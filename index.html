@@ -17361,8 +17361,8 @@ ${rateText}`
       if (!confirm('Clear uploaded fleet mileage data?')) return;
 
       try {
-        // Delete from database
-        await supabase.from('fleet_mileage').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        // Delete from database using sb (the Supabase client)
+        await sb.from('fleet_mileage').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
         // Clear local state
         fleetMileageData = [];
@@ -17457,8 +17457,8 @@ ${rateText}`
 
     async function saveFleetMileageToDb(data, periodStart, periodEnd) {
       try {
-        // First, delete existing data for this period (or all data - only keep latest upload)
-        await supabase.from('fleet_mileage').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        // First, delete existing data (only keep latest upload) using sb (the Supabase client)
+        await sb.from('fleet_mileage').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
         // Insert new data
         const records = data.map(d => ({
@@ -17473,7 +17473,7 @@ ${rateText}`
           end_odometer: d.end_odometer
         }));
 
-        const { error } = await supabase.from('fleet_mileage').insert(records);
+        const { error } = await sb.from('fleet_mileage').insert(records);
 
         if (error) {
           console.error('Error saving fleet mileage:', error);
