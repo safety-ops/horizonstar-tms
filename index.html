@@ -20016,32 +20016,37 @@ ${rateText}`
         showToast('Generating PDF and sending email to ' + driverEmail + '...', 'info');
 
         try {
-          // Create container for PDF generation (must be in viewport for html2canvas to render)
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = paystubHTML;
-          tempDiv.style.cssText = 'position:fixed;top:0;left:0;width:800px;background:white;z-index:-1;opacity:0;pointer-events:none;';
-          document.body.appendChild(tempDiv);
+          // Create iframe for PDF generation (iframe content renders independently)
+          const iframe = document.createElement('iframe');
+          iframe.style.cssText = 'position:fixed;top:0;left:0;width:850px;height:1200px;border:none;z-index:99999;background:white;';
+          document.body.appendChild(iframe);
 
-          // Wait for fonts and images to load
-          await new Promise(resolve => setTimeout(resolve, 500));
+          // Write the paystub HTML to the iframe
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+          iframeDoc.open();
+          iframeDoc.write(paystubHTML);
+          iframeDoc.close();
 
-          // Generate PDF from paystub HTML
+          // Wait for iframe content to fully render
+          await new Promise(resolve => setTimeout(resolve, 800));
+
+          // Generate PDF from iframe body
           const pdfBlob = await html2pdf()
             .set({
-              margin: 10,
+              margin: 5,
               filename: 'earnings-statement.pdf',
               image: { type: 'jpeg', quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true, logging: false },
+              html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 800 },
               jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             })
-            .from(tempDiv)
+            .from(iframeDoc.body)
             .outputPdf('blob');
 
           // Convert PDF to base64
           const base64Pdf = await blobToBase64(pdfBlob);
 
-          // Remove temp div
-          document.body.removeChild(tempDiv);
+          // Remove iframe
+          document.body.removeChild(iframe);
 
           // Get trip numbers for email body
           const selectedTrips = selectedTripIds.map(id => appData.trips.find(t => t.id === id)).filter(t => t);
