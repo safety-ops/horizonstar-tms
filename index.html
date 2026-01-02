@@ -17130,14 +17130,18 @@ ${rateText}`
       
       const totalFuelGallons = Object.values(fuelByState).reduce((s, v) => s + v, 0);
       
-      // Calculate actual MPG from trip data for the quarter
+      // Calculate actual MPG - prioritize IFTA uploaded miles over trip miles
       const quarterTrips = (appData.trips || []).filter(t => {
         if (!t.trip_date) return false;
         return t.trip_date >= qRange.start && t.trip_date <= qRange.end;
       });
       const tripMilesTotal = quarterTrips.reduce((s, t) => s + parseFloat(t.miles || 0), 0);
-      const calculatedMPG = totalFuelGallons > 0 ? (tripMilesTotal / totalFuelGallons) : 0;
-      const hasCalcData = tripMilesTotal > 0 && totalFuelGallons > 0;
+      const iftaMilesTotal = iftaMileageData.reduce((s, m) => s + m.miles, 0);
+      // Use IFTA miles if available (more accurate), otherwise fall back to trip miles
+      const milesForMPG = iftaMilesTotal > 0 ? iftaMilesTotal : tripMilesTotal;
+      const milesSource = iftaMilesTotal > 0 ? 'IFTA' : 'trip';
+      const calculatedMPG = totalFuelGallons > 0 && milesForMPG > 0 ? (milesForMPG / totalFuelGallons) : 0;
+      const hasCalcData = milesForMPG > 0 && totalFuelGallons > 0;
       
       // Calculate IFTA if we have mileage data
       let iftaResults = [];
@@ -17188,18 +17192,18 @@ ${rateText}`
         '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Quarter</label><select id="iftaQuarter" onchange="iftaQuarter=parseInt(this.value);renderIFTA(document.getElementById(\'main-content\'))"><option value="1"' + (iftaQuarter === 1 ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="2"' + (iftaQuarter === 2 ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="3"' + (iftaQuarter === 3 ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="4"' + (iftaQuarter === 4 ? ' selected' : '') + '>Q4 (Oct-Dec)</option></select></div>' +
         '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select id="iftaYear" onchange="iftaYear=parseInt(this.value);renderIFTA(document.getElementById(\'main-content\'))"><option value="2024"' + (iftaYear === 2024 ? ' selected' : '') + '>2024</option><option value="2025"' + (iftaYear === 2025 ? ' selected' : '') + '>2025</option><option value="2026"' + (iftaYear === 2026 ? ' selected' : '') + '>2026</option><option value="2027"' + (iftaYear === 2027 ? ' selected' : '') + '>2027</option></select></div>' +
         '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Fleet MPG</label><div style="display:flex;gap:8px;align-items:center"><input type="number" step="0.1" value="' + fleetMPG + '" style="width:80px" onchange="fleetMPG=parseFloat(this.value)||6;renderIFTA(document.getElementById(\'main-content\'))">' +
-        (hasCalcData ? '<button class="btn btn-secondary" style="padding:6px 10px;font-size:12px" onclick="fleetMPG=' + calculatedMPG.toFixed(2) + ';renderIFTA(document.getElementById(\'main-content\'))" title="Use calculated MPG from your trip miles and fuel data">Use ' + calculatedMPG.toFixed(2) + '</button>' : '') +
+        (hasCalcData ? '<button class="btn btn-secondary" style="padding:6px 10px;font-size:12px" onclick="fleetMPG=' + calculatedMPG.toFixed(2) + ';renderIFTA(document.getElementById(\'main-content\'))" title="Use calculated MPG from your ' + milesSource + ' miles and fuel data">Use ' + calculatedMPG.toFixed(2) + '</button>' : '') +
         '</div></div>' +
         '<div style="margin-left:auto;font-size:18px;font-weight:700;color:#1e40af">📅 ' + qRange.label + ' ' + iftaYear + '</div></div>' +
-        
+
         // Auto MPG Info Box
         (hasCalcData ? '<div style="background:#dbeafe;border:1px solid #3b82f6;border-radius:6px;padding:12px;margin-top:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">' +
         '<span style="font-size:14px;color:#1e40af">📊 <strong>Auto-Calculated MPG:</strong> ' + calculatedMPG.toFixed(2) + ' MPG</span>' +
-        '<span style="font-size:12px;color:#3b82f6">(' + tripMilesTotal.toLocaleString() + ' trip miles ÷ ' + totalFuelGallons.toFixed(1) + ' gallons = ' + calculatedMPG.toFixed(2) + ' MPG)</span>' +
+        '<span style="font-size:12px;color:#3b82f6">(' + milesForMPG.toLocaleString() + ' ' + milesSource + ' miles ÷ ' + totalFuelGallons.toFixed(1) + ' gallons = ' + calculatedMPG.toFixed(2) + ' MPG)</span>' +
         (Math.abs(calculatedMPG - fleetMPG) > 0.5 ? '<span style="font-size:12px;color:#dc2626;background:#fee2e2;padding:4px 8px;border-radius:4px">⚠️ Differs from current setting by ' + Math.abs(calculatedMPG - fleetMPG).toFixed(2) + ' MPG</span>' : '<span style="font-size:12px;color:#059669">✓ Close to current setting</span>') +
-        '</div>' : 
+        '</div>' :
         '<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;padding:12px;margin-top:12px">' +
-        '<span style="font-size:13px;color:#92400e">💡 <strong>Tip:</strong> Add trip miles and fuel transactions to auto-calculate your actual fleet MPG for more accurate IFTA reporting.</span></div>') +
+        '<span style="font-size:13px;color:#92400e">💡 <strong>Tip:</strong> Upload IFTA mileage or add trip miles and fuel transactions to auto-calculate your actual fleet MPG.</span></div>') +
         '</div>' +
         
         // Summary Stats
