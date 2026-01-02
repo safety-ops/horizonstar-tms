@@ -20016,13 +20016,14 @@ ${rateText}`
         showToast('Generating PDF and sending email to ' + driverEmail + '...', 'info');
 
         try {
-          // Create temp container for PDF generation
+          // Create container for PDF generation (must be in viewport for html2canvas to render)
           const tempDiv = document.createElement('div');
           tempDiv.innerHTML = paystubHTML;
-          tempDiv.style.position = 'absolute';
-          tempDiv.style.left = '-9999px';
-          tempDiv.style.width = '800px';
+          tempDiv.style.cssText = 'position:fixed;top:0;left:0;width:800px;background:white;z-index:-1;opacity:0;pointer-events:none;';
           document.body.appendChild(tempDiv);
+
+          // Wait for fonts and images to load
+          await new Promise(resolve => setTimeout(resolve, 500));
 
           // Generate PDF from paystub HTML
           const pdfBlob = await html2pdf()
@@ -20030,7 +20031,7 @@ ${rateText}`
               margin: 10,
               filename: 'earnings-statement.pdf',
               image: { type: 'jpeg', quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true },
+              html2canvas: { scale: 2, useCORS: true, logging: false },
               jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             })
             .from(tempDiv)
