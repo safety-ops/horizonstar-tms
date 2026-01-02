@@ -20022,7 +20022,7 @@ ${rateText}`
         try {
           // Create iframe for PDF generation (iframe content renders independently)
           const iframe = document.createElement('iframe');
-          iframe.style.cssText = 'position:fixed;top:0;left:0;width:800px;height:1200px;border:none;z-index:99999;background:white;';
+          iframe.style.cssText = 'position:fixed;top:0;left:0;width:820px;height:2000px;border:none;z-index:99999;background:white;';
           document.body.appendChild(iframe);
 
           // Write the paystub HTML to the iframe
@@ -20031,26 +20031,39 @@ ${rateText}`
           iframeDoc.write(paystubHTML);
           iframeDoc.close();
 
-          // Add pdf-export class to body for proper styling (hides print button, removes margins)
-          iframeDoc.body.classList.add('pdf-export');
-          iframeDoc.body.style.cssText = 'margin:0;padding:0;width:760px;';
-
-          // Also ensure the .page element has no centering margin
-          const pageEl = iframeDoc.querySelector('.page');
-          if (pageEl) {
-            pageEl.style.cssText = 'margin:0;padding:20px;max-width:none;width:100%;box-sizing:border-box;';
+          // Directly hide the print button (more reliable than CSS class)
+          const printBtn = iframeDoc.querySelector('.print-btn');
+          if (printBtn) {
+            printBtn.style.display = 'none';
           }
 
-          // Wait for iframe content to fully render
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          // Set body styles for proper PDF capture
+          iframeDoc.body.style.cssText = 'margin:0;padding:0;width:800px;background:white;';
+
+          // Ensure the .page element fills the width properly
+          const pageEl = iframeDoc.querySelector('.page');
+          if (pageEl) {
+            pageEl.style.cssText = 'margin:0;padding:24px;max-width:800px;width:800px;box-sizing:border-box;';
+          }
+
+          // Wait for iframe content to fully render (fonts, images)
+          await new Promise(resolve => setTimeout(resolve, 1200));
 
           // Generate PDF from iframe body with proper capture settings
           const pdfBlob = await html2pdf()
             .set({
-              margin: [5, 5, 5, 5],
+              margin: [8, 8, 8, 8],
               filename: 'earnings-statement.pdf',
-              image: { type: 'jpeg', quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0, width: 760 },
+              image: { type: 'jpeg', quality: 0.95 },
+              html2canvas: {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                scrollX: 0,
+                scrollY: 0,
+                width: 800,
+                windowWidth: 800
+              },
               jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             })
             .from(iframeDoc.body)
