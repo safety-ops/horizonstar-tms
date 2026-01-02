@@ -7807,31 +7807,46 @@
     let pendingRealtimeUpdate = false;
     
     function handleRealtimeChange(payload) {
-      // Don't refresh if we just made the change ourselves (within last 2 seconds)
+      // Don't refresh if we just made the change ourselves (within last 3 seconds)
       const timeSinceLastSave = Date.now() - (window.lastSaveTimestamp || 0);
-      if (timeSinceLastSave < 2000) {
+      if (timeSinceLastSave < 3000) {
         return; // Skip - this is likely our own change
       }
-      
+
       // Debounce multiple rapid changes
       pendingRealtimeUpdate = true;
       if (realtimeDebounceTimer) clearTimeout(realtimeDebounceTimer);
-      
+
       realtimeDebounceTimer = setTimeout(async () => {
         if (!pendingRealtimeUpdate) return;
         pendingRealtimeUpdate = false;
-        
+
         // Show notification
         const table = payload.table;
         const action = payload.eventType;
         const tableNames = { trips: 'Trip', orders: 'Vehicle', drivers: 'Driver', trucks: 'Truck', expenses: 'Expense' };
         const actionNames = { INSERT: 'added', UPDATE: 'updated', DELETE: 'deleted' };
-        
+
         showToast('🔄 ' + (tableNames[table] || table) + ' ' + (actionNames[action] || 'changed') + ' by another user', 'info');
-        
+
         // Refresh data
         await loadAllData(true);
-        renderPage();
+
+        // Respect current detail view - don't navigate away
+        if (currentDetailView) {
+          // Re-render the detail view instead of the page list
+          if (currentDetailView.type === 'trip') {
+            viewTrip(currentDetailView.id);
+          } else if (currentDetailView.type === 'driver') {
+            viewDriver(currentDetailView.id);
+          } else if (currentDetailView.type === 'truck') {
+            viewTruck(currentDetailView.id);
+          } else {
+            renderPage();
+          }
+        } else {
+          renderPage();
+        }
       }, 1000); // Wait 1 second for any additional changes
     }
     
@@ -10933,8 +10948,14 @@
       }
     }
 
-    // Dashboard year filter - defaults to current year
+    // Dashboard period filter - defaults to current year
+    let dashboardPeriod = 'year';  // 'all', 'year', 'q1', 'q2', 'q3', 'q4'
     let dashboardYear = new Date().getFullYear();
+
+    function changeDashboardPeriod(period) {
+      dashboardPeriod = period;
+      renderDashboard(document.getElementById('main-content'));
+    }
 
     function changeDashboardYear(year) {
       dashboardYear = parseInt(year);
@@ -10948,11 +10969,65 @@
       return date.getFullYear();
     }
 
+    function getTripQuarter(trip) {
+      const dateStr = trip.trip_date || trip.period_start_date || trip.created_at;
+      if (!dateStr) return null;
+      const month = new Date(dateStr).getMonth();
+      if (month >= 0 && month <= 2) return 1;
+      if (month >= 3 && month <= 5) return 2;
+      if (month >= 6 && month <= 8) return 3;
+      return 4;
+    }
+
+    function filterTripsByPeriod(trips) {
+      return trips.filter(t => {
+        if (dashboardPeriod === 'all') return true;
+        const tripYear = getTripYear(t);
+        if (tripYear !== dashboardYear) return false;
+        if (dashboardPeriod === 'year') return true;
+        const quarter = getTripQuarter(t);
+        if (dashboardPeriod === 'q1') return quarter === 1;
+        if (dashboardPeriod === 'q2') return quarter === 2;
+        if (dashboardPeriod === 'q3') return quarter === 3;
+        if (dashboardPeriod === 'q4') return quarter === 4;
+        return true;
+      });
+    }
+
+    function getDashboardPeriodLabel() {
+      if (dashboardPeriod === 'all') return 'All Time';
+      if (dashboardPeriod === 'year') return dashboardYear;
+      if (dashboardPeriod === 'q1') return 'Q1 ' + dashboardYear;
+      if (dashboardPeriod === 'q2') return 'Q2 ' + dashboardYear;
+      if (dashboardPeriod === 'q3') return 'Q3 ' + dashboardYear;
+      if (dashboardPeriod === 'q4') return 'Q4 ' + dashboardYear;
+      return dashboardYear;
+    }
+
     function renderDashboard(c) {
-      // Filter trips by selected year
-      const yearTrips = appData.trips.filter(t => getTripYear(t) === dashboardYear);
+      // Filter trips by selected period (year, quarter, or all time)
+      const yearTrips = filterTripsByPeriod(appData.trips);
       const yearTripIds = yearTrips.map(t => t.id);
-      const yearOrders = appData.orders.filter(o => yearTripIds.includes(o.trip_id) || (!o.trip_id && new Date(o.created_at).getFullYear() === dashboardYear));
+
+      // Filter orders to match the same period
+      const yearOrders = appData.orders.filter(o => {
+        if (yearTripIds.includes(o.trip_id)) return true;
+        if (!o.trip_id) {
+          // Standalone orders - filter by period
+          const orderDate = new Date(o.created_at);
+          const orderYear = orderDate.getFullYear();
+          if (dashboardPeriod === 'all') return true;
+          if (orderYear !== dashboardYear) return false;
+          if (dashboardPeriod === 'year') return true;
+          const month = orderDate.getMonth();
+          const quarter = month >= 0 && month <= 2 ? 1 : month >= 3 && month <= 5 ? 2 : month >= 6 && month <= 8 ? 3 : 4;
+          if (dashboardPeriod === 'q1') return quarter === 1;
+          if (dashboardPeriod === 'q2') return quarter === 2;
+          if (dashboardPeriod === 'q3') return quarter === 3;
+          if (dashboardPeriod === 'q4') return quarter === 4;
+        }
+        return false;
+      });
 
       // Calculate all metrics for selected year
       let totalRev = 0, totalProfit = 0, totalExpenses = 0, totalBrokerFees = 0, totalLocalFees = 0, totalDriverCut = 0, totalMiles = 0, totalCars = 0;
@@ -11053,13 +11128,23 @@
       if (!availableYears.includes(currentYear)) availableYears.unshift(currentYear);
       const yearOptions = availableYears.map(y => '<option value="' + y + '"' + (y === dashboardYear ? ' selected' : '') + '>' + y + '</option>').join('');
 
-      c.innerHTML = '<div class="header"><h2>📊 Dashboard</h2><div style="display:flex;gap:12px;align-items:center"><select onchange="changeDashboardYear(this.value)" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);font-weight:600;cursor:pointer">' + yearOptions + '</select><button class="btn btn-secondary" onclick="showExportMenu()">📥 Export</button><button class="btn btn-secondary" onclick="loadAllData(true).then(()=>renderPage())">🔄 Refresh</button></div></div>' +
+      // Period selector buttons
+      const periodButtons = [
+        { value: 'all', label: 'All Time' },
+        { value: 'year', label: 'Year' },
+        { value: 'q1', label: 'Q1' },
+        { value: 'q2', label: 'Q2' },
+        { value: 'q3', label: 'Q3' },
+        { value: 'q4', label: 'Q4' }
+      ].map(p => '<button onclick="changeDashboardPeriod(\'' + p.value + '\')" style="padding:6px 12px;border-radius:6px;border:1px solid ' + (dashboardPeriod === p.value ? 'var(--primary)' : 'var(--border)') + ';background:' + (dashboardPeriod === p.value ? 'var(--primary)' : 'var(--bg-secondary)') + ';color:' + (dashboardPeriod === p.value ? 'white' : 'var(--text-primary)') + ';font-size:13px;font-weight:500;cursor:pointer">' + p.label + '</button>').join('');
+
+      c.innerHTML = '<div class="header"><h2>📊 Dashboard</h2><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div style="display:flex;gap:4px">' + periodButtons + '</div>' + (dashboardPeriod !== 'all' ? '<select onchange="changeDashboardYear(this.value)" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);font-weight:600;cursor:pointer">' + yearOptions + '</select>' : '') + '<button class="btn btn-secondary" onclick="showExportMenu()">📥 Export</button><button class="btn btn-secondary" onclick="loadAllData(true).then(()=>renderPage())">🔄 Refresh</button></div></div>' +
 
         // Tasks Widget - TOP OF PAGE
         renderTasksWidget() +
 
-        // Recent Trips Table - RIGHT AFTER TASKS (filtered by year)
-        '<div class="card" style="margin-bottom:20px"><div class="card-header"><h3>🚛 Recent Trips (' + dashboardYear + ')</h3></div><div class="table-wrapper"><table><thead><tr><th>Trip</th><th>Date</th><th>Driver</th><th>Truck</th><th>Cars</th><th>Revenue</th><th>Profit</th><th>Status</th></tr></thead><tbody>' + (yearTrips.length > 0 ? yearTrips.slice(0, 5).map(t => { const d = appData.drivers.find(x => x.id === t.driver_id); const tr = appData.trucks.find(x => x.id === t.truck_id); const f = getTripFin(t.id); return '<tr style="cursor:pointer" onclick="viewTrip(' + t.id + ')"><td><strong style="color:#3b82f6">' + t.trip_number + '</strong></td><td>' + formatDate(t.trip_date) + '</td><td>' + (d ? d.first_name + ' ' + d.last_name : '-') + '</td><td>' + (tr ? '#' + tr.truck_number : '-') + '</td><td>' + f.vehicleCount + '</td><td class="money">' + formatMoney(f.loadRevenue) + '</td><td class="money ' + (f.netProfit >= 0 ? 'positive' : 'negative') + '">' + formatMoney(f.netProfit) + '</td><td><span class="badge ' + getBadge(t.status) + '">' + t.status + '</span></td></tr>'; }).join('') : '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted)">No trips in ' + dashboardYear + '</td></tr>') + '</tbody></table></div></div>' +
+        // Recent Trips Table - RIGHT AFTER TASKS (filtered by period)
+        '<div class="card" style="margin-bottom:20px"><div class="card-header"><h3>🚛 Recent Trips (' + getDashboardPeriodLabel() + ')</h3></div><div class="table-wrapper"><table><thead><tr><th>Trip</th><th>Date</th><th>Driver</th><th>Truck</th><th>Cars</th><th>Revenue</th><th>Profit</th><th>Status</th></tr></thead><tbody>' + (yearTrips.length > 0 ? yearTrips.slice(0, 5).map(t => { const d = appData.drivers.find(x => x.id === t.driver_id); const tr = appData.trucks.find(x => x.id === t.truck_id); const f = getTripFin(t.id); return '<tr style="cursor:pointer" onclick="viewTrip(' + t.id + ')"><td><strong style="color:#3b82f6">' + t.trip_number + '</strong></td><td>' + formatDate(t.trip_date) + '</td><td>' + (d ? d.first_name + ' ' + d.last_name : '-') + '</td><td>' + (tr ? '#' + tr.truck_number : '-') + '</td><td>' + f.vehicleCount + '</td><td class="money">' + formatMoney(f.loadRevenue) + '</td><td class="money ' + (f.netProfit >= 0 ? 'positive' : 'negative') + '">' + formatMoney(f.netProfit) + '</td><td><span class="badge ' + getBadge(t.status) + '">' + t.status + '</span></td></tr>'; }).join('') : '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted)">No trips for ' + getDashboardPeriodLabel() + '</td></tr>') + '</tbody></table></div></div>' +
         
         // Top Stats Row
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:20px">' +
