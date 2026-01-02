@@ -10949,8 +10949,9 @@
     }
 
     // Dashboard period filter - defaults to current year
-    let dashboardPeriod = 'year';  // 'all', 'year', 'q1', 'q2', 'q3', 'q4'
+    let dashboardPeriod = 'year';  // 'all', 'year', 'month', 'q1', 'q2', 'q3', 'q4'
     let dashboardYear = new Date().getFullYear();
+    let dashboardMonth = new Date().getMonth() + 1;  // 1-12
 
     function changeDashboardPeriod(period) {
       dashboardPeriod = period;
@@ -10959,6 +10960,11 @@
 
     function changeDashboardYear(year) {
       dashboardYear = parseInt(year);
+      renderDashboard(document.getElementById('main-content'));
+    }
+
+    function changeDashboardMonth(month) {
+      dashboardMonth = parseInt(month);
       renderDashboard(document.getElementById('main-content'));
     }
 
@@ -10979,12 +10985,19 @@
       return 4;
     }
 
+    function getTripMonth(trip) {
+      const dateStr = trip.trip_date || trip.period_start_date || trip.created_at;
+      if (!dateStr) return null;
+      return new Date(dateStr).getMonth() + 1;  // 1-12
+    }
+
     function filterTripsByPeriod(trips) {
       return trips.filter(t => {
         if (dashboardPeriod === 'all') return true;
         const tripYear = getTripYear(t);
         if (tripYear !== dashboardYear) return false;
         if (dashboardPeriod === 'year') return true;
+        if (dashboardPeriod === 'month') return getTripMonth(t) === dashboardMonth;
         const quarter = getTripQuarter(t);
         if (dashboardPeriod === 'q1') return quarter === 1;
         if (dashboardPeriod === 'q2') return quarter === 2;
@@ -10994,9 +11007,12 @@
       });
     }
 
+    const dashboardMonthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
     function getDashboardPeriodLabel() {
       if (dashboardPeriod === 'all') return 'All Time';
       if (dashboardPeriod === 'year') return dashboardYear;
+      if (dashboardPeriod === 'month') return dashboardMonthNames[dashboardMonth] + ' ' + dashboardYear;
       if (dashboardPeriod === 'q1') return 'Q1 ' + dashboardYear;
       if (dashboardPeriod === 'q2') return 'Q2 ' + dashboardYear;
       if (dashboardPeriod === 'q3') return 'Q3 ' + dashboardYear;
@@ -11132,13 +11148,17 @@
       const periodButtons = [
         { value: 'all', label: 'All Time' },
         { value: 'year', label: 'Year' },
+        { value: 'month', label: 'Month' },
         { value: 'q1', label: 'Q1' },
         { value: 'q2', label: 'Q2' },
         { value: 'q3', label: 'Q3' },
         { value: 'q4', label: 'Q4' }
       ].map(p => '<button onclick="changeDashboardPeriod(\'' + p.value + '\')" style="padding:6px 12px;border-radius:6px;border:1px solid ' + (dashboardPeriod === p.value ? 'var(--primary)' : 'var(--border)') + ';background:' + (dashboardPeriod === p.value ? 'var(--primary)' : 'var(--bg-secondary)') + ';color:' + (dashboardPeriod === p.value ? 'white' : 'var(--text-primary)') + ';font-size:13px;font-weight:500;cursor:pointer">' + p.label + '</button>').join('');
 
-      c.innerHTML = '<div class="header"><h2>📊 Dashboard</h2><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div style="display:flex;gap:4px">' + periodButtons + '</div>' + (dashboardPeriod !== 'all' ? '<select onchange="changeDashboardYear(this.value)" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);font-weight:600;cursor:pointer">' + yearOptions + '</select>' : '') + '<button class="btn btn-secondary" onclick="showExportMenu()">📥 Export</button><button class="btn btn-secondary" onclick="loadAllData(true).then(()=>renderPage())">🔄 Refresh</button></div></div>' +
+      // Month selector options
+      const monthOptions = dashboardMonthNames.slice(1).map((m, i) => '<option value="' + (i + 1) + '"' + (dashboardMonth === i + 1 ? ' selected' : '') + '>' + m + '</option>').join('');
+
+      c.innerHTML = '<div class="header"><h2>📊 Dashboard</h2><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div style="display:flex;gap:4px">' + periodButtons + '</div>' + (dashboardPeriod === 'month' ? '<select onchange="changeDashboardMonth(this.value)" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);font-weight:600;cursor:pointer">' + monthOptions + '</select>' : '') + (dashboardPeriod !== 'all' ? '<select onchange="changeDashboardYear(this.value)" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);font-weight:600;cursor:pointer">' + yearOptions + '</select>' : '') + '<button class="btn btn-secondary" onclick="showExportMenu()">📥 Export</button><button class="btn btn-secondary" onclick="loadAllData(true).then(()=>renderPage())">🔄 Refresh</button></div></div>' +
 
         // Tasks Widget - TOP OF PAGE
         renderTasksWidget() +
@@ -15635,7 +15655,7 @@ ${rateText}`
         '<div class="card" style="padding:16px;margin-bottom:24px"><div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">' +
         '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Period</label><select id="dispRankPeriod" onchange="dispRankPeriod=this.value;renderDispatcherRanking(document.getElementById(\'main-content\'))"><option value="all"' + (dispRankPeriod === 'all' ? ' selected' : '') + '>All Time</option><option value="month"' + (dispRankPeriod === 'month' ? ' selected' : '') + '>Monthly</option><option value="q1"' + (dispRankPeriod === 'q1' ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="q2"' + (dispRankPeriod === 'q2' ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="q3"' + (dispRankPeriod === 'q3' ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="q4"' + (dispRankPeriod === 'q4' ? ' selected' : '') + '>Q4 (Oct-Dec)</option><option value="year"' + (dispRankPeriod === 'year' ? ' selected' : '') + '>Full Year</option></select></div>' +
         (dispRankPeriod === 'month' ? '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Month</label><select id="dispRankMonth" onchange="dispRankMonth=parseInt(this.value);renderDispatcherRanking(document.getElementById(\'main-content\'))">' + months.slice(1).map((m, i) => '<option value="' + (i+1) + '"' + (dispRankMonth === i+1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select></div>' : '') +
-        (dispRankPeriod !== 'all' ? '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select id="dispRankYear" onchange="dispRankYear=parseInt(this.value);renderDispatcherRanking(document.getElementById(\'main-content\'))"><option value="2024"' + (dispRankYear === 2024 ? ' selected' : '') + '>2024</option><option value="2025"' + (dispRankYear === 2025 ? ' selected' : '') + '>2025</option><option value="2026"' + (dispRankYear === 2026 ? ' selected' : '') + '>2026</option></select></div>' : '') +
+        (dispRankPeriod !== 'all' ? '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select id="dispRankYear" onchange="dispRankYear=parseInt(this.value);renderDispatcherRanking(document.getElementById(\'main-content\'))"><option value="2024"' + (dispRankYear === 2024 ? ' selected' : '') + '>2024</option><option value="2025"' + (dispRankYear === 2025 ? ' selected' : '') + '>2025</option><option value="2026"' + (dispRankYear === 2026 ? ' selected' : '') + '>2026</option><option value="2027"' + (dispRankYear === 2027 ? ' selected' : '') + '>2027</option></select></div>' : '') +
         '<div style="margin-left:auto;font-size:18px;font-weight:700;color:#1e40af">📅 ' + getDispRankPeriodLabel() + '</div></div></div>' +
         
         // Summary stats
@@ -15939,7 +15959,7 @@ ${rateText}`
         '<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:16px">' +
         '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Period</label><select id="fuelPeriod" onchange="fuelPeriod=this.value;renderFuelTracking(document.getElementById(\'main-content\'))"><option value="month"' + (fuelPeriod === 'month' ? ' selected' : '') + '>Monthly</option><option value="q1"' + (fuelPeriod === 'q1' ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="q2"' + (fuelPeriod === 'q2' ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="q3"' + (fuelPeriod === 'q3' ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="q4"' + (fuelPeriod === 'q4' ? ' selected' : '') + '>Q4 (Oct-Dec)</option><option value="year"' + (fuelPeriod === 'year' ? ' selected' : '') + '>Full Year</option></select></div>' +
         (fuelPeriod === 'month' ? '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Month</label><select id="fuelMonth" onchange="fuelMonth=parseInt(this.value);renderFuelTracking(document.getElementById(\'main-content\'))">' + months.slice(1).map((m, i) => '<option value="' + (i+1) + '"' + (fuelMonth === i+1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select></div>' : '') +
-        '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select id="fuelYear" onchange="fuelYear=parseInt(this.value);renderFuelTracking(document.getElementById(\'main-content\'))"><option value="2024"' + (fuelYear === 2024 ? ' selected' : '') + '>2024</option><option value="2025"' + (fuelYear === 2025 ? ' selected' : '') + '>2025</option><option value="2026"' + (fuelYear === 2026 ? ' selected' : '') + '>2026</option></select></div>' +
+        '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select id="fuelYear" onchange="fuelYear=parseInt(this.value);renderFuelTracking(document.getElementById(\'main-content\'))"><option value="2024"' + (fuelYear === 2024 ? ' selected' : '') + '>2024</option><option value="2025"' + (fuelYear === 2025 ? ' selected' : '') + '>2025</option><option value="2026"' + (fuelYear === 2026 ? ' selected' : '') + '>2026</option><option value="2027"' + (fuelYear === 2027 ? ' selected' : '') + '>2027</option></select></div>' +
         '<div style="margin-left:auto;font-size:18px;font-weight:700;color:#1e40af">📅 ' + getFuelPeriodLabel() + '</div></div>' +
         
         // Filter row
@@ -16985,7 +17005,7 @@ ${rateText}`
         // Quarter selector
         '<div class="card" style="padding:16px;margin-bottom:24px"><div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">' +
         '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Quarter</label><select id="iftaQuarter" onchange="iftaQuarter=parseInt(this.value);renderIFTA(document.getElementById(\'main-content\'))"><option value="1"' + (iftaQuarter === 1 ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="2"' + (iftaQuarter === 2 ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="3"' + (iftaQuarter === 3 ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="4"' + (iftaQuarter === 4 ? ' selected' : '') + '>Q4 (Oct-Dec)</option></select></div>' +
-        '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select id="iftaYear" onchange="iftaYear=parseInt(this.value);renderIFTA(document.getElementById(\'main-content\'))"><option value="2024"' + (iftaYear === 2024 ? ' selected' : '') + '>2024</option><option value="2025"' + (iftaYear === 2025 ? ' selected' : '') + '>2025</option><option value="2026"' + (iftaYear === 2026 ? ' selected' : '') + '>2026</option></select></div>' +
+        '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select id="iftaYear" onchange="iftaYear=parseInt(this.value);renderIFTA(document.getElementById(\'main-content\'))"><option value="2024"' + (iftaYear === 2024 ? ' selected' : '') + '>2024</option><option value="2025"' + (iftaYear === 2025 ? ' selected' : '') + '>2025</option><option value="2026"' + (iftaYear === 2026 ? ' selected' : '') + '>2026</option><option value="2027"' + (iftaYear === 2027 ? ' selected' : '') + '>2027</option></select></div>' +
         '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Fleet MPG</label><div style="display:flex;gap:8px;align-items:center"><input type="number" step="0.1" value="' + fleetMPG + '" style="width:80px" onchange="fleetMPG=parseFloat(this.value)||6;renderIFTA(document.getElementById(\'main-content\'))">' +
         (hasCalcData ? '<button class="btn btn-secondary" style="padding:6px 10px;font-size:12px" onclick="fleetMPG=' + calculatedMPG.toFixed(2) + ';renderIFTA(document.getElementById(\'main-content\'))" title="Use calculated MPG from your trip miles and fuel data">Use ' + calculatedMPG.toFixed(2) + '</button>' : '') +
         '</div></div>' +
@@ -20537,7 +20557,7 @@ ${rateText}`
         '<button class="btn ' + (varCostFilter === 'all' ? 'btn-primary' : 'btn-secondary') + '" onclick="setVarCostFilter(\'all\')">All Time</button>' +
         '<button class="btn ' + (varCostFilter === 'month' ? 'btn-primary' : 'btn-secondary') + '" onclick="setVarCostFilter(\'month\')">By Month</button>' +
         (varCostFilter === 'month' ? '<select onchange="setVarCostMonth(this.value)" style="padding:8px;border-radius:6px;border:1px solid #d1d5db">' + months.slice(1).map((m, i) => '<option value="' + (i + 1) + '"' + (varCostMonth === i + 1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select>' +
-        '<select onchange="setVarCostYear(this.value)" style="padding:8px;border-radius:6px;border:1px solid #d1d5db">' + [2023, 2024, 2025, 2026].map(y => '<option value="' + y + '"' + (varCostYear === y ? ' selected' : '') + '>' + y + '</option>').join('') + '</select>' : '') +
+        '<select onchange="setVarCostYear(this.value)" style="padding:8px;border-radius:6px;border:1px solid #d1d5db">' + [2023, 2024, 2025, 2026, 2027].map(y => '<option value="' + y + '"' + (varCostYear === y ? ' selected' : '') + '>' + y + '</option>').join('') + '</select>' : '') +
         '</div>' +
         
         // Stats
@@ -21354,7 +21374,7 @@ ${rateText}`
         '<button onclick="finPeriodType=\'quarter\';renderFinancialAnalysis(document.getElementById(\'main-content\'))" style="padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-weight:500;transition:all 0.2s;' + (finPeriodType === 'quarter' ? 'background:#3b82f6;color:white' : 'background:transparent;color:#64748b') + '">Quarterly</button>' +
         '<button onclick="finPeriodType=\'year\';renderFinancialAnalysis(document.getElementById(\'main-content\'))" style="padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-weight:500;transition:all 0.2s;' + (finPeriodType === 'year' ? 'background:#3b82f6;color:white' : 'background:transparent;color:#64748b') + '">Yearly</button>' +
         '</div>' +
-        '<select id="finYear" onchange="finYear=parseInt(this.value);renderFinancialAnalysis(document.getElementById(\'main-content\'))" style="padding:10px 16px;border:1px solid #e2e8f0;border-radius:8px;background:white;font-weight:500"><option value="2024"' + (finYear === 2024 ? ' selected' : '') + '>2024</option><option value="2025"' + (finYear === 2025 ? ' selected' : '') + '>2025</option><option value="2026"' + (finYear === 2026 ? ' selected' : '') + '>2026</option></select>' +
+        '<select id="finYear" onchange="finYear=parseInt(this.value);renderFinancialAnalysis(document.getElementById(\'main-content\'))" style="padding:10px 16px;border:1px solid #e2e8f0;border-radius:8px;background:white;font-weight:500"><option value="2024"' + (finYear === 2024 ? ' selected' : '') + '>2024</option><option value="2025"' + (finYear === 2025 ? ' selected' : '') + '>2025</option><option value="2026"' + (finYear === 2026 ? ' selected' : '') + '>2026</option><option value="2027"' + (finYear === 2027 ? ' selected' : '') + '>2027</option></select>' +
         (finPeriodType === 'month' ? '<select id="finMonth" onchange="finMonth=parseInt(this.value);renderFinancialAnalysis(document.getElementById(\'main-content\'))" style="padding:10px 16px;border:1px solid #e2e8f0;border-radius:8px;background:white;font-weight:500">' + months.slice(1).map((m, i) => '<option value="' + (i+1) + '"' + (finMonth === i+1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select>' : '') +
         (finPeriodType === 'quarter' ? '<select id="finQuarter" onchange="finQuarter=parseInt(this.value);renderFinancialAnalysis(document.getElementById(\'main-content\'))" style="padding:10px 16px;border:1px solid #e2e8f0;border-radius:8px;background:white;font-weight:500"><option value="1"' + (finQuarter === 1 ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="2"' + (finQuarter === 2 ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="3"' + (finQuarter === 3 ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="4"' + (finQuarter === 4 ? ' selected' : '') + '>Q4 (Oct-Dec)</option></select>' : '') +
         '<div style="margin-left:auto;background:#1e293b;color:white;padding:10px 20px;border-radius:8px;font-weight:700">' + periodLabel + '</div>' +
@@ -26091,7 +26111,7 @@ function jsonResponse(data, status = 200) {
       
       c.innerHTML = '<div class="header"><h2>📊 Enhanced Reports</h2><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><select id="reportPeriod" onchange="reportPeriod=this.value;renderReports(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)"><option value="month"' + (reportPeriod === 'month' ? ' selected' : '') + '>Monthly</option><option value="quarter"' + (reportPeriod === 'quarter' ? ' selected' : '') + '>Quarterly</option><option value="year"' + (reportPeriod === 'year' ? ' selected' : '') + '>Yearly</option><option value="all"' + (reportPeriod === 'all' ? ' selected' : '') + '>All Time</option></select>' +
         (reportPeriod === 'month' ? '<select id="reportMonth" onchange="reportMonth=parseInt(this.value);renderReports(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)">' + months.slice(1).map((m, i) => '<option value="' + (i+1) + '"' + (reportMonth === i+1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select>' : '') +
-        (reportPeriod !== 'all' ? '<select id="reportYear" onchange="reportYear=parseInt(this.value);renderReports(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)"><option value="2024"' + (reportYear === 2024 ? ' selected' : '') + '>2024</option><option value="2025"' + (reportYear === 2025 ? ' selected' : '') + '>2025</option></select>' : '') +
+        (reportPeriod !== 'all' ? '<select id="reportYear" onchange="reportYear=parseInt(this.value);renderReports(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)"><option value="2024"' + (reportYear === 2024 ? ' selected' : '') + '>2024</option><option value="2025"' + (reportYear === 2025 ? ' selected' : '') + '>2025</option><option value="2026"' + (reportYear === 2026 ? ' selected' : '') + '>2026</option><option value="2027"' + (reportYear === 2027 ? ' selected' : '') + '>2027</option></select>' : '') +
         '<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox"' + (reportCompare ? ' checked' : '') + ' onchange="reportCompare=this.checked;renderReports(document.getElementById(\'main-content\'))"><span style="font-size:13px">Compare to previous</span></label><button class="btn btn-secondary" onclick="exportReportCSV()">📥 Export CSV</button></div></div>' +
         '<div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap"><button class="btn ' + (reportTab === 'truck_pl' ? 'btn-primary' : 'btn-secondary') + '" onclick="reportTab=\'truck_pl\';renderReports(document.getElementById(\'main-content\'))">🚛 Truck P&L</button><button class="btn ' + (reportTab === 'driver_performance' ? 'btn-primary' : 'btn-secondary') + '" onclick="reportTab=\'driver_performance\';renderReports(document.getElementById(\'main-content\'))">👨‍✈️ Driver Performance</button><button class="btn ' + (reportTab === 'lane_analysis' ? 'btn-primary' : 'btn-secondary') + '" onclick="reportTab=\'lane_analysis\';renderReports(document.getElementById(\'main-content\'))">🛣️ Lane Analysis</button></div>' +
         '<div id="reportContent">' +
