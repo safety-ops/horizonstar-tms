@@ -9822,9 +9822,15 @@
           maintenance_records: [], claims: [], tickets: [], violations: [], ticket_files: [], violation_files: [], claim_files: [], compliance_tasks: [], accidents: []
         };
         
-        // Load secondary data in background (non-blocking)
-        loadSecondaryData();
-        
+        // For force reload (like real-time sync), wait for ALL data including secondary
+        // This ensures local_drivers, expenses, etc. are loaded before we re-render
+        if (forceReload) {
+          await loadSecondaryData();
+        } else {
+          // Load secondary data in background (non-blocking) for initial page load
+          loadSecondaryData();
+        }
+
         // Cache the data
         dataCache.set('appData', appData);
       } catch (e) { 
