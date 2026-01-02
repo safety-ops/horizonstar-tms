@@ -11122,6 +11122,7 @@
       const totalMiles = fleetMilesResult.miles;
       const dashboardMilesSource = fleetMilesResult.source; // 'samsara' or 'trips'
 
+      let tripFuelExpenses = 0; // Fuel from trip-level expenses
       yearTrips.forEach(t => {
         const f = getTripFin(t.id);
         totalRev += f.loadRevenue;
@@ -11131,7 +11132,11 @@
         totalLocalFees += f.localFees;
         totalDriverCut += f.driverCut;
         totalCars += f.vehicleCount;
-        
+
+        // Sum trip-level fuel expenses
+        const tripExpenses = appData.expenses?.filter(e => e.trip_id === t.id) || [];
+        tripFuelExpenses += tripExpenses.filter(e => e.category === 'FUEL').reduce((s, e) => s + parseFloat(e.amount || 0), 0);
+
         // Truck performance
         if (t.truck_id) {
           if (!truckPerf[t.truck_id]) truckPerf[t.truck_id] = { trips: 0, rev: 0, profit: 0 };
@@ -11140,6 +11145,15 @@
           truckPerf[t.truck_id].profit += f.netProfit;
         }
       });
+
+      // Calculate fleet-wide fuel from Fuel Tracking (fuel_transactions table)
+      const fleetFuelRecords = (appData.fuel_transactions || []).filter(f => {
+        if (!f.transaction_date) return false;
+        const fuelDate = f.transaction_date;
+        return fuelDate >= dateRange.start && fuelDate <= dateRange.end;
+      });
+      const fleetFuelCost = fleetFuelRecords.reduce((s, f) => s + parseFloat(f.total_cost || 0), 0);
+      const fleetFuelGallons = fleetFuelRecords.reduce((s, f) => s + parseFloat(f.gallons || 0), 0);
       
       // Dispatcher performance from orders (filtered by year)
       yearOrders.forEach(o => {
@@ -11357,6 +11371,24 @@
         '<div style="border-top:2px solid var(--border);padding-top:12px;margin-top:8px;display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700">Total Direct Trip Expenses</span><span style="font-weight:700;color:#dc2626">' + formatMoney(totalBrokerFees + totalLocalFees + totalDriverCut + totalExpenses) + '</span></div>' +
         '</div>' +
         '</div>' +
+        '</div>' +
+
+        // Fuel Tracking Comparison Card
+        '<div class="card" style="padding:20px;margin-bottom:20px">' +
+        '<h3 style="margin-bottom:16px;color:#f59e0b;border-bottom:2px solid #f59e0b;padding-bottom:8px">⛽ FUEL TRACKING</h3>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">' +
+        '<div style="background:#fef3c7;padding:16px;border-radius:8px;border-left:4px solid #f59e0b">' +
+        '<div style="font-size:12px;color:#92400e;margin-bottom:4px">Trip-Level Fuel Expenses</div>' +
+        '<div style="font-size:24px;font-weight:700;color:#92400e">' + formatMoney(tripFuelExpenses) + '</div>' +
+        '<div style="font-size:11px;color:#a16207;margin-top:4px">From individual trip expenses</div>' +
+        '</div>' +
+        '<div style="background:#dbeafe;padding:16px;border-radius:8px;border-left:4px solid #3b82f6">' +
+        '<div style="font-size:12px;color:#1d4ed8;margin-bottom:4px">Fleet Fuel (Fuel Tracking)</div>' +
+        '<div style="font-size:24px;font-weight:700;color:#1d4ed8">' + formatMoney(fleetFuelCost) + '</div>' +
+        '<div style="font-size:11px;color:#2563eb;margin-top:4px">' + fleetFuelGallons.toLocaleString(undefined, {maximumFractionDigits: 0}) + ' gallons • ' + (fleetFuelGallons > 0 && totalMiles > 0 ? (totalMiles / fleetFuelGallons).toFixed(2) : '-') + ' MPG</div>' +
+        '</div>' +
+        '</div>' +
+        (Math.abs(tripFuelExpenses - fleetFuelCost) > 100 ? '<div style="margin-top:12px;padding:12px;background:#fef3c7;border-radius:8px;font-size:13px;color:#92400e">⚠️ Trip fuel and Fleet fuel don\'t match. Trip fuel is per-trip expenses; Fleet fuel is from Fuel Tracking uploads.</div>' : '') +
         '</div>' +
         
         // Third row - KPIs and Performance
@@ -20798,8 +20830,8 @@ ${rateText}`
       
       // ═══ REVENUE & COSTS FROM TRIPS ═══
       let totalRevenue = 0, totalBrokerFees = 0, totalLocalFees = 0, totalDriverPay = 0, totalTripExpenses = 0;
-      let totalMiles = 0, totalCars = 0;
-      
+      let tripMilesTotal = 0, totalCars = 0;
+
       trips.forEach(t => {
         const fin = getTripFin(t.id);
         totalRevenue += fin.loadRevenue;
@@ -20807,9 +20839,16 @@ ${rateText}`
         totalLocalFees += fin.localFees;
         totalDriverPay += fin.driverCut;
         totalTripExpenses += fin.totalExpenses;
-        totalMiles += parseFloat(t.miles || 0);
+        tripMilesTotal += parseFloat(t.miles || 0);
         totalCars += fin.vehicleCount;
       });
+
+      // Use fleet miles from Samsara for fleet-wide metrics, fall back to trip miles
+      const startDate = minDate.toISOString().split('T')[0];
+      const endDate = maxDate.toISOString().split('T')[0];
+      const fleetMilesResult = getFleetMiles(startDate, endDate);
+      const totalMiles = fleetMilesResult.miles > 0 ? fleetMilesResult.miles : tripMilesTotal;
+      const milesSource = fleetMilesResult.miles > 0 ? 'samsara' : 'trips';
       
       // Fixed & Variable Costs
       const monthlyFixedCosts = fixedCosts.reduce((s, fc) => s + parseFloat(fc.amount || 0), 0);
@@ -22670,8 +22709,8 @@ ${rateText}`
       
       // ═══ FIXED: Use getTripFin() for accurate revenue/cost data ═══
       let totalRevenue = 0, totalBrokerFees = 0, totalLocalFees = 0, totalDriverPay = 0, totalTripExpenses = 0;
-      let totalMiles = 0, totalCars = 0;
-      
+      let tripMilesTotal = 0, totalCars = 0;
+
       trips.forEach(t => {
         const fin = getTripFin(t.id);
         totalRevenue += fin.loadRevenue;
@@ -22679,10 +22718,17 @@ ${rateText}`
         totalLocalFees += fin.localFees;
         totalDriverPay += fin.driverCut;
         totalTripExpenses += fin.totalExpenses;
-        totalMiles += parseFloat(t.miles || 0);
+        tripMilesTotal += parseFloat(t.miles || 0);
         totalCars += fin.vehicleCount;
       });
-      
+
+      // Use fleet miles from Samsara for fleet-wide metrics, fall back to trip miles
+      const startDate = minDate.toISOString().split('T')[0];
+      const endDate = maxDate.toISOString().split('T')[0];
+      const fleetMilesResult = getFleetMiles(startDate, endDate);
+      const totalMiles = fleetMilesResult.miles > 0 ? fleetMilesResult.miles : tripMilesTotal;
+      const milesSource = fleetMilesResult.miles > 0 ? 'samsara' : 'trips';
+
       const cleanRevenue = totalRevenue - totalBrokerFees - totalLocalFees;
       const avgRevenuePerMile = totalMiles > 0 ? totalRevenue / totalMiles : 0;
       
