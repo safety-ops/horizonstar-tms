@@ -11152,7 +11152,8 @@
         const fuelDate = f.transaction_date;
         return fuelDate >= dateRange.start && fuelDate <= dateRange.end;
       });
-      const fleetFuelCost = fleetFuelRecords.reduce((s, f) => s + parseFloat(f.total_cost || 0), 0);
+      // Use 'amount' field (same as Fuel Tracking page uses)
+      const fleetFuelCost = fleetFuelRecords.reduce((s, f) => s + parseFloat(f.amount || 0), 0);
       const fleetFuelGallons = fleetFuelRecords.reduce((s, f) => s + parseFloat(f.gallons || 0), 0);
       
       // Dispatcher performance from orders (filtered by year)
