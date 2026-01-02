@@ -1,0 +1,491 @@
+/* ============================================================
+   HORIZON STAR TMS - Print Styles
+   Comprehensive print support for all pages
+   ============================================================ */
+
+@media print {
+  /* ============================================================
+     GLOBAL PRINT RESET
+     ============================================================ */
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  html, body {
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+    font-size: 12pt !important;
+    line-height: 1.4 !important;
+  }
+
+  /* ============================================================
+     HIDE NON-PRINTABLE ELEMENTS
+     ============================================================ */
+
+  /* Navigation and UI chrome */
+  .sidebar,
+  .mobile-header,
+  .mobile-overlay,
+  .topbar,
+  .skip-link,
+  .hamburger,
+  .sidebar-toggle,
+  .loading-overlay,
+  .toast,
+  .modal-overlay,
+  .nav-tooltip,
+  .chat-widget,
+  .mini-chat,
+  #mobileOverlay,
+  #hamburger {
+    display: none !important;
+  }
+
+  /* Interactive elements */
+  button,
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger,
+  .action-btn,
+  .modal-close,
+  input[type="button"],
+  input[type="submit"],
+  .topbar-btn,
+  .export-btn,
+  .refresh-btn {
+    display: none !important;
+  }
+
+  /* Keep buttons that are part of data display */
+  .badge,
+  .status-badge {
+    display: inline-block !important;
+  }
+
+  /* ============================================================
+     LAYOUT ADJUSTMENTS
+     ============================================================ */
+
+  .app {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .main {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  #main-content {
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  .content,
+  .page-content {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* ============================================================
+     PRINT HEADER
+     ============================================================ */
+
+  .print-header {
+    display: block !important;
+    text-align: center;
+    padding: 20px 0;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #22c55e;
+  }
+
+  .print-header::before {
+    content: "HORIZON STAR LLC";
+    display: block;
+    font-size: 18pt;
+    font-weight: bold;
+    color: #22c55e;
+    margin-bottom: 5px;
+  }
+
+  .print-header::after {
+    content: "Transportation Management System";
+    display: block;
+    font-size: 10pt;
+    color: #666;
+  }
+
+  /* ============================================================
+     TYPOGRAPHY
+     ============================================================ */
+
+  h1, h2, h3, h4, h5, h6 {
+    color: black !important;
+    page-break-after: avoid;
+    margin-top: 12pt;
+    margin-bottom: 6pt;
+  }
+
+  h1 { font-size: 18pt !important; }
+  h2 { font-size: 16pt !important; }
+  h3 { font-size: 14pt !important; }
+  h4 { font-size: 12pt !important; }
+
+  p, li, td, th {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* ============================================================
+     CARDS AND CONTAINERS
+     ============================================================ */
+
+  .card,
+  .stat-card,
+  .metric-card,
+  .driver-card {
+    background: white !important;
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    margin-bottom: 12pt;
+    padding: 10pt !important;
+  }
+
+  .card-header {
+    background: #f5f5f5 !important;
+    border-bottom: 1px solid #ddd !important;
+    padding: 8pt 10pt !important;
+  }
+
+  .card-header h3 {
+    margin: 0 !important;
+    font-size: 12pt !important;
+  }
+
+  /* ============================================================
+     TABLES
+     ============================================================ */
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 10pt !important;
+    page-break-inside: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  th, td {
+    border: 1px solid #ccc !important;
+    padding: 6pt 8pt !important;
+    text-align: left !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  th {
+    background: #f0f0f0 !important;
+    font-weight: 600 !important;
+  }
+
+  /* Alternate row colors for readability */
+  tbody tr:nth-child(even) td {
+    background: #f9f9f9 !important;
+  }
+
+  /* Numeric columns */
+  .money,
+  .number,
+  td:last-child {
+    text-align: right !important;
+    font-family: 'Courier New', monospace !important;
+  }
+
+  /* ============================================================
+     BADGES AND STATUS
+     ============================================================ */
+
+  .badge {
+    border: 1px solid #ccc !important;
+    background: #f5f5f5 !important;
+    color: black !important;
+    padding: 2pt 6pt !important;
+    border-radius: 3pt !important;
+    font-size: 9pt !important;
+  }
+
+  .badge-green,
+  .badge-success {
+    border-color: #22c55e !important;
+    color: #166534 !important;
+  }
+
+  .badge-amber,
+  .badge-warning {
+    border-color: #f59e0b !important;
+    color: #92400e !important;
+  }
+
+  .badge-red,
+  .badge-danger {
+    border-color: #ef4444 !important;
+    color: #991b1b !important;
+  }
+
+  .badge-blue,
+  .badge-info {
+    border-color: #3b82f6 !important;
+    color: #1e40af !important;
+  }
+
+  /* ============================================================
+     DASHBOARD SPECIFIC
+     ============================================================ */
+
+  .dashboard-grid,
+  .stats-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10pt !important;
+  }
+
+  .stat-card .stat-icon {
+    display: none !important;
+  }
+
+  .stat-card .stat-value {
+    font-size: 14pt !important;
+    font-weight: bold !important;
+    color: black !important;
+  }
+
+  .stat-card .stat-label {
+    font-size: 9pt !important;
+    color: #666 !important;
+  }
+
+  /* ============================================================
+     TRIPS PAGE
+     ============================================================ */
+
+  .trip-row {
+    break-inside: avoid;
+  }
+
+  .trip-details {
+    font-size: 9pt;
+    color: #666;
+  }
+
+  /* ============================================================
+     DRIVERS PAGE
+     ============================================================ */
+
+  .drivers-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10pt !important;
+  }
+
+  .driver-card {
+    page-break-inside: avoid;
+  }
+
+  .driver-avatar {
+    width: 40pt !important;
+    height: 40pt !important;
+    border-radius: 50% !important;
+    background: #f0f0f0 !important;
+    border: 1pt solid #ccc !important;
+  }
+
+  /* ============================================================
+     IFTA REPORT
+     ============================================================ */
+
+  .ifta-summary {
+    background: #f9f9f9 !important;
+    border: 1pt solid #ccc !important;
+    padding: 12pt !important;
+    margin-bottom: 12pt !important;
+  }
+
+  .ifta-jurisdiction-table th {
+    background: #e8e8e8 !important;
+  }
+
+  .tax-owed {
+    color: #dc2626 !important;
+    font-weight: bold !important;
+  }
+
+  .tax-credit {
+    color: #16a34a !important;
+    font-weight: bold !important;
+  }
+
+  /* ============================================================
+     PAYROLL / PAY STATEMENTS
+     ============================================================ */
+
+  .pay-statement {
+    border: 2pt solid #22c55e !important;
+    padding: 15pt !important;
+  }
+
+  .pay-statement-header {
+    text-align: center !important;
+    border-bottom: 1pt solid #ccc !important;
+    padding-bottom: 10pt !important;
+    margin-bottom: 10pt !important;
+  }
+
+  .earnings-table,
+  .deductions-table {
+    margin-bottom: 12pt !important;
+  }
+
+  .net-pay {
+    font-size: 16pt !important;
+    font-weight: bold !important;
+    text-align: right !important;
+    padding-top: 10pt !important;
+    border-top: 2pt solid #22c55e !important;
+  }
+
+  /* ============================================================
+     FUEL TRACKING
+     ============================================================ */
+
+  .fuel-summary-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 8pt !important;
+    margin-bottom: 12pt !important;
+  }
+
+  /* ============================================================
+     PROFITABILITY
+     ============================================================ */
+
+  .profit-metric {
+    text-align: center !important;
+    padding: 10pt !important;
+    border: 1pt solid #ccc !important;
+  }
+
+  .profit-value {
+    font-size: 18pt !important;
+    font-weight: bold !important;
+  }
+
+  .profit-positive { color: #16a34a !important; }
+  .profit-negative { color: #dc2626 !important; }
+
+  /* ============================================================
+     PAGE BREAKS
+     ============================================================ */
+
+  .page-break {
+    page-break-before: always;
+  }
+
+  .no-break {
+    page-break-inside: avoid;
+  }
+
+  /* ============================================================
+     PRINT FOOTER
+     ============================================================ */
+
+  @page {
+    margin: 0.5in;
+    @bottom-center {
+      content: "Page " counter(page) " of " counter(pages);
+      font-size: 9pt;
+      color: #666;
+    }
+  }
+
+  /* Add printed date */
+  .print-footer::after {
+    content: "Printed: " attr(data-print-date);
+    display: block;
+    text-align: center;
+    font-size: 8pt;
+    color: #999;
+    margin-top: 20pt;
+    padding-top: 10pt;
+    border-top: 1pt solid #ddd;
+  }
+
+  /* ============================================================
+     REMOVE DECORATIVE ELEMENTS
+     ============================================================ */
+
+  .gradient-bg,
+  .glass-effect,
+  .shadow,
+  .hover-effect,
+  [class*="animation"],
+  [class*="transition"] {
+    background: white !important;
+    box-shadow: none !important;
+  }
+
+  /* Remove emojis (optional - comment out if you want emojis) */
+  /*
+  .emoji,
+  [role="img"] {
+    display: none !important;
+  }
+  */
+
+  /* Links - show URL */
+  a[href]:after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #666;
+  }
+
+  a[href^="#"]:after,
+  a[href^="javascript"]:after {
+    content: "";
+  }
+}
+
+/* ============================================================
+   PRINT PREVIEW STYLES (for on-screen print preview)
+   ============================================================ */
+
+.print-preview {
+  background: white;
+  color: black;
+  padding: 40px;
+  max-width: 8.5in;
+  margin: 0 auto;
+  box-shadow: 0 0 20px rgba(0,0,0,0.2);
+}
+
+.print-preview .sidebar,
+.print-preview .topbar,
+.print-preview .btn {
+  display: none;
+}
