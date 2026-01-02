@@ -27,6 +27,9 @@
   <!-- Supabase Client Library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+  <!-- HTML to PDF Library for Earnings Statements -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
   <style>
     :root {
       /* Light Theme (Default) - Horizon Star Green */
@@ -20010,21 +20013,57 @@ ${rateText}`
         }
 
         // Show sending indicator
-        showToast('Sending email to ' + driverEmail + '...', 'info');
+        showToast('Generating PDF and sending email to ' + driverEmail + '...', 'info');
 
         try {
-          const emailSubject = 'Earnings Statement - ' + driver.first_name + ' ' + driver.last_name + ' - Pay Date: ' + formatDate(payDate);
+          // Create temp container for PDF generation
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = paystubHTML;
+          tempDiv.style.position = 'absolute';
+          tempDiv.style.left = '-9999px';
+          tempDiv.style.width = '800px';
+          document.body.appendChild(tempDiv);
 
-          // Send the full HTML earnings statement via Supabase Edge Function
+          // Generate PDF from paystub HTML
+          const pdfBlob = await html2pdf()
+            .set({
+              margin: 10,
+              filename: 'earnings-statement.pdf',
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            })
+            .from(tempDiv)
+            .outputPdf('blob');
+
+          // Convert PDF to base64
+          const base64Pdf = await blobToBase64(pdfBlob);
+
+          // Remove temp div
+          document.body.removeChild(tempDiv);
+
+          // Get trip numbers for email body
+          const selectedTrips = selectedTripIds.map(id => appData.trips.find(t => t.id === id)).filter(t => t);
+          const tripNames = selectedTrips.map(t => t.trip_number).join(', ');
+
+          const emailSubject = 'Earnings Statement - ' + driver.first_name + ' ' + driver.last_name + ' - Pay Date: ' + formatDate(payDate);
+          const emailBody = 'Hello ' + driver.first_name + ',\n\nPlease find attached your Earnings Statement for ' + tripNames + '.\n\nPay Date: ' + formatDate(payDate) + '\nNet Pay: ' + formatMoney(netPay) + '\n\nThank you,\nHorizon Star TMS';
+
+          // Send email with PDF attachment
           await sendEarningsEmail(
             driverEmail,
             driver.first_name + ' ' + driver.last_name,
             emailSubject,
-            paystubHTML
+            null, // no HTML body
+            emailBody,
+            {
+              filename: 'Earnings_Statement_' + driver.last_name + '_' + formatDate(payDate).replace(/\//g, '-') + '.pdf',
+              content: base64Pdf
+            }
           );
-          
+
           showToast('Email sent successfully to ' + driverEmail + '!', 'success');
-          
+
           // Log the activity
           await logActivity('PAYSTUB_EMAILED', {
             driver_id: driverId,
@@ -20034,7 +20073,7 @@ ${rateText}`
             net_pay: netPay,
             period: formatDate(periodStart) + ' - ' + formatDate(periodEnd)
           });
-          
+
         } catch (error) {
           console.error('Email send error:', error);
           showToast('Failed to send email: ' + (error.text || error.message || 'Unknown error'), 'error');
@@ -22333,8 +22372,21 @@ ${rateText}`
     
     // ============ EMAIL INTEGRATION (Supabase Edge Function + Resend) ============
 
+    // Helper function to convert blob to base64
+    function blobToBase64(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = reader.result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
     // Send earnings statement email via Supabase Edge Function
-    async function sendEarningsEmail(driverEmail, driverName, subject, htmlContent) {
+    async function sendEarningsEmail(driverEmail, driverName, subject, htmlContent, textContent, attachment) {
       try {
         const response = await fetch(SUPABASE_URL + '/functions/v1/send-email', {
           method: 'POST',
@@ -22345,8 +22397,10 @@ ${rateText}`
           body: JSON.stringify({
             to: driverEmail,
             subject: subject,
-            html: htmlContent,
-            from_name: 'Horizon Star TMS'
+            html: htmlContent || null,
+            text: textContent || null,
+            from_name: 'Horizon Star TMS',
+            attachment: attachment || null
           })
         });
 

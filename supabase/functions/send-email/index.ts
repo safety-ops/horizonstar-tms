@@ -26,14 +26,39 @@ serve(async (req) => {
       )
     }
 
-    const { to, subject, html, from_name } = await req.json()
+    const { to, subject, html, text, from_name, attachment } = await req.json()
 
-    // Validate required fields
-    if (!to || !subject || !html) {
+    // Validate required fields - need either html or text body, OR an attachment
+    if (!to || !subject || (!html && !text && !attachment)) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: to, subject, html' }),
+        JSON.stringify({ error: 'Missing required fields: to, subject, and either html, text, or attachment' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
+    }
+
+    // Build the email payload
+    const emailPayload: any = {
+      from: from_name ? `${from_name} <noreply@luckycabbagetms.com>` : 'Horizon Star TMS <noreply@luckycabbagetms.com>',
+      to: Array.isArray(to) ? to : [to],
+      subject: subject,
+    }
+
+    // Add html body if provided
+    if (html) {
+      emailPayload.html = html
+    }
+
+    // Add text body if provided
+    if (text) {
+      emailPayload.text = text
+    }
+
+    // Add attachment if provided (for PDF earnings statements)
+    if (attachment && attachment.filename && attachment.content) {
+      emailPayload.attachments = [{
+        filename: attachment.filename,
+        content: attachment.content  // base64 encoded content
+      }]
     }
 
     // Send email via Resend API
@@ -43,12 +68,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${RESEND_API_KEY}`,
       },
-      body: JSON.stringify({
-        from: from_name ? `${from_name} <noreply@resend.dev>` : 'Horizon Star TMS <noreply@resend.dev>',
-        to: Array.isArray(to) ? to : [to],
-        subject: subject,
-        html: html,
-      }),
+      body: JSON.stringify(emailPayload),
     })
 
     const data = await res.json()
