@@ -11536,8 +11536,9 @@
       // Get current category
       const currentCat = loadBoardCategories.find(cat => cat.id === selectedLoadCategory) || loadBoardCategories[0];
       
-      // Filter orders for display
-      let displayOrders = unassignedOrders.filter(o => o.load_category === selectedLoadCategory);
+      // Filter orders for display and sort by earliest pickup date first
+      let displayOrders = unassignedOrders.filter(o => o.load_category === selectedLoadCategory)
+        .sort((a, b) => (a.pickup_date || '').localeCompare(b.pickup_date || ''));
       if (selectedLoadSub) {
         displayOrders = displayOrders.filter(o => o.load_subcategory === selectedLoadSub);
       }
@@ -14867,20 +14868,22 @@ ${rateText}`
       const completedTripIds = appData.trips.filter(t => t.status === 'COMPLETED').map(t => t.id);
       
       // Pending local delivery: trip is COMPLETED, destination is NY/NJ/PA, has local_fee > 0, not assigned, not marked as "not for local"
-      const pendingLocalDelivery = appData.orders.filter(o => 
+      // Sorted by earliest delivery date first
+      const pendingLocalDelivery = appData.orders.filter(o =>
         completedTripIds.includes(o.trip_id) &&
         parseFloat(o.local_fee || 0) > 0 &&
         isLocalDeliveryState(o.destination) &&
         !o.local_driver_id &&
         !o.not_for_local_delivery
-      );
+      ).sort((a, b) => (a.dropoff_date || '').localeCompare(b.dropoff_date || ''));
       
       // Pending local pickup: cars in Load Board with "NY to Home" or "NY to FL" category, not assigned to local driver, not marked as "not for local"
-      const pendingLocalPickup = appData.orders.filter(o => 
+      // Sorted by earliest pickup date first
+      const pendingLocalPickup = appData.orders.filter(o =>
         (o.load_category === 'ny_to_home' || o.load_category === 'ny_to_fl') &&
         !o.local_driver_id &&
         !o.not_for_local_delivery
-      );
+      ).sort((a, b) => (a.pickup_date || '').localeCompare(b.pickup_date || ''));
       
       const assignedToLocal = appData.orders.filter(o => o.local_driver_id);
       
