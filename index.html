@@ -12839,8 +12839,14 @@ ${rateText}`
     function viewTrip(id) {
       // Mark that we're viewing a trip detail (prevents background re-renders from kicking us out)
       currentDetailView = { type: 'trip', id: id };
-      
+
       const t = appData.trips.find(x => x.id === id);
+      if (!t) {
+        // Trip was deleted or not found - go back to list
+        currentDetailView = null;
+        renderTrips(document.getElementById('main-content'));
+        return;
+      }
       const d = appData.drivers.find(x => x.id === t.driver_id);
       const tr = appData.trucks.find(x => x.id === t.truck_id);
       const orders = appData.orders.filter(o => o.trip_id === id);
@@ -14330,8 +14336,14 @@ ${rateText}`
     function viewDriverProfile(driverId) {
       // Mark that we're viewing a driver detail (prevents background re-renders)
       currentDetailView = { type: 'driver', id: driverId };
-      
+
       const d = appData.drivers.find(x => x.id === driverId);
+      if (!d) {
+        // Driver was deleted or not found - go back to list
+        currentDetailView = null;
+        renderDrivers(document.getElementById('main-content'));
+        return;
+      }
       const trips = appData.trips.filter(t => t.driver_id === driverId);
       let earn = 0; trips.forEach(t => earn += getTripFin(t.id).driverCut);
       const driverFiles = (appData.driver_files || []).filter(f => f.driver_id === driverId);
@@ -15136,6 +15148,12 @@ ${rateText}`
       currentDetailView = { type: 'local_driver', id: localDriverId };
 
       const ld = (appData.local_drivers || []).find(x => x.id === localDriverId);
+      if (!ld) {
+        // Local driver was deleted or not found - go back to list
+        currentDetailView = null;
+        renderLocalDrivers(document.getElementById('main-content'));
+        return;
+      }
       const driverOrders = appData.orders.filter(o => o.local_driver_id === localDriverId);
       const totalEarnings = driverOrders.reduce((s, o) => s + parseFloat(o.local_fee || 0), 0);
       const pendingOrders = driverOrders.filter(o => o.local_delivery_status !== 'DELIVERED');
@@ -17879,8 +17897,14 @@ ${rateText}`
     function viewTruckCompliance(truckId) {
       // Mark that we're viewing a truck detail (prevents background re-renders)
       currentDetailView = { type: 'truck', id: truckId };
-      
+
       const t = appData.trucks.find(x => x.id === truckId);
+      if (!t) {
+        // Truck was deleted or not found - go back to list
+        currentDetailView = null;
+        renderTrucks(document.getElementById('main-content'));
+        return;
+      }
       const truckFiles = (appData.truck_files || []).filter(f => f.truck_id === truckId);
       const complianceFiles = truckFiles.filter(f => f.category !== 'CUSTOM');
       const customFiles = truckFiles.filter(f => f.category === 'CUSTOM');
