@@ -7821,28 +7821,27 @@
         if (!pendingRealtimeUpdate) return;
         pendingRealtimeUpdate = false;
 
-        // Show notification
-        const table = payload.table;
-        const action = payload.eventType;
-        const tableNames = { trips: 'Trip', orders: 'Vehicle', drivers: 'Driver', trucks: 'Truck', expenses: 'Expense' };
-        const actionNames = { INSERT: 'added', UPDATE: 'updated', DELETE: 'deleted' };
+        // CRITICAL: Save current detail view BEFORE any async operations
+        // This prevents race conditions where async code could clear/modify currentDetailView
+        const savedDetailView = currentDetailView ? {...currentDetailView} : null;
 
-        showToast('🔄 ' + (tableNames[table] || table) + ' ' + (actionNames[action] || 'changed') + ' by another user', 'info');
+        // Show notification
+        showToast('🔄 Data changed by another user', 'info');
 
         // Refresh data
         await loadAllData(true);
 
-        // Respect current detail view - don't navigate away
-        if (currentDetailView) {
+        // Respect SAVED detail view - don't navigate away
+        if (savedDetailView) {
           // Re-render the detail view instead of the page list
-          if (currentDetailView.type === 'trip') {
-            viewTrip(currentDetailView.id);
-          } else if (currentDetailView.type === 'driver') {
-            viewDriverProfile(currentDetailView.id);
-          } else if (currentDetailView.type === 'truck') {
-            viewTruckCompliance(currentDetailView.id);
-          } else if (currentDetailView.type === 'local_driver') {
-            viewLocalDriverDetails(currentDetailView.id);
+          if (savedDetailView.type === 'trip') {
+            viewTrip(savedDetailView.id);
+          } else if (savedDetailView.type === 'driver') {
+            viewDriverProfile(savedDetailView.id);
+          } else if (savedDetailView.type === 'truck') {
+            viewTruckCompliance(savedDetailView.id);
+          } else if (savedDetailView.type === 'local_driver') {
+            viewLocalDriverDetails(savedDetailView.id);
           } else {
             renderPage();
           }
@@ -9900,12 +9899,11 @@
         
         // Load Samsara settings from database (shared across all users)
         await loadSamsaraSettings();
-        
-        // Only re-render if we're NOT viewing a detail page (trip/driver/truck detail)
-        // This prevents getting kicked out of detail views when secondary data loads
-        if (!currentDetailView) {
-          renderPage();
-        }
+
+        // NOTE: We intentionally do NOT call renderPage() here anymore.
+        // The data is now loaded and cached - views will use it on next interaction.
+        // Calling renderPage() from background async code caused race conditions
+        // that would kick users out of detail views unexpectedly.
       } catch (e) {
         console.error('Failed to load secondary data:', e);
       }
