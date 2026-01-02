@@ -9892,7 +9892,29 @@
         // Try to load accidents
         let accidents = [];
         try { accidents = await dbFetch('accidents', { order: 'accident_date.desc' }) || []; } catch(e) { accidents = []; }
-        
+
+        // Load fleet mileage data from Samsara uploads
+        let fleet_mileage = [];
+        try { fleet_mileage = await dbFetch('fleet_mileage', { order: 'period_end.desc' }) || []; } catch(e) { fleet_mileage = []; }
+
+        // Populate fleetMileageData and fleetMileagePeriod from database
+        if (fleet_mileage.length > 0) {
+          fleetMileageData = fleet_mileage.map(r => ({
+            vehicle_name: r.vehicle_name,
+            truck_number: r.truck_number,
+            distance: parseFloat(r.distance) || 0,
+            driving_hours: parseFloat(r.driving_hours) || 0,
+            stops: parseInt(r.stops) || 0,
+            start_odometer: parseFloat(r.start_odometer) || 0,
+            end_odometer: parseFloat(r.end_odometer) || 0
+          }));
+          // Get period from first record (all should have same period)
+          fleetMileagePeriod = {
+            start: fleet_mileage[0].period_start,
+            end: fleet_mileage[0].period_end
+          };
+        }
+
         // Update appData with secondary data
         Object.assign(appData, {
           local_drivers: local_drivers || [],
@@ -16090,6 +16112,18 @@ ${rateText}`
         
         // Tab Content
         (fuelAnalyticsTab === 'overview' ? (
+        // Fleet Mileage Status Card (if data uploaded)
+        (fleetMileageData.length > 0 ?
+        '<div class="card" style="margin-bottom:20px;padding:16px;background:linear-gradient(135deg,#dbeafe 0%,#e0f2fe 100%);border:1px solid #93c5fd">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">' +
+        '<div>' +
+        '<div style="font-size:14px;font-weight:700;color:#1d4ed8;margin-bottom:4px">📡 Samsara Fleet Mileage Loaded</div>' +
+        '<div style="font-size:13px;color:#1e40af">' + fleetMileageData.length + ' trucks • ' + fleetMileageData.reduce((s,t) => s + t.distance, 0).toLocaleString(undefined, {maximumFractionDigits: 0}) + ' total miles</div>' +
+        '<div style="font-size:11px;color:#3b82f6;margin-top:2px">Period: ' + fleetMileagePeriod.start + ' to ' + fleetMileagePeriod.end + '</div>' +
+        '</div>' +
+        '<button onclick="clearFleetMileage()" class="btn btn-secondary" style="background:#fee2e2;color:#dc2626;border-color:#fecaca;padding:6px 12px;font-size:12px">🗑️ Clear</button>' +
+        '</div></div>' : '') +
+
         // PRIMARY STATS CARDS - OVERVIEW TAB
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px">' +
         '<div class="stat-card" style="padding:16px;border-left:4px solid #f59e0b"><div class="label">Total Diesel</div><div class="value" style="font-size:20px">' + totalDieselGal.toFixed(1) + ' gal</div></div>' +
@@ -17286,13 +17320,23 @@ ${rateText}`
       document.body.appendChild(m);
     }
 
-    function clearFleetMileage() {
+    async function clearFleetMileage() {
       if (!confirm('Clear uploaded fleet mileage data?')) return;
-      fleetMileageData = [];
-      fleetMileagePeriod = { start: null, end: null };
-      showToast('Fleet mileage data cleared');
-      document.querySelector('.modal-overlay')?.remove();
-      renderFuelTracking(document.getElementById('main-content'));
+
+      try {
+        // Delete from database
+        await supabase.from('fleet_mileage').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+        // Clear local state
+        fleetMileageData = [];
+        fleetMileagePeriod = { start: null, end: null };
+        showToast('Fleet mileage data cleared');
+        document.querySelector('.modal-overlay')?.remove();
+        renderFuelTracking(document.getElementById('main-content'));
+      } catch (err) {
+        console.error('Error clearing fleet mileage:', err);
+        showToast('Error clearing data', 'error');
+      }
     }
 
     function parseFleetMileageCsv() {
@@ -17363,13 +17407,8 @@ ${rateText}`
         }
 
         if (data.length > 0) {
-          fleetMileageData = data;
-          fleetMileagePeriod = { start: periodStart, end: periodEnd };
-
-          const totalMiles = data.reduce((s, t) => s + t.distance, 0);
-          document.querySelector('.modal-overlay').remove();
-          showToast('Imported ' + data.length + ' trucks, ' + totalMiles.toLocaleString(undefined, {maximumFractionDigits: 0}) + ' total miles');
-          renderFuelTracking(document.getElementById('main-content'));
+          // Save to Supabase database
+          saveFleetMileageToDb(data, periodStart, periodEnd);
         } else {
           document.getElementById('fleetMileagePreview').style.display = 'block';
           document.getElementById('fleetMileagePreview').innerHTML = '<div style="background:#fee2e2;padding:12px;border-radius:8px"><strong style="color:#dc2626">No valid data found.</strong><br><span style="font-size:12px">Make sure the CSV has Vehicle Name and Distance columns with data.</span></div>';
@@ -17377,6 +17416,47 @@ ${rateText}`
       };
 
       reader.readAsText(file);
+    }
+
+    async function saveFleetMileageToDb(data, periodStart, periodEnd) {
+      try {
+        // First, delete existing data for this period (or all data - only keep latest upload)
+        await supabase.from('fleet_mileage').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+        // Insert new data
+        const records = data.map(d => ({
+          period_start: periodStart,
+          period_end: periodEnd,
+          truck_number: d.truck_number,
+          vehicle_name: d.vehicle_name,
+          distance: d.distance,
+          driving_hours: d.driving_hours,
+          stops: d.stops,
+          start_odometer: d.start_odometer,
+          end_odometer: d.end_odometer
+        }));
+
+        const { error } = await supabase.from('fleet_mileage').insert(records);
+
+        if (error) {
+          console.error('Error saving fleet mileage:', error);
+          showToast('Error saving to database: ' + error.message, 'error');
+          return;
+        }
+
+        // Update local state
+        fleetMileageData = data;
+        fleetMileagePeriod = { start: periodStart, end: periodEnd };
+
+        const totalMiles = data.reduce((s, t) => s + t.distance, 0);
+        document.querySelector('.modal-overlay')?.remove();
+        showToast('Saved ' + data.length + ' trucks, ' + totalMiles.toLocaleString(undefined, {maximumFractionDigits: 0}) + ' total miles');
+        renderFuelTracking(document.getElementById('main-content'));
+
+      } catch (err) {
+        console.error('Error saving fleet mileage:', err);
+        showToast('Error saving data', 'error');
+      }
     }
 
     function exportIFTA() {
