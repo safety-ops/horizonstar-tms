@@ -17302,21 +17302,58 @@ ${rateText}`
 
     // ============ FLEET MILEAGE UPLOAD (Samsara Vehicle Activity Report) ============
     function openFleetMileageModal() {
+      const samsaraKey = getSamsaraApiKey();
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
-      m.innerHTML = '<div class="modal" style="max-width:600px"><div class="modal-header"><h3>🚛 Upload Fleet Mileage (Samsara)</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body">' +
-        '<div style="background:#dbeafe;padding:16px;border-radius:8px;margin-bottom:16px">' +
-        '<strong style="color:#1d4ed8">Samsara Vehicle Activity Report</strong>' +
-        '<p style="color:#1e40af;margin-top:8px;font-size:14px">Export from Samsara: Reports → Vehicle Activity Report</p>' +
-        '<p style="color:#1e40af;margin-top:4px;font-size:13px">Expected columns: Vehicle Name, Distance (mi), Driving Time, Stops, Start Odometer, End Odometer</p>' +
+      m.innerHTML = '<div class="modal" style="max-width:650px"><div class="modal-header"><h3>🚛 Fleet Mileage (Samsara)</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body">' +
+
+        // Date range section
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">' +
+        '<div class="form-group" style="margin:0"><label>Period Start</label><input type="date" id="fleetMileageStart" value="' + new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0] + '"></div>' +
+        '<div class="form-group" style="margin:0"><label>Period End</label><input type="date" id="fleetMileageEnd" value="' + new Date().toISOString().split('T')[0] + '"></div>' +
         '</div>' +
-        '<div class="form-group"><label>Report Period Start</label><input type="date" id="fleetMileageStart" value="' + new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0] + '"></div>' +
-        '<div class="form-group"><label>Report Period End</label><input type="date" id="fleetMileageEnd" value="' + new Date().toISOString().split('T')[0] + '"></div>' +
-        '<div class="form-group"><label>Select CSV File</label><input type="file" id="fleetMileageCsvFile" accept=".csv"></div>' +
-        '<div id="fleetMileagePreview" style="display:none;margin-top:16px;max-height:300px;overflow-y:auto"></div>' +
-        (fleetMileageData.length > 0 ? '<div style="background:#dcfce7;padding:12px;border-radius:8px;margin-top:16px"><strong style="color:#166534">Current Data:</strong><span style="color:#15803d;margin-left:8px">' + fleetMileageData.length + ' trucks, ' + fleetMileageData.reduce((s,t) => s + parseFloat(t.distance || 0), 0).toLocaleString(undefined, {maximumFractionDigits: 0}) + ' total miles</span><br><span style="font-size:12px;color:#166534">Period: ' + (fleetMileagePeriod.start || 'N/A') + ' to ' + (fleetMileagePeriod.end || 'N/A') + '</span></div>' : '') +
+
+        // Option 1: Fetch from Samsara API
+        (samsaraKey ?
+          '<div style="background:linear-gradient(135deg,#dcfce7,#d1fae5);padding:20px;border-radius:12px;margin-bottom:16px;border:1px solid #86efac">' +
+          '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">' +
+          '<span style="font-size:24px">🔄</span>' +
+          '<div><strong style="color:#166534;font-size:16px">Fetch from Samsara API</strong><br>' +
+          '<span style="color:#15803d;font-size:13px">Automatically pull mileage data for selected period</span></div>' +
+          '</div>' +
+          '<button class="btn" style="background:#22c55e;color:white;border:none;width:100%;padding:12px;font-weight:600" onclick="fetchAndSaveFleetMileage(document.getElementById(\'fleetMileageStart\').value, document.getElementById(\'fleetMileageEnd\').value)">🔄 Fetch Mileage from Samsara</button>' +
+          '<div id="samsaraFetchStatus" style="margin-top:12px"></div>' +
+          '</div>'
+        :
+          '<div style="background:#fef3c7;padding:16px;border-radius:12px;margin-bottom:16px;border:1px solid #fcd34d">' +
+          '<strong style="color:#92400e">⚠️ Samsara Not Connected</strong>' +
+          '<p style="color:#a16207;margin-top:8px;font-size:14px">Connect your Samsara API in Settings to enable automatic mileage fetch.</p>' +
+          '</div>'
+        ) +
+
+        // Option 2: Manual CSV Upload
+        '<div style="background:var(--bg-card);padding:16px;border-radius:12px;border:1px solid var(--border)">' +
+        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">' +
+        '<span style="font-size:24px">📤</span>' +
+        '<div><strong style="color:var(--text)">Upload CSV (Manual)</strong><br>' +
+        '<span style="color:var(--text-muted);font-size:13px">Samsara: Reports → Vehicle Activity Report</span></div>' +
+        '</div>' +
+        '<div class="form-group" style="margin:0"><input type="file" id="fleetMileageCsvFile" accept=".csv"></div>' +
+        '<button class="btn btn-secondary" style="width:100%;margin-top:12px" onclick="parseFleetMileageCsv()">📤 Upload & Import CSV</button>' +
+        '<div id="fleetMileagePreview" style="display:none;margin-top:12px"></div>' +
+        '</div>' +
+
+        // Current data display
+        (fleetMileageData.length > 0 ? '<div style="background:#dbeafe;padding:16px;border-radius:12px;margin-top:16px;border:1px solid #93c5fd">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center">' +
+          '<div><strong style="color:#1d4ed8">📊 Current Data Loaded</strong><br>' +
+          '<span style="color:#2563eb;font-size:14px">' + fleetMileageData.length + ' trucks • ' + fleetMileageData.reduce((s,t) => s + parseFloat(t.distance || 0), 0).toLocaleString(undefined, {maximumFractionDigits: 0}) + ' total miles</span><br>' +
+          '<span style="color:#3b82f6;font-size:12px">Period: ' + (fleetMileagePeriod.start || 'N/A') + ' to ' + (fleetMileagePeriod.end || 'N/A') + '</span></div>' +
+          '<button class="btn" style="background:#fee2e2;color:#dc2626;border-color:#fecaca" onclick="clearFleetMileage()">🗑️ Clear</button>' +
+          '</div></div>' : '') +
+
         '</div><div class="modal-footer">' +
-        (fleetMileageData.length > 0 ? '<button class="btn" style="background:#fee2e2;color:#dc2626;border-color:#fecaca;margin-right:auto" onclick="clearFleetMileage()">🗑️ Clear Data</button>' : '') +
-        '<button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="parseFleetMileageCsv()">🔍 Parse & Import</button></div></div>';
+        '<button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Close</button>' +
+        '</div></div>';
       document.body.appendChild(m);
     }
 
@@ -23486,7 +23523,119 @@ function jsonResponse(data, status = 200) {
       const data = await samsaraFetch('/fleet/vehicles/locations');
       return data?.data || [];
     }
-    
+
+    // Fetch vehicle stats (odometer readings) from Samsara API
+    async function fetchSamsaraVehicleStats(startTime, endTime) {
+      // Convert dates to ISO 8601 format for Samsara API
+      const startISO = new Date(startTime).toISOString();
+      const endISO = new Date(endTime + 'T23:59:59').toISOString();
+
+      // Samsara API: GET /fleet/vehicles/stats/history for historical odometer data
+      const params = new URLSearchParams({
+        startTime: startISO,
+        endTime: endISO,
+        types: 'obdOdometerMeters'
+      });
+
+      const data = await samsaraFetch('/fleet/vehicles/stats/history?' + params.toString());
+      return data?.data || [];
+    }
+
+    // Fetch fleet mileage from Samsara API and save to database
+    async function fetchAndSaveFleetMileage(periodStart, periodEnd) {
+      const statusDiv = document.getElementById('samsaraFetchStatus');
+
+      try {
+        statusDiv.innerHTML = '<div style="background:#fef3c7;padding:12px;border-radius:8px;color:#92400e">⏳ Fetching vehicles from Samsara...</div>';
+
+        // First get list of all vehicles
+        const vehicles = await fetchSamsaraVehicles();
+
+        if (!vehicles || vehicles.length === 0) {
+          statusDiv.innerHTML = '<div style="background:#fee2e2;padding:12px;border-radius:8px;color:#dc2626">✗ No vehicles found. Check your Samsara connection.</div>';
+          return;
+        }
+
+        statusDiv.innerHTML = '<div style="background:#fef3c7;padding:12px;border-radius:8px;color:#92400e">⏳ Found ' + vehicles.length + ' vehicles. Fetching odometer data...</div>';
+
+        // Fetch stats for each vehicle
+        const startISO = new Date(periodStart).toISOString();
+        const endISO = new Date(periodEnd + 'T23:59:59').toISOString();
+
+        const data = [];
+
+        for (const vehicle of vehicles) {
+          try {
+            // Get stats history for this vehicle
+            const params = new URLSearchParams({
+              startTime: startISO,
+              endTime: endISO,
+              types: 'obdOdometerMeters',
+              vehicleIds: vehicle.id
+            });
+
+            const statsData = await samsaraFetch('/fleet/vehicles/stats/history?' + params.toString());
+            const stats = statsData?.data || [];
+
+            if (stats.length > 0 && stats[0].obdOdometerMeters && stats[0].obdOdometerMeters.length > 0) {
+              const readings = stats[0].obdOdometerMeters;
+
+              // Get first and last readings to calculate distance
+              const startOdoMeters = readings[0]?.value || 0;
+              const endOdoMeters = readings[readings.length - 1]?.value || 0;
+
+              // Convert meters to miles
+              const startOdoMiles = startOdoMeters * 0.000621371;
+              const endOdoMiles = endOdoMeters * 0.000621371;
+              const distanceMiles = endOdoMiles - startOdoMiles;
+
+              // Extract truck number from vehicle name
+              const truckMatch = (vehicle.name || '').match(/(\d+)/);
+              const truckNumber = truckMatch ? parseInt(truckMatch[1]) : null;
+
+              if (truckNumber && distanceMiles > 0) {
+                data.push({
+                  vehicle_name: vehicle.name || 'Vehicle ' + vehicle.id,
+                  truck_number: truckNumber,
+                  distance: Math.round(distanceMiles * 10) / 10,
+                  driving_hours: 0,
+                  stops: 0,
+                  start_odometer: Math.round(startOdoMiles * 100) / 100,
+                  end_odometer: Math.round(endOdoMiles * 100) / 100
+                });
+              }
+            }
+          } catch (e) {
+            console.warn('Could not fetch stats for vehicle:', vehicle.name, e);
+          }
+        }
+
+        if (data.length === 0) {
+          // Try alternative: use /fleet/vehicles/stats for current readings
+          statusDiv.innerHTML = '<div style="background:#fef3c7;padding:12px;border-radius:8px;color:#92400e">⏳ No historical data. Trying alternative method...</div>';
+
+          // Get current vehicle stats
+          const currentStats = await samsaraFetch('/fleet/vehicles/stats?types=obdOdometerMeters');
+          const currentData = currentStats?.data || [];
+
+          if (currentData.length > 0) {
+            statusDiv.innerHTML = '<div style="background:#fee2e2;padding:12px;border-radius:8px;color:#dc2626">⚠️ Samsara API returned current odometer only, not historical range.<br><br>For accurate mileage by date range, please use CSV upload instead.</div>';
+            return;
+          }
+
+          statusDiv.innerHTML = '<div style="background:#fee2e2;padding:12px;border-radius:8px;color:#dc2626">✗ No odometer data available from Samsara API.<br><br>Please upload the Vehicle Activity Report CSV instead.</div>';
+          return;
+        }
+
+        // Save to database
+        await saveFleetMileageToDb(data, periodStart, periodEnd);
+
+      } catch (err) {
+        console.error('Error fetching Samsara mileage:', err);
+        statusDiv.innerHTML = '<div style="background:#fee2e2;padding:12px;border-radius:8px;color:#dc2626">✗ Error: ' + err.message + '</div>';
+      }
+    }
+
     function getTruckSamsaraLinks() {
       try {
         return JSON.parse(localStorage.getItem('truck_samsara_links') || '{}');
