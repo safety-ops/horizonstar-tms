@@ -7838,9 +7838,11 @@
           if (currentDetailView.type === 'trip') {
             viewTrip(currentDetailView.id);
           } else if (currentDetailView.type === 'driver') {
-            viewDriver(currentDetailView.id);
+            viewDriverProfile(currentDetailView.id);
           } else if (currentDetailView.type === 'truck') {
-            viewTruck(currentDetailView.id);
+            viewTruckCompliance(currentDetailView.id);
+          } else if (currentDetailView.type === 'local_driver') {
+            viewLocalDriverDetails(currentDetailView.id);
           } else {
             renderPage();
           }
@@ -14842,6 +14844,9 @@ ${rateText}`
     }
 
     function renderLocalDrivers(c) {
+      // Clear detail view flag when going back to local drivers list
+      currentDetailView = null;
+
       // Get completed trip IDs
       const completedTripIds = appData.trips.filter(t => t.status === 'COMPLETED').map(t => t.id);
       
@@ -15127,6 +15132,9 @@ ${rateText}`
     }
 
     function viewLocalDriverDetails(localDriverId) {
+      // Mark that we're viewing a local driver detail (prevents background re-renders)
+      currentDetailView = { type: 'local_driver', id: localDriverId };
+
       const ld = (appData.local_drivers || []).find(x => x.id === localDriverId);
       const driverOrders = appData.orders.filter(o => o.local_driver_id === localDriverId);
       const totalEarnings = driverOrders.reduce((s, o) => s + parseFloat(o.local_fee || 0), 0);
