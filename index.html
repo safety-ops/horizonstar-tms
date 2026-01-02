@@ -9981,7 +9981,8 @@
       // Hero content (left side) with 5 features
       const heroContent = `
         <div class="login-hero-content">
-          <h1>HORIZON STAR LLC<br><span>Transportation Management System</span></h1>
+          <img src="images/Asset 3@4x.png" alt="Horizon Star LLC" style="max-width: 320px; height: auto; margin-bottom: 16px;">
+          <p style="font-size: 14px; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">Transportation Management System</p>
           <p class="login-hero-subtitle">Complete fleet operations platform — track, plan, optimize, and grow your transportation business</p>
 
           <div class="login-features">
@@ -10498,7 +10499,7 @@
         '<button class="hamburger" id="hamburger" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar">' +
         '<span></span><span></span><span></span>' +
         '</button>' +
-        '<div class="logo-text">⭐ HORIZON STAR</div>' +
+        '<img src="images/Asset 3@4x.png" alt="Horizon Star" class="mobile-logo" style="height:28px;width:auto;">' +
         '<div class="user-avatar" style="width:36px;height:36px;font-size:12px;font-weight:700;background:white;color:var(--primary);border-radius:10px" aria-label="User profile">' + userInitials + '</div>' +
         '</div>';
       
@@ -10506,7 +10507,7 @@
         '<div class="mobile-overlay" id="mobileOverlay" onclick="if(event.target===this)toggleMobileMenu()"></div>' +
         '<aside class="sidebar' + (isSidebarCollapsed ? ' collapsed' : '') + '" id="sidebar" role="navigation" aria-label="Main navigation" onclick="event.stopPropagation()" ontouchstart="event.stopPropagation()">' +
         '<button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar" aria-label="Collapse sidebar" aria-expanded="' + (!isSidebarCollapsed) + '">◀</button>' +
-        '<div class="logo"><div class="logo-icon">⭐</div><h1><span>HORIZON STAR</span></h1></div>' +
+        '<div class="logo"><img src="images/Asset 3@4x.png" alt="Horizon Star LLC" style="max-width:170px;height:auto;"></div>' +
         '<nav id="nav" role="menubar" aria-label="Application navigation"></nav>' +
         '</aside>' +
         '<main class="main' + (isSidebarCollapsed ? ' sidebar-collapsed' : '') + '" role="main" aria-label="Main content">' + topBar + '<div id="main-content"><div class="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div> ' + t('loading') + '</div></div></main>' +
@@ -19414,23 +19415,34 @@ ${rateText}`
       const fmtMoney = (amt) => '$' + (amt || 0).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
       const fmtDate = (d) => d ? new Date(d).toLocaleDateString() : 'N/A';
 
-      // === HEADER ===
-      // HS Logo box
-      doc.setFillColor(17, 24, 39);
-      doc.rect(margin, y, 18, 18, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('HS', margin + 9, y + 12, { align: 'center' });
-
-      // Company name
-      doc.setTextColor(...darkGray);
-      doc.setFontSize(16);
-      doc.text('HORIZON STAR', margin + 22, y + 8);
-      doc.setFontSize(9);
-      doc.setTextColor(...medGray);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Transportation Services', margin + 22, y + 14);
+      // === HEADER WITH LOGO ===
+      // Load and add company logo
+      try {
+        const logoImg = new Image();
+        logoImg.crossOrigin = 'anonymous';
+        await new Promise((resolve, reject) => {
+          logoImg.onload = resolve;
+          logoImg.onerror = reject;
+          logoImg.src = 'images/Asset 3@4x.png';
+        });
+        // Logo aspect ratio is ~3.9:1, so at height 12mm, width ~47mm
+        doc.addImage(logoImg, 'PNG', margin, y, 55, 14);
+      } catch (e) {
+        // Fallback to text if image fails
+        doc.setFillColor(17, 24, 39);
+        doc.rect(margin, y, 18, 14, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('HS', margin + 9, y + 9, { align: 'center' });
+        doc.setTextColor(...darkGray);
+        doc.setFontSize(14);
+        doc.text('HORIZON STAR', margin + 22, y + 8);
+        doc.setFontSize(8);
+        doc.setTextColor(...medGray);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Transportation Services', margin + 22, y + 12);
+      }
 
       // Right side - Document info
       doc.setFontSize(8);
