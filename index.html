@@ -9015,21 +9015,29 @@
     }
 
     // ============ EFFICIENCY METRICS ============
-    function calculateEfficiencyMetrics() {
-      const trips = appData.trips || [];
+    function calculateEfficiencyMetrics(filteredTrips) {
+      // Use filtered trips if provided, otherwise use all trips
+      const trips = filteredTrips || appData.trips || [];
       const trucks = appData.trucks.filter(t => t.status === 'ACTIVE') || [];
       const tripVolume = calculateTripVolume(trips);
       const incomeStatement = generateIncomeStatement();
-      
-      let totalMiles = 0, totalCars = 0, totalRevenue = 0, totalProfit = 0;
-      
+
+      // Get fleet miles from Samsara if available
+      const dateRange = getDashboardDateRange();
+      const fleetMilesResult = getFleetMiles(dateRange.start, dateRange.end);
+
+      let totalCars = 0, totalRevenue = 0, totalProfit = 0;
+
       trips.forEach(trip => {
         const fin = getTripFin(trip.id);
-        totalMiles += parseFloat(trip.miles || 0);
         totalCars += fin.vehicleCount;
         totalRevenue += fin.loadRevenue;
         totalProfit += fin.netProfit;
       });
+
+      // Use Samsara miles for fleet-wide metrics, fall back to trip miles
+      const totalMiles = fleetMilesResult.miles;
+      const milesSource = fleetMilesResult.source; // 'samsara' or 'trips'
       
       const profitPerMile = totalMiles > 0 ? totalProfit / totalMiles : 0;
       const profitPerCar = totalCars > 0 ? totalProfit / totalCars : 0;
@@ -9101,7 +9109,8 @@
         totalRevenue,
         totalProfit,
         truckCount,
-        tripCount: trips.length
+        tripCount: trips.length,
+        milesSource // 'samsara' or 'trips'
       };
     }
 
@@ -11031,6 +11040,29 @@
       return dashboardYear;
     }
 
+    // Get date range for dashboard period
+    function getDashboardDateRange() {
+      const year = dashboardYear;
+      if (dashboardPeriod === 'all') {
+        return { start: '2020-01-01', end: '2030-12-31' }; // Effectively all time
+      }
+      if (dashboardPeriod === 'year') {
+        return { start: year + '-01-01', end: year + '-12-31' };
+      }
+      if (dashboardPeriod === 'month') {
+        const lastDay = new Date(year, dashboardMonth, 0).getDate();
+        return {
+          start: year + '-' + String(dashboardMonth).padStart(2, '0') + '-01',
+          end: year + '-' + String(dashboardMonth).padStart(2, '0') + '-' + lastDay
+        };
+      }
+      if (dashboardPeriod === 'q1') return { start: year + '-01-01', end: year + '-03-31' };
+      if (dashboardPeriod === 'q2') return { start: year + '-04-01', end: year + '-06-30' };
+      if (dashboardPeriod === 'q3') return { start: year + '-07-01', end: year + '-09-30' };
+      if (dashboardPeriod === 'q4') return { start: year + '-10-01', end: year + '-12-31' };
+      return { start: year + '-01-01', end: year + '-12-31' };
+    }
+
     function renderDashboard(c) {
       // Filter trips by selected period (year, quarter, or all time)
       const yearTrips = filterTripsByPeriod(appData.trips);
@@ -11057,10 +11089,16 @@
       });
 
       // Calculate all metrics for selected year
-      let totalRev = 0, totalProfit = 0, totalExpenses = 0, totalBrokerFees = 0, totalLocalFees = 0, totalDriverCut = 0, totalMiles = 0, totalCars = 0;
+      let totalRev = 0, totalProfit = 0, totalExpenses = 0, totalBrokerFees = 0, totalLocalFees = 0, totalDriverCut = 0, totalCars = 0;
       const completedTrips = yearTrips.filter(t => t.status === 'COMPLETED');
       const truckPerf = {};
       const dispPerf = {};
+
+      // Get fleet miles from Samsara if available (preferred), otherwise use trip miles
+      const dateRange = getDashboardDateRange();
+      const fleetMilesResult = getFleetMiles(dateRange.start, dateRange.end);
+      const totalMiles = fleetMilesResult.miles;
+      const dashboardMilesSource = fleetMilesResult.source; // 'samsara' or 'trips'
 
       yearTrips.forEach(t => {
         const f = getTripFin(t.id);
@@ -11070,7 +11108,6 @@
         totalBrokerFees += f.brokerFee;
         totalLocalFees += f.localFees;
         totalDriverCut += f.driverCut;
-        totalMiles += parseFloat(t.miles || 0);
         totalCars += f.vehicleCount;
         
         // Truck performance
@@ -11219,7 +11256,7 @@
             '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
             '<h3 style="margin:0;color:white;font-size:16px">⚡ Quick View - Company Profitability</h3>' +
             '<div style="display:flex;align-items:center;gap:12px">' +
-            '<span style="background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:12px;font-size:11px">' + totalMiles.toLocaleString() + ' miles • ' + totalCars + ' cars</span>' +
+            '<span style="background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:12px;font-size:11px">' + totalMiles.toLocaleString() + ' mi ' + (dashboardMilesSource === 'samsara' ? '<span style="color:#93c5fd;font-size:9px">📡</span>' : '') + ' • ' + totalCars + ' cars</span>' +
             '<button onclick="openSetupWizard()" style="background:rgba(59,130,246,0.3);color:#93c5fd;border:1px solid rgba(59,130,246,0.5);padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer">🧙‍♂️ Setup</button>' +
             '</div></div></div>' +
             warningBanner +
@@ -15897,15 +15934,31 @@ ${rateText}`
       const totalCost = totalDieselCost + totalDefCost + totalFees;
       
       // Calculate miles for the period (from trips)
+      // Get fleet miles - prefer Samsara data, fallback to trip miles
       let periodMiles = 0;
+      let milesSource = 'trips'; // 'samsara' or 'trips'
       const activeTruckFilter = selectedFuelTruck || fuelFilterTruck;
-      const periodTrips = activeTruckFilter 
-        ? appData.trips.filter(t => {
-            const truck = appData.trucks.find(tr => tr.id === t.truck_id);
-            return truck && truck.truck_number == activeTruckFilter && t.trip_date >= range.start && t.trip_date <= range.end;
-          })
-        : appData.trips.filter(t => t.trip_date >= range.start && t.trip_date <= range.end);
-      periodMiles = periodTrips.reduce((s, t) => s + parseFloat(t.miles || 0), 0);
+
+      if (activeTruckFilter) {
+        // Single truck - check Samsara data first
+        const samsaraTruckData = getFleetMilesByTruck();
+        if (samsaraTruckData && samsaraTruckData[activeTruckFilter]) {
+          periodMiles = samsaraTruckData[activeTruckFilter].distance;
+          milesSource = 'samsara';
+        } else {
+          // Fall back to trip miles for this truck
+          const truck = appData.trucks.find(tr => tr.truck_number == activeTruckFilter);
+          if (truck) {
+            const truckTrips = appData.trips.filter(t => t.truck_id === truck.id && t.trip_date >= range.start && t.trip_date <= range.end);
+            periodMiles = truckTrips.reduce((s, t) => s + parseFloat(t.miles || 0), 0);
+          }
+        }
+      } else {
+        // All trucks - use getFleetMiles()
+        const fleetMilesResult = getFleetMiles(range.start, range.end);
+        periodMiles = fleetMilesResult.miles;
+        milesSource = fleetMilesResult.source;
+      }
       
       const mpg = periodMiles > 0 && totalDieselGal > 0 ? periodMiles / totalDieselGal : 0;
       const costPerMile = periodMiles > 0 ? totalDieselCost / periodMiles : 0;
@@ -15932,15 +15985,24 @@ ${rateText}`
         truckStats[t.truck_number].savings += parseFloat(t.savings || 0);
       });
       
-      // Calculate miles per truck
+      // Calculate miles per truck - prefer Samsara data
+      const samsaraTruckMiles = getFleetMilesByTruck();
       Object.keys(truckStats).forEach(tn => {
-        const truck = appData.trucks.find(t => t.truck_number == tn);
-        if (truck) {
-          const truckTrips = appData.trips.filter(t => t.truck_id === truck.id && t.trip_date >= range.start && t.trip_date <= range.end);
-          truckStats[tn].miles = truckTrips.reduce((s, t) => s + parseFloat(t.miles || 0), 0);
-          truckStats[tn].mpg = truckStats[tn].miles > 0 && truckStats[tn].diesel > 0 ? truckStats[tn].miles / truckStats[tn].diesel : 0;
-          truckStats[tn].costPerMile = truckStats[tn].miles > 0 ? truckStats[tn].cost / truckStats[tn].miles : 0;
+        // Check Samsara data first
+        if (samsaraTruckMiles && samsaraTruckMiles[tn]) {
+          truckStats[tn].miles = samsaraTruckMiles[tn].distance;
+          truckStats[tn].milesSource = 'samsara';
+        } else {
+          // Fall back to trip miles
+          const truck = appData.trucks.find(t => t.truck_number == tn);
+          if (truck) {
+            const truckTrips = appData.trips.filter(t => t.truck_id === truck.id && t.trip_date >= range.start && t.trip_date <= range.end);
+            truckStats[tn].miles = truckTrips.reduce((s, t) => s + parseFloat(t.miles || 0), 0);
+          }
+          truckStats[tn].milesSource = 'trips';
         }
+        truckStats[tn].mpg = truckStats[tn].miles > 0 && truckStats[tn].diesel > 0 ? truckStats[tn].miles / truckStats[tn].diesel : 0;
+        truckStats[tn].costPerMile = truckStats[tn].miles > 0 ? truckStats[tn].cost / truckStats[tn].miles : 0;
       });
       
       // Group by state
@@ -15986,9 +16048,12 @@ ${rateText}`
       if (selectedFuelTruck) {
         headerContent += '<button class="btn btn-secondary" onclick="selectedFuelTruck=null;renderFuelTracking(document.getElementById(\'main-content\'))">← Back to All Trucks</button>';
       }
-      headerContent += '<button class="btn btn-primary" onclick="openFuelUploadModal()">📤 Upload Fuel Report</button>' + 
-        (filteredTxns.length > 0 && !selectedFuelTruck ? '<button class="btn btn-secondary" style="background:#fee2e2;color:#dc2626;border-color:#fecaca" onclick="deletePeriodFuelData()">🗑️ Delete Period Data</button>' : '') + 
-        '</div></div>';
+      headerContent += '<button class="btn btn-primary" onclick="openFuelUploadModal()">📤 Fuel Report</button>';
+      headerContent += '<button class="btn" onclick="openFleetMileageModal()" style="background:#3b82f6;color:white;border:none">🚛 Samsara Mileage</button>';
+      if (filteredTxns.length > 0 && !selectedFuelTruck) {
+        headerContent += '<button class="btn btn-secondary" style="background:#fee2e2;color:#dc2626;border-color:#fecaca" onclick="deletePeriodFuelData()">🗑️ Delete Period Data</button>';
+      }
+      headerContent += '</div></div>';
       
       c.innerHTML = headerContent +
         
@@ -16039,7 +16104,7 @@ ${rateText}`
         '<div class="card" style="margin-bottom:24px;padding:20px">' +
         '<h3 style="margin-bottom:16px;color:#8b5cf6;border-bottom:2px solid #8b5cf6;padding-bottom:8px">📊 EFFICIENCY METRICS</h3>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px">' +
-        '<div style="background:#f8fafc;padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#64748b">Miles Traveled</div><div style="font-size:24px;font-weight:700">' + periodMiles.toLocaleString() + '</div></div>' +
+        '<div style="background:' + (milesSource === 'samsara' ? '#dbeafe' : '#f8fafc') + ';padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#64748b">Miles Traveled</div><div style="font-size:24px;font-weight:700">' + periodMiles.toLocaleString() + '</div>' + (milesSource === 'samsara' ? '<div style="font-size:10px;color:#1d4ed8;margin-top:4px">📡 Samsara</div>' : '<div style="font-size:10px;color:#64748b;margin-top:4px">📝 Trip Data</div>') + '</div>' +
         '<div style="background:' + (mpg >= 6 ? '#d1fae5' : mpg >= 5 ? '#fef3c7' : '#fee2e2') + ';padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#64748b">Fuel Economy (MPG)</div><div style="font-size:24px;font-weight:700;color:' + (mpg >= 6 ? '#059669' : mpg >= 5 ? '#d97706' : '#dc2626') + '">' + mpg.toFixed(2) + '</div></div>' +
         '<div style="background:#f8fafc;padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#64748b">Cost Per Mile</div><div style="font-size:24px;font-weight:700;color:#dc2626">' + formatMoney(costPerMile) + '</div></div>' +
         '<div style="background:#f8fafc;padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#64748b">Fill-Ups</div><div style="font-size:24px;font-weight:700">' + fillUps + '</div></div>' +
@@ -16938,6 +17003,50 @@ ${rateText}`
     let iftaMileageData = [];
     let fleetMPG = 6.0; // Default MPG for car haulers
 
+    // Fleet mileage data from Samsara Vehicle Activity Report
+    // This is the source of truth for fleet-wide mileage (not trip miles)
+    let fleetMileageData = []; // Array of { truck_number, distance, driving_hours, stops, start_odometer, end_odometer, period_start, period_end }
+    let fleetMileagePeriod = { start: null, end: null }; // Period of uploaded data
+
+    // Get fleet miles for a date range - uses Samsara data if available, falls back to trip miles
+    function getFleetMiles(startDate, endDate) {
+      // Check if we have Samsara fleet mileage data for this period
+      if (fleetMileageData.length > 0 && fleetMileagePeriod.start && fleetMileagePeriod.end) {
+        // Check if requested period overlaps with uploaded data
+        if (startDate <= fleetMileagePeriod.end && endDate >= fleetMileagePeriod.start) {
+          // Use Samsara data - sum all truck distances
+          const totalMiles = fleetMileageData.reduce((sum, t) => sum + (parseFloat(t.distance) || 0), 0);
+          return { miles: totalMiles, source: 'samsara', period: fleetMileagePeriod };
+        }
+      }
+
+      // Fallback to trip miles if no Samsara data
+      const periodTrips = (appData.trips || []).filter(t => {
+        const d = t.trip_date;
+        return d && d >= startDate && d <= endDate;
+      });
+      const tripMiles = periodTrips.reduce((sum, t) => sum + parseFloat(t.miles || 0), 0);
+      return { miles: tripMiles, source: 'trips', period: { start: startDate, end: endDate } };
+    }
+
+    // Get per-truck fleet miles from Samsara data
+    function getFleetMilesByTruck() {
+      if (fleetMileageData.length === 0) return null;
+
+      const byTruck = {};
+      fleetMileageData.forEach(t => {
+        const truckNum = t.truck_number;
+        byTruck[truckNum] = {
+          distance: parseFloat(t.distance) || 0,
+          driving_hours: parseFloat(t.driving_hours) || 0,
+          stops: parseInt(t.stops) || 0,
+          start_odometer: parseFloat(t.start_odometer) || 0,
+          end_odometer: parseFloat(t.end_odometer) || 0
+        };
+      });
+      return byTruck;
+    }
+
     // 2024 IFTA Tax Rates (cents per gallon) - Diesel
     const iftaTaxRates = {
       'AL': 0.29, 'AZ': 0.26, 'AR': 0.285, 'CA': 0.8945, 'CO': 0.205,
@@ -17154,6 +17263,119 @@ ${rateText}`
         }
       };
       
+      reader.readAsText(file);
+    }
+
+    // ============ FLEET MILEAGE UPLOAD (Samsara Vehicle Activity Report) ============
+    function openFleetMileageModal() {
+      const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
+      m.innerHTML = '<div class="modal" style="max-width:600px"><div class="modal-header"><h3>🚛 Upload Fleet Mileage (Samsara)</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body">' +
+        '<div style="background:#dbeafe;padding:16px;border-radius:8px;margin-bottom:16px">' +
+        '<strong style="color:#1d4ed8">Samsara Vehicle Activity Report</strong>' +
+        '<p style="color:#1e40af;margin-top:8px;font-size:14px">Export from Samsara: Reports → Vehicle Activity Report</p>' +
+        '<p style="color:#1e40af;margin-top:4px;font-size:13px">Expected columns: Vehicle Name, Distance (mi), Driving Time, Stops, Start Odometer, End Odometer</p>' +
+        '</div>' +
+        '<div class="form-group"><label>Report Period Start</label><input type="date" id="fleetMileageStart" value="' + new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0] + '"></div>' +
+        '<div class="form-group"><label>Report Period End</label><input type="date" id="fleetMileageEnd" value="' + new Date().toISOString().split('T')[0] + '"></div>' +
+        '<div class="form-group"><label>Select CSV File</label><input type="file" id="fleetMileageCsvFile" accept=".csv"></div>' +
+        '<div id="fleetMileagePreview" style="display:none;margin-top:16px;max-height:300px;overflow-y:auto"></div>' +
+        (fleetMileageData.length > 0 ? '<div style="background:#dcfce7;padding:12px;border-radius:8px;margin-top:16px"><strong style="color:#166534">Current Data:</strong><span style="color:#15803d;margin-left:8px">' + fleetMileageData.length + ' trucks, ' + fleetMileageData.reduce((s,t) => s + parseFloat(t.distance || 0), 0).toLocaleString(undefined, {maximumFractionDigits: 0}) + ' total miles</span><br><span style="font-size:12px;color:#166534">Period: ' + (fleetMileagePeriod.start || 'N/A') + ' to ' + (fleetMileagePeriod.end || 'N/A') + '</span></div>' : '') +
+        '</div><div class="modal-footer">' +
+        (fleetMileageData.length > 0 ? '<button class="btn" style="background:#fee2e2;color:#dc2626;border-color:#fecaca;margin-right:auto" onclick="clearFleetMileage()">🗑️ Clear Data</button>' : '') +
+        '<button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="parseFleetMileageCsv()">🔍 Parse & Import</button></div></div>';
+      document.body.appendChild(m);
+    }
+
+    function clearFleetMileage() {
+      if (!confirm('Clear uploaded fleet mileage data?')) return;
+      fleetMileageData = [];
+      fleetMileagePeriod = { start: null, end: null };
+      showToast('Fleet mileage data cleared');
+      document.querySelector('.modal-overlay')?.remove();
+      renderFuelTracking(document.getElementById('main-content'));
+    }
+
+    function parseFleetMileageCsv() {
+      const fileInput = document.getElementById('fleetMileageCsvFile');
+      const periodStart = document.getElementById('fleetMileageStart').value;
+      const periodEnd = document.getElementById('fleetMileageEnd').value;
+
+      if (!fileInput.files || fileInput.files.length === 0) {
+        showToast('Please select a CSV file', 'error');
+        return;
+      }
+
+      if (!periodStart || !periodEnd) {
+        showToast('Please enter report period dates', 'error');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        const text = e.target.result;
+        const lines = text.split('\n');
+        const data = [];
+
+        // Parse header to find column indices
+        const headerLine = lines[0].toLowerCase();
+        const headers = headerLine.split(',').map(h => h.trim());
+
+        // Find column indices (flexible matching)
+        const vehicleIdx = headers.findIndex(h => h.includes('vehicle') || h.includes('name') || h.includes('unit'));
+        const distanceIdx = headers.findIndex(h => h.includes('distance'));
+        const drivingIdx = headers.findIndex(h => h.includes('driving') && h.includes('time'));
+        const stopsIdx = headers.findIndex(h => h.includes('stop'));
+        const startOdoIdx = headers.findIndex(h => h.includes('start') && h.includes('odometer'));
+        const endOdoIdx = headers.findIndex(h => h.includes('end') && h.includes('odometer'));
+
+        if (vehicleIdx === -1 || distanceIdx === -1) {
+          document.getElementById('fleetMileagePreview').style.display = 'block';
+          document.getElementById('fleetMileagePreview').innerHTML = '<div style="background:#fee2e2;padding:12px;border-radius:8px"><strong style="color:#dc2626">Could not find required columns (Vehicle Name, Distance).</strong><br><span style="font-size:12px">Found headers: ' + headers.join(', ') + '</span></div>';
+          return;
+        }
+
+        // Parse data rows
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+
+          const cols = line.split(',').map(c => c.trim());
+          const vehicleName = cols[vehicleIdx] || '';
+          const distance = parseFloat(cols[distanceIdx]) || 0;
+
+          // Extract truck number from vehicle name (e.g., "Unit 55" -> 55, "Unit 005" -> 5)
+          const truckMatch = vehicleName.match(/(\d+)/);
+          const truckNumber = truckMatch ? parseInt(truckMatch[1]) : null;
+
+          if (truckNumber && distance > 0) {
+            data.push({
+              vehicle_name: vehicleName,
+              truck_number: truckNumber,
+              distance: distance,
+              driving_hours: drivingIdx !== -1 ? (parseFloat(cols[drivingIdx]) || 0) : 0,
+              stops: stopsIdx !== -1 ? (parseInt(cols[stopsIdx]) || 0) : 0,
+              start_odometer: startOdoIdx !== -1 ? (parseFloat(cols[startOdoIdx]) || 0) : 0,
+              end_odometer: endOdoIdx !== -1 ? (parseFloat(cols[endOdoIdx]) || 0) : 0
+            });
+          }
+        }
+
+        if (data.length > 0) {
+          fleetMileageData = data;
+          fleetMileagePeriod = { start: periodStart, end: periodEnd };
+
+          const totalMiles = data.reduce((s, t) => s + t.distance, 0);
+          document.querySelector('.modal-overlay').remove();
+          showToast('Imported ' + data.length + ' trucks, ' + totalMiles.toLocaleString(undefined, {maximumFractionDigits: 0}) + ' total miles');
+          renderFuelTracking(document.getElementById('main-content'));
+        } else {
+          document.getElementById('fleetMileagePreview').style.display = 'block';
+          document.getElementById('fleetMileagePreview').innerHTML = '<div style="background:#fee2e2;padding:12px;border-radius:8px"><strong style="color:#dc2626">No valid data found.</strong><br><span style="font-size:12px">Make sure the CSV has Vehicle Name and Distance columns with data.</span></div>';
+        }
+      };
+
       reader.readAsText(file);
     }
 
@@ -22150,8 +22372,14 @@ ${rateText}`
       // Trip Net Profit = Revenue - All Trip Costs
       const tripNetProfit = loadRevenue - directTripExpenses;
       
-      // Cash collected (COD + COP only)
-      const cashCollected = orders.filter(o => o.payment_type === 'COD' || o.payment_type === 'COP').reduce((s, o) => s + parseFloat(o.revenue || 0), 0);
+      // Cash collected (COD + COP only) - handle split payments
+      const cashCollected = orders.filter(o => o.payment_type === 'COD' || o.payment_type === 'COP').reduce((s, o) => {
+        // If bill_amount > 0, this is a split payment - use cod_amount instead of revenue
+        if (parseFloat(o.bill_amount || 0) > 0) {
+          return s + parseFloat(o.cod_amount || 0);
+        }
+        return s + parseFloat(o.revenue || 0);
+      }, 0);
       const expenseReimbursement = fuelCosts.OTHER; // Only OTHER category is reimbursed
       const netPayToDriver = driverCut - cashCollected + expenseReimbursement;
       
@@ -26669,7 +26897,13 @@ function jsonResponse(data, status = 200) {
           return sum + (tripClean * ((trip.driver_cut_percent || 32) / 100));
         }, 0);
         
-        const cashCollected = driverOrders.filter(o => (o.payment_type === 'COD' || o.payment_type === 'COP') && o.driver_paid_status === 'PAID').reduce((s, o) => s + parseFloat(o.driver_paid_amount || o.revenue || 0), 0);
+        // Cash collected - handle split payments (bill_amount > 0 means use cod_amount)
+        const cashCollected = driverOrders.filter(o => o.payment_type === 'COD' || o.payment_type === 'COP').reduce((s, o) => {
+          if (parseFloat(o.bill_amount || 0) > 0) {
+            return s + parseFloat(o.cod_amount || 0);
+          }
+          return s + parseFloat(o.revenue || 0);
+        }, 0);
         const miles = driverTrips.reduce((s, t) => s + parseFloat(t.miles || 0), 0);
         const avgPerCar = driverOrders.length > 0 ? cleanGross / driverOrders.length : 0;
         
