@@ -27,8 +27,9 @@
   <!-- Supabase Client Library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- HTML to PDF Library for Earnings Statements -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- PDF Generation Libraries for Earnings Statements -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
 
   <style>
     :root {
@@ -19393,6 +19394,345 @@ ${rateText}`
       document.getElementById('totalBonusesDisplay').textContent = totalBonus.toFixed(2);
     }
 
+    // Generate PDF directly using jsPDF (pixel-perfect, no html2canvas issues)
+    async function generatePaystubPDF(driver, earnings, selectedTripIds, netPay, totalDriverCut, totalCashCollected, totalExpenses, totalRevenue, periodStart, periodEnd, payDate, stubNumber, checkNumber, deductions, bonuses, totalDeductions, totalBonuses, totalBrokerFee, totalLocalFee, totalCleanGross, avgEarningsPerTrip) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 15;
+      let y = margin;
+
+      // Colors (RGB arrays)
+      const green = [4, 120, 87];
+      const red = [185, 28, 28];
+      const darkGray = [17, 24, 39];
+      const medGray = [107, 114, 128];
+      const lightGray = [243, 244, 246];
+
+      // Local helper functions for PDF
+      const fmtMoney = (amt) => '$' + (amt || 0).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+      const fmtDate = (d) => d ? new Date(d).toLocaleDateString() : 'N/A';
+
+      // === HEADER ===
+      // HS Logo box
+      doc.setFillColor(17, 24, 39);
+      doc.rect(margin, y, 18, 18, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('HS', margin + 9, y + 12, { align: 'center' });
+
+      // Company name
+      doc.setTextColor(...darkGray);
+      doc.setFontSize(16);
+      doc.text('HORIZON STAR', margin + 22, y + 8);
+      doc.setFontSize(9);
+      doc.setTextColor(...medGray);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Transportation Services', margin + 22, y + 14);
+
+      // Right side - Document info
+      doc.setFontSize(8);
+      doc.setTextColor(...medGray);
+      doc.text('Official Document', pageWidth - margin, y + 4, { align: 'right' });
+      doc.setFontSize(11);
+      doc.setTextColor(...darkGray);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Earnings Statement', pageWidth - margin, y + 10, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text('Stub No. ' + stubNumber + '  |  Check No. ' + checkNumber, pageWidth - margin, y + 16, { align: 'right' });
+
+      y += 24;
+
+      // === NET PAY BANNER ===
+      doc.setFillColor(...green);
+      doc.rect(margin, y, pageWidth - margin * 2, 16, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(10);
+      doc.text('Net Pay This Period', margin + 5, y + 6);
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text(fmtMoney(netPay), margin + 5, y + 13);
+      doc.setFont('helvetica', 'normal');
+
+      y += 22;
+
+      // === DRIVER INFO + STATS ===
+      doc.setTextColor(...darkGray);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text(driver.first_name.toUpperCase() + ' ' + driver.last_name.toUpperCase(), margin, y);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(...medGray);
+      const cutPercent = earnings.length > 0 ? earnings[0].cutPercent : (driver.cut_percent || 0);
+      doc.text('Driver | ' + cutPercent + '% Commission Rate', margin, y + 5);
+
+      // Stats boxes on right
+      const statBoxWidth = 28;
+      const statsX = pageWidth - margin - (statBoxWidth * 3) - 6;
+      doc.setFillColor(...lightGray);
+      const statsData = [[selectedTripIds.length, 'Trips'], [earnings.length, 'Loads'], [fmtMoney(avgEarningsPerTrip), 'Avg/Trip']];
+      statsData.forEach((stat, i) => {
+        const x = statsX + (statBoxWidth + 3) * i;
+        doc.rect(x, y - 6, statBoxWidth, 14, 'F');
+        doc.setTextColor(...darkGray);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text(String(stat[0]), x + statBoxWidth/2, y, { align: 'center' });
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...medGray);
+        doc.text(stat[1], x + statBoxWidth/2, y + 5, { align: 'center' });
+      });
+
+      y += 14;
+
+      // === SUMMARY GRID ===
+      const summaryData = [
+        { label: 'Gross Earnings', value: fmtMoney(totalDriverCut), color: green, bg: [240, 253, 244] },
+        { label: 'Cash Collected', value: '-' + fmtMoney(totalCashCollected), color: red, bg: [254, 242, 242] },
+        { label: 'Reimbursements', value: '+' + fmtMoney(totalExpenses), color: green, bg: [249, 250, 251] },
+        { label: 'Total Revenue', value: fmtMoney(totalRevenue), color: darkGray, bg: [249, 250, 251] }
+      ];
+      const boxWidth = (pageWidth - margin * 2 - 9) / 4;
+      summaryData.forEach((item, i) => {
+        const x = margin + (boxWidth + 3) * i;
+        doc.setFillColor(...item.bg);
+        doc.rect(x, y, boxWidth, 18, 'F');
+        doc.setTextColor(...item.color);
+        doc.setFontSize(13);
+        doc.setFont('helvetica', 'bold');
+        doc.text(item.value, x + boxWidth/2, y + 8, { align: 'center' });
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...medGray);
+        doc.text(item.label.toUpperCase(), x + boxWidth/2, y + 14, { align: 'center' });
+      });
+
+      y += 24;
+
+      // === EARNINGS TABLE HEADER ===
+      doc.setFillColor(...lightGray);
+      doc.rect(margin, y, pageWidth - margin * 2, 8, 'F');
+      doc.setDrawColor(17, 24, 39);
+      doc.setLineWidth(0.5);
+      doc.line(margin, y, margin + 2, y + 8);
+      doc.setTextColor(...darkGray);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('EARNINGS DETAIL', margin + 6, y + 5.5);
+      doc.setFont('helvetica', 'normal');
+
+      y += 10;
+
+      // Build table with AutoTable
+      const tableHeaders = ['Date', 'Trip', 'Revenue', 'Broker', 'Local', 'Clean', 'Driver Cut', '%', 'Cash'];
+      const tableData = earnings.map(e => [
+        fmtDate(e.date),
+        e.tripNumber,
+        fmtMoney(e.revenue),
+        e.brokerFee > 0 ? '-' + fmtMoney(e.brokerFee) : '—',
+        e.localFee > 0 ? '-' + fmtMoney(e.localFee) : '—',
+        fmtMoney(e.cleanGross),
+        fmtMoney(e.driverCut),
+        e.cutPercent.toFixed(0) + '%',
+        e.cashOnHand > 0 ? fmtMoney(e.cashOnHand) : '—'
+      ]);
+
+      // Add total row
+      tableData.push([
+        'TOTAL', '',
+        fmtMoney(totalRevenue),
+        '-' + fmtMoney(totalBrokerFee),
+        '-' + fmtMoney(totalLocalFee),
+        fmtMoney(totalCleanGross),
+        fmtMoney(totalDriverCut),
+        cutPercent.toFixed(0) + '%',
+        fmtMoney(totalCashCollected)
+      ]);
+
+      doc.autoTable({
+        startY: y,
+        head: [tableHeaders],
+        body: tableData,
+        margin: { left: margin, right: margin },
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [249, 250, 251], textColor: [107, 114, 128], fontStyle: 'bold' },
+        bodyStyles: { textColor: [17, 24, 39] },
+        columnStyles: {
+          0: { cellWidth: 18 },
+          1: { cellWidth: 16 },
+          2: { halign: 'right' },
+          3: { halign: 'right', textColor: red },
+          4: { halign: 'right', textColor: red },
+          5: { halign: 'right' },
+          6: { halign: 'right', textColor: green, fontStyle: 'bold' },
+          7: { halign: 'center', cellWidth: 12 },
+          8: { halign: 'right' }
+        },
+        didParseCell: function(data) {
+          if (data.row.index === tableData.length - 1) {
+            data.cell.styles.fillColor = [243, 244, 246];
+            data.cell.styles.fontStyle = 'bold';
+          }
+        }
+      });
+
+      y = doc.lastAutoTable.finalY + 8;
+
+      // === DEDUCTIONS & BONUSES (two columns) ===
+      const colWidth = (pageWidth - margin * 2 - 4) / 2;
+
+      // Deductions column
+      doc.setDrawColor(229, 231, 235);
+      doc.rect(margin, y, colWidth, 50);
+      doc.setFillColor(...red);
+      doc.rect(margin, y, colWidth, 8, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text('− DEDUCTIONS', margin + 4, y + 5.5);
+
+      let dedY = y + 14;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...darkGray);
+      const dedItems = [
+        ['Insurance', deductions.insurance],
+        ['Fuel', deductions.fuel],
+        ['Fuel Deposit', deductions.fuelDeposit],
+        ['ELD', deductions.eld],
+        ['Tolls', deductions.tolls],
+        ['IFTA', deductions.ifta],
+        ['HUT 2290', deductions.hut2290],
+        ['Reg Renewal', deductions.regRenewal],
+        ['Other', deductions.other]
+      ].filter(d => d[1] > 0);
+
+      if (dedItems.length > 0) {
+        dedItems.forEach(([label, amt]) => {
+          doc.setFontSize(8);
+          doc.setTextColor(...darkGray);
+          doc.text(label, margin + 4, dedY);
+          doc.setTextColor(...red);
+          doc.text('-' + fmtMoney(amt), margin + colWidth - 4, dedY, { align: 'right' });
+          dedY += 5;
+        });
+        // Total deductions
+        doc.setFillColor(254, 242, 242);
+        doc.rect(margin + 2, y + 40, colWidth - 4, 8, 'F');
+        doc.setTextColor(...red);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Total: -' + fmtMoney(totalDeductions), margin + colWidth - 4, y + 45, { align: 'right' });
+      } else {
+        doc.setTextColor(...medGray);
+        doc.setFontSize(8);
+        doc.text('No deductions this period', margin + colWidth/2, y + 28, { align: 'center' });
+      }
+
+      // Bonuses column
+      const bonusX = margin + colWidth + 4;
+      doc.setDrawColor(229, 231, 235);
+      doc.rect(bonusX, y, colWidth, 50);
+      doc.setFillColor(...green);
+      doc.rect(bonusX, y, colWidth, 8, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text('+ BONUSES & ADDITIONS', bonusX + 4, y + 5.5);
+
+      let bonY = y + 14;
+      doc.setFont('helvetica', 'normal');
+      const bonItems = [
+        ['Expense Reimbursements', totalExpenses],
+        ['Level I Inspection', bonuses.level1],
+        ['Level II Inspection', bonuses.level2],
+        ['Level III Inspection', bonuses.level3],
+        ['Other Bonus', bonuses.other]
+      ].filter(b => b[1] > 0);
+
+      if (bonItems.length > 0) {
+        bonItems.forEach(([label, amt]) => {
+          doc.setFontSize(8);
+          doc.setTextColor(...darkGray);
+          doc.text(label, bonusX + 4, bonY);
+          doc.setTextColor(...green);
+          doc.text('+' + fmtMoney(amt), bonusX + colWidth - 4, bonY, { align: 'right' });
+          bonY += 5;
+        });
+        // Total bonuses
+        doc.setFillColor(240, 253, 244);
+        doc.rect(bonusX + 2, y + 40, colWidth - 4, 8, 'F');
+        doc.setTextColor(...green);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Total: +' + fmtMoney(totalBonuses + totalExpenses), bonusX + colWidth - 4, y + 45, { align: 'right' });
+      } else {
+        doc.setTextColor(...medGray);
+        doc.setFontSize(8);
+        doc.text('No bonuses this period', bonusX + colWidth/2, y + 28, { align: 'center' });
+      }
+
+      y += 56;
+
+      // === CHECK STUB ===
+      doc.setDrawColor(...darkGray);
+      doc.setLineWidth(0.5);
+      doc.rect(margin, y, pageWidth - margin * 2, 32);
+
+      // Check header
+      doc.setFillColor(249, 250, 251);
+      doc.rect(margin, y, pageWidth - margin * 2, 10, 'F');
+      doc.setTextColor(...darkGray);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Horizon Star, LLC', margin + 4, y + 5);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.text('118 Mary Ambler Way, Ambler, PA 19002', margin + 4, y + 8);
+      doc.setFontSize(8);
+      doc.text('Check No. ' + checkNumber, pageWidth - margin - 4, y + 5, { align: 'right' });
+      doc.text('Date: ' + fmtDate(payDate), pageWidth - margin - 4, y + 8, { align: 'right' });
+
+      // Check body
+      doc.setFontSize(7);
+      doc.setTextColor(...medGray);
+      doc.text('PAY TO THE ORDER OF', margin + 4, y + 15);
+      doc.setTextColor(...darkGray);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(driver.first_name.toUpperCase() + ' ' + driver.last_name.toUpperCase(), margin + 4, y + 21);
+
+      // Amount box
+      const amtColor = netPay >= 0 ? green : red;
+      doc.setFillColor(netPay >= 0 ? 240 : 254, netPay >= 0 ? 253 : 242, netPay >= 0 ? 244 : 242);
+      doc.setDrawColor(...amtColor);
+      doc.rect(pageWidth - margin - 45, y + 13, 41, 12, 'FD');
+      doc.setTextColor(...amtColor);
+      doc.setFontSize(14);
+      doc.text(fmtMoney(netPay), pageWidth - margin - 24.5, y + 21, { align: 'center' });
+
+      // Check footer
+      doc.setFillColor(...darkGray);
+      doc.rect(margin, y + 27, pageWidth - margin * 2, 5, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(6);
+      doc.setFont('helvetica', 'normal');
+      doc.text('This is not a negotiable instrument', margin + 4, y + 30.5);
+      doc.text('For record keeping purposes only', pageWidth - margin - 4, y + 30.5, { align: 'right' });
+
+      y += 38;
+
+      // === FOOTER ===
+      doc.setTextColor(...medGray);
+      doc.setFontSize(7);
+      doc.text('Horizon Star, LLC | 118 Mary Ambler Way, Ambler, PA 19002 | (267) 334-1834', pageWidth/2, y, { align: 'center' });
+      doc.text('Statement generated ' + new Date().toLocaleDateString() + ' at ' + new Date().toLocaleTimeString(), pageWidth/2, y + 4, { align: 'center' });
+
+      // Return PDF blob
+      return doc.output('blob');
+    }
+
     async function generatePaystub(driverId, action = 'print') {
       // action can be: 'print', 'email', or 'both'
       const driver = appData.drivers.find(d => d.id === driverId);
@@ -20020,60 +20360,17 @@ ${rateText}`
         showToast('Generating PDF and sending email to ' + driverEmail + '...', 'info');
 
         try {
-          // Create iframe for PDF generation (iframe content renders independently)
-          const iframe = document.createElement('iframe');
-          iframe.style.cssText = 'position:fixed;top:0;left:0;width:820px;height:2000px;border:none;z-index:99999;background:white;';
-          document.body.appendChild(iframe);
-
-          // Write the paystub HTML to the iframe
-          const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-          iframeDoc.open();
-          iframeDoc.write(paystubHTML);
-          iframeDoc.close();
-
-          // Directly hide the print button (more reliable than CSS class)
-          const printBtn = iframeDoc.querySelector('.print-btn');
-          if (printBtn) {
-            printBtn.style.display = 'none';
-          }
-
-          // Set body styles for proper PDF capture
-          iframeDoc.body.style.cssText = 'margin:0;padding:0;width:800px;background:white;';
-
-          // Ensure the .page element fills the width properly
-          const pageEl = iframeDoc.querySelector('.page');
-          if (pageEl) {
-            pageEl.style.cssText = 'margin:0;padding:24px;max-width:800px;width:800px;box-sizing:border-box;';
-          }
-
-          // Wait for iframe content to fully render (fonts, images)
-          await new Promise(resolve => setTimeout(resolve, 1200));
-
-          // Generate PDF from iframe body with proper capture settings
-          const pdfBlob = await html2pdf()
-            .set({
-              margin: [8, 8, 8, 8],
-              filename: 'earnings-statement.pdf',
-              image: { type: 'jpeg', quality: 0.95 },
-              html2canvas: {
-                scale: 2,
-                useCORS: true,
-                logging: false,
-                scrollX: 0,
-                scrollY: 0,
-                width: 800,
-                windowWidth: 800
-              },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            })
-            .from(iframeDoc.body)
-            .outputPdf('blob');
+          // Generate PDF directly using jsPDF (no html2canvas - much more reliable)
+          const pdfBlob = await generatePaystubPDF(
+            driver, earnings, selectedTripIds, netPay,
+            totalDriverCut, totalCashCollected, totalExpenses, totalRevenue,
+            periodStart, periodEnd, payDate, stubNumber, checkNumber,
+            deductions, bonuses, totalDeductions, totalBonuses,
+            totalBrokerFee, totalLocalFee, totalCleanGross, avgEarningsPerTrip
+          );
 
           // Convert PDF to base64
           const base64Pdf = await blobToBase64(pdfBlob);
-
-          // Remove iframe
-          document.body.removeChild(iframe);
 
           // Get trip numbers for email body
           const selectedTrips = selectedTripIds.map(id => appData.trips.find(t => t.id === id)).filter(t => t);
