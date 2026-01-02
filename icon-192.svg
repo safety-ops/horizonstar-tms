@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a1014"/>
+      <stop offset="100%" style="stop-color:#050a0e"/>
+    </linearGradient>
+    <linearGradient id="truckGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#22c55e"/>
+      <stop offset="100%" style="stop-color:#16a34a"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="192" height="192" rx="32" fill="url(#bgGrad)"/>
+  <!-- Truck body -->
+  <rect x="30" y="70" width="90" height="50" rx="6" fill="url(#truckGrad)"/>
+  <!-- Truck cab -->
+  <path d="M120 70 L120 120 L155 120 L155 90 L140 70 Z" fill="url(#truckGrad)"/>
+  <!-- Window -->
+  <rect x="125" y="78" width="22" height="18" rx="3" fill="#050a0e" opacity="0.6"/>
+  <!-- Wheels -->
+  <circle cx="55" cy="125" r="15" fill="#1a1a1a"/>
+  <circle cx="55" cy="125" r="8" fill="#333"/>
+  <circle cx="140" cy="125" r="15" fill="#1a1a1a"/>
+  <circle cx="140" cy="125" r="8" fill="#333"/>
+  <!-- Star accent -->
+  <polygon points="96,35 99,44 108,44 101,50 104,59 96,54 88,59 91,50 84,44 93,44" fill="#22c55e"/>
+</svg>

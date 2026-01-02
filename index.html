@@ -8,6 +8,7 @@
   <!-- PWA Support -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#22c55e">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Horizon Star TMS">
@@ -22751,16 +22752,32 @@ function jsonResponse(data, status = 200) {
     function initLiveMap() {
       const container = document.getElementById('liveMapContainer');
       if (!container || !window.L) return;
-      
+
+      // Ensure container has dimensions before initializing
+      if (container.offsetWidth === 0 || container.offsetHeight === 0) {
+        // Retry after a short delay if container not ready
+        setTimeout(initLiveMap, 100);
+        return;
+      }
+
       // Clear existing map
       if (liveMapInstance) {
-        liveMapInstance.remove();
+        try {
+          liveMapInstance.remove();
+        } catch (e) {
+          // Ignore removal errors
+        }
         liveMapInstance = null;
       }
       liveMapMarkers = {};
-      
+
       // Initialize map centered on US
-      liveMapInstance = L.map('liveMapContainer').setView([39.8283, -98.5795], 4);
+      try {
+        liveMapInstance = L.map('liveMapContainer').setView([39.8283, -98.5795], 4);
+      } catch (e) {
+        console.warn('Leaflet map init error:', e);
+        return;
+      }
       
       // Add tile layer (OpenStreetMap)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

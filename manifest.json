@@ -1,0 +1,18 @@
+{
+  "name": "Horizon Star TMS",
+  "short_name": "HS TMS",
+  "description": "Transportation Management System for fleet tracking, trip planning, and driver payroll",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#050a0e",
+  "theme_color": "#22c55e",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
