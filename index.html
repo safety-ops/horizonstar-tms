@@ -10381,7 +10381,7 @@
       
       // Redirect after 2.5 seconds
       setTimeout(() => {
-        window.location.href = 'app.html';
+        window.location.href = 'index.html';
       }, 2500);
     }
 
@@ -25685,7 +25685,7 @@ function jsonResponse(data, status = 200) {
         const lockStatus = isAccountLocked(email.toLowerCase());
         if (lockStatus.locked) {
           alert(`Account locked. Try again in ${lockStatus.remainingMinutes} minutes.`);
-          window.location.href = 'app.html';
+          window.location.href = 'index.html';
           return false;
         }
         
@@ -25694,7 +25694,7 @@ function jsonResponse(data, status = 200) {
           if (users.length === 0) {
             recordLoginAttempt(email.toLowerCase(), false);
             alert('User not found');
-            window.location.href = 'app.html';
+            window.location.href = 'index.html';
             return false;
           }
           
@@ -25703,7 +25703,7 @@ function jsonResponse(data, status = 200) {
           // Check if user is active
           if (user.is_active === false) {
             alert('Account deactivated. Contact administrator.');
-            window.location.href = 'app.html';
+            window.location.href = 'index.html';
             return false;
           }
           
@@ -25719,7 +25719,7 @@ function jsonResponse(data, status = 200) {
             } else {
               alert('Invalid password');
             }
-            window.location.href = 'app.html';
+            window.location.href = 'index.html';
             return false;
           }
           
@@ -25740,7 +25740,7 @@ function jsonResponse(data, status = 200) {
           return true;
         } catch (e) {
           alert('Login error: ' + e.message);
-          window.location.href = 'app.html';
+          window.location.href = 'index.html';
           return false;
         }
       }
@@ -25756,7 +25756,7 @@ function jsonResponse(data, status = 200) {
           const existing = await dbFetch('users', { filter: { email: 'eq.' + email.toLowerCase() } });
           if (existing.length > 0) {
             alert('Email already registered');
-            window.location.href = 'app.html';
+            window.location.href = 'index.html';
             return false;
           }
           
@@ -25787,7 +25787,7 @@ function jsonResponse(data, status = 200) {
           return true;
         } catch (e) {
           alert('Signup error: ' + e.message);
-          window.location.href = 'app.html';
+          window.location.href = 'index.html';
           return false;
         }
       }
