@@ -20027,16 +20027,19 @@ ${rateText}`
           iframeDoc.write(paystubHTML);
           iframeDoc.close();
 
+          // Reset any default margins and set explicit width on body
+          iframeDoc.body.style.cssText = 'margin:0;padding:0;width:800px;';
+
           // Wait for iframe content to fully render
           await new Promise(resolve => setTimeout(resolve, 800));
 
-          // Generate PDF from iframe body
+          // Generate PDF from iframe body with proper capture settings
           const pdfBlob = await html2pdf()
             .set({
               margin: 5,
               filename: 'earnings-statement.pdf',
               image: { type: 'jpeg', quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 800 },
+              html2canvas: { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0, width: 800 },
               jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             })
             .from(iframeDoc.body)
