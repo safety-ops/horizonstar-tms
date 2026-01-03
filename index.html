@@ -8022,6 +8022,7 @@
         variable_costs: 'Variable Costs',
         financial: 'Financial Analysis',
         profitability: 'Profitability',
+        trip_profitability: 'Trip Profitability',
         executive_dashboard: 'Executive Dashboard',
         maintenance: 'Maintenance',
         claims: 'Damage Claims',
@@ -10668,6 +10669,7 @@
       
       // FINANCIALS section - Restricted to ADMIN and MANAGER only
       { id: 'financials', labelKey: 'financials', icon: 'financials', restricted: true, section: 'FINANCIALS' },
+      { id: 'trip_profitability', labelKey: 'trip_profitability', icon: 'profitability', restricted: true, section: 'FINANCIALS' },
       { id: 'payroll', labelKey: 'payroll', icon: 'payroll', restricted: true, section: 'FINANCIALS' },
       { id: 'fuel', labelKey: 'fuel', icon: 'fuel', restricted: true, section: 'FINANCIALS' },
       { id: 'ifta', labelKey: 'ifta', icon: 'ifta', restricted: true, section: 'FINANCIALS' },
@@ -10687,7 +10689,7 @@
     let expandedMenus = { financials: false };
     
     // Role-restricted pages (visible only to ADMIN and MANAGER)
-    const restrictedPages = ['fuel', 'ifta', 'payroll', 'financials', 'reports', 'ai_advisor'];
+    const restrictedPages = ['fuel', 'ifta', 'payroll', 'financials', 'trip_profitability', 'reports', 'ai_advisor'];
 
     function getNavLabel(item) {
       // If Georgian and has custom Georgian label, use it
@@ -10963,6 +10965,7 @@
       else if (currentPage === 'financial') { finTab = 'overview'; renderConsolidatedFinancials(m); }
       else if (currentPage === 'profitability') { finTab = 'trips'; renderConsolidatedFinancials(m); }
       else if (currentPage === 'executive_dashboard') { finTab = 'overview'; renderConsolidatedFinancials(m); }
+      else if (currentPage === 'trip_profitability') renderTripProfitability(m);
       else if (currentPage === 'maintenance') renderMaintenance(m);
       else if (currentPage === 'tasks') renderTasks(m);
       else if (currentPage === 'settings') renderSettings(m);
@@ -20898,7 +20901,7 @@ ${rateText}`
       } else if (finTab === 'overview') {
         content = renderFinOverview(totalRevenue, cleanRevenue, grossProfit, operatingProfit, netProfit, profitMargin, totalCars, totalMiles, trips.length, monthlyFixedCosts, totalVariableCosts, totalDriverPay, totalBrokerFees, totalLocalFees, totalTripExpenses, profitPerCar, profitPerMile, revenuePerMile, avgRevenuePerCar);
       } else if (finTab === 'costs') {
-        content = renderFinCosts(fixedCosts, variableCosts, monthlyFixedCosts, totalVariableCosts, totalFuelFromRecords, totalMaintenanceCost, totalOtherVariableCosts);
+        content = renderFinCosts(fixedCosts, variableCosts, monthlyFixedCosts, totalVariableCosts, totalFuelFromRecords, totalMaintenanceCost, totalOtherVariableCosts, fuelRecords);
       } else if (finTab === 'trips') {
         content = renderFinByTrip(trips);
       } else if (finTab === 'drivers') {
@@ -20998,15 +21001,21 @@ ${rateText}`
       `;
     }
     
-    function renderFinCosts(fixedCosts, variableCosts, monthlyFixedCosts, totalVariableCosts, totalFuelFromRecords, totalMaintenanceCost, totalOtherVariableCosts) {
-      const fixedRows = fixedCosts.length === 0 
+    function renderFinCosts(fixedCosts, variableCosts, monthlyFixedCosts, totalVariableCosts, totalFuelFromRecords, totalMaintenanceCost, totalOtherVariableCosts, fuelRecords = []) {
+      const fixedRows = fixedCosts.length === 0
         ? '<tr><td colspan="4" style="text-align:center;padding:20px;color:#64748b">No fixed costs yet</td></tr>'
         : fixedCosts.map(fc => `<tr><td><span class="badge badge-blue">${fc.category || 'OTHER'}</span></td><td>${fc.name}</td><td class="money">${formatMoney(fc.amount)}/mo</td><td><div class="actions"><button class="action-btn edit" onclick="openFixedCostModal(${fc.id})">Edit</button><button class="action-btn delete" onclick="deleteFixedCost(${fc.id})">Del</button></div></td></tr>`).join('');
-      
+
       const varRows = variableCosts.length === 0
         ? '<tr><td colspan="5" style="text-align:center;padding:20px;color:#64748b">No variable costs yet</td></tr>'
         : variableCosts.map(vc => `<tr><td>${vc.date ? formatDate(vc.date) : '-'}</td><td><span class="badge badge-purple">${vc.category || 'OTHER'}</span></td><td>${vc.name || vc.description || '-'}</td><td class="money">${formatMoney(vc.amount)}</td><td><div class="actions"><button class="action-btn edit" onclick="openVariableCostModal(${vc.id})">Edit</button><button class="action-btn delete" onclick="deleteVariableCost(${vc.id})">Del</button></div></td></tr>`).join('');
-      
+
+      // Fuel card stats
+      const fuelTxCount = fuelRecords.length;
+      const totalGallons = fuelRecords.reduce((s, f) => s + parseFloat(f.gallons || 0), 0);
+      const avgPerGallon = totalGallons > 0 ? totalFuelFromRecords / totalGallons : 0;
+      const avgPerTransaction = fuelTxCount > 0 ? totalFuelFromRecords / fuelTxCount : 0;
+
       return `
         <div class="stats-grid" style="margin-bottom:24px;">
           <div class="stat-card" style="border-left:4px solid #ef4444">
@@ -21026,7 +21035,38 @@ ${rateText}`
             <div class="value">${formatMoney(totalMaintenanceCost)}</div>
           </div>
         </div>
-        
+
+        <!-- Fuel Card Expenses Card -->
+        <div class="card" style="margin-bottom:24px;border-left:4px solid #dc2626">
+          <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+            <h3>⛽ Fuel Card Expenses</h3>
+            <div style="font-size:24px;font-weight:700;color:#dc2626">${formatMoney(totalFuelFromRecords)}</div>
+          </div>
+          <div style="padding:16px 20px;background:#fef2f2">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;">
+              <div style="text-align:center;padding:12px;background:white;border-radius:8px;">
+                <div style="font-size:11px;color:#64748b">Transactions</div>
+                <div style="font-size:18px;font-weight:700">${fuelTxCount}</div>
+              </div>
+              <div style="text-align:center;padding:12px;background:white;border-radius:8px;">
+                <div style="font-size:11px;color:#64748b">Total Gallons</div>
+                <div style="font-size:18px;font-weight:700">${totalGallons.toFixed(1)}</div>
+              </div>
+              <div style="text-align:center;padding:12px;background:white;border-radius:8px;">
+                <div style="font-size:11px;color:#64748b">Avg $/Gallon</div>
+                <div style="font-size:18px;font-weight:700">${formatMoney(avgPerGallon)}</div>
+              </div>
+              <div style="text-align:center;padding:12px;background:white;border-radius:8px;">
+                <div style="font-size:11px;color:#64748b">Avg per Fill</div>
+                <div style="font-size:18px;font-weight:700">${formatMoney(avgPerTransaction)}</div>
+              </div>
+            </div>
+            <div style="margin-top:12px;text-align:center;font-size:12px;color:#64748b">
+              Data from uploaded fuel card reports • <a href="#" onclick="navigateTo('fuel');return false" style="color:#dc2626">View Fuel Tracking →</a>
+            </div>
+          </div>
+        </div>
+
         <div class="card" style="margin-bottom:24px;">
           <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
             <h3>🏢 Fixed Costs (Monthly)</h3>
@@ -21253,6 +21293,564 @@ ${rateText}`
         </div>
       `;
     }
+
+    // ============ TRIP PROFITABILITY PAGE ============
+    let tripProfitFilter = { startDate: '', endDate: '', driver: 'all', truck: 'all', profitability: 'all', search: '' };
+    let tripProfitSort = { column: 'date', direction: 'desc' };
+    let selectedTripsForCompare = [];
+
+    function renderTripProfitability(c) {
+      const trips = appData.trips || [];
+      const drivers = appData.drivers || [];
+      const trucks = appData.trucks || [];
+
+      // Apply filters
+      let filteredTrips = [...trips];
+
+      if (tripProfitFilter.startDate) {
+        filteredTrips = filteredTrips.filter(t => t.trip_date >= tripProfitFilter.startDate);
+      }
+      if (tripProfitFilter.endDate) {
+        filteredTrips = filteredTrips.filter(t => t.trip_date <= tripProfitFilter.endDate);
+      }
+      if (tripProfitFilter.driver !== 'all') {
+        filteredTrips = filteredTrips.filter(t => t.driver_id === parseInt(tripProfitFilter.driver));
+      }
+      if (tripProfitFilter.truck !== 'all') {
+        filteredTrips = filteredTrips.filter(t => t.truck_id === parseInt(tripProfitFilter.truck));
+      }
+      if (tripProfitFilter.search) {
+        const searchLower = tripProfitFilter.search.toLowerCase();
+        filteredTrips = filteredTrips.filter(t => (t.trip_number && t.trip_number.toLowerCase().includes(searchLower)));
+      }
+
+      // Calculate financials for all filtered trips
+      const tripData = filteredTrips.map(t => {
+        const fin = getTripFin(t.id);
+        const driver = drivers.find(d => d.id === t.driver_id);
+        const truck = trucks.find(tr => tr.id === t.truck_id);
+        const miles = parseFloat(t.miles || 0);
+        const margin = fin.loadRevenue > 0 ? (fin.netProfit / fin.loadRevenue * 100) : 0;
+        const rpm = miles > 0 ? fin.loadRevenue / miles : 0;
+        const ppm = miles > 0 ? fin.netProfit / miles : 0;
+        return { trip: t, fin, driver, truck, miles, margin, rpm, ppm, isProfitable: fin.netProfit >= 0 };
+      });
+
+      // Apply profitability filter
+      let displayData = tripData;
+      if (tripProfitFilter.profitability === 'profitable') {
+        displayData = tripData.filter(d => d.isProfitable);
+      } else if (tripProfitFilter.profitability === 'unprofitable') {
+        displayData = tripData.filter(d => !d.isProfitable);
+      }
+
+      // Sort data
+      displayData.sort((a, b) => {
+        let aVal, bVal;
+        switch(tripProfitSort.column) {
+          case 'date': aVal = new Date(a.trip.trip_date || 0); bVal = new Date(b.trip.trip_date || 0); break;
+          case 'trip': aVal = a.trip.trip_number || ''; bVal = b.trip.trip_number || ''; break;
+          case 'driver': aVal = a.driver ? a.driver.last_name : ''; bVal = b.driver ? b.driver.last_name : ''; break;
+          case 'truck': aVal = a.truck ? a.truck.truck_number : 0; bVal = b.truck ? b.truck.truck_number : 0; break;
+          case 'revenue': aVal = a.fin.loadRevenue; bVal = b.fin.loadRevenue; break;
+          case 'profit': aVal = a.fin.netProfit; bVal = b.fin.netProfit; break;
+          case 'margin': aVal = a.margin; bVal = b.margin; break;
+          case 'rpm': aVal = a.rpm; bVal = b.rpm; break;
+          default: aVal = 0; bVal = 0;
+        }
+        if (aVal < bVal) return tripProfitSort.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return tripProfitSort.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+
+      // Calculate summary stats
+      const totalRevenue = displayData.reduce((s, d) => s + d.fin.loadRevenue, 0);
+      const totalProfit = displayData.reduce((s, d) => s + d.fin.netProfit, 0);
+      const totalMiles = displayData.reduce((s, d) => s + d.miles, 0);
+      const avgMargin = totalRevenue > 0 ? (totalProfit / totalRevenue * 100) : 0;
+      const profitableCount = displayData.filter(d => d.isProfitable).length;
+
+      // Build driver and truck options
+      const driverOptions = drivers.map(d => '<option value="' + d.id + '"' + (tripProfitFilter.driver == d.id ? ' selected' : '') + '>' + d.first_name + ' ' + d.last_name + '</option>').join('');
+      const truckOptions = trucks.map(t => '<option value="' + t.id + '"' + (tripProfitFilter.truck == t.id ? ' selected' : '') + '>#' + t.truck_number + '</option>').join('');
+
+      // Top/Bottom performers
+      const sortedByProfit = [...displayData].sort((a, b) => b.fin.netProfit - a.fin.netProfit);
+      const top5 = sortedByProfit.slice(0, 5);
+      const bottom5 = sortedByProfit.slice(-5).reverse();
+
+      c.innerHTML = `
+        <div class="header">
+          <h2>📊 Trip Profitability Analysis</h2>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-secondary" onclick="exportTripProfitability()">📥 Export CSV</button>
+            ${selectedTripsForCompare.length >= 2 ? '<button class="btn btn-primary" onclick="showTripComparison()">⚖️ Compare Selected (' + selectedTripsForCompare.length + ')</button>' : ''}
+          </div>
+        </div>
+
+        <!-- Date Range & Filters -->
+        <div style="background:#f8fafc;padding:16px;border-radius:8px;margin-bottom:20px">
+          <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+            <div style="display:flex;align-items:center;gap:8px">
+              <label style="font-weight:600;color:#475569">From:</label>
+              <input type="date" value="${tripProfitFilter.startDate}" onchange="tripProfitFilter.startDate=this.value;renderTripProfitability(document.getElementById('main-content'))" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px">
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <label style="font-weight:600;color:#475569">To:</label>
+              <input type="date" value="${tripProfitFilter.endDate}" onchange="tripProfitFilter.endDate=this.value;renderTripProfitability(document.getElementById('main-content'))" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px">
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <label style="font-weight:600;color:#475569">Driver:</label>
+              <select onchange="tripProfitFilter.driver=this.value;renderTripProfitability(document.getElementById('main-content'))" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px">
+                <option value="all"${tripProfitFilter.driver === 'all' ? ' selected' : ''}>All Drivers</option>
+                ${driverOptions}
+              </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <label style="font-weight:600;color:#475569">Truck:</label>
+              <select onchange="tripProfitFilter.truck=this.value;renderTripProfitability(document.getElementById('main-content'))" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px">
+                <option value="all"${tripProfitFilter.truck === 'all' ? ' selected' : ''}>All Trucks</option>
+                ${truckOptions}
+              </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <label style="font-weight:600;color:#475569">Status:</label>
+              <select onchange="tripProfitFilter.profitability=this.value;renderTripProfitability(document.getElementById('main-content'))" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px">
+                <option value="all"${tripProfitFilter.profitability === 'all' ? ' selected' : ''}>All Trips</option>
+                <option value="profitable"${tripProfitFilter.profitability === 'profitable' ? ' selected' : ''}>Profitable Only</option>
+                <option value="unprofitable"${tripProfitFilter.profitability === 'unprofitable' ? ' selected' : ''}>Unprofitable Only</option>
+              </select>
+            </div>
+            <button class="btn btn-secondary" style="padding:8px 16px" onclick="tripProfitFilter={startDate:'',endDate:'',driver:'all',truck:'all',profitability:'all',search:''};selectedTripsForCompare=[];renderTripProfitability(document.getElementById('main-content'))">Clear Filters</button>
+          </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="stats-grid" style="margin-bottom:24px">
+          <div class="stat-card" style="border-left:4px solid #22c55e">
+            <div class="label">Total Revenue</div>
+            <div class="value" style="color:#22c55e">${formatMoney(totalRevenue)}</div>
+            <div style="font-size:12px;color:#64748b;margin-top:4px">${displayData.length} trips</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid ${totalProfit >= 0 ? '#22c55e' : '#ef4444'}">
+            <div class="label">Net Profit</div>
+            <div class="value" style="color:${totalProfit >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(totalProfit)}</div>
+            <div style="font-size:12px;color:#64748b;margin-top:4px">${avgMargin.toFixed(1)}% margin</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Profitable Trips</div>
+            <div class="value" style="color:#22c55e">${profitableCount}/${displayData.length}</div>
+            <div style="font-size:12px;color:#64748b;margin-top:4px">${(displayData.length > 0 ? (profitableCount / displayData.length * 100) : 0).toFixed(0)}% success rate</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Avg Profit/Mile</div>
+            <div class="value">${formatMoney(totalMiles > 0 ? totalProfit / totalMiles : 0)}</div>
+            <div style="font-size:12px;color:#64748b;margin-top:4px">${totalMiles.toLocaleString()} total miles</div>
+          </div>
+        </div>
+
+        <!-- Best/Worst Performers -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+          <div class="card" style="border-left:4px solid #22c55e">
+            <div class="card-header"><h3>Top 5 Most Profitable</h3></div>
+            <div style="padding:12px">
+              ${top5.length === 0 ? '<div style="text-align:center;color:#64748b;padding:20px">No data</div>' : top5.map(d => '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0"><span style="font-weight:600">' + d.trip.trip_number + '</span><span style="color:#22c55e;font-weight:700">' + formatMoney(d.fin.netProfit) + ' (' + d.margin.toFixed(1) + '%)</span></div>').join('')}
+            </div>
+          </div>
+          <div class="card" style="border-left:4px solid #ef4444">
+            <div class="card-header"><h3>Bottom 5 Performers</h3></div>
+            <div style="padding:12px">
+              ${bottom5.length === 0 ? '<div style="text-align:center;color:#64748b;padding:20px">No data</div>' : bottom5.map(d => '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0"><span style="font-weight:600">' + d.trip.trip_number + '</span><span style="color:' + (d.fin.netProfit >= 0 ? '#f59e0b' : '#ef4444') + ';font-weight:700">' + formatMoney(d.fin.netProfit) + ' (' + d.margin.toFixed(1) + '%)</span></div>').join('')}
+            </div>
+          </div>
+        </div>
+
+        <!-- Trips Table -->
+        <div class="card">
+          <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+            <h3>All Trips (${displayData.length})</h3>
+            <span style="font-size:12px;color:#64748b">Select trips to compare | Click headers to sort</span>
+          </div>
+          <div class="table-wrapper" style="max-height:500px;overflow-y:auto">
+            <table id="tripProfitTable">
+              <thead style="position:sticky;top:0;z-index:5;background:var(--card-bg)">
+                <tr>
+                  <th style="width:40px">Compare</th>
+                  <th onclick="sortTripProfitTable('date')" style="cursor:pointer">Date ${tripProfitSort.column === 'date' ? (tripProfitSort.direction === 'asc' ? '↑' : '↓') : '↕'}</th>
+                  <th onclick="sortTripProfitTable('trip')" style="cursor:pointer">Trip # ${tripProfitSort.column === 'trip' ? (tripProfitSort.direction === 'asc' ? '↑' : '↓') : '↕'}</th>
+                  <th onclick="sortTripProfitTable('driver')" style="cursor:pointer">Driver ${tripProfitSort.column === 'driver' ? (tripProfitSort.direction === 'asc' ? '↑' : '↓') : '↕'}</th>
+                  <th onclick="sortTripProfitTable('truck')" style="cursor:pointer">Truck ${tripProfitSort.column === 'truck' ? (tripProfitSort.direction === 'asc' ? '↑' : '↓') : '↕'}</th>
+                  <th onclick="sortTripProfitTable('revenue')" style="cursor:pointer">Revenue ${tripProfitSort.column === 'revenue' ? (tripProfitSort.direction === 'asc' ? '↑' : '↓') : '↕'}</th>
+                  <th>Broker Fees</th>
+                  <th>Driver Pay</th>
+                  <th>Expenses</th>
+                  <th onclick="sortTripProfitTable('profit')" style="cursor:pointer">Net Profit ${tripProfitSort.column === 'profit' ? (tripProfitSort.direction === 'asc' ? '↑' : '↓') : '↕'}</th>
+                  <th onclick="sortTripProfitTable('margin')" style="cursor:pointer">Margin % ${tripProfitSort.column === 'margin' ? (tripProfitSort.direction === 'asc' ? '↑' : '↓') : '↕'}</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${displayData.length === 0 ? '<tr><td colspan="12" style="text-align:center;padding:40px;color:#64748b">No trips match the selected filters</td></tr>' :
+                displayData.map(d => {
+                  const isSelected = selectedTripsForCompare.includes(d.trip.id);
+                  return '<tr style="' + (isSelected ? 'background:var(--primary-light)' : '') + '">' +
+                    '<td><input type="checkbox" ' + (isSelected ? 'checked' : '') + ' onchange="toggleTripCompare(' + d.trip.id + ')" ' + (selectedTripsForCompare.length >= 3 && !isSelected ? 'disabled title="Max 3 trips"' : '') + '></td>' +
+                    '<td>' + formatDate(d.trip.trip_date) + '</td>' +
+                    '<td><strong>' + d.trip.trip_number + '</strong></td>' +
+                    '<td>' + (d.driver ? d.driver.first_name + ' ' + d.driver.last_name : '-') + '</td>' +
+                    '<td>' + (d.truck ? '#' + d.truck.truck_number : '-') + '</td>' +
+                    '<td class="money" style="color:#22c55e">' + formatMoney(d.fin.loadRevenue) + '</td>' +
+                    '<td class="money" style="color:#ef4444">' + formatMoney(d.fin.brokerFee) + '</td>' +
+                    '<td class="money" style="color:#ef4444">' + formatMoney(d.fin.driverCut) + '</td>' +
+                    '<td class="money" style="color:#ef4444">' + formatMoney(d.fin.totalExpenses) + '</td>' +
+                    '<td class="money" style="font-weight:700;color:' + (d.isProfitable ? '#22c55e' : '#ef4444') + '">' + formatMoney(d.fin.netProfit) + '</td>' +
+                    '<td style="color:' + (d.margin >= 20 ? '#22c55e' : d.margin >= 0 ? '#f59e0b' : '#ef4444') + '">' + d.margin.toFixed(1) + '%</td>' +
+                    '<td><button class="action-btn" onclick="showTripProfitDetailModal(' + d.trip.id + ')">Details</button></td>' +
+                  '</tr>';
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function sortTripProfitTable(column) {
+      if (tripProfitSort.column === column) {
+        tripProfitSort.direction = tripProfitSort.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        tripProfitSort.column = column;
+        tripProfitSort.direction = 'desc';
+      }
+      renderTripProfitability(document.getElementById('main-content'));
+    }
+
+    function toggleTripCompare(tripId) {
+      const idx = selectedTripsForCompare.indexOf(tripId);
+      if (idx > -1) {
+        selectedTripsForCompare.splice(idx, 1);
+      } else if (selectedTripsForCompare.length < 3) {
+        selectedTripsForCompare.push(tripId);
+      }
+      renderTripProfitability(document.getElementById('main-content'));
+    }
+
+    function showTripComparison() {
+      if (selectedTripsForCompare.length < 2) {
+        showToast('Select at least 2 trips to compare', 'warning');
+        return;
+      }
+
+      const trips = selectedTripsForCompare.map(id => {
+        const trip = appData.trips.find(t => t.id === id);
+        const fin = getTripFin(id);
+        const driver = appData.drivers.find(d => d.id === trip.driver_id);
+        const truck = appData.trucks.find(t => t.id === trip.truck_id);
+        const miles = parseFloat(trip.miles || 0);
+        return { trip, fin, driver, truck, miles };
+      });
+
+      const avgRevenue = trips.reduce((s, t) => s + t.fin.loadRevenue, 0) / trips.length;
+      const avgProfit = trips.reduce((s, t) => s + t.fin.netProfit, 0) / trips.length;
+      const avgMargin = trips.reduce((s, t) => s + (t.fin.loadRevenue > 0 ? t.fin.netProfit / t.fin.loadRevenue * 100 : 0), 0) / trips.length;
+
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.onclick = e => { if (e.target === modal) modal.remove(); };
+      modal.innerHTML = `
+        <div class="modal" style="max-width:900px;max-height:90vh;overflow-y:auto">
+          <div class="modal-header">
+            <h3>Trip Comparison</h3>
+            <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+          </div>
+          <div class="modal-body" style="padding:20px">
+            <div style="display:grid;grid-template-columns:repeat(${trips.length}, 1fr);gap:16px;margin-bottom:24px">
+              ${trips.map(t => `
+                <div class="card" style="border-top:4px solid ${t.fin.netProfit >= 0 ? '#22c55e' : '#ef4444'}">
+                  <div class="card-header"><h3>${t.trip.trip_number}</h3></div>
+                  <div style="padding:16px">
+                    <div style="margin-bottom:12px"><strong>Date:</strong> ${formatDate(t.trip.trip_date)}</div>
+                    <div style="margin-bottom:12px"><strong>Driver:</strong> ${t.driver ? t.driver.first_name + ' ' + t.driver.last_name : '-'}</div>
+                    <div style="margin-bottom:12px"><strong>Truck:</strong> ${t.truck ? '#' + t.truck.truck_number : '-'}</div>
+                    <div style="margin-bottom:12px"><strong>Miles:</strong> ${t.miles.toLocaleString()}</div>
+                    <div style="margin-bottom:12px"><strong>Cars:</strong> ${t.fin.vehicleCount}</div>
+                    <hr style="margin:16px 0">
+                    <div style="margin-bottom:8px"><strong>Revenue:</strong> <span style="color:#22c55e">${formatMoney(t.fin.loadRevenue)}</span></div>
+                    <div style="margin-bottom:8px"><strong>Broker Fees:</strong> <span style="color:#ef4444">${formatMoney(t.fin.brokerFee)}</span></div>
+                    <div style="margin-bottom:8px"><strong>Driver Pay:</strong> <span style="color:#ef4444">${formatMoney(t.fin.driverCut)}</span></div>
+                    <div style="margin-bottom:8px"><strong>Expenses:</strong> <span style="color:#ef4444">${formatMoney(t.fin.totalExpenses)}</span></div>
+                    <hr style="margin:16px 0">
+                    <div style="font-size:18px;font-weight:700;color:${t.fin.netProfit >= 0 ? '#22c55e' : '#ef4444'}">
+                      Net Profit: ${formatMoney(t.fin.netProfit)}
+                    </div>
+                    <div style="margin-top:8px;color:#64748b">
+                      Margin: ${(t.fin.loadRevenue > 0 ? t.fin.netProfit / t.fin.loadRevenue * 100 : 0).toFixed(1)}%
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="card" style="background:#f8fafc">
+              <div class="card-header"><h3>Benchmark Comparison</h3></div>
+              <div style="padding:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+                <div style="text-align:center;padding:16px;background:var(--card-bg);border-radius:8px">
+                  <div style="font-size:12px;color:#64748b">Avg Revenue</div>
+                  <div style="font-size:20px;font-weight:700;color:#3b82f6">${formatMoney(avgRevenue)}</div>
+                </div>
+                <div style="text-align:center;padding:16px;background:var(--card-bg);border-radius:8px">
+                  <div style="font-size:12px;color:#64748b">Avg Profit</div>
+                  <div style="font-size:20px;font-weight:700;color:${avgProfit >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(avgProfit)}</div>
+                </div>
+                <div style="text-align:center;padding:16px;background:var(--card-bg);border-radius:8px">
+                  <div style="font-size:12px;color:#64748b">Avg Margin</div>
+                  <div style="font-size:20px;font-weight:700">${avgMargin.toFixed(1)}%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Close</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    function showTripProfitDetailModal(tripId) {
+      const trip = appData.trips.find(t => t.id === tripId);
+      const fin = getTripFin(tripId);
+      const driver = appData.drivers.find(d => d.id === trip.driver_id);
+      const truck = appData.trucks.find(t => t.id === trip.truck_id);
+      const orders = appData.orders.filter(o => o.trip_id === tripId);
+      const expenses = appData.expenses.filter(e => e.trip_id === tripId);
+      const miles = parseFloat(trip.miles || 0);
+      const margin = fin.loadRevenue > 0 ? (fin.netProfit / fin.loadRevenue * 100) : 0;
+
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.onclick = e => { if (e.target === modal) modal.remove(); };
+      modal.innerHTML = `
+        <div class="modal" style="max-width:800px;max-height:90vh;overflow-y:auto">
+          <div class="modal-header" style="background:${fin.netProfit >= 0 ? '#dcfce7' : '#fee2e2'}">
+            <h3>Trip Report: ${trip.trip_number}</h3>
+            <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+          </div>
+          <div class="modal-body" style="padding:20px">
+
+            <!-- Trip Summary -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;margin-bottom:24px">
+              <div style="text-align:center;padding:16px;background:#f8fafc;border-radius:8px">
+                <div style="font-size:12px;color:#64748b">Date</div>
+                <div style="font-size:16px;font-weight:600">${formatDate(trip.trip_date)}</div>
+              </div>
+              <div style="text-align:center;padding:16px;background:#f8fafc;border-radius:8px">
+                <div style="font-size:12px;color:#64748b">Driver</div>
+                <div style="font-size:16px;font-weight:600">${driver ? driver.first_name + ' ' + driver.last_name : '-'}</div>
+              </div>
+              <div style="text-align:center;padding:16px;background:#f8fafc;border-radius:8px">
+                <div style="font-size:12px;color:#64748b">Truck</div>
+                <div style="font-size:16px;font-weight:600">${truck ? '#' + truck.truck_number : '-'}</div>
+              </div>
+              <div style="text-align:center;padding:16px;background:#f8fafc;border-radius:8px">
+                <div style="font-size:12px;color:#64748b">Miles</div>
+                <div style="font-size:16px;font-weight:600">${miles.toLocaleString()}</div>
+              </div>
+            </div>
+
+            <!-- Financial Breakdown -->
+            <div class="card" style="margin-bottom:24px">
+              <div class="card-header"><h3>Financial Breakdown</h3></div>
+              <div style="padding:20px">
+                <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0">
+                  <span>Gross Revenue (${fin.vehicleCount} vehicles)</span>
+                  <strong style="color:#22c55e">${formatMoney(fin.loadRevenue)}</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0">
+                  <span style="color:#ef4444">− Broker Fees</span>
+                  <span style="color:#ef4444">${formatMoney(fin.brokerFee)}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0">
+                  <span style="color:#ef4444">− Local Fees</span>
+                  <span style="color:#ef4444">${formatMoney(fin.localFees)}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:12px 0;background:#f0fdf4;margin:0 -20px;padding-left:20px;padding-right:20px">
+                  <strong>= Clean Revenue</strong>
+                  <strong style="color:#22c55e">${formatMoney(fin.cleanGross)}</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0">
+                  <span style="color:#ef4444">− Driver Pay (${trip.driver_cut_percent || 32}%)</span>
+                  <span style="color:#ef4444">${formatMoney(fin.driverCut)}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0">
+                  <span style="color:#ef4444">− Trip Expenses</span>
+                  <span style="color:#ef4444">${formatMoney(fin.totalExpenses)}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:16px 0;margin-top:8px;background:${fin.netProfit >= 0 ? '#dcfce7' : '#fee2e2'};margin:8px -20px -20px -20px;padding:16px 20px;border-radius:0 0 8px 8px">
+                  <strong style="font-size:18px">NET PROFIT</strong>
+                  <strong style="font-size:18px;color:${fin.netProfit >= 0 ? '#16a34a' : '#dc2626'}">${formatMoney(fin.netProfit)} (${margin.toFixed(1)}%)</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Vehicles/Orders -->
+            <div class="card" style="margin-bottom:24px">
+              <div class="card-header"><h3>Vehicles (${orders.length})</h3></div>
+              <div class="table-wrapper">
+                <table>
+                  <thead><tr><th>Order</th><th>Vehicle</th><th>Origin</th><th>Destination</th><th>Revenue</th><th>Broker Fee</th></tr></thead>
+                  <tbody>
+                    ${orders.length === 0 ? '<tr><td colspan="6" style="text-align:center;padding:20px;color:#64748b">No orders</td></tr>' :
+                    orders.map(o => `
+                      <tr>
+                        <td>${o.order_number || '-'}</td>
+                        <td>${o.vehicle_year || ''} ${o.vehicle_make || ''} ${o.vehicle_model || ''}</td>
+                        <td>${o.origin || '-'}</td>
+                        <td>${o.destination || '-'}</td>
+                        <td class="money">${formatMoney(o.revenue)}</td>
+                        <td class="money" style="color:#ef4444">${formatMoney(o.broker_fee)}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Trip Expenses -->
+            <div class="card">
+              <div class="card-header"><h3>Trip Expenses (${expenses.length})</h3></div>
+              <div class="table-wrapper">
+                <table>
+                  <thead><tr><th>Category</th><th>Description</th><th>Amount</th></tr></thead>
+                  <tbody>
+                    ${expenses.length === 0 ? '<tr><td colspan="3" style="text-align:center;padding:20px;color:#64748b">No expenses recorded</td></tr>' :
+                    expenses.map(e => `
+                      <tr>
+                        <td><span class="badge badge-blue">${e.category || 'OTHER'}</span></td>
+                        <td>${e.description || '-'}</td>
+                        <td class="money">${formatMoney(e.amount)}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+          <div class="modal-footer" style="display:flex;gap:8px">
+            <button class="btn btn-secondary" onclick="exportSingleTripReport(${tripId})">Export Report</button>
+            <button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove()">Close</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    function exportTripProfitability() {
+      const trips = appData.trips || [];
+      if (trips.length === 0) {
+        showToast('No trips to export', 'error');
+        return;
+      }
+
+      const headers = ['Trip #', 'Date', 'Driver', 'Truck', 'Miles', 'Cars', 'Revenue', 'Broker Fees', 'Local Fees', 'Driver Pay', 'Expenses', 'Net Profit', 'Margin %'];
+
+      const rows = trips.map(t => {
+        const fin = getTripFin(t.id);
+        const driver = appData.drivers.find(d => d.id === t.driver_id);
+        const truck = appData.trucks.find(tr => tr.id === t.truck_id);
+        const miles = parseFloat(t.miles || 0);
+        const margin = fin.loadRevenue > 0 ? (fin.netProfit / fin.loadRevenue * 100) : 0;
+
+        return [
+          t.trip_number || '',
+          t.trip_date || '',
+          driver ? driver.first_name + ' ' + driver.last_name : '',
+          truck ? truck.truck_number : '',
+          miles,
+          fin.vehicleCount,
+          fin.loadRevenue.toFixed(2),
+          fin.brokerFee.toFixed(2),
+          fin.localFees.toFixed(2),
+          fin.driverCut.toFixed(2),
+          fin.totalExpenses.toFixed(2),
+          fin.netProfit.toFixed(2),
+          margin.toFixed(1)
+        ].map(val => '"' + val + '"').join(',');
+      });
+
+      const csv = [headers.join(','), ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.setAttribute('href', URL.createObjectURL(blob));
+      link.setAttribute('download', 'trip_profitability_' + new Date().toISOString().split('T')[0] + '.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Exported ' + trips.length + ' trips!');
+    }
+
+    function exportSingleTripReport(tripId) {
+      const trip = appData.trips.find(t => t.id === tripId);
+      const fin = getTripFin(tripId);
+      const driver = appData.drivers.find(d => d.id === trip.driver_id);
+      const truck = appData.trucks.find(t => t.id === trip.truck_id);
+      const orders = appData.orders.filter(o => o.trip_id === tripId);
+      const expenses = appData.expenses.filter(e => e.trip_id === tripId);
+
+      const lines = [
+        ['Trip Report: ' + trip.trip_number],
+        ['Generated: ' + new Date().toLocaleString()],
+        [],
+        ['TRIP DETAILS'],
+        ['Date', trip.trip_date],
+        ['Driver', driver ? driver.first_name + ' ' + driver.last_name : '-'],
+        ['Truck', truck ? '#' + truck.truck_number : '-'],
+        ['Miles', trip.miles || 0],
+        [],
+        ['FINANCIAL SUMMARY'],
+        ['Revenue', fin.loadRevenue.toFixed(2)],
+        ['Broker Fees', fin.brokerFee.toFixed(2)],
+        ['Local Fees', fin.localFees.toFixed(2)],
+        ['Driver Pay', fin.driverCut.toFixed(2)],
+        ['Trip Expenses', fin.totalExpenses.toFixed(2)],
+        ['Net Profit', fin.netProfit.toFixed(2)],
+        [],
+        ['VEHICLES'],
+        ['Order #', 'Vehicle', 'Origin', 'Destination', 'Revenue', 'Broker Fee']
+      ];
+
+      orders.forEach(o => {
+        lines.push([
+          o.order_number || '',
+          (o.vehicle_year || '') + ' ' + (o.vehicle_make || '') + ' ' + (o.vehicle_model || ''),
+          o.origin || '',
+          o.destination || '',
+          parseFloat(o.revenue || 0).toFixed(2),
+          parseFloat(o.broker_fee || 0).toFixed(2)
+        ]);
+      });
+
+      lines.push([]);
+      lines.push(['EXPENSES']);
+      lines.push(['Category', 'Description', 'Amount']);
+
+      expenses.forEach(e => {
+        lines.push([e.category || '', e.description || '', parseFloat(e.amount || 0).toFixed(2)]);
+      });
+
+      const csv = lines.map(row => row.map(val => '"' + val + '"').join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.setAttribute('href', URL.createObjectURL(blob));
+      link.setAttribute('download', 'trip_report_' + trip.trip_number + '_' + new Date().toISOString().split('T')[0] + '.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Trip report exported!');
+    }
+    // ============ END TRIP PROFITABILITY PAGE ============
+
     function renderFixedCosts(c) {
       const costs = appData.fixed_costs || [];
       const totalMonthly = costs.reduce((s, fc) => s + parseFloat(fc.amount || 0), 0);
