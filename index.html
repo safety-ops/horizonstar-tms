@@ -29799,7 +29799,7 @@ function jsonResponse(data, status = 200) {
 
     async function loadApplications() {
       try {
-        let query = supabase.from('driver_applications').select('*').order('submitted_at', { ascending: false });
+        let query = sb.from('driver_applications').select('*').order('submitted_at', { ascending: false });
 
         if (applicationsFilter !== 'all') {
           query = query.eq('status', applicationsFilter);
@@ -30118,7 +30118,7 @@ function jsonResponse(data, status = 200) {
 
     async function markUnderReview(id) {
       try {
-        const { error } = await supabase
+        const { error } = await sb
           .from('driver_applications')
           .update({ status: 'under_review' })
           .eq('id', id);
@@ -30137,7 +30137,7 @@ function jsonResponse(data, status = 200) {
       if (!confirm('Are you sure you want to approve this application?')) return;
 
       try {
-        const { error } = await supabase
+        const { error } = await sb
           .from('driver_applications')
           .update({
             status: 'approved',
@@ -30165,7 +30165,7 @@ function jsonResponse(data, status = 200) {
 
     async function rejectApplication(id, reason) {
       try {
-        const { error } = await supabase
+        const { error } = await sb
           .from('driver_applications')
           .update({
             status: 'rejected',
