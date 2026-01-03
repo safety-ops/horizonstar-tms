@@ -8579,15 +8579,15 @@
 
     // ============ BREAK-EVEN ANALYSIS ============
     function calculateBreakEven(options = {}) {
-      const { truckId, tripId, targetProfit = 0 } = options;
-      
+      const { truckId, tripId, targetProfit = 0, trips: filteredTrips } = options;
+
       // Get monthly fixed costs
       const monthlyFixedCosts = (appData.fixed_costs || []).reduce((s, fc) => s + parseFloat(fc.amount || 0), 0);
       const activeTrucks = appData.trucks.filter(t => t.status === 'ACTIVE').length || 1;
       const fixedCostPerTruck = monthlyFixedCosts / activeTrucks;
-      
-      // Calculate historical averages
-      const allTrips = appData.trips || [];
+
+      // Calculate historical averages - use filtered trips if provided
+      const allTrips = filteredTrips || appData.trips || [];
       let totalBrokerFeeRatio = 0, totalLocalFeeRatio = 0, totalDriverCutRatio = 0;
       let totalExpensePerTrip = 0, avgMilesPerTrip = 0, avgCarsPerTrip = 0;
       let validTrips = 0;
@@ -9191,12 +9191,22 @@
 
     // ============ RENDER EXECUTIVE FINANCIAL DASHBOARD ============
     function renderExecutiveDashboard(c) {
-      const efficiency = calculateEfficiencyMetrics();
-      const cashFlow = calculateCashFlow();
-      const incomeStatement = generateIncomeStatement();
+      // Filter by financialsYear
+      const yearStart = financialsYear + '-01-01';
+      const yearEnd = financialsYear + '-12-31';
+
+      const allTrips = appData.trips || [];
+      const yearTrips = allTrips.filter(t => {
+        if (!t.trip_date) return false;
+        return t.trip_date >= yearStart && t.trip_date <= yearEnd;
+      });
+
+      const efficiency = calculateEfficiencyMetrics(yearTrips);
+      const cashFlow = calculateCashFlow(yearStart, yearEnd);
+      const incomeStatement = generateIncomeStatement(yearStart, yearEnd);
       const forecast = generateForecast(6);
-      const tripVolume = calculateTripVolume(appData.trips);
-      const breakEven = calculateBreakEven();
+      const tripVolume = calculateTripVolume(yearTrips);
+      const breakEven = calculateBreakEven({ trips: yearTrips });
       
       // Health score color
       const healthColor = efficiency.overallHealthScore >= 80 ? '#22c55e' 
@@ -9210,17 +9220,31 @@
         : efficiency.overallHealthScore >= 50 ? 'D' 
         : 'F';
       
+      // Year selector options for Executive tab
+      const currentYear = new Date().getFullYear();
+      const yearOptions = [currentYear, currentYear - 1, currentYear - 2, currentYear - 3].map(y =>
+        '<option value="' + y + '"' + (financialsYear === y ? ' selected' : '') + '>' + y + '</option>'
+      ).join('');
+
       // Tabs for consolidated view
       const tabs = `
-        <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;">
-          <button class="btn btn-primary" style="padding:6px 12px;font-size:12px" onclick="finTab='executive';renderConsolidatedFinancials(document.getElementById('main-content'))">🏢 Executive</button>
-          <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='analysis';renderConsolidatedFinancials(document.getElementById('main-content'))">📈 Analysis</button>
-          <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='overview';renderConsolidatedFinancials(document.getElementById('main-content'))">📊 Overview</button>
-          <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='costs';renderConsolidatedFinancials(document.getElementById('main-content'))">💸 Costs</button>
-          <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='trips';renderConsolidatedFinancials(document.getElementById('main-content'))">🚛 By Trip</button>
-          <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='drivers';renderConsolidatedFinancials(document.getElementById('main-content'))">👤 By Driver</button>
-          <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='brokers';renderConsolidatedFinancials(document.getElementById('main-content'))">🤝 By Broker</button>
-          <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='lanes';renderConsolidatedFinancials(document.getElementById('main-content'))">🗺️ By Lane</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-primary" style="padding:6px 12px;font-size:12px" onclick="finTab='executive';renderConsolidatedFinancials(document.getElementById('main-content'))">🏢 Executive</button>
+            <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='analysis';renderConsolidatedFinancials(document.getElementById('main-content'))">📈 Analysis</button>
+            <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='overview';renderConsolidatedFinancials(document.getElementById('main-content'))">📊 Overview</button>
+            <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='costs';renderConsolidatedFinancials(document.getElementById('main-content'))">💸 Costs</button>
+            <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='trips';renderConsolidatedFinancials(document.getElementById('main-content'))">🚛 By Trip</button>
+            <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='drivers';renderConsolidatedFinancials(document.getElementById('main-content'))">👤 By Driver</button>
+            <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='brokers';renderConsolidatedFinancials(document.getElementById('main-content'))">🤝 By Broker</button>
+            <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='lanes';renderConsolidatedFinancials(document.getElementById('main-content'))">🗺️ By Lane</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;background:#f8fafc;padding:8px 12px;border-radius:6px">
+            <label style="font-weight:600;color:#475569;font-size:13px">Year:</label>
+            <select onchange="financialsYear=parseInt(this.value);renderConsolidatedFinancials(document.getElementById('main-content'))" style="padding:6px 12px;border:1px solid #e2e8f0;border-radius:6px;font-weight:600">
+              ${yearOptions}
+            </select>
+          </div>
         </div>
       `;
       
@@ -11069,7 +11093,8 @@
     function getDashboardDateRange() {
       const year = dashboardYear;
       if (dashboardPeriod === 'all') {
-        return { start: '2020-01-01', end: '2030-12-31' }; // Effectively all time
+        // Changed: 'all' now means full selected year only (not 2020-2030)
+        return { start: year + '-01-01', end: year + '-12-31' };
       }
       if (dashboardPeriod === 'year') {
         return { start: year + '-01-01', end: year + '-12-31' };
@@ -20815,23 +20840,55 @@ ${rateText}`
     // Fixed Costs Management
     // ============ CONSOLIDATED FINANCIALS ============
     let finTab = 'executive'; // executive, analysis, overview, costs, trips, drivers, brokers, lanes
-    
+    let financialsYear = new Date().getFullYear(); // Default to current year
+
     function renderConsolidatedFinancials(c) {
-      const trips = appData.trips || [];
-      const orders = appData.orders || [];
+      const allTrips = appData.trips || [];
+      const allOrders = appData.orders || [];
       const trucks = appData.trucks || [];
       const drivers = appData.drivers || [];
       const fixedCosts = appData.fixed_costs || [];
-      const variableCosts = appData.variable_costs || [];
-      const maintenance = appData.maintenance_records || [];
-      const fuelRecords = appData.fuel_transactions || [];
-      
-      // Calculate time period
-      const tripDates = trips.filter(t => t.trip_date).map(t => parseTripDate(t.trip_date)).filter(d => d !== null);
-      const minDate = tripDates.length > 0 ? new Date(Math.min(...tripDates)) : new Date();
-      const maxDate = tripDates.length > 0 ? new Date(Math.max(...tripDates)) : new Date();
-      const monthsInData = Math.max(1, Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24 * 30)));
-      
+      const allVariableCosts = appData.variable_costs || [];
+      const allMaintenance = appData.maintenance_records || [];
+      const allFuelRecords = appData.fuel_transactions || [];
+
+      // Filter by selected year
+      const yearStart = financialsYear + '-01-01';
+      const yearEnd = financialsYear + '-12-31';
+
+      const trips = allTrips.filter(t => {
+        if (!t.trip_date) return false;
+        return t.trip_date >= yearStart && t.trip_date <= yearEnd;
+      });
+
+      const orders = allOrders.filter(o => {
+        if (o.trip_id) {
+          const trip = allTrips.find(t => t.id === o.trip_id);
+          return trip && trip.trip_date >= yearStart && trip.trip_date <= yearEnd;
+        }
+        return o.created_at && o.created_at >= yearStart && o.created_at <= yearEnd;
+      });
+
+      const variableCosts = allVariableCosts.filter(vc => {
+        if (!vc.date) return false;
+        return vc.date >= yearStart && vc.date <= yearEnd;
+      });
+
+      const maintenance = allMaintenance.filter(m => {
+        if (!m.date) return false;
+        return m.date >= yearStart && m.date <= yearEnd;
+      });
+
+      const fuelRecords = allFuelRecords.filter(f => {
+        if (!f.transaction_date) return false;
+        return f.transaction_date >= yearStart && f.transaction_date <= yearEnd;
+      });
+
+      // Calculate months in selected year (always 12 for a full year, or partial if current year)
+      const now = new Date();
+      const isCurrentYear = financialsYear === now.getFullYear();
+      const monthsInData = isCurrentYear ? now.getMonth() + 1 : 12;
+
       // ═══ REVENUE & COSTS FROM TRIPS ═══
       let totalRevenue = 0, totalBrokerFees = 0, totalLocalFees = 0, totalDriverPay = 0, totalTripExpenses = 0;
       let tripMilesTotal = 0, totalCars = 0;
@@ -20848,12 +20905,10 @@ ${rateText}`
       });
 
       // Use fleet miles from Samsara for fleet-wide metrics, fall back to trip miles
-      const startDate = minDate.toISOString().split('T')[0];
-      const endDate = maxDate.toISOString().split('T')[0];
-      const fleetMilesResult = getFleetMiles(startDate, endDate);
+      const fleetMilesResult = getFleetMiles(yearStart, yearEnd);
       const totalMiles = fleetMilesResult.miles > 0 ? fleetMilesResult.miles : tripMilesTotal;
       const milesSource = fleetMilesResult.miles > 0 ? 'samsara' : 'trips';
-      
+
       // Fixed & Variable Costs
       const monthlyFixedCosts = fixedCosts.reduce((s, fc) => s + parseFloat(fc.amount || 0), 0);
       const totalFixedCosts = monthlyFixedCosts * monthsInData;
@@ -20875,17 +20930,31 @@ ${rateText}`
       const revenuePerMile = totalMiles > 0 ? totalRevenue / totalMiles : 0;
       const avgRevenuePerCar = totalCars > 0 ? totalRevenue / totalCars : 0;
       
+      // Year selector options
+      const currentYear = new Date().getFullYear();
+      const yearOptions = [currentYear, currentYear - 1, currentYear - 2, currentYear - 3].map(y =>
+        '<option value="' + y + '"' + (financialsYear === y ? ' selected' : '') + '>' + y + '</option>'
+      ).join('');
+
       // Tabs
       const tabs = `
-        <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;">
-          <button class="btn ${finTab === 'executive' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='executive';renderConsolidatedFinancials(document.getElementById('main-content'))">🏢 Executive</button>
-          <button class="btn ${finTab === 'analysis' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='analysis';renderConsolidatedFinancials(document.getElementById('main-content'))">📈 Analysis</button>
-          <button class="btn ${finTab === 'overview' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='overview';renderConsolidatedFinancials(document.getElementById('main-content'))">📊 Overview</button>
-          <button class="btn ${finTab === 'costs' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='costs';renderConsolidatedFinancials(document.getElementById('main-content'))">💸 Costs</button>
-          <button class="btn ${finTab === 'trips' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='trips';renderConsolidatedFinancials(document.getElementById('main-content'))">🚛 By Trip</button>
-          <button class="btn ${finTab === 'drivers' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='drivers';renderConsolidatedFinancials(document.getElementById('main-content'))">👤 By Driver</button>
-          <button class="btn ${finTab === 'brokers' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='brokers';renderConsolidatedFinancials(document.getElementById('main-content'))">🤝 By Broker</button>
-          <button class="btn ${finTab === 'lanes' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='lanes';renderConsolidatedFinancials(document.getElementById('main-content'))">🗺️ By Lane</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn ${finTab === 'executive' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='executive';renderConsolidatedFinancials(document.getElementById('main-content'))">🏢 Executive</button>
+            <button class="btn ${finTab === 'analysis' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='analysis';renderConsolidatedFinancials(document.getElementById('main-content'))">📈 Analysis</button>
+            <button class="btn ${finTab === 'overview' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='overview';renderConsolidatedFinancials(document.getElementById('main-content'))">📊 Overview</button>
+            <button class="btn ${finTab === 'costs' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='costs';renderConsolidatedFinancials(document.getElementById('main-content'))">💸 Costs</button>
+            <button class="btn ${finTab === 'trips' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='trips';renderConsolidatedFinancials(document.getElementById('main-content'))">🚛 By Trip</button>
+            <button class="btn ${finTab === 'drivers' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='drivers';renderConsolidatedFinancials(document.getElementById('main-content'))">👤 By Driver</button>
+            <button class="btn ${finTab === 'brokers' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='brokers';renderConsolidatedFinancials(document.getElementById('main-content'))">🤝 By Broker</button>
+            <button class="btn ${finTab === 'lanes' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='lanes';renderConsolidatedFinancials(document.getElementById('main-content'))">🗺️ By Lane</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;background:#f8fafc;padding:8px 12px;border-radius:6px">
+            <label style="font-weight:600;color:#475569;font-size:13px">Year:</label>
+            <select onchange="financialsYear=parseInt(this.value);renderConsolidatedFinancials(document.getElementById('main-content'))" style="padding:6px 12px;border:1px solid #e2e8f0;border-radius:6px;font-weight:600">
+              ${yearOptions}
+            </select>
+          </div>
         </div>
       `;
       
@@ -21295,7 +21364,9 @@ ${rateText}`
     }
 
     // ============ TRIP PROFITABILITY PAGE ============
-    let tripProfitFilter = { startDate: '', endDate: '', driver: 'all', truck: 'all', profitability: 'all', search: '' };
+    // Default Trip Profitability filter to current year
+    const currentYearForTripProfit = new Date().getFullYear();
+    let tripProfitFilter = { startDate: currentYearForTripProfit + '-01-01', endDate: currentYearForTripProfit + '-12-31', driver: 'all', truck: 'all', profitability: 'all', search: '' };
     let tripProfitSort = { column: 'date', direction: 'desc' };
     let selectedTripsForCompare = [];
 
@@ -22080,12 +22151,20 @@ ${rateText}`
       const months = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
       const numTrucks = appData.trucks.filter(t => t.status === 'ACTIVE').length || 1;
       const monthlyFixedCosts = (appData.fixed_costs || []).reduce((s, fc) => s + parseFloat(fc.amount || 0), 0);
-      
-      // ============ ALL-TIME CALCULATIONS FOR "AT A GLANCE" ============
+
+      // Filter by financialsYear
+      const yearStart = financialsYear + '-01-01';
+      const yearEnd = financialsYear + '-12-31';
+      const yearFilteredTrips = (appData.trips || []).filter(t => {
+        if (!t.trip_date) return false;
+        return t.trip_date >= yearStart && t.trip_date <= yearEnd;
+      });
+
+      // ============ YEAR CALCULATIONS FOR "AT A GLANCE" ============
       let allTimeRevenue = 0, allTimeBrokerFees = 0, allTimeLocalFees = 0, allTimeDriverCut = 0, allTimeExpenses = 0, allTimeMiles = 0, allTimeCars = 0;
       const allTimeFuelCosts = { FUEL: 0, TOLLS: 0, PERMITS: 0, PARKING: 0, MAINTENANCE: 0, OTHER: 0 };
-      
-      appData.trips.forEach(t => {
+
+      yearFilteredTrips.forEach(t => {
         const f = getTripFin(t.id);
         allTimeRevenue += f.loadRevenue;
         allTimeBrokerFees += f.brokerFee;
@@ -22102,15 +22181,15 @@ ${rateText}`
         });
       });
       
-      const allTimeTripCount = appData.trips.length;
+      const allTimeTripCount = yearFilteredTrips.length;
       const allTimeCleanGross = allTimeRevenue - allTimeBrokerFees - allTimeLocalFees;
       const allTimeDirectTripExpenses = allTimeBrokerFees + allTimeLocalFees + allTimeDriverCut + allTimeExpenses; // All trip costs
       const allTimeNetProfit = allTimeRevenue - allTimeDirectTripExpenses; // Revenue - All Trip Costs
       const allTimeTruckGross = allTimeCleanGross - allTimeDriverCut; // Keep for backward compatibility
-      
+
       // Calculate avg driver cut percentage
       let totalCutPercent = 0;
-      appData.trips.forEach(t => totalCutPercent += parseFloat(t.driver_cut_percent || 32));
+      yearFilteredTrips.forEach(t => totalCutPercent += parseFloat(t.driver_cut_percent || 32));
       const avgDriverCutPercent = allTimeTripCount > 0 ? totalCutPercent / allTimeTripCount : 32;
       
       // All-time metrics
