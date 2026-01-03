@@ -10056,6 +10056,7 @@
           </div>
           <div class="login-nav-links"></div>
           <div class="login-nav-buttons">
+            <button class="login-nav-btn" onclick="renderDriverApplication()" style="background:transparent;border:2px solid #22c55e;color:#22c55e;margin-right:12px">🚛 APPLY TO DRIVE</button>
             <button class="login-nav-btn login" onclick="renderLogin()">LOGIN</button>
           </div>
         </nav>
@@ -10139,6 +10140,972 @@
           ${footerBar}
         </div>
       `;
+    }
+
+    // ============ DRIVER APPLICATION FORM (FMCSA COMPLIANT) ============
+    let applicationPage = 1;
+    let applicationData = {
+      // Page 1
+      first_name: '', last_name: '', date_of_birth: '', ssn: '',
+      phone: '', email: '', address: '', city: '', state: '', zip: '',
+      lived_3_years: false, previous_addresses: [],
+      license_number: '', license_state: '', license_class: '',
+      license_expires: '', license_front_url: '', license_back_url: '',
+      endorsements: [], other_licenses_3_years: false, other_licenses_details: [],
+      medical_card_url: '', medical_expires: '',
+      accidents_3_years: false, accidents_details: [],
+      violations_3_years: false, violations_details: [],
+      denied_license: false, denied_license_details: '',
+      license_revoked: false, license_revoked_details: '',
+      employment_history: [{ employer_name: '', phone: '', fax: '', email: '', address: '', city: '', state: '', zip: '', position: '', date_from: '', date_to: '', reason_leaving: '', equipment_class: '', subject_fmcsr: false, dot_regulated: false }],
+      employment_gaps: '',
+      // Signatures
+      page1_signature: '', page1_date: '',
+      page2_signature: '', page2_date: '',
+      page3_signature: '', page3_date: '',
+      page4_signature: '', page4_date: '',
+      page5_signature: '', page5_date: '',
+      page6_signature: '', page6_date: '', page6_full_name: '',
+      page7_signature: '', page7_date: '', clearinghouse_registered: false,
+      page8_signature: '', page8_date: '',
+      // Drug/Alcohol
+      tested_positive: false, alcohol_concentration: false, refused_test: false, return_to_duty_docs: false
+    };
+    let signatureCanvas = null;
+    let signatureCtx = null;
+    let isDrawing = false;
+
+    function renderDriverApplication() {
+      applyTheme();
+
+      const pageNames = [
+        'Applicant Information',
+        'Fair Credit Reporting Act',
+        'Driver License Compliance',
+        'Drug & Alcohol Statement',
+        'Safety Performance History',
+        'PSP Disclosure',
+        'Clearinghouse Consent',
+        'MVR Release Consent'
+      ];
+
+      // Page tabs
+      const pageTabs = pageNames.map((name, i) => `
+        <div class="app-tab ${applicationPage === i + 1 ? 'active' : ''}" onclick="goToAppPage(${i + 1})" style="cursor:pointer;padding:8px 12px;font-size:12px;border-bottom:3px solid ${applicationPage === i + 1 ? '#22c55e' : 'transparent'};color:${applicationPage === i + 1 ? '#22c55e' : 'rgba(255,255,255,0.6)'};transition:all 0.2s">
+          Page ${i + 1}
+        </div>
+      `).join('');
+
+      // Get page content
+      let pageContent = '';
+      switch(applicationPage) {
+        case 1: pageContent = getApplicationPage1(); break;
+        case 2: pageContent = getApplicationPage2(); break;
+        case 3: pageContent = getApplicationPage3(); break;
+        case 4: pageContent = getApplicationPage4(); break;
+        case 5: pageContent = getApplicationPage5(); break;
+        case 6: pageContent = getApplicationPage6(); break;
+        case 7: pageContent = getApplicationPage7(); break;
+        case 8: pageContent = getApplicationPage8(); break;
+      }
+
+      document.getElementById('app').innerHTML = `
+        <div style="min-height:100vh;background:linear-gradient(135deg,#050a0e 0%,#0a1628 100%);padding:20px">
+          <nav class="login-nav">
+            <div class="login-nav-logo" onclick="renderLogin()" style="cursor:pointer">
+              <div class="login-nav-logo-icon">🚛</div>
+              <span>Horizon<span style="color:#22c55e">Star</span></span>
+            </div>
+            <div style="color:white;font-size:18px;font-weight:600">Application For Employment</div>
+            <div class="login-nav-buttons">
+              <button class="login-nav-btn login" onclick="renderLogin()">← BACK TO LOGIN</button>
+            </div>
+          </nav>
+
+          <div style="max-width:900px;margin:20px auto">
+            <!-- Company Header -->
+            <div style="text-align:center;margin-bottom:24px">
+              <div style="font-size:24px;font-weight:700;color:white">HORIZON STAR LLC</div>
+              <div style="color:rgba(255,255,255,0.6);font-size:14px">225 Lincoln Highway, Suite 205, Fairless Hills, PA 19030</div>
+            </div>
+
+            <!-- Page Tabs -->
+            <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:4px;margin-bottom:24px;background:rgba(255,255,255,0.05);padding:8px;border-radius:12px">
+              ${pageTabs}
+            </div>
+
+            <!-- Form Content -->
+            <div style="background:rgba(255,255,255,0.98);border-radius:16px;padding:32px;box-shadow:0 20px 40px rgba(0,0,0,0.3)">
+              ${pageContent}
+
+              <!-- Navigation Buttons -->
+              <div style="display:flex;justify-content:space-between;margin-top:32px;padding-top:24px;border-top:1px solid #e2e8f0">
+                ${applicationPage > 1 ? '<button class="btn btn-secondary" onclick="prevAppPage()">← Back</button>' : '<div></div>'}
+                ${applicationPage < 8
+                  ? '<button class="btn btn-primary" onclick="nextAppPage()">Next →</button>'
+                  : '<button class="btn btn-primary" onclick="submitApplication()" style="background:#22c55e">Submit Application</button>'
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Initialize signature canvas if on a page with signature
+      setTimeout(() => initSignatureCanvas(), 100);
+    }
+
+    function goToAppPage(page) {
+      saveCurrentPageData();
+      applicationPage = page;
+      renderDriverApplication();
+    }
+
+    function prevAppPage() {
+      saveCurrentPageData();
+      if (applicationPage > 1) applicationPage--;
+      renderDriverApplication();
+    }
+
+    function nextAppPage() {
+      saveCurrentPageData();
+      if (applicationPage < 8) applicationPage++;
+      renderDriverApplication();
+    }
+
+    function saveCurrentPageData() {
+      // Save form data from current page
+      const form = document.getElementById('app-form');
+      if (!form) return;
+
+      const formData = new FormData(form);
+      for (let [key, value] of formData.entries()) {
+        if (key.includes('[]')) {
+          // Handle arrays (endorsements)
+          const actualKey = key.replace('[]', '');
+          if (!applicationData[actualKey]) applicationData[actualKey] = [];
+          if (!applicationData[actualKey].includes(value)) applicationData[actualKey].push(value);
+        } else if (value === 'on') {
+          applicationData[key] = true;
+        } else {
+          applicationData[key] = value;
+        }
+      }
+
+      // Save signature if exists
+      if (signatureCanvas) {
+        const sigKey = 'page' + applicationPage + '_signature';
+        applicationData[sigKey] = signatureCanvas.toDataURL();
+      }
+    }
+
+    function getApplicationPage1() {
+      const stateOptions = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'].map(s => `<option value="${s}" ${applicationData.state === s ? 'selected' : ''}>${s}</option>`).join('');
+      const licenseStateOptions = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'].map(s => `<option value="${s}" ${applicationData.license_state === s ? 'selected' : ''}>${s}</option>`).join('');
+
+      return `
+        <form id="app-form">
+          <h2 style="color:#1e293b;margin-bottom:24px;font-size:24px">Applicant Information</h2>
+
+          <!-- Name -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+            <div class="form-group">
+              <label>First Name *</label>
+              <input type="text" name="first_name" value="${applicationData.first_name}" required>
+            </div>
+            <div class="form-group">
+              <label>Last Name *</label>
+              <input type="text" name="last_name" value="${applicationData.last_name}" required>
+            </div>
+          </div>
+
+          <!-- DOB & SSN -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+            <div class="form-group">
+              <label>Date of Birth *</label>
+              <input type="date" name="date_of_birth" value="${applicationData.date_of_birth}" required>
+            </div>
+            <div class="form-group">
+              <label>Social Security Number *</label>
+              <input type="text" name="ssn" value="${applicationData.ssn}" placeholder="XXX-XX-XXXX" required>
+            </div>
+          </div>
+
+          <!-- Phone & Email -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+            <div class="form-group">
+              <label>Phone *</label>
+              <input type="tel" name="phone" value="${applicationData.phone}" required>
+            </div>
+            <div class="form-group">
+              <label>Email *</label>
+              <input type="email" name="email" value="${applicationData.email}" required>
+            </div>
+          </div>
+
+          <!-- Address -->
+          <div class="form-group" style="margin-bottom:16px">
+            <label>Address *</label>
+            <input type="text" name="address" value="${applicationData.address}" placeholder="Street Address" required>
+          </div>
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:16px;margin-bottom:20px">
+            <div class="form-group">
+              <label>City *</label>
+              <input type="text" name="city" value="${applicationData.city}" required>
+            </div>
+            <div class="form-group">
+              <label>State *</label>
+              <select name="state" required>${stateOptions}</select>
+            </div>
+            <div class="form-group">
+              <label>Zip Code *</label>
+              <input type="text" name="zip" value="${applicationData.zip}" required>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:24px">
+            <label>Have you lived at this address for more than 3 years?</label>
+            <div style="display:flex;gap:16px;margin-top:8px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="lived_3_years" value="true" ${applicationData.lived_3_years ? 'checked' : ''}> Yes
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="lived_3_years" value="false" ${!applicationData.lived_3_years ? 'checked' : ''}> No
+              </label>
+            </div>
+          </div>
+
+          <hr style="border:none;border-top:2px solid #e2e8f0;margin:32px 0">
+
+          <!-- Driver's License Information -->
+          <h3 style="color:#1e293b;margin-bottom:16px">Driver's License Information</h3>
+          <p style="color:#64748b;font-size:13px;margin-bottom:16px">Include all licenses held for the past 3 years. Start with the most current.</p>
+
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:16px;margin-bottom:20px">
+            <div class="form-group">
+              <label>License Number *</label>
+              <input type="text" name="license_number" value="${applicationData.license_number}" required>
+            </div>
+            <div class="form-group">
+              <label>State *</label>
+              <select name="license_state" required>${licenseStateOptions}</select>
+            </div>
+            <div class="form-group">
+              <label>Class *</label>
+              <input type="text" name="license_class" value="${applicationData.license_class}" placeholder="A, B, C" required>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
+            <div class="form-group">
+              <label>Expires *</label>
+              <input type="date" name="license_expires" value="${applicationData.license_expires}" required>
+            </div>
+            <div class="form-group">
+              <label>Upload BACK of License</label>
+              <input type="file" name="license_back" accept="image/*,.pdf" onchange="handleFileUpload(this, 'license_back_url')">
+            </div>
+            <div class="form-group">
+              <label>Upload FRONT of License</label>
+              <input type="file" name="license_front" accept="image/*,.pdf" onchange="handleFileUpload(this, 'license_front_url')">
+            </div>
+          </div>
+
+          <!-- Endorsements -->
+          <div class="form-group" style="margin-bottom:20px">
+            <label>Endorsements</label>
+            <div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:8px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="checkbox" name="endorsements[]" value="H" ${applicationData.endorsements.includes('H') ? 'checked' : ''}> H - Placarded Hazmat
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="checkbox" name="endorsements[]" value="N" ${applicationData.endorsements.includes('N') ? 'checked' : ''}> N - Tank Vehicles
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="checkbox" name="endorsements[]" value="P" ${applicationData.endorsements.includes('P') ? 'checked' : ''}> P - Passengers
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="checkbox" name="endorsements[]" value="T" ${applicationData.endorsements.includes('T') ? 'checked' : ''}> T - Double/Triple Trailers
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="checkbox" name="endorsements[]" value="S" ${applicationData.endorsements.includes('S') ? 'checked' : ''}> S - School Bus
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="checkbox" name="endorsements[]" value="X" ${applicationData.endorsements.includes('X') ? 'checked' : ''}> X - Placarded Hazmat & Tank
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:24px">
+            <label>Have you held any other licenses in the past 3 years?</label>
+            <div style="display:flex;gap:16px;margin-top:8px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="other_licenses_3_years" value="true" ${applicationData.other_licenses_3_years ? 'checked' : ''}> Yes
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="other_licenses_3_years" value="false" ${!applicationData.other_licenses_3_years ? 'checked' : ''}> No
+              </label>
+            </div>
+          </div>
+
+          <hr style="border:none;border-top:2px solid #e2e8f0;margin:32px 0">
+
+          <!-- Medical Card -->
+          <h3 style="color:#1e293b;margin-bottom:16px">Medical Card</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+            <div class="form-group">
+              <label>Upload Copy</label>
+              <input type="file" name="medical_card" accept="image/*,.pdf" onchange="handleFileUpload(this, 'medical_card_url')">
+            </div>
+            <div class="form-group">
+              <label>Medical Certificate Expiration Date *</label>
+              <input type="date" name="medical_expires" value="${applicationData.medical_expires}" required>
+            </div>
+          </div>
+
+          <hr style="border:none;border-top:2px solid #e2e8f0;margin:32px 0">
+
+          <!-- Accidents/Crashes -->
+          <h3 style="color:#1e293b;margin-bottom:16px">Accidents/Crashes Previous 3 Years</h3>
+          <div class="form-group" style="margin-bottom:24px">
+            <label>Have you had any accidents/crashes in the last 3 years?</label>
+            <div style="display:flex;gap:16px;margin-top:8px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="accidents_3_years" value="true" ${applicationData.accidents_3_years ? 'checked' : ''}> Yes
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="accidents_3_years" value="false" ${!applicationData.accidents_3_years ? 'checked' : ''}> No
+              </label>
+            </div>
+          </div>
+
+          <!-- Moving Violations -->
+          <h3 style="color:#1e293b;margin-bottom:16px">Moving Traffic Violations Previous 3 Years</h3>
+          <div class="form-group" style="margin-bottom:24px">
+            <label>Have you had any traffic violations in the last 3 years?</label>
+            <div style="display:flex;gap:16px;margin-top:8px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="violations_3_years" value="true" ${applicationData.violations_3_years ? 'checked' : ''}> Yes
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="violations_3_years" value="false" ${!applicationData.violations_3_years ? 'checked' : ''}> No
+              </label>
+            </div>
+          </div>
+
+          <!-- Forfeitures -->
+          <h3 style="color:#1e293b;margin-bottom:16px">Forfeitures Previous 3 Years</h3>
+          <div class="form-group" style="margin-bottom:16px">
+            <label>A. Have you ever been denied a license, permit, or privilege to operate a motor vehicle?</label>
+            <div style="display:flex;gap:16px;margin-top:8px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="denied_license" value="true" ${applicationData.denied_license ? 'checked' : ''}> Yes
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="denied_license" value="false" ${!applicationData.denied_license ? 'checked' : ''}> No
+              </label>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:24px">
+            <label>B. Has any license, permit or privilege ever been revoked or suspended?</label>
+            <div style="display:flex;gap:16px;margin-top:8px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="license_revoked" value="true" ${applicationData.license_revoked ? 'checked' : ''}> Yes
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="license_revoked" value="false" ${!applicationData.license_revoked ? 'checked' : ''}> No
+              </label>
+            </div>
+          </div>
+
+          <hr style="border:none;border-top:2px solid #e2e8f0;margin:32px 0">
+
+          <!-- Employment Record -->
+          <h3 style="color:#1e293b;margin-bottom:16px">Employment Record Previous 10 Years</h3>
+          <p style="color:#64748b;font-size:13px;margin-bottom:16px">Any gaps in employment in excess of one (1) month must be explained. Start with the last or current position, including any military experience, and work backwards. You are required to list the complete mailing address, including street number, city, state, city, and complete all other information.</p>
+
+          <div id="employment-items">
+            ${applicationData.employment_history.map((emp, i) => getEmploymentItem(emp, i)).join('')}
+          </div>
+          <button type="button" class="btn btn-secondary" onclick="addEmploymentItem()" style="margin-bottom:24px">+ Add Employer</button>
+
+          <div class="form-group" style="margin-bottom:24px">
+            <label>Explain any gaps in employment that exceeds more than 1 month</label>
+            <textarea name="employment_gaps" rows="3" style="width:100%;padding:12px;border:1px solid #e2e8f0;border-radius:8px">${applicationData.employment_gaps}</textarea>
+          </div>
+
+          <hr style="border:none;border-top:2px solid #e2e8f0;margin:32px 0">
+
+          <!-- Certification -->
+          <h3 style="color:#1e293b;margin-bottom:16px">TO BE READ AND SIGNED BY APPLICANT</h3>
+          <div style="background:#f8fafc;padding:20px;border-radius:8px;margin-bottom:24px;font-size:13px;color:#475569;line-height:1.6">
+            <p>I authorize you to make investigations (including contacting current and prior employers) into my personal, employment, financial, medical history, and other related matters as may be necessary in arriving at an employment decision. I hereby release employers, schools, health care providers, and other persons from all liability in responding to inquiries and releasing information in connection with my application.</p>
+            <p style="margin-top:12px">In the event of employment, I understand that false or misleading information given in my application or interview(s) may result in discharge. I also understand that I am required to abide by all rules and regulations of the Company.</p>
+            <p style="margin-top:12px">I understand that the information I provide regarding my current and/or prior employers may be used, and those employer(s) will be contacted for the purpose of investigating my safety performance history as required by 49 CFR 391.23. I understand that I have the right to:</p>
+            <ul style="margin-top:8px;padding-left:20px">
+              <li>Review information provided by current/previous employers</li>
+              <li>Have errors in the information corrected by previous employers, and for those previous employers to resend the corrected information to the prospective employer; and</li>
+              <li>Have a rebuttal statement attached to the alleged erroneous information, if the previous employer(s) and I cannot agree on the accuracy of the information.</li>
+            </ul>
+          </div>
+
+          <p style="font-weight:600;color:#1e293b;margin-bottom:16px">This certifies that this application was completed by me, and all entries on it and information in it are true and complete to the best of my knowledge.</p>
+
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px">
+            <div class="form-group">
+              <label>Signature *</label>
+              <div style="border:1px solid #e2e8f0;border-radius:8px;background:#fff">
+                <canvas id="signature-canvas" width="400" height="150" style="width:100%;cursor:crosshair"></canvas>
+                <div style="display:flex;justify-content:space-between;padding:8px;border-top:1px solid #e2e8f0;font-size:12px">
+                  <span style="color:#64748b">×</span>
+                  <div>
+                    <button type="button" onclick="clearSignature()" style="background:none;border:none;color:#3b82f6;cursor:pointer;font-size:12px">clear</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Date Signed *</label>
+              <input type="date" name="page1_date" value="${applicationData.page1_date || new Date().toISOString().split('T')[0]}" required>
+            </div>
+          </div>
+        </form>
+      `;
+    }
+
+    function getEmploymentItem(emp, index) {
+      const stateOptions = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'].map(s => `<option value="${s}" ${emp.state === s ? 'selected' : ''}>${s}</option>`).join('');
+      return `
+        <div class="employment-item" style="border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:16px;background:#fafafa">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <strong style="color:#1e293b">Employer ${index + 1}</strong>
+            ${index > 0 ? `<button type="button" onclick="removeEmploymentItem(${index})" style="background:#fee2e2;color:#dc2626;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px">Remove</button>` : ''}
+          </div>
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr 2fr;gap:12px;margin-bottom:12px">
+            <div class="form-group"><label>Employer Name</label><input type="text" name="emp_${index}_name" value="${emp.employer_name || ''}"></div>
+            <div class="form-group"><label>Phone</label><input type="text" name="emp_${index}_phone" value="${emp.phone || ''}"></div>
+            <div class="form-group"><label>Fax</label><input type="text" name="emp_${index}_fax" value="${emp.fax || ''}"></div>
+            <div class="form-group"><label>Email</label><input type="email" name="emp_${index}_email" value="${emp.email || ''}"></div>
+          </div>
+          <div class="form-group" style="margin-bottom:12px"><label>Address</label><input type="text" name="emp_${index}_address" value="${emp.address || ''}"></div>
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin-bottom:12px">
+            <div class="form-group"><label>City</label><input type="text" name="emp_${index}_city" value="${emp.city || ''}"></div>
+            <div class="form-group"><label>State</label><select name="emp_${index}_state">${stateOptions}</select></div>
+            <div class="form-group"><label>Zip Code</label><input type="text" name="emp_${index}_zip" value="${emp.zip || ''}"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr 2fr;gap:12px;margin-bottom:12px">
+            <div class="form-group"><label>Position Held</label><input type="text" name="emp_${index}_position" value="${emp.position || ''}"></div>
+            <div class="form-group"><label>Date From</label><input type="month" name="emp_${index}_from" value="${emp.date_from || ''}"></div>
+            <div class="form-group"><label>Date To</label><input type="month" name="emp_${index}_to" value="${emp.date_to || ''}"></div>
+            <div class="form-group"><label>Reason for Leaving</label><input type="text" name="emp_${index}_reason" value="${emp.reason_leaving || ''}"></div>
+          </div>
+          <div class="form-group" style="margin-bottom:12px"><label>Equipment Class</label><input type="text" name="emp_${index}_equipment" value="${emp.equipment_class || ''}"></div>
+          <div style="display:flex;gap:24px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+              <input type="checkbox" name="emp_${index}_fmcsr" ${emp.subject_fmcsr ? 'checked' : ''}> Subject to FMCSRs while employed?
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+              <input type="checkbox" name="emp_${index}_dot" ${emp.dot_regulated ? 'checked' : ''}> Safety-sensitive DOT regulated position (49 CFR Part 40)?
+            </label>
+          </div>
+        </div>
+      `;
+    }
+
+    function addEmploymentItem() {
+      applicationData.employment_history.push({ employer_name: '', phone: '', fax: '', email: '', address: '', city: '', state: '', zip: '', position: '', date_from: '', date_to: '', reason_leaving: '', equipment_class: '', subject_fmcsr: false, dot_regulated: false });
+      renderDriverApplication();
+    }
+
+    function removeEmploymentItem(index) {
+      applicationData.employment_history.splice(index, 1);
+      renderDriverApplication();
+    }
+
+    function getApplicationPage2() {
+      return `
+        <form id="app-form">
+          <h2 style="color:#1e293b;margin-bottom:24px;font-size:24px">Fair Credit Reporting Act Disclosure Statement</h2>
+
+          <div style="background:#f8fafc;padding:24px;border-radius:8px;margin-bottom:24px;font-size:14px;color:#475569;line-height:1.8">
+            <p>In accordance with the provisions of Section 604 (b)(2)(A) of the Fair Credit Reporting Act, Public Law 91-508, as amended by the Consumer Credit Reporting Act of 1996 (Title II, Subtitle D, Chapter I, of Public Law 104-208), you are being informed that reports verifying your previous employment, previous drug and alcohol test results, and your driving record may be obtained on you for employment purposes. These reports are required by Sections 382.413 and 391.25 of the Federal Motor Carrier Safety Regulations. I acknowledge the receipt of the above disclosure and authorize to obtain a consumer report on me for employment purposes. This authorization is ongoing in the event such a report is needed in the future.</p>
+
+            <p style="margin-top:16px">Pursuant to the federal Fair Credit Reporting Act, I, , hereby authorize this company and its designated agents and representatives to conduct a comprehensive review of my background through any consumer report for employment. I understand that the scope of the consumer report/investigative consumer report may include, but is not limited to, the following areas: verification of Social Security number; current and previous residences; employment history, including all personnel files; education; references; credit history and reports; criminal history, including records from any criminal justice agency in any or all federal, state or county jurisdictions; birth records; motor vehicle records, including traffic citations and registration; and any other public records.</p>
+          </div>
+
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px">
+            <div class="form-group">
+              <label>Prospective Employee Signature *</label>
+              <div style="border:1px solid #e2e8f0;border-radius:8px;background:#fff">
+                <canvas id="signature-canvas" width="400" height="150" style="width:100%;cursor:crosshair"></canvas>
+                <div style="display:flex;justify-content:space-between;padding:8px;border-top:1px solid #e2e8f0;font-size:12px">
+                  <span style="color:#64748b">×</span>
+                  <button type="button" onclick="clearSignature()" style="background:none;border:none;color:#3b82f6;cursor:pointer;font-size:12px">clear</button>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Date Signed *</label>
+              <input type="date" name="page2_date" value="${applicationData.page2_date || new Date().toISOString().split('T')[0]}" required>
+            </div>
+          </div>
+        </form>
+      `;
+    }
+
+    function getApplicationPage3() {
+      return `
+        <form id="app-form">
+          <h2 style="color:#1e293b;margin-bottom:24px;font-size:24px">CERTIFICATION OF COMPLIANCE WITH DRIVER LICENSE REQUIREMENTS</h2>
+
+          <div style="background:#f8fafc;padding:24px;border-radius:8px;margin-bottom:24px;font-size:14px;color:#475569;line-height:1.8">
+            <p>The requirements in Part 383 apply to every contractor who operates in intrastate, interstate, or foreign commerce and operates a vehicle weighing 26,001 pounds or more, can transport more than 15 people, or transports hazardous materials that require placarding. The requirements in Part 391 apply to every driver who operates in interstate commerce and operates a vehicle weighing 10,001 pounds or more, can transport more than 15 people, or transports hazardous materials that require placarding.</p>
+
+            <p style="margin-top:16px"><strong>DRIVER REQUIREMENTS:</strong> Parts 383 and 391 of the Federal Motor Carrier Safety Regulations contain some requirements that you as a contractor must comply with. They are as follows:</p>
+
+            <p style="margin-top:16px"><strong>1. Possess only one license:</strong> You, as a commercial vehicle contractor, may not possess more than one motor vehicle operator's license. If you currently have more than one license, you should keep the license from your state of residence, and return the additional licenses to the states that issued them. Destroying a license does not close the record in the state that issued it: you must notify the state. If a multiple license has been lost, stolen, or destroyed, you should close your record by notifying the state of issuance that you no longer want to be licensed by that state.</p>
+
+            <p style="margin-top:16px"><strong>2. Notification of license suspension, revocation or cancellation:</strong> Sections 392.42 and 383.33 of the Federal Motor Carrier Safety Regulations require that you notify the carrier the NEXT BUSINESS DAY of any revocation or suspension of your driver's license. In addition, Section 383.31 requires that any time you violate a state or local traffic law (other than parking), you must report it to motor carrier and the state that issued your license within 30 days.</p>
+
+            <p style="margin-top:16px"><strong>I certify that I have read and understand the above requirements. The following license is the only one I will possess:</strong></p>
+          </div>
+
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px">
+            <div class="form-group">
+              <label>Signature *</label>
+              <div style="border:1px solid #e2e8f0;border-radius:8px;background:#fff">
+                <canvas id="signature-canvas" width="400" height="150" style="width:100%;cursor:crosshair"></canvas>
+                <div style="display:flex;justify-content:space-between;padding:8px;border-top:1px solid #e2e8f0;font-size:12px">
+                  <span style="color:#64748b">×</span>
+                  <button type="button" onclick="clearSignature()" style="background:none;border:none;color:#3b82f6;cursor:pointer;font-size:12px">clear</button>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Date *</label>
+              <input type="date" name="page3_date" value="${applicationData.page3_date || new Date().toISOString().split('T')[0]}" required>
+            </div>
+          </div>
+        </form>
+      `;
+    }
+
+    function getApplicationPage4() {
+      return `
+        <form id="app-form">
+          <h2 style="color:#1e293b;margin-bottom:24px;font-size:24px">PRE-EMPLOYMENT EMPLOYEE ALCOHOL & DRUG TEST STATEMENT</h2>
+
+          <div style="background:#f8fafc;padding:24px;border-radius:8px;margin-bottom:24px;font-size:14px;color:#475569;line-height:1.8">
+            <p>49 CFR Part 40.25(j) states, as the employer, you must ask the employee whether he or she has tested positive, or refused to test, on any pre-employment drug or alcohol test administered by an employer to which the employee applied for, but did not obtain, safety-sensitive transportation work covered by DOT agency drug and alcohol testing rules during the past two years. If the employee admits that he or she had a positive test or a refusal to test, you must not use the employee to perform safety-sensitive functions for you, until and unless the employee documents successful completion of the return-to-duty process required in 49 CFR Subpart O.</p>
+          </div>
+
+          <h3 style="color:#1e293b;margin-bottom:16px">Drug and Alcohol Questions</h3>
+
+          <div class="form-group" style="margin-bottom:16px">
+            <label>A. Have you ever tested positive for a controlled substance?</label>
+            <div style="display:flex;gap:16px;margin-top:8px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="tested_positive" value="true" ${applicationData.tested_positive ? 'checked' : ''}> Yes
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="tested_positive" value="false" ${!applicationData.tested_positive ? 'checked' : ''}> No
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:16px">
+            <label>B. Have you ever had an alcohol concentration of .04 or greater?</label>
+            <div style="display:flex;gap:16px;margin-top:8px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="alcohol_concentration" value="true" ${applicationData.alcohol_concentration ? 'checked' : ''}> Yes
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="alcohol_concentration" value="false" ${!applicationData.alcohol_concentration ? 'checked' : ''}> No
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:16px">
+            <label>C. Have you ever refused a required test for drugs or alcohol?</label>
+            <div style="display:flex;gap:16px;margin-top:8px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="refused_test" value="true" ${applicationData.refused_test ? 'checked' : ''}> Yes
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="refused_test" value="false" ${!applicationData.refused_test ? 'checked' : ''}> No
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:24px">
+            <label>If you answered yes to the above question, can you provide documentation of successful completion of DOT return-to-duty requirements (including follow-up tests)?</label>
+            <div style="display:flex;gap:16px;margin-top:8px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="return_to_duty_docs" value="true" ${applicationData.return_to_duty_docs ? 'checked' : ''}> Yes
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="return_to_duty_docs" value="false" ${!applicationData.return_to_duty_docs ? 'checked' : ''}> No
+              </label>
+            </div>
+          </div>
+
+          <div style="background:#fef3c7;padding:20px;border-radius:8px;margin-bottom:24px;font-size:13px;color:#92400e;line-height:1.6">
+            <p>I understand that, as required by the Federal Motor Carrier Safety Regulations and Company policy, all drivers must submit to alcohol and controlled substance testing as a condition of employment. I also understand that any offer of employment will be contingent upon the results of an alcohol and controlled substance test. Therefore, I agree to submit to the following alcohol and controlled substance tests in accordance and as defined by the Federal Motor Carrier Safety Regulation and this Company's policies:</p>
+            <ul style="margin-top:8px;padding-left:20px">
+              <li>Pre-Employment, to determine employment eligibility</li>
+              <li>Random</li>
+              <li>Reasonable Suspicion</li>
+              <li>Post-Accident</li>
+            </ul>
+          </div>
+
+          <p style="font-weight:600;color:#1e293b;margin-bottom:16px">I certify that I have read, understand, and agree to abide by the conditions of this consent and release form.</p>
+
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px">
+            <div class="form-group">
+              <label>Prospective Employee Signature *</label>
+              <div style="border:1px solid #e2e8f0;border-radius:8px;background:#fff">
+                <canvas id="signature-canvas" width="400" height="150" style="width:100%;cursor:crosshair"></canvas>
+                <div style="display:flex;justify-content:space-between;padding:8px;border-top:1px solid #e2e8f0;font-size:12px">
+                  <span style="color:#64748b">×</span>
+                  <button type="button" onclick="clearSignature()" style="background:none;border:none;color:#3b82f6;cursor:pointer;font-size:12px">clear</button>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Date Signed *</label>
+              <input type="date" name="page4_date" value="${applicationData.page4_date || new Date().toISOString().split('T')[0]}" required>
+            </div>
+          </div>
+        </form>
+      `;
+    }
+
+    function getApplicationPage5() {
+      return `
+        <form id="app-form">
+          <h2 style="color:#1e293b;margin-bottom:24px;font-size:24px">SAFETY PERFORMANCE HISTORY INVESTIGATION</h2>
+
+          <div style="background:#f8fafc;padding:24px;border-radius:8px;margin-bottom:24px;font-size:13px;color:#475569;line-height:1.8">
+            <p>I, hereby authorize release of information to HORIZON STAR LLC from my employment file and my Department of Transportation regulated drug and alcohol testing records. This release is in accordance with DOT Regulation 49 CFR Parts 40.25/382.413/391.23. I understand that information to be released, by my previous employer, is limited to the previous three years. You are released from any and all liability which may result from releasing such information. Pursuant to the federal Fair Credit Reporting Act, I hereby authorize this company and its designated agents and representatives to conduct a comprehensive review of my background through any consumer report for employment. I understand that the scope of the consumer report/investigative consumer report may include, but is not limited to, the following areas: verification of Social Security number; current and previous residences; employment history, including all personnel files; education; references; credit history and reports; criminal history, including records from any criminal justice agency in any or all federal, state or county jurisdictions; birth records; motor vehicle records, including traffic citations and registration; and any other public records.</p>
+
+            <p style="margin-top:16px">I understand that it is my right to review information provided by previous employers; to have errors in the information corrected by the previous employer and for that previous employer to re-send the corrected information; as well as the right to have a rebuttal statement attached to the alleged erroneous information if the previous employer and I cannot agree on the accuracy of the information. I understand that if I wish to review previous employer-provided investigative information, I must submit a written request, which may be done at any time, including when applying, or as late as 30 days after being employed or being notified of denial of employment. I understand that if I have not arranged to pick up or receive the requested records within thirty (30) days of them becoming available, it may be considered that I have waived my request to review the record(s).</p>
+
+            <p style="margin-top:16px">I, , social security , hereby authorize the release of information from my Department of Transportation regulated drug and alcohol testing records by my previous employer, listed below, to HORIZON STAR LLC.</p>
+
+            <p style="margin-top:16px">This release is in accordance with DOT Regulation 49 CFR Part 40, Section 40.25. I understand that information to be released by my previous employer is limited to the following DOT-regulated testing items:</p>
+            <ol style="margin-top:8px;padding-left:20px">
+              <li>Alcohol tests with a result of 0.04 or higher;</li>
+              <li>Verified positive drug tests;</li>
+              <li>Refusals to be tested;</li>
+              <li>Other violations of DOT agency drug and alcohol testing regulations;</li>
+              <li>Information obtained from previous employers of a drug and alcohol rule violation;</li>
+              <li>Documentation, if any, of completion of the return-to-duty process following a rule violation.</li>
+            </ol>
+
+            <p style="margin-top:16px">I further authorize my former employer to release my safety performance history information to my prospective employer for investigation purposes as required by FMCSR 391.23, 382.405 (f) & 382.413(b) for the 3 years preceding this release. You are released from any and all liability that may result from furnishing such information. A photocopy of this release shall be as valid as the original.</p>
+          </div>
+
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px">
+            <div class="form-group">
+              <label>Prospective Employee Signature *</label>
+              <div style="border:1px solid #e2e8f0;border-radius:8px;background:#fff">
+                <canvas id="signature-canvas" width="400" height="150" style="width:100%;cursor:crosshair"></canvas>
+                <div style="display:flex;justify-content:space-between;padding:8px;border-top:1px solid #e2e8f0;font-size:12px">
+                  <span style="color:#64748b">×</span>
+                  <button type="button" onclick="clearSignature()" style="background:none;border:none;color:#3b82f6;cursor:pointer;font-size:12px">clear</button>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Date Signed *</label>
+              <input type="date" name="page5_date" value="${applicationData.page5_date || new Date().toISOString().split('T')[0]}" required>
+            </div>
+          </div>
+        </form>
+      `;
+    }
+
+    function getApplicationPage6() {
+      return `
+        <form id="app-form">
+          <h2 style="color:#1e293b;margin-bottom:24px;font-size:24px">PSP DRIVER DISCLOSURE & AUTHORIZATION</h2>
+
+          <div style="background:#fef3c7;border:1px solid #fcd34d;padding:16px;border-radius:8px;margin-bottom:16px;font-size:13px;color:#92400e">
+            <strong>THE BELOW DISCLOSURE AND AUTHORIZATION LANGUAGE IS FOR MANDATORY USE BY ALL ACCOUNT HOLDERS IMPORTANT DISCLOSURE REGARDING BACKGROUND REPORTS FROM THE PSP Online Service.</strong>
+          </div>
+
+          <div style="background:#f8fafc;padding:24px;border-radius:8px;margin-bottom:24px;font-size:12px;color:#475569;line-height:1.8;max-height:400px;overflow-y:auto">
+            <p>In connection with your application for employment with HORIZON STAR LLC, Prospective Employer, its employees, agents or contractors may obtain one or more reports regarding your driving, and safety inspection history from the Federal Motor Carrier Safety Administration (FMCSA).</p>
+
+            <p style="margin-top:12px">When the application for employment is submitted in person, if the Prospective Employer uses any information it obtains from FMCSA in a decision to not hire you or to make any other adverse employment decision regarding you, the Prospective Employer will provide you with a copy of the report upon which its decision was based and a written summary of your rights under the Fair Credit Reporting Act before taking any final adverse action. If any final adverse action is taken against you based upon your driving history or safety report, the Prospective Employer will notify you that the action has been taken and that the action was based in part or in whole on this report.</p>
+
+            <p style="margin-top:12px">When the application for employment is submitted by mail, telephone, computer, or other similar means, if the Prospective Employer uses any information it obtains from FMCSA in a decision to not hire you or to make any other adverse employment decision regarding you, the Prospective Employer must provide you within three business days of taking adverse action oral, written or electronic notification: that adverse action has been taken based in whole or in part on information obtained from FMCSA; the name, address, and the toll free telephone number of FMCSA; that the FMCSA did not make the decision to take the adverse action and is unable to provide you the specific reasons why the adverse action was taken; and that you may, upon providing proper identification, request a free copy of the report and may dispute with the FMCSA the accuracy or completeness of any information or report. If you request a copy of a driver record from the Prospective Employer who procured the report, then, within 3 business days of receiving your request, together with proper identification, the Prospective Employer must send or provide to you a copy of your report and a summary of your rights under the Fair Credit Reporting Act.</p>
+
+            <p style="margin-top:12px">Neither the Prospective Employer nor the FMCSA contractor supplying the crash and safety information has the capability to correct any safety data that appears to be incorrect. You may challenge the accuracy of the data by submitting a request to https://dataqs.fmcsa.dot.gov. If you challenge crash or inspection information reported by a State, FMCSA cannot change or correct this data. Your request will be forwarded by the DataQs system to the appropriate State for adjudication.</p>
+
+            <p style="margin-top:12px">Any crash or inspection in which you were involved will display on your PSP report. Since the PSP report does not report, or assign, or imply fault, it will include all Commercial Motor Vehicle (CMV) crashes where you were a driver or co-driver and where those crashes were reported to FMCSA, regardless of fault. Similarly, all inspections, with or without violations, appear on the PSP report. State citations associated with Federal Motor Carrier Safety Regulations (FMCSR) violations that have been adjudicated by a court of law will also appear, and remain, on a PSP report.</p>
+
+            <p style="margin-top:12px">The Prospective Employer cannot obtain background reports from FMCSA without your authorization.</p>
+
+            <p style="margin-top:16px"><strong>AUTHORIZATION</strong></p>
+            <p>If you agree that the Prospective Employer may obtain such background reports, please read the following and sign below:</p>
+
+            <p style="margin-top:12px">I authorize HORIZON STAR LLC ("Prospective Employer") to access the FMCSA Pre-Employment Screening Program (PSP) system to seek information regarding my commercial driving safety record and information regarding my safety inspection history. I understand that I am authorizing the release of safety performance information including crash data from the previous five (5) years and inspection history from the previous three (3) years. I understand and acknowledge that this release of information may assist the Prospective Employer to make a determination regarding my suitability as an employee.</p>
+
+            <p style="margin-top:12px">I further understand that neither the Prospective Employer nor the FMCSA contractor supplying the crash and safety information has the capability to correct any safety data that appears to be incorrect. I understand I may challenge the accuracy of the data by submitting a request to https://dataqs.fmcsa.dot.gov. If I challenge crash or inspection information reported by a State, FMCSA cannot change or correct this data. I understand my request will be forwarded by the DataQs system to the appropriate State for adjudication.</p>
+
+            <p style="margin-top:12px">I understand that any crash or inspection in which I was involved will display on my PSP report. Since the PSP report does not report, or assign, or imply fault, I acknowledge it will include all CMV crashes where I was a driver or co-driver and where those crashes were reported to FMCSA, regardless of fault. Similarly, I understand all inspections, with or without violations, will appear on my PSP report, and State citations associated with FMCSR violations that have been adjudicated by a court of law will also appear, and remain, on my PSP report.</p>
+
+            <p style="margin-top:12px">I have read the above Disclosure Regarding Background Reports provided to me by Prospective Employer and I understand that if I sign this Disclosure and Authorization, Prospective Employer may obtain a report of my crash and inspection history. I hereby authorize Prospective Employer and its employees, authorized agents, and/or affiliates to obtain the information authorized above.</p>
+
+            <p style="margin-top:12px"><strong>NOTICE:</strong> This form is made available to monthly account holders by NIC on behalf of the U.S. Department of Transportation, Federal Motor Carrier Safety Administration (FMCSA). Account holders are required by federal law to obtain an Applicant's written or electronic consent prior to accessing the Applicant's PSP report. Further, account holders are required by FMCSA to use the language contained in this Disclosure and Authorization form to obtain an Applicant's consent. The language must be used in whole, exactly as provided. Further, the language on this form must exist as one stand-alone document. The language may NOT be included with other consent forms or any other language.</p>
+
+            <p style="margin-top:12px"><strong>NOTICE:</strong> The prospective employment concept referenced in this form contemplates the definition of "employee" contained at 49 C.F.R. 383.5.</p>
+          </div>
+
+          <div class="form-group" style="margin-bottom:24px">
+            <label>Full Name *</label>
+            <input type="text" name="page6_full_name" value="${applicationData.page6_full_name}" required>
+          </div>
+
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px">
+            <div class="form-group">
+              <label>Signature *</label>
+              <div style="border:1px solid #e2e8f0;border-radius:8px;background:#fff">
+                <canvas id="signature-canvas" width="400" height="150" style="width:100%;cursor:crosshair"></canvas>
+                <div style="display:flex;justify-content:space-between;padding:8px;border-top:1px solid #e2e8f0;font-size:12px">
+                  <span style="color:#64748b">×</span>
+                  <button type="button" onclick="clearSignature()" style="background:none;border:none;color:#3b82f6;cursor:pointer;font-size:12px">clear</button>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Date Signed *</label>
+              <input type="date" name="page6_date" value="${applicationData.page6_date || new Date().toISOString().split('T')[0]}" required>
+            </div>
+          </div>
+        </form>
+      `;
+    }
+
+    function getApplicationPage7() {
+      return `
+        <form id="app-form">
+          <h2 style="color:#1e293b;margin-bottom:24px;font-size:24px">GENERAL CONSENT FOR LIMITED QUERIES OF THE FEDERAL MOTOR CARRIER SAFETY ADMINISTRATION (FMCSA) DRUG AND ALCOHOL CLEARINGHOUSE</h2>
+
+          <div style="background:#f8fafc;padding:24px;border-radius:8px;margin-bottom:24px;font-size:14px;color:#475569;line-height:1.8">
+            <p>I, , hereby provide consent to HORIZON STAR LLC to conduct a limited query of the FMCSA Commercial Driver's License Drug and Alcohol Clearinghouse (Clearinghouse) to determine whether drug or alcohol violation information about me exists in the Clearinghouse.</p>
+
+            <p style="margin-top:16px">I am consenting to multiple limited queries for the duration of employment with HORIZON STAR LLC.</p>
+
+            <p style="margin-top:16px">I understand that if the limited query conducted by HORIZON STAR LLC indicates that drug or alcohol violation information about me exists in the Clearinghouse, FMCSA will not disclose that information to HORIZON STAR LLC without first obtaining additional specific consent from me.</p>
+
+            <p style="margin-top:16px">I further understand that if I refuse to provide consent for HORIZON STAR LLC to conduct a limited query of the Clearinghouse, HORIZON STAR LLC must prohibit me from performing safety-sensitive functions, including driving a commercial motor vehicle, as required by FMCSA's drug and alcohol program regulations.</p>
+          </div>
+
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-bottom:24px">
+            <div class="form-group">
+              <label>Prospective Employee Signature *</label>
+              <div style="border:1px solid #e2e8f0;border-radius:8px;background:#fff">
+                <canvas id="signature-canvas" width="400" height="150" style="width:100%;cursor:crosshair"></canvas>
+                <div style="display:flex;justify-content:space-between;padding:8px;border-top:1px solid #e2e8f0;font-size:12px">
+                  <span style="color:#64748b">×</span>
+                  <button type="button" onclick="clearSignature()" style="background:none;border:none;color:#3b82f6;cursor:pointer;font-size:12px">clear</button>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Date Signed *</label>
+              <input type="date" name="page7_date" value="${applicationData.page7_date || new Date().toISOString().split('T')[0]}" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Are you registered with FMCSA Clearinghouse?</label>
+            <div style="display:flex;gap:16px;margin-top:8px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="clearinghouse_registered" value="true" ${applicationData.clearinghouse_registered ? 'checked' : ''}> Yes
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="radio" name="clearinghouse_registered" value="false" ${!applicationData.clearinghouse_registered ? 'checked' : ''}> No
+              </label>
+            </div>
+          </div>
+        </form>
+      `;
+    }
+
+    function getApplicationPage8() {
+      return `
+        <form id="app-form">
+          <h2 style="color:#1e293b;margin-bottom:24px;font-size:24px">MVR Release Consent</h2>
+
+          <div style="background:#f8fafc;padding:24px;border-radius:8px;margin-bottom:24px;font-size:14px;color:#475569;line-height:1.8">
+            <p>In conjunction with my potential employment HORIZON STAR LLC ("the company"), I (applicant) consent to the release of my Motor Vehicle Records (MVR) to the company. I understand the company will use these records to evaluate my suitability to fulfill driving duties that may be related to the position for which I am applying. I also consent to the review, evaluation, and other use of any MVR I may have provided to the company.</p>
+
+            <p style="margin-top:16px">This consent is given in satisfaction of Public Law 18 USC 2721 et. Seq., "Federal Drivers Privacy Protection Act", and is intended to constitute "written consent" as required by this Act.</p>
+          </div>
+
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px">
+            <div class="form-group">
+              <label>Prospective Employee Signature *</label>
+              <div style="border:1px solid #e2e8f0;border-radius:8px;background:#fff">
+                <canvas id="signature-canvas" width="400" height="150" style="width:100%;cursor:crosshair"></canvas>
+                <div style="display:flex;justify-content:space-between;padding:8px;border-top:1px solid #e2e8f0;font-size:12px">
+                  <span style="color:#64748b">×</span>
+                  <button type="button" onclick="clearSignature()" style="background:none;border:none;color:#3b82f6;cursor:pointer;font-size:12px">clear</button>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Date Signed *</label>
+              <input type="date" name="page8_date" value="${applicationData.page8_date || new Date().toISOString().split('T')[0]}" required>
+            </div>
+          </div>
+
+          <div style="background:#d1fae5;padding:20px;border-radius:8px;margin-top:24px;text-align:center">
+            <p style="color:#065f46;font-size:16px;font-weight:600">🎉 You're almost done!</p>
+            <p style="color:#047857;font-size:14px;margin-top:8px">Click "Submit Application" below to complete your application.</p>
+          </div>
+        </form>
+      `;
+    }
+
+    // Signature Canvas Functions
+    function initSignatureCanvas() {
+      signatureCanvas = document.getElementById('signature-canvas');
+      if (!signatureCanvas) return;
+
+      signatureCtx = signatureCanvas.getContext('2d');
+      signatureCtx.strokeStyle = '#1e293b';
+      signatureCtx.lineWidth = 2;
+      signatureCtx.lineCap = 'round';
+
+      // Load existing signature if any
+      const sigKey = 'page' + applicationPage + '_signature';
+      if (applicationData[sigKey]) {
+        const img = new Image();
+        img.onload = () => signatureCtx.drawImage(img, 0, 0);
+        img.src = applicationData[sigKey];
+      }
+
+      // Mouse events
+      signatureCanvas.addEventListener('mousedown', startDrawing);
+      signatureCanvas.addEventListener('mousemove', draw);
+      signatureCanvas.addEventListener('mouseup', stopDrawing);
+      signatureCanvas.addEventListener('mouseout', stopDrawing);
+
+      // Touch events
+      signatureCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDrawing(e.touches[0]); });
+      signatureCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0]); });
+      signatureCanvas.addEventListener('touchend', stopDrawing);
+    }
+
+    function startDrawing(e) {
+      isDrawing = true;
+      signatureCtx.beginPath();
+      const rect = signatureCanvas.getBoundingClientRect();
+      const scaleX = signatureCanvas.width / rect.width;
+      const scaleY = signatureCanvas.height / rect.height;
+      signatureCtx.moveTo((e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY);
+    }
+
+    function draw(e) {
+      if (!isDrawing) return;
+      const rect = signatureCanvas.getBoundingClientRect();
+      const scaleX = signatureCanvas.width / rect.width;
+      const scaleY = signatureCanvas.height / rect.height;
+      signatureCtx.lineTo((e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY);
+      signatureCtx.stroke();
+    }
+
+    function stopDrawing() {
+      isDrawing = false;
+    }
+
+    function clearSignature() {
+      if (signatureCtx) {
+        signatureCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+      }
+    }
+
+    // File upload handler
+    async function handleFileUpload(input, fieldName) {
+      const file = input.files[0];
+      if (!file) return;
+
+      // For now, store as base64 (in production, upload to Supabase Storage)
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        applicationData[fieldName] = e.target.result;
+        showToast('File uploaded successfully');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Submit application
+    async function submitApplication() {
+      saveCurrentPageData();
+
+      // Validate required fields
+      if (!applicationData.first_name || !applicationData.last_name || !applicationData.email) {
+        showToast('Please complete all required fields on Page 1', 'error');
+        applicationPage = 1;
+        renderDriverApplication();
+        return;
+      }
+
+      try {
+        // Insert into database
+        const { data, error } = await sb.from('driver_applications').insert([applicationData]).select();
+
+        if (error) throw error;
+
+        // Show success message
+        document.getElementById('app').innerHTML = `
+          <div style="min-height:100vh;background:linear-gradient(135deg,#050a0e 0%,#0a1628 100%);display:flex;align-items:center;justify-content:center;padding:20px">
+            <div style="background:white;border-radius:16px;padding:48px;text-align:center;max-width:500px">
+              <div style="font-size:64px;margin-bottom:24px">✅</div>
+              <h1 style="color:#1e293b;margin-bottom:16px">Application Submitted!</h1>
+              <p style="color:#64748b;margin-bottom:24px">Thank you for applying to HORIZON STAR LLC. We have received your application and will review it shortly.</p>
+              <p style="color:#64748b;font-size:14px;margin-bottom:32px">A confirmation email will be sent to <strong>${applicationData.email}</strong></p>
+              <button class="btn btn-primary" onclick="renderLogin()">Return to Home</button>
+            </div>
+          </div>
+        `;
+
+        // Reset application data
+        applicationPage = 1;
+        applicationData = {
+          first_name: '', last_name: '', date_of_birth: '', ssn: '',
+          phone: '', email: '', address: '', city: '', state: '', zip: '',
+          lived_3_years: false, previous_addresses: [],
+          license_number: '', license_state: '', license_class: '',
+          license_expires: '', license_front_url: '', license_back_url: '',
+          endorsements: [], other_licenses_3_years: false, other_licenses_details: [],
+          medical_card_url: '', medical_expires: '',
+          accidents_3_years: false, accidents_details: [],
+          violations_3_years: false, violations_details: [],
+          denied_license: false, denied_license_details: '',
+          license_revoked: false, license_revoked_details: '',
+          employment_history: [{ employer_name: '', phone: '', fax: '', email: '', address: '', city: '', state: '', zip: '', position: '', date_from: '', date_to: '', reason_leaving: '', equipment_class: '', subject_fmcsr: false, dot_regulated: false }],
+          employment_gaps: '',
+          page1_signature: '', page1_date: '',
+          page2_signature: '', page2_date: '',
+          page3_signature: '', page3_date: '',
+          page4_signature: '', page4_date: '',
+          page5_signature: '', page5_date: '',
+          page6_signature: '', page6_date: '', page6_full_name: '',
+          page7_signature: '', page7_date: '', clearinghouse_registered: false,
+          page8_signature: '', page8_date: '',
+          tested_positive: false, alcohol_concentration: false, refused_test: false, return_to_duty_docs: false
+        };
+
+      } catch (err) {
+        console.error('Submit error:', err);
+        showToast('Error submitting application: ' + err.message, 'error');
+      }
     }
 
     async function handleLogin(e) {
