@@ -10280,7 +10280,15 @@
       if (!form) return;
 
       const formData = new FormData(form);
+      // File input fields to skip (handled separately by handleFileUpload)
+      const fileFields = ['license_front', 'license_back', 'medical_card'];
+
       for (let [key, value] of formData.entries()) {
+        // Skip file inputs - they're handled by handleFileUpload
+        if (fileFields.includes(key)) continue;
+        // Skip if value is a File object
+        if (value instanceof File) continue;
+
         // Handle employment history fields (emp_0_name, emp_0_address, etc.)
         const empMatch = key.match(/^emp_(\d+)_(.+)$/);
         if (empMatch) {
@@ -11081,9 +11089,10 @@
       }
 
       try {
-        // Clean up any stray emp_X_* keys that shouldn't be in the database
+        // Clean up any keys that shouldn't be in the database
+        const invalidKeys = ['license_front', 'license_back', 'medical_card'];
         Object.keys(applicationData).forEach(key => {
-          if (key.match(/^emp_\d+_/)) {
+          if (key.match(/^emp_\d+_/) || invalidKeys.includes(key)) {
             delete applicationData[key];
           }
         });
