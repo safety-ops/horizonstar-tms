@@ -9202,22 +9202,35 @@
       });
 
       const efficiency = calculateEfficiencyMetrics(yearTrips);
+      const allTimeEfficiency = calculateEfficiencyMetrics(allTrips); // All time score
       const cashFlow = calculateCashFlow(yearStart, yearEnd);
       const incomeStatement = generateIncomeStatement(yearStart, yearEnd);
       const forecast = generateForecast(6);
       const tripVolume = calculateTripVolume(yearTrips);
       const breakEven = calculateBreakEven({ trips: yearTrips });
-      
-      // Health score color
-      const healthColor = efficiency.overallHealthScore >= 80 ? '#22c55e' 
-        : efficiency.overallHealthScore >= 60 ? '#f59e0b' 
+
+      // Health score color (current year)
+      const healthColor = efficiency.overallHealthScore >= 80 ? '#22c55e'
+        : efficiency.overallHealthScore >= 60 ? '#f59e0b'
         : '#ef4444';
-      
-      const healthGrade = efficiency.overallHealthScore >= 90 ? 'A+' 
-        : efficiency.overallHealthScore >= 80 ? 'A' 
-        : efficiency.overallHealthScore >= 70 ? 'B' 
-        : efficiency.overallHealthScore >= 60 ? 'C' 
-        : efficiency.overallHealthScore >= 50 ? 'D' 
+
+      const healthGrade = efficiency.overallHealthScore >= 90 ? 'A+'
+        : efficiency.overallHealthScore >= 80 ? 'A'
+        : efficiency.overallHealthScore >= 70 ? 'B'
+        : efficiency.overallHealthScore >= 60 ? 'C'
+        : efficiency.overallHealthScore >= 50 ? 'D'
+        : 'F';
+
+      // All-time health score color
+      const allTimeHealthColor = allTimeEfficiency.overallHealthScore >= 80 ? '#22c55e'
+        : allTimeEfficiency.overallHealthScore >= 60 ? '#f59e0b'
+        : '#ef4444';
+
+      const allTimeHealthGrade = allTimeEfficiency.overallHealthScore >= 90 ? 'A+'
+        : allTimeEfficiency.overallHealthScore >= 80 ? 'A'
+        : allTimeEfficiency.overallHealthScore >= 70 ? 'B'
+        : allTimeEfficiency.overallHealthScore >= 60 ? 'C'
+        : allTimeEfficiency.overallHealthScore >= 50 ? 'D'
         : 'F';
       
       // Year selector options for Executive tab
@@ -9257,20 +9270,34 @@
           </div>
         </div>
         
-        <!-- Health Score Banner -->
-        <div style="background:linear-gradient(135deg,${healthColor}20,${healthColor}10);border:2px solid ${healthColor};border-radius:16px;padding:24px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px">
-          <div>
-            <div style="font-size:14px;color:${healthColor};font-weight:600;margin-bottom:4px">BUSINESS HEALTH SCORE</div>
-            <div style="font-size:48px;font-weight:800;color:${healthColor};line-height:1">${efficiency.overallHealthScore.toFixed(0)}<span style="font-size:24px">/100</span></div>
-            <div style="font-size:16px;color:var(--text-secondary);margin-top:4px">Grade: ${healthGrade}</div>
-          </div>
-          <div style="display:flex;gap:24px;flex-wrap:wrap">
-            ${Object.entries(efficiency.scores).map(([key, score]) => `
-              <div style="text-align:center">
-                <div style="width:60px;height:60px;border-radius:50%;border:4px solid ${score >= 80 ? '#22c55e' : score >= 60 ? '#f59e0b' : '#ef4444'};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:${score >= 80 ? '#22c55e' : score >= 60 ? '#f59e0b' : '#ef4444'}">${score.toFixed(0)}%</div>
-                <div style="font-size:10px;color:var(--text-muted);margin-top:4px;text-transform:uppercase">${key.replace(/([A-Z])/g, ' $1').trim()}</div>
+        <!-- Health Score Banner - Current Year + All Time -->
+        <div style="display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap">
+          <!-- Current Year Score -->
+          <div style="flex:1;min-width:280px;background:linear-gradient(135deg,${healthColor}20,${healthColor}10);border:2px solid ${healthColor};border-radius:16px;padding:24px">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+              <div>
+                <div style="font-size:12px;color:${healthColor};font-weight:600;margin-bottom:4px">${financialsYear} HEALTH SCORE</div>
+                <div style="font-size:48px;font-weight:800;color:${healthColor};line-height:1">${efficiency.overallHealthScore.toFixed(0)}<span style="font-size:24px">/100</span></div>
+                <div style="font-size:14px;color:var(--text-secondary);margin-top:4px">Grade: ${healthGrade}</div>
               </div>
-            `).join('')}
+              <div style="display:flex;gap:12px;flex-wrap:wrap">
+                ${Object.entries(efficiency.scores).map(([key, score]) => `
+                  <div style="text-align:center">
+                    <div style="width:50px;height:50px;border-radius:50%;border:3px solid ${score >= 80 ? '#22c55e' : score >= 60 ? '#f59e0b' : '#ef4444'};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:${score >= 80 ? '#22c55e' : score >= 60 ? '#f59e0b' : '#ef4444'}">${score.toFixed(0)}%</div>
+                    <div style="font-size:9px;color:var(--text-muted);margin-top:2px;text-transform:uppercase">${key.replace(/([A-Z])/g, ' $1').trim()}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+          <!-- All Time Score -->
+          <div style="min-width:200px;background:linear-gradient(135deg,${allTimeHealthColor}15,${allTimeHealthColor}05);border:2px solid ${allTimeHealthColor}80;border-radius:16px;padding:24px">
+            <div style="text-align:center">
+              <div style="font-size:12px;color:${allTimeHealthColor};font-weight:600;margin-bottom:4px">ALL TIME SCORE</div>
+              <div style="font-size:36px;font-weight:800;color:${allTimeHealthColor};line-height:1">${allTimeEfficiency.overallHealthScore.toFixed(0)}<span style="font-size:18px">/100</span></div>
+              <div style="font-size:14px;color:var(--text-secondary);margin-top:4px">Grade: ${allTimeHealthGrade}</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:8px">${allTrips.length} total trips</div>
+            </div>
           </div>
         </div>
         
