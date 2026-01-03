@@ -10281,7 +10281,30 @@
 
       const formData = new FormData(form);
       for (let [key, value] of formData.entries()) {
-        if (key.includes('[]')) {
+        // Handle employment history fields (emp_0_name, emp_0_address, etc.)
+        const empMatch = key.match(/^emp_(\d+)_(.+)$/);
+        if (empMatch) {
+          const index = parseInt(empMatch[1]);
+          const field = empMatch[2];
+          // Map form field names to employment_history object keys
+          const fieldMap = {
+            'name': 'employer_name', 'phone': 'phone', 'fax': 'fax', 'email': 'email',
+            'address': 'address', 'city': 'city', 'state': 'state', 'zip': 'zip',
+            'position': 'position', 'from': 'date_from', 'to': 'date_to',
+            'reason': 'reason_leaving', 'equipment': 'equipment_class',
+            'fmcsr': 'subject_fmcsr', 'dot': 'dot_regulated'
+          };
+          const actualField = fieldMap[field] || field;
+          if (!applicationData.employment_history[index]) {
+            applicationData.employment_history[index] = {};
+          }
+          // Handle checkbox values
+          if (field === 'fmcsr' || field === 'dot') {
+            applicationData.employment_history[index][actualField] = value === 'on';
+          } else {
+            applicationData.employment_history[index][actualField] = value;
+          }
+        } else if (key.includes('[]')) {
           // Handle arrays (endorsements)
           const actualKey = key.replace('[]', '');
           if (!applicationData[actualKey]) applicationData[actualKey] = [];
@@ -11058,6 +11081,13 @@
       }
 
       try {
+        // Clean up any stray emp_X_* keys that shouldn't be in the database
+        Object.keys(applicationData).forEach(key => {
+          if (key.match(/^emp_\d+_/)) {
+            delete applicationData[key];
+          }
+        });
+
         // Insert into database
         const { data, error } = await sb.from('driver_applications').insert([applicationData]).select();
 
