@@ -1,8 +1,9 @@
-# HorizonStar TMS - Production Multi-Tenant Platform SOP
+# VroomX TMS - Production Multi-Tenant Platform SOP
 
 ## Project Overview
 
-**Project:** HorizonStar TMS (Transportation Management System)
+**Product Name:** VroomX TMS
+**Project:** Multi-Tenant Transportation Management System SaaS Platform
 **Objective:** Transform single-tenant internal TMS into a production-grade, multi-tenant SaaS platform with subscription billing and modern UI/UX.
 
 **Current Tech Stack:**
@@ -433,19 +434,20 @@ function requireFeature(featureKey) {
 ### 3.1 Design Direction (NOT copying HaulEx - Original Design)
 
 **Brand Identity:**
-- Primary Color: HorizonStar Green (#22c55e)
+- Primary Color: VroomX Blue (#3b82f6) or VroomX Green (#22c55e) - TBD
 - Secondary: Deep Navy (#0f172a)
-- Accent: Warm Amber (#f59e0b)
+- Accent: Electric Orange (#f97316)
 - Typography: Space Grotesk (headers), Inter (body)
+- Brand Voice: Modern, Fast, Reliable - "Your Fleet, Accelerated"
 
 **Landing Page Sections:**
 
 1. **Hero Section**
-   - Bold headline: "The Modern TMS Built for Growing Fleets"
-   - Subheadline: "Manage trips, drivers, trucks, and finances in one powerful platform"
+   - Bold headline: "Fleet Management at Full Speed" or "Your Fleet, Accelerated"
+   - Subheadline: "The all-in-one TMS that handles trips, drivers, trucks, and finances — so you can focus on growing your business"
    - CTA buttons: "Start Free Trial" + "Book Demo"
-   - Hero image: Dashboard mockup or animated truck/logistics visual
-   - Trust badges: "No credit card required" + "14-day free trial"
+   - Hero image: Dashboard mockup with dynamic elements or animated truck/logistics visual
+   - Trust badges: "No credit card required" + "14-day free trial" + "Setup in minutes"
 
 2. **Social Proof Bar**
    - Logos of integrations: Samsara, Stripe, etc.
@@ -519,9 +521,9 @@ function requireFeature(featureKey) {
 <section class="hero">
     <div class="hero-content">
         <span class="badge">🚀 New: AI-Powered Fleet Insights</span>
-        <h1>The Modern TMS Built for <span class="gradient-text">Growing Fleets</span></h1>
+        <h1>Fleet Management <span class="gradient-text">at Full Speed</span></h1>
         <p class="hero-subtitle">
-            Manage trips, drivers, trucks, and finances in one powerful platform.
+            The all-in-one TMS that handles trips, drivers, trucks, and finances.
             Built by trucking professionals, for trucking professionals.
         </p>
         <div class="hero-ctas">
@@ -537,7 +539,7 @@ function requireFeature(featureKey) {
         <p class="hero-note">No credit card required • 14-day free trial • Cancel anytime</p>
     </div>
     <div class="hero-visual">
-        <img src="/assets/images/dashboard-mockup.png" alt="HorizonStar Dashboard" />
+        <img src="/assets/images/dashboard-mockup.png" alt="VroomX TMS Dashboard" />
     </div>
 </section>
 ```
@@ -575,7 +577,7 @@ function requireFeature(featureKey) {
 **New Sidebar Structure:**
 ```
 ┌─────────────────────────────┐
-│  [Logo] HorizonStar         │
+│  [Logo] VroomX              │
 │  [Org Switcher ▼]           │
 ├─────────────────────────────┤
 │  🏠 Dashboard               │
@@ -976,7 +978,7 @@ Authentication Tests:
 VITE_SUPABASE_URL=https://xxx.supabase.co
 VITE_SUPABASE_ANON_KEY=xxx
 VITE_STRIPE_PUBLISHABLE_KEY=pk_live_xxx
-VITE_APP_URL=https://app.horizonstar.com
+VITE_APP_URL=https://app.vroomx.io
 
 # Supabase Edge Functions
 STRIPE_SECRET_KEY=sk_live_xxx
@@ -1082,6 +1084,31 @@ Before implementation, clarify:
 
 ---
 
-*Document Version: 1.0*
+## Brand Guidelines Summary
+
+**Product Name:** VroomX TMS (or just "VroomX")
+**Tagline Options:**
+- "Your Fleet, Accelerated"
+- "Fleet Management at Full Speed"
+- "Move Faster. Manage Smarter."
+
+**Logo Concept:** Stylized "V" with speed lines or a checkmark embedded, suggesting both velocity and reliability
+
+**Color Palette:**
+- Primary: #3b82f6 (VroomX Blue) - trust, technology
+- Accent: #f97316 (Electric Orange) - energy, speed
+- Success: #22c55e (Green) - positive actions
+- Dark: #0f172a (Navy) - professional, serious
+
+**Voice & Tone:**
+- Professional but approachable
+- Action-oriented language
+- Focus on speed, efficiency, and growth
+- Avoid jargon, be clear
+
+---
+
+*Document Version: 1.1*
+*Product: VroomX TMS*
 *Last Updated: January 2026*
 *Author: Claude Code Assistant*
