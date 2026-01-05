@@ -13438,6 +13438,29 @@ ${rateText}`
       currentAssignType = 'trip';
     }
 
+    async function unassignOrderFromTrip(orderId) {
+      const o = appData.orders.find(x => x.id === orderId);
+      if (!o) { showToast('Order not found', 'error'); return; }
+
+      if (!confirm('Unassign this vehicle from trip ' + (appData.trips.find(t => t.id === o.trip_id)?.trip_number || '') + '?')) {
+        return;
+      }
+
+      try {
+        await dbUpdate('orders', orderId, {
+          trip_id: null,
+          vehicle_direction: null,
+          pickup_sequence: null,
+          delivery_sequence: null
+        });
+        showToast('Vehicle unassigned from trip!');
+        await loadAllData(true);
+        renderOrders(document.getElementById('ordersPage'));
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
     let selectedTruckTab = null;
     // Trips page year filter (default to current year)
     let tripsYear = new Date().getFullYear();
@@ -15418,7 +15441,8 @@ ${rateText}`
           const driverName = driver ? driver.first_name.charAt(0) + '. ' + driver.last_name : '-';
           const phoneInfo = (o.pickup_phone || o.delivery_phone) ? '<span title="P: ' + (o.pickup_phone || '-') + '&#10;D: ' + (o.delivery_phone || '-') + '" style="cursor:help">📞</span>' : '-';
           const noteHtml = o.dispatcher_notes ? '<tr style="background:#fef3c7"><td></td><td colspan="17" style="padding:8px 16px;font-size:13px"><span style="font-weight:600;color:#92400e">📝 Note:</span> ' + o.dispatcher_notes + '</td></tr>' : '';
-          return '<tr><td><input type="checkbox" class="order-checkbox" data-id="' + o.id + '" onchange="toggleOrderSelection(' + o.id + ')"></td><td><strong>' + o.order_number + '</strong></td><td>' + (t ? '<span class="badge badge-purple">' + t.trip_number + '</span>' : '<span style="color:#94a3b8">Unassigned</span>') + '</td><td>' + (driver ? '<span class="badge badge-green">' + driverName + '</span>' : '<span style="color:#94a3b8">-</span>') + '</td><td>' + (o.broker_name || '-') + '</td><td>' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + '</td><td title="' + (o.pickup_full_address || o.origin || '') + '">' + (o.origin || '-') + '</td><td title="' + (o.delivery_full_address || o.destination || '') + '">' + (o.destination || '-') + '</td><td>' + phoneInfo + '</td><td>' + (o.pickup_date ? formatDate(o.pickup_date) : '-') + '</td><td>' + (o.dropoff_date ? formatDate(o.dropoff_date) : '-') + '</td><td><span class="badge badge-blue">' + (o.payment_type || '-') + '</span></td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee || 0) + '</td><td class="money">' + formatMoney(o.revenue) + '</td><td><span class="badge ' + getBadge(o.status) + '">' + o.status + '</span></td><td class="sticky-col"><div class="actions">' + (o.dispatcher_notes ? '<button class="action-btn" style="background:#fef3c7;color:#92400e" title="' + o.dispatcher_notes.replace(/"/g, '&quot;') + '">📝</button>' : '') + '<button class="action-btn edit" onclick="openOrderModal(' + o.id + ')">Edit</button><button class="action-btn delete" onclick="deleteOrder(' + o.id + ')">Del</button></div></td></tr>' + noteHtml; 
+          const assignBtn = t ? '<button class="action-btn" style="background:#fee2e2;color:#dc2626" onclick="unassignOrderFromTrip(' + o.id + ')" title="Unassign from trip">✕</button>' : '<button class="action-btn" style="background:#dbeafe;color:#1d4ed8" onclick="openAssignToTrip(' + o.id + ')" title="Assign to trip">+🚛</button>';
+          return '<tr><td><input type="checkbox" class="order-checkbox" data-id="' + o.id + '" onchange="toggleOrderSelection(' + o.id + ')"></td><td><strong>' + o.order_number + '</strong></td><td>' + (t ? '<span class="badge badge-purple">' + t.trip_number + '</span>' : '<span style="color:#94a3b8">Unassigned</span>') + '</td><td>' + (driver ? '<span class="badge badge-green">' + driverName + '</span>' : '<span style="color:#94a3b8">-</span>') + '</td><td>' + (o.broker_name || '-') + '</td><td>' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + '</td><td title="' + (o.pickup_full_address || o.origin || '') + '">' + (o.origin || '-') + '</td><td title="' + (o.delivery_full_address || o.destination || '') + '">' + (o.destination || '-') + '</td><td>' + phoneInfo + '</td><td>' + (o.pickup_date ? formatDate(o.pickup_date) : '-') + '</td><td>' + (o.dropoff_date ? formatDate(o.dropoff_date) : '-') + '</td><td><span class="badge badge-blue">' + (o.payment_type || '-') + '</span></td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee || 0) + '</td><td class="money">' + formatMoney(o.revenue) + '</td><td><span class="badge ' + getBadge(o.status) + '">' + o.status + '</span></td><td class="sticky-col"><div class="actions">' + assignBtn + (o.dispatcher_notes ? '<button class="action-btn" style="background:#fef3c7;color:#92400e" title="' + o.dispatcher_notes.replace(/"/g, '&quot;') + '">📝</button>' : '') + '<button class="action-btn edit" onclick="openOrderModal(' + o.id + ')">Edit</button><button class="action-btn delete" onclick="deleteOrder(' + o.id + ')">Del</button></div></td></tr>' + noteHtml; 
         }).join('')) + 
         '</tbody></table></div></div>';
     }
