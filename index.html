@@ -25418,10 +25418,8 @@ ${rateText}`
               <div style="margin-bottom:16px">
                 <div id="tripMapStats" style="font-size:13px;color:var(--text-muted)">Calculating route...</div>
               </div>
-              <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">
-                <button class="btn btn-secondary btn-sm" onclick="tripMapSortByDate()">📅 By Date</button>
-                <button class="btn btn-secondary btn-sm" onclick="tripMapAutoSequenceGeographic()">🧭 Geographic</button>
-                <button class="btn btn-secondary btn-sm" onclick="tripMapAutoSequenceNearest()">📍 Nearest</button>
+              <div style="margin-bottom:12px">
+                <button class="btn btn-secondary btn-sm" onclick="tripMapAutoSequenceGeographic()">🧭 Auto-Sequence</button>
               </div>
               <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Drag stops to reorder route:</p>
               <div id="tripMapStopList"></div>
@@ -25660,17 +25658,6 @@ ${rateText}`
       tripMapDraggedIndex = null;
     }
 
-    function tripMapSortByDate() {
-      tripMapStops.sort((a, b) => {
-        const dateA = new Date(a.date || '2099-12-31');
-        const dateB = new Date(b.date || '2099-12-31');
-        return dateA - dateB;
-      });
-
-      renderTripMapStopList();
-      updateTripMapRoute();
-    }
-
     // Auto-sequence: Geographic (East→West or West→East based on trip direction)
     // Interleaves pickups and deliveries at each geographic location
     async function tripMapAutoSequenceGeographic() {
@@ -25773,145 +25760,6 @@ ${rateText}`
       renderTripMapStopList();
       await updateTripMapRoute();
       showToast(`🧭 Sorted ${isReturnTrip ? 'West→East' : 'East→West'}`, 'success');
-    }
-
-    // Auto-sequence: Nearest Neighbor algorithm
-    async function tripMapAutoSequenceNearest() {
-      const stopsWithCoords = tripMapStops.filter(s => s.coords);
-      const stopsWithoutCoords = tripMapStops.filter(s => !s.coords);
-
-      if (stopsWithCoords.length === 0) {
-        showToast('No geocoded stops to sequence', 'warning');
-        return;
-      }
-
-      // Track which orders have been picked up
-      const pickedUp = new Set();
-      const result = [];
-      const remaining = [...stopsWithCoords];
-
-      // Find the easternmost pickup as starting point
-      const pickups = remaining.filter(s => s.type === 'PICKUP');
-      if (pickups.length === 0) {
-        // No pickups (all terminal), just sort deliveries by nearest
-        let current = remaining.reduce((east, s) =>
-          !east || s.coords.lng > east.coords.lng ? s : east, null);
-
-        while (remaining.length > 0) {
-          result.push(current);
-          remaining.splice(remaining.indexOf(current), 1);
-          if (remaining.length > 0) {
-            current = findNearest(current, remaining);
-          }
-        }
-      } else {
-        // Start from easternmost pickup
-        let current = pickups.reduce((east, s) =>
-          !east || s.coords.lng > east.coords.lng ? s : east, null);
-
-        while (remaining.length > 0) {
-          result.push(current);
-          remaining.splice(remaining.indexOf(current), 1);
-
-          // Mark as picked up if it's a pickup
-          if (current.type === 'PICKUP') {
-            pickedUp.add(current.orderId);
-          }
-
-          if (remaining.length === 0) break;
-
-          // Find nearest VALID stop (can't deliver before pickup)
-          const validStops = remaining.filter(s => {
-            if (s.type === 'DELIVERY') {
-              // Can only deliver if already picked up
-              return pickedUp.has(s.orderId);
-            }
-            return true; // Pickups are always valid
-          });
-
-          if (validStops.length > 0) {
-            current = findNearest(current, validStops);
-          } else {
-            // No valid stops, take any remaining pickup
-            current = remaining.find(s => s.type === 'PICKUP') || remaining[0];
-          }
-        }
-      }
-
-      tripMapStops = [...result, ...stopsWithoutCoords];
-
-      renderTripMapStopList();
-      await updateTripMapRoute();
-      showToast('📍 Optimized by nearest neighbor', 'success');
-    }
-
-    // Helper: Calculate distance between two coordinates
-    function calcDistance(a, b) {
-      const dLat = b.lat - a.lat;
-      const dLng = b.lng - a.lng;
-      return Math.sqrt(dLat * dLat + dLng * dLng);
-    }
-
-    // Helper: Find nearest stop from current position
-    function findNearest(current, stops) {
-      let nearest = stops[0];
-      let minDist = calcDistance(current.coords, nearest.coords);
-
-      for (let i = 1; i < stops.length; i++) {
-        const dist = calcDistance(current.coords, stops[i].coords);
-        if (dist < minDist) {
-          minDist = dist;
-          nearest = stops[i];
-        }
-      }
-      return nearest;
-    }
-
-    // Helper: Enforce pickup comes before delivery for each order
-    function enforcePickupBeforeDelivery(stops) {
-      const result = [...stops];
-      const orderPositions = {};
-
-      // Find current positions
-      result.forEach((stop, index) => {
-        if (!orderPositions[stop.orderId]) {
-          orderPositions[stop.orderId] = {};
-        }
-        orderPositions[stop.orderId][stop.type] = index;
-      });
-
-      // Fix any violations
-      let changed = true;
-      let iterations = 0;
-      while (changed && iterations < 100) {
-        changed = false;
-        iterations++;
-
-        for (const orderId of Object.keys(orderPositions)) {
-          const pos = orderPositions[orderId];
-          if (pos.PICKUP !== undefined && pos.DELIVERY !== undefined) {
-            if (pos.PICKUP >= pos.DELIVERY) {
-              // Move pickup just before delivery
-              const pickupIdx = pos.PICKUP;
-              const deliveryIdx = pos.DELIVERY;
-              const [pickup] = result.splice(pickupIdx, 1);
-              result.splice(deliveryIdx, 0, pickup);
-
-              // Recalculate positions
-              result.forEach((stop, index) => {
-                if (!orderPositions[stop.orderId]) {
-                  orderPositions[stop.orderId] = {};
-                }
-                orderPositions[stop.orderId][stop.type] = index;
-              });
-              changed = true;
-              break;
-            }
-          }
-        }
-      }
-
-      return result;
     }
 
     function validateTripMapSequence() {
