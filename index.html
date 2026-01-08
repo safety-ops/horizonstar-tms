@@ -25695,20 +25695,23 @@ ${rateText}`
 
       // Sort stops to approximate driving route
       // Primary: longitude (East→West or West→East)
-      // Secondary: latitude bands - for stops at similar longitude, prefer southern route (I-40/I-10 corridor)
-      // This approximates real driving routes where interstates run along southern corridors
-      const LONGITUDE_THRESHOLD = 2; // degrees (~100-150 miles) - consider stops "at similar longitude"
+      // Secondary: in Oklahoma region only, prefer southern route (I-40 corridor before Tulsa/I-44)
+      const LONGITUDE_THRESHOLD = 2; // degrees (~100-150 miles)
+      const OKLAHOMA_REGION = { minLng: -100, maxLng: -94 }; // Oklahoma longitude range
 
       stopsWithCoords.sort((a, b) => {
         const lngDiff = Math.abs(a.coords.lng - b.coords.lng);
 
-        if (lngDiff < LONGITUDE_THRESHOLD) {
-          // Similar longitude - sort by latitude (southern first for main corridor)
-          // For East→West trips, southern routes (I-40, I-10) are primary
-          // Lower latitude = further south
+        // Only apply latitude sorting in Oklahoma region where I-40 and I-44 split
+        const aInOklahoma = a.coords.lng >= OKLAHOMA_REGION.minLng && a.coords.lng <= OKLAHOMA_REGION.maxLng;
+        const bInOklahoma = b.coords.lng >= OKLAHOMA_REGION.minLng && b.coords.lng <= OKLAHOMA_REGION.maxLng;
+
+        if (lngDiff < LONGITUDE_THRESHOLD && aInOklahoma && bInOklahoma) {
+          // Both in Oklahoma with similar longitude - southern first (I-40 before I-44)
           return a.coords.lat - b.coords.lat;
         }
 
+        // Default: sort by longitude
         if (isReturnTrip) {
           return a.coords.lng - b.coords.lng; // West to East
         } else {
