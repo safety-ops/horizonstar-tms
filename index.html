@@ -25580,29 +25580,16 @@ ${rateText}`
         bounds.push([stop.coords.lat, stop.coords.lng]);
       });
 
-      // Calculate driving route
+      // Draw route line between stops
       if (validStops.length >= 2) {
-        const waypoints = validStops.map(s => s.coords);
-        const routeData = await calculateDrivingRoute(waypoints);
+        const pathCoords = validStops.map(s => [s.coords.lat, s.coords.lng]);
+        tripMapRoute = L.polyline(pathCoords, {
+          color: '#3b82f6',
+          weight: 4,
+          opacity: 0.8
+        }).addTo(tripMapInstance);
 
-        if (routeData) {
-          const decodedPath = decodePolyline(routeData.polyline);
-          tripMapRoute = L.polyline(decodedPath, {
-            color: '#3b82f6',
-            weight: 4,
-            opacity: 0.8
-          }).addTo(tripMapInstance);
-
-          const distanceMiles = Math.round(routeData.totalDistance / 1609.34);
-          const durationHours = Math.round(routeData.totalDuration / 3600 * 10) / 10;
-          document.getElementById('tripMapStats').innerHTML = `
-            <strong>📏 ${distanceMiles.toLocaleString()} miles</strong><br>
-            <strong>⏱️ ${durationHours} hours drive time</strong>
-            <div style="margin-top:4px;color:var(--text-muted)">${validStops.length} stops</div>
-          `;
-        } else {
-          document.getElementById('tripMapStats').innerHTML = `<div>${validStops.length} stops (route calculation failed)</div>`;
-        }
+        document.getElementById('tripMapStats').innerHTML = `<div>${validStops.length} stops</div>`;
       } else {
         document.getElementById('tripMapStats').innerHTML = `<div>${validStops.length} stop${validStops.length !== 1 ? 's' : ''}</div>`;
       }
