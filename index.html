@@ -25706,10 +25706,22 @@ ${rateText}`
         }
       }
 
-      // Sort ALL stops by longitude
-      // East→West: sort by longitude descending (most east first)
-      // West→East: sort by longitude ascending (most west first)
+      // Sort stops to approximate driving route
+      // Primary: longitude (East→West or West→East)
+      // Secondary: latitude bands - for stops at similar longitude, prefer southern route (I-40/I-10 corridor)
+      // This approximates real driving routes where interstates run along southern corridors
+      const LONGITUDE_THRESHOLD = 2; // degrees (~100-150 miles) - consider stops "at similar longitude"
+
       stopsWithCoords.sort((a, b) => {
+        const lngDiff = Math.abs(a.coords.lng - b.coords.lng);
+
+        if (lngDiff < LONGITUDE_THRESHOLD) {
+          // Similar longitude - sort by latitude (southern first for main corridor)
+          // For East→West trips, southern routes (I-40, I-10) are primary
+          // Lower latitude = further south
+          return a.coords.lat - b.coords.lat;
+        }
+
         if (isReturnTrip) {
           return a.coords.lng - b.coords.lng; // West to East
         } else {
