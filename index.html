@@ -14198,7 +14198,7 @@ ${rateText}`
       ` : '';
       
       const c = document.getElementById('main-content');
-      c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><button class="btn btn-secondary" onclick="renderTrips(document.getElementById(\'main-content\'))">← Back</button><h2>' + t.trip_number + '</h2><span class="badge ' + getBadge(t.status) + '">' + t.status + '</span>' + (t.status !== 'COMPLETED' ? '<button class="btn btn-primary" style="background:#10b981" onclick="markTripCompleted(' + id + ')">✓ Mark Completed</button>' : '<span style="color:#10b981;font-weight:600">✓ Trip Completed</span>') + '</div><div style="display:flex;gap:12px"><button class="btn btn-primary" onclick="openAddVehicle(' + id + ')">+ Add Vehicle</button><button class="btn btn-secondary" onclick="openAddExpense(' + id + ')">+ Expense</button><button class="btn btn-secondary" onclick="openRouteSequence(' + id + ')">🗺️ Route Sequence</button></div></div>' +
+      c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><button class="btn btn-secondary" onclick="renderTrips(document.getElementById(\'main-content\'))">← Back</button><h2>' + t.trip_number + '</h2><span class="badge ' + getBadge(t.status) + '">' + t.status + '</span>' + (t.status !== 'COMPLETED' ? '<button class="btn btn-primary" style="background:#10b981" onclick="markTripCompleted(' + id + ')">✓ Mark Completed</button>' : '<span style="color:#10b981;font-weight:600">✓ Trip Completed</span>') + '</div><div style="display:flex;gap:12px"><button class="btn btn-primary" onclick="openAddVehicle(' + id + ')">+ Add Vehicle</button><button class="btn btn-secondary" onclick="openAddExpense(' + id + ')">+ Expense</button><button class="btn btn-secondary" onclick="openTripMap(' + id + ')">🗺️ Trip Map</button></div></div>' +
         
         '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px"><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Date</div><div class="value" style="font-size:16px">' + formatDate(t.trip_date) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:150px;padding:12px 16px;background:#f3e8ff;cursor:pointer" onclick="openTripModal(' + id + ')"><div class="label">📅 Pay Period ✏️</div><div class="value" style="font-size:12px;color:#7c3aed">' + payPeriodText + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px;cursor:pointer" onclick="openAssignDriver(' + id + ')"><div class="label">Driver ✏️</div><div class="value" style="font-size:14px">' + (d ? d.first_name + ' ' + d.last_name : 'Not Assigned') + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:80px;padding:12px 16px;cursor:pointer" onclick="openAssignTruck(' + id + ')"><div class="label">Truck ✏️</div><div class="value" style="font-size:16px">' + (tr ? '#' + tr.truck_number : '-') + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:70px;padding:12px 16px"><div class="label">Cars</div><div class="value" style="font-size:16px">' + orders.length + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Broker Fees</div><div class="value" style="font-size:14px;color:#ef4444">' + formatMoney(f.brokerFee) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Local Fees</div><div class="value" style="font-size:14px;color:#ef4444">' + formatMoney(f.localFees) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Revenue</div><div class="value" style="font-size:14px">' + formatMoney(f.loadRevenue) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;background:#dbeafe"><div class="label">Clean Revenue</div><div class="value" style="font-size:14px;color:#1d4ed8">' + formatMoney(cleanRevenue) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px;background:' + (f.netProfit >= 0 ? '#d1fae5' : '#fee2e2') + '"><div class="label">Net Profit</div><div class="value" style="font-size:14px">' + formatMoney(f.netProfit) + '</div></div></div>' +
         
@@ -25075,7 +25075,38 @@ ${rateText}`
         '<li>Copy the token and paste above</li>' +
         '</ol>' +
         '</div></div>' +
-        
+
+        // Google Maps Integration Section (for Trip Map)
+        '<div class="card" style="max-width:700px;margin-top:24px"><div class="card-header"><h3>🗺️ Google Maps Integration</h3></div>' +
+        '<div style="padding:20px">' +
+        '<p style="color:#64748b;margin-bottom:20px">Enable Trip Map feature with driving routes and geocoding.</p>' +
+
+        '<div class="form-group"><label>Google Maps API Key</label><div style="display:flex;gap:12px"><input type="password" id="googleMapsKeyInput" value="' + getGoogleMapsApiKey() + '" placeholder="AIzaSy..." style="flex:1"><button class="btn btn-secondary" onclick="toggleGoogleMapsKeyVisibility()">👁️</button></div></div>' +
+
+        (getGoogleMapsApiKey() ? '<div style="background:#d1fae5;padding:12px;border-radius:8px;margin-bottom:16px"><span style="color:#059669">✓ Google Maps API key saved</span></div>' : '<div style="background:#fef3c7;padding:12px;border-radius:8px;margin-bottom:16px"><span style="color:#92400e">⚠️ No API key. Trip Map feature disabled.</span></div>') +
+
+        '<div style="display:flex;gap:12px;flex-wrap:wrap"><button class="btn btn-primary" onclick="saveGoogleMapsKey()">💾 Save Key</button>' +
+        (getGoogleMapsApiKey() ? '<button class="btn btn-secondary" style="background:#fee2e2;color:#dc2626" onclick="clearGoogleMapsKey()">🗑️ Remove</button>' : '') +
+        '<button class="btn btn-secondary" onclick="testGoogleMapsKey()">🧪 Test Connection</button></div>' +
+
+        '<div id="googleMapsTestResult" style="margin-top:16px"></div>' +
+        '</div></div>' +
+
+        '<div class="card" style="max-width:700px;margin-top:24px"><div class="card-header"><h3>📋 How to Get Google Maps API Key</h3></div>' +
+        '<div style="padding:20px">' +
+        '<ol style="color:#64748b;line-height:2">' +
+        '<li>Go to <a href="https://console.cloud.google.com" target="_blank" style="color:#1d4ed8">console.cloud.google.com</a></li>' +
+        '<li>Create a new project or select existing</li>' +
+        '<li>Go to <strong>APIs & Services</strong> → <strong>Library</strong></li>' +
+        '<li>Enable: <strong>Geocoding API</strong> and <strong>Directions API</strong></li>' +
+        '<li>Go to <strong>APIs & Services</strong> → <strong>Credentials</strong></li>' +
+        '<li>Click <strong>Create Credentials</strong> → <strong>API Key</strong></li>' +
+        '<li>Restrict key to Geocoding and Directions APIs (optional but recommended)</li>' +
+        '<li>Copy and paste the key above</li>' +
+        '</ol>' +
+        '<div style="background:#dbeafe;padding:12px;border-radius:8px;margin-top:16px"><strong style="color:#1d4ed8">Free Tier:</strong> $200/month credit (~40,000 geocode requests or ~40,000 directions requests)</div>' +
+        '</div></div>' +
+
         // Email Integration Section (Supabase Edge Function + Resend)
         '<div class="card" style="max-width:700px;margin-top:24px"><div class="card-header"><h3>📧 Email Integration (Resend)</h3></div>' +
         '<div style="padding:20px">' +
@@ -25211,6 +25242,799 @@ ${rateText}`
       }
     }
     
+    // ============ GOOGLE MAPS INTEGRATION ============
+    // For Trip Map feature - geocoding and routing
+
+    function getGoogleMapsApiKey() {
+      return localStorage.getItem('horizonstar_google_maps_key') || '';
+    }
+
+    function setGoogleMapsApiKey(key) {
+      if (key) {
+        localStorage.setItem('horizonstar_google_maps_key', key);
+      } else {
+        localStorage.removeItem('horizonstar_google_maps_key');
+      }
+    }
+
+    // Geocoding cache to minimize API calls
+    let geocodeCache = {};
+
+    function loadGeocodeCache() {
+      try {
+        const cached = localStorage.getItem('horizonstar_geocode_cache');
+        if (cached) geocodeCache = JSON.parse(cached);
+      } catch(e) { geocodeCache = {}; }
+    }
+
+    function saveGeocodeCache() {
+      try {
+        localStorage.setItem('horizonstar_geocode_cache', JSON.stringify(geocodeCache));
+      } catch(e) { console.warn('Could not save geocode cache'); }
+    }
+
+    async function geocodeAddress(address) {
+      if (!address) return null;
+
+      const cacheKey = address.toLowerCase().trim();
+      if (geocodeCache[cacheKey]) return geocodeCache[cacheKey];
+
+      const apiKey = getGoogleMapsApiKey();
+      if (!apiKey) {
+        console.warn('Google Maps API key not configured');
+        return null;
+      }
+
+      try {
+        const response = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`
+        );
+        const data = await response.json();
+
+        if (data.status === 'OK' && data.results.length > 0) {
+          const location = data.results[0].geometry.location;
+          const result = { lat: location.lat, lng: location.lng };
+          geocodeCache[cacheKey] = result;
+          saveGeocodeCache();
+          return result;
+        }
+        console.warn('Geocoding failed for:', address, data.status);
+        return null;
+      } catch(e) {
+        console.error('Geocoding error:', e);
+        return null;
+      }
+    }
+
+    async function calculateDrivingRoute(waypoints) {
+      if (waypoints.length < 2) return null;
+
+      const apiKey = getGoogleMapsApiKey();
+      if (!apiKey) return null;
+
+      const origin = `${waypoints[0].lat},${waypoints[0].lng}`;
+      const destination = `${waypoints[waypoints.length - 1].lat},${waypoints[waypoints.length - 1].lng}`;
+
+      let url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&key=${apiKey}`;
+
+      if (waypoints.length > 2) {
+        const intermediates = waypoints.slice(1, -1).map(w => `${w.lat},${w.lng}`).join('|');
+        url += `&waypoints=${encodeURIComponent(intermediates)}`;
+      }
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.status === 'OK' && data.routes.length > 0) {
+          return {
+            polyline: data.routes[0].overview_polyline.points,
+            legs: data.routes[0].legs,
+            totalDistance: data.routes[0].legs.reduce((sum, leg) => sum + leg.distance.value, 0),
+            totalDuration: data.routes[0].legs.reduce((sum, leg) => sum + leg.duration.value, 0)
+          };
+        }
+        console.warn('Directions API failed:', data.status);
+        return null;
+      } catch(e) {
+        console.error('Directions API error:', e);
+        return null;
+      }
+    }
+
+    function decodePolyline(encoded) {
+      const points = [];
+      let index = 0, lat = 0, lng = 0;
+
+      while (index < encoded.length) {
+        let shift = 0, result = 0, byte;
+        do {
+          byte = encoded.charCodeAt(index++) - 63;
+          result |= (byte & 0x1f) << shift;
+          shift += 5;
+        } while (byte >= 0x20);
+        lat += (result & 1) ? ~(result >> 1) : (result >> 1);
+
+        shift = 0; result = 0;
+        do {
+          byte = encoded.charCodeAt(index++) - 63;
+          result |= (byte & 0x1f) << shift;
+          shift += 5;
+        } while (byte >= 0x20);
+        lng += (result & 1) ? ~(result >> 1) : (result >> 1);
+
+        points.push([lat / 1e5, lng / 1e5]);
+      }
+      return points;
+    }
+
+    // Trip Map state
+    let tripMapInstance = null;
+    let tripMapMarkers = [];
+    let tripMapRoute = null;
+    let tripMapTripId = null;
+    let tripMapStops = [];
+
+    async function openTripMap(tripId) {
+      tripMapTripId = tripId;
+      const trip = appData.trips.find(t => t.id === tripId);
+      const tripOrders = appData.orders.filter(o => o.trip_id === tripId);
+
+      if (tripOrders.length === 0) {
+        showToast('No vehicles in this trip to map', 'warning');
+        return;
+      }
+
+      const apiKey = getGoogleMapsApiKey();
+      if (!apiKey) {
+        showToast('Please configure Google Maps API key in Settings', 'error');
+        goToPage('settings');
+        return;
+      }
+
+      // Build stops array
+      tripMapStops = buildTripMapStops(tripOrders);
+
+      // Create modal
+      const m = document.createElement('div');
+      m.className = 'modal-overlay';
+      m.id = 'tripMapOverlay';
+      m.onclick = e => { if (e.target === m) closeTripMap(); };
+
+      m.innerHTML = `
+        <div class="modal" style="max-width:95vw;width:1400px;max-height:95vh;height:90vh;display:flex;flex-direction:column">
+          <div class="modal-header" style="flex-shrink:0">
+            <h3>🗺️ Trip Map - ${trip ? trip.trip_number : 'Trip ' + tripId}</h3>
+            <button class="modal-close" onclick="closeTripMap()">×</button>
+          </div>
+          <div style="display:flex;flex:1;overflow:hidden">
+            <div id="tripMapContainer" style="flex:1;min-height:400px;position:relative">
+              <div id="tripMapLoading" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:1000">
+                <div style="font-size:32px;margin-bottom:16px">🔄</div>
+                <div>Loading map...</div>
+              </div>
+            </div>
+            <div id="tripMapPanel" style="width:320px;background:var(--bg-card);border-left:1px solid var(--border);overflow-y:auto;padding:16px">
+              <div style="margin-bottom:16px">
+                <div id="tripMapStats" style="font-size:13px;color:var(--text-muted)">Calculating route...</div>
+              </div>
+              <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn btn-secondary btn-sm" onclick="tripMapSortByDate()">📅 By Date</button>
+                <button class="btn btn-secondary btn-sm" onclick="tripMapAutoSequenceGeographic()">🧭 Geographic</button>
+                <button class="btn btn-secondary btn-sm" onclick="tripMapAutoSequenceNearest()">📍 Nearest</button>
+              </div>
+              <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Drag stops to reorder route:</p>
+              <div id="tripMapStopList"></div>
+              <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+                <button class="btn btn-primary" style="width:100%" onclick="saveTripMapSequence()">💾 Save Sequence</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(m);
+      loadGeocodeCache();
+      await initTripMap();
+    }
+
+    function buildTripMapStops(tripOrders) {
+      let stops = [];
+
+      tripOrders.forEach(order => {
+        const hasLocalFee = parseFloat(order.local_fee || 0) > 0;
+        const pickupAddr = order.pickup_full_address || order.origin || '';
+        const deliveryAddr = order.delivery_full_address || order.destination || '';
+
+        // Add PICKUP only if no local fee (local fee means terminal pickup)
+        if (!hasLocalFee && pickupAddr) {
+          stops.push({
+            orderId: order.id,
+            type: 'PICKUP',
+            address: pickupAddr,
+            shortLocation: order.origin || '',
+            vehicle: `${order.vehicle_year || ''} ${order.vehicle_make || ''} ${order.vehicle_model || ''}`.trim(),
+            date: order.pickup_date,
+            sequence: order.pickup_sequence || 999,
+            coords: null
+          });
+        }
+
+        // Always add DELIVERY
+        if (deliveryAddr) {
+          stops.push({
+            orderId: order.id,
+            type: 'DELIVERY',
+            address: deliveryAddr,
+            shortLocation: order.destination || '',
+            vehicle: `${order.vehicle_year || ''} ${order.vehicle_make || ''} ${order.vehicle_model || ''}`.trim(),
+            date: order.dropoff_date,
+            sequence: order.delivery_sequence || 999,
+            isTerminalPickup: hasLocalFee,
+            coords: null
+          });
+        }
+      });
+
+      // Sort by sequence, then by date
+      stops.sort((a, b) => {
+        if (a.sequence !== b.sequence) return a.sequence - b.sequence;
+        const dateA = new Date(a.date || '2099-12-31');
+        const dateB = new Date(b.date || '2099-12-31');
+        return dateA - dateB;
+      });
+
+      return stops;
+    }
+
+    async function initTripMap() {
+      // Ensure Leaflet CSS is loaded
+      if (!document.querySelector('link[href*="leaflet"]')) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        document.head.appendChild(link);
+      }
+
+      // Ensure Leaflet JS is loaded
+      if (!window.L) {
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        script.onload = () => initTripMapAfterLeaflet();
+        document.body.appendChild(script);
+      } else {
+        await initTripMapAfterLeaflet();
+      }
+    }
+
+    async function initTripMapAfterLeaflet() {
+      const container = document.getElementById('tripMapContainer');
+      if (!container) return;
+
+      // Small delay to ensure container is rendered
+      await new Promise(r => setTimeout(r, 100));
+
+      tripMapInstance = L.map(container).setView([39.8283, -98.5795], 4);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+      }).addTo(tripMapInstance);
+
+      document.getElementById('tripMapLoading')?.remove();
+
+      // Geocode all addresses
+      for (let i = 0; i < tripMapStops.length; i++) {
+        const stop = tripMapStops[i];
+        if (!stop.coords && stop.address) {
+          stop.coords = await geocodeAddress(stop.address);
+        }
+      }
+
+      renderTripMapStopList();
+      await updateTripMapRoute();
+    }
+
+    async function updateTripMapRoute() {
+      if (!tripMapInstance) return;
+
+      // Clear existing
+      tripMapMarkers.forEach(m => m.remove());
+      tripMapMarkers = [];
+      if (tripMapRoute) {
+        tripMapRoute.remove();
+        tripMapRoute = null;
+      }
+
+      const validStops = tripMapStops.filter(s => s.coords);
+
+      if (validStops.length === 0) {
+        document.getElementById('tripMapStats').innerHTML = '<span style="color:#ef4444">Could not geocode any addresses</span>';
+        return;
+      }
+
+      // Add numbered markers
+      const bounds = [];
+      validStops.forEach((stop, index) => {
+        const isPickup = stop.type === 'PICKUP';
+        const markerColor = isPickup ? '#22c55e' : '#f97316';
+
+        const icon = L.divIcon({
+          html: `<div style="background:${markerColor};color:white;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,0.3);border:2px solid white">${index + 1}</div>`,
+          className: 'trip-map-marker',
+          iconSize: [28, 28],
+          iconAnchor: [14, 14]
+        });
+
+        const marker = L.marker([stop.coords.lat, stop.coords.lng], { icon })
+          .addTo(tripMapInstance)
+          .bindPopup(`
+            <div style="min-width:180px">
+              <div style="font-weight:600;color:${markerColor}">${isPickup ? '📦 PICKUP' : '🏁 DELIVERY'}</div>
+              <div style="font-size:14px;margin-top:4px">${stop.vehicle || 'Vehicle'}</div>
+              <div style="font-size:12px;color:#64748b;margin-top:4px">📍 ${stop.shortLocation || stop.address}</div>
+              ${stop.date ? `<div style="font-size:12px;color:#64748b;margin-top:2px">📅 ${formatDate(stop.date)}</div>` : ''}
+            </div>
+          `);
+
+        tripMapMarkers.push(marker);
+        bounds.push([stop.coords.lat, stop.coords.lng]);
+      });
+
+      // Calculate driving route
+      if (validStops.length >= 2) {
+        const waypoints = validStops.map(s => s.coords);
+        const routeData = await calculateDrivingRoute(waypoints);
+
+        if (routeData) {
+          const decodedPath = decodePolyline(routeData.polyline);
+          tripMapRoute = L.polyline(decodedPath, {
+            color: '#3b82f6',
+            weight: 4,
+            opacity: 0.8
+          }).addTo(tripMapInstance);
+
+          const distanceMiles = Math.round(routeData.totalDistance / 1609.34);
+          const durationHours = Math.round(routeData.totalDuration / 3600 * 10) / 10;
+          document.getElementById('tripMapStats').innerHTML = `
+            <strong>📏 ${distanceMiles.toLocaleString()} miles</strong><br>
+            <strong>⏱️ ${durationHours} hours drive time</strong>
+            <div style="margin-top:4px;color:var(--text-muted)">${validStops.length} stops</div>
+          `;
+        } else {
+          document.getElementById('tripMapStats').innerHTML = `<div>${validStops.length} stops (route calculation failed)</div>`;
+        }
+      } else {
+        document.getElementById('tripMapStats').innerHTML = `<div>${validStops.length} stop${validStops.length !== 1 ? 's' : ''}</div>`;
+      }
+
+      if (bounds.length > 0) {
+        tripMapInstance.fitBounds(bounds, { padding: [40, 40] });
+      }
+    }
+
+    function renderTripMapStopList() {
+      const container = document.getElementById('tripMapStopList');
+      if (!container) return;
+
+      container.innerHTML = tripMapStops.map((stop, index) => {
+        const isPickup = stop.type === 'PICKUP';
+        const bgColor = isPickup ? 'rgba(34,197,94,0.15)' : 'rgba(249,115,22,0.15)';
+        const borderColor = isPickup ? '#22c55e' : '#f97316';
+        const typeLabel = isPickup ? '📦 P' : '🏁 D';
+        const hasCoords = !!stop.coords;
+
+        return `
+          <div class="trip-map-stop" draggable="true" data-index="${index}"
+               style="background:${bgColor};border-left:4px solid ${borderColor};padding:10px;margin-bottom:6px;border-radius:6px;cursor:grab;${!hasCoords ? 'opacity:0.5' : ''}"
+               ondragstart="tripMapDragStart(event)" ondragover="tripMapDragOver(event)" ondrop="tripMapDrop(event)" ondragend="tripMapDragEnd(event)">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-weight:700;min-width:24px">${index + 1}.</span>
+              <div style="flex:1;overflow:hidden">
+                <div style="font-size:12px;font-weight:600;color:${borderColor}">${typeLabel}</div>
+                <div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${stop.vehicle || 'Vehicle'}</div>
+                <div style="font-size:11px;color:var(--text-muted)">${stop.shortLocation || (stop.address ? stop.address.substring(0, 30) : 'No address')}</div>
+              </div>
+              <span style="color:var(--text-muted)">☰</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    let tripMapDraggedIndex = null;
+
+    function tripMapDragStart(e) {
+      tripMapDraggedIndex = parseInt(e.target.closest('.trip-map-stop').dataset.index);
+      e.target.closest('.trip-map-stop').style.opacity = '0.4';
+    }
+
+    function tripMapDragOver(e) {
+      e.preventDefault();
+    }
+
+    async function tripMapDrop(e) {
+      e.preventDefault();
+      const targetEl = e.target.closest('.trip-map-stop');
+      if (!targetEl) return;
+      const targetIndex = parseInt(targetEl.dataset.index);
+
+      if (tripMapDraggedIndex !== null && tripMapDraggedIndex !== targetIndex) {
+        const [moved] = tripMapStops.splice(tripMapDraggedIndex, 1);
+        tripMapStops.splice(targetIndex, 0, moved);
+
+        renderTripMapStopList();
+        await updateTripMapRoute();
+      }
+    }
+
+    function tripMapDragEnd(e) {
+      const el = e.target.closest('.trip-map-stop');
+      if (el) el.style.opacity = '1';
+      tripMapDraggedIndex = null;
+    }
+
+    function tripMapSortByDate() {
+      tripMapStops.sort((a, b) => {
+        const dateA = new Date(a.date || '2099-12-31');
+        const dateB = new Date(b.date || '2099-12-31');
+        return dateA - dateB;
+      });
+
+      renderTripMapStopList();
+      updateTripMapRoute();
+    }
+
+    // Auto-sequence: Geographic (East→West or West→East based on trip direction)
+    // Interleaves pickups and deliveries at each geographic location
+    async function tripMapAutoSequenceGeographic() {
+      // Determine trip direction from orders
+      const tripOrders = appData.orders.filter(o => o.trip_id === tripMapTripId);
+      const directions = tripOrders.map(o => o.vehicle_direction).filter(Boolean);
+
+      // Check if it's a return trip (going east)
+      const isReturnTrip = directions.some(d =>
+        d.includes('TO_HOME') || d === 'CA_TO_FL'
+      );
+
+      // Filter stops with valid coordinates
+      const stopsWithCoords = tripMapStops.filter(s => s.coords);
+      const stopsWithoutCoords = tripMapStops.filter(s => !s.coords);
+
+      if (stopsWithCoords.length === 0) {
+        showToast('No geocoded stops to sequence', 'warning');
+        return;
+      }
+
+      // Sort by longitude (west = negative, east = positive in US)
+      // East→West: sort by longitude descending (most east first)
+      // West→East: sort by longitude ascending (most west first)
+      stopsWithCoords.sort((a, b) => {
+        if (isReturnTrip) {
+          // West to East (return trip)
+          return a.coords.lng - b.coords.lng;
+        } else {
+          // East to West (outbound trip)
+          return b.coords.lng - a.coords.lng;
+        }
+      });
+
+      // Walk through in geographic order, interleaving pickups and deliveries
+      const result = [];
+      const pickedUp = new Set(); // Track which orders have been picked up
+
+      // Pre-mark terminal pickups (isTerminalPickup = true means local driver already delivered to terminal)
+      // These deliveries can happen anytime - no pickup stop needed
+      for (const stop of stopsWithCoords) {
+        if (stop.type === 'DELIVERY' && stop.isTerminalPickup) {
+          pickedUp.add(stop.orderId);
+        }
+      }
+
+      // Also check: if a delivery has no corresponding pickup in our stops, treat as terminal
+      const pickupOrderIds = new Set(stopsWithCoords.filter(s => s.type === 'PICKUP').map(s => s.orderId));
+      for (const stop of stopsWithCoords) {
+        if (stop.type === 'DELIVERY' && !pickupOrderIds.has(stop.orderId)) {
+          pickedUp.add(stop.orderId);
+        }
+      }
+
+      const deferred = []; // Deliveries we can't do yet (pickup not done)
+
+      for (const stop of stopsWithCoords) {
+        if (stop.type === 'PICKUP') {
+          // Always add pickups
+          result.push(stop);
+          pickedUp.add(stop.orderId);
+
+          // Check if any deferred deliveries can now be done
+          for (let i = deferred.length - 1; i >= 0; i--) {
+            if (pickedUp.has(deferred[i].orderId)) {
+              result.push(deferred[i]);
+              deferred.splice(i, 1);
+            }
+          }
+        } else {
+          // DELIVERY
+          if (pickedUp.has(stop.orderId)) {
+            // Car already picked up (or terminal pickup), can deliver
+            result.push(stop);
+          } else {
+            // Car not picked up yet, defer this delivery
+            deferred.push(stop);
+          }
+        }
+      }
+
+      // Add any remaining deferred deliveries at the end
+      result.push(...deferred);
+
+      // Combine with stops without coords at the end
+      tripMapStops = [...result, ...stopsWithoutCoords];
+
+      renderTripMapStopList();
+      await updateTripMapRoute();
+      showToast(`🧭 Sorted ${isReturnTrip ? 'West→East' : 'East→West'}`, 'success');
+    }
+
+    // Auto-sequence: Nearest Neighbor algorithm
+    async function tripMapAutoSequenceNearest() {
+      const stopsWithCoords = tripMapStops.filter(s => s.coords);
+      const stopsWithoutCoords = tripMapStops.filter(s => !s.coords);
+
+      if (stopsWithCoords.length === 0) {
+        showToast('No geocoded stops to sequence', 'warning');
+        return;
+      }
+
+      // Track which orders have been picked up
+      const pickedUp = new Set();
+      const result = [];
+      const remaining = [...stopsWithCoords];
+
+      // Find the easternmost pickup as starting point
+      const pickups = remaining.filter(s => s.type === 'PICKUP');
+      if (pickups.length === 0) {
+        // No pickups (all terminal), just sort deliveries by nearest
+        let current = remaining.reduce((east, s) =>
+          !east || s.coords.lng > east.coords.lng ? s : east, null);
+
+        while (remaining.length > 0) {
+          result.push(current);
+          remaining.splice(remaining.indexOf(current), 1);
+          if (remaining.length > 0) {
+            current = findNearest(current, remaining);
+          }
+        }
+      } else {
+        // Start from easternmost pickup
+        let current = pickups.reduce((east, s) =>
+          !east || s.coords.lng > east.coords.lng ? s : east, null);
+
+        while (remaining.length > 0) {
+          result.push(current);
+          remaining.splice(remaining.indexOf(current), 1);
+
+          // Mark as picked up if it's a pickup
+          if (current.type === 'PICKUP') {
+            pickedUp.add(current.orderId);
+          }
+
+          if (remaining.length === 0) break;
+
+          // Find nearest VALID stop (can't deliver before pickup)
+          const validStops = remaining.filter(s => {
+            if (s.type === 'DELIVERY') {
+              // Can only deliver if already picked up
+              return pickedUp.has(s.orderId);
+            }
+            return true; // Pickups are always valid
+          });
+
+          if (validStops.length > 0) {
+            current = findNearest(current, validStops);
+          } else {
+            // No valid stops, take any remaining pickup
+            current = remaining.find(s => s.type === 'PICKUP') || remaining[0];
+          }
+        }
+      }
+
+      tripMapStops = [...result, ...stopsWithoutCoords];
+
+      renderTripMapStopList();
+      await updateTripMapRoute();
+      showToast('📍 Optimized by nearest neighbor', 'success');
+    }
+
+    // Helper: Calculate distance between two coordinates
+    function calcDistance(a, b) {
+      const dLat = b.lat - a.lat;
+      const dLng = b.lng - a.lng;
+      return Math.sqrt(dLat * dLat + dLng * dLng);
+    }
+
+    // Helper: Find nearest stop from current position
+    function findNearest(current, stops) {
+      let nearest = stops[0];
+      let minDist = calcDistance(current.coords, nearest.coords);
+
+      for (let i = 1; i < stops.length; i++) {
+        const dist = calcDistance(current.coords, stops[i].coords);
+        if (dist < minDist) {
+          minDist = dist;
+          nearest = stops[i];
+        }
+      }
+      return nearest;
+    }
+
+    // Helper: Enforce pickup comes before delivery for each order
+    function enforcePickupBeforeDelivery(stops) {
+      const result = [...stops];
+      const orderPositions = {};
+
+      // Find current positions
+      result.forEach((stop, index) => {
+        if (!orderPositions[stop.orderId]) {
+          orderPositions[stop.orderId] = {};
+        }
+        orderPositions[stop.orderId][stop.type] = index;
+      });
+
+      // Fix any violations
+      let changed = true;
+      let iterations = 0;
+      while (changed && iterations < 100) {
+        changed = false;
+        iterations++;
+
+        for (const orderId of Object.keys(orderPositions)) {
+          const pos = orderPositions[orderId];
+          if (pos.PICKUP !== undefined && pos.DELIVERY !== undefined) {
+            if (pos.PICKUP >= pos.DELIVERY) {
+              // Move pickup just before delivery
+              const pickupIdx = pos.PICKUP;
+              const deliveryIdx = pos.DELIVERY;
+              const [pickup] = result.splice(pickupIdx, 1);
+              result.splice(deliveryIdx, 0, pickup);
+
+              // Recalculate positions
+              result.forEach((stop, index) => {
+                if (!orderPositions[stop.orderId]) {
+                  orderPositions[stop.orderId] = {};
+                }
+                orderPositions[stop.orderId][stop.type] = index;
+              });
+              changed = true;
+              break;
+            }
+          }
+        }
+      }
+
+      return result;
+    }
+
+    function validateTripMapSequence() {
+      const orderPositions = {};
+
+      tripMapStops.forEach((stop, index) => {
+        if (!orderPositions[stop.orderId]) {
+          orderPositions[stop.orderId] = {};
+        }
+        orderPositions[stop.orderId][stop.type] = index;
+      });
+
+      let errors = [];
+      Object.keys(orderPositions).forEach(orderId => {
+        const pos = orderPositions[orderId];
+        if (pos.PICKUP !== undefined && pos.DELIVERY !== undefined) {
+          if (pos.PICKUP >= pos.DELIVERY) {
+            errors.push(orderId);
+          }
+        }
+      });
+
+      if (errors.length > 0) {
+        showToast('⚠️ Pickup must come before delivery for each vehicle', 'warning');
+        return false;
+      }
+      return true;
+    }
+
+    async function saveTripMapSequence() {
+      if (!validateTripMapSequence()) return;
+
+      const updates = {};
+
+      tripMapStops.forEach((stop, index) => {
+        if (!updates[stop.orderId]) {
+          updates[stop.orderId] = {};
+        }
+
+        if (stop.type === 'PICKUP') {
+          updates[stop.orderId].pickup_sequence = index + 1;
+        } else {
+          updates[stop.orderId].delivery_sequence = index + 1;
+        }
+      });
+
+      try {
+        for (const [orderId, data] of Object.entries(updates)) {
+          await dbUpdate('orders', parseInt(orderId), data, true);
+        }
+
+        showToast('✅ Route sequence saved!', 'success');
+        closeTripMap();
+        await loadAllData(true);
+        viewTrip(tripMapTripId);
+      } catch(e) {
+        showToast('❌ Failed to save: ' + e.message, 'error');
+      }
+    }
+
+    function closeTripMap() {
+      if (tripMapInstance) {
+        tripMapInstance.remove();
+        tripMapInstance = null;
+      }
+      tripMapMarkers = [];
+      tripMapRoute = null;
+      tripMapStops = [];
+      document.getElementById('tripMapOverlay')?.remove();
+    }
+
+    // Google Maps Settings functions
+    function saveGoogleMapsKey() {
+      const key = document.getElementById('googleMapsKeyInput')?.value?.trim();
+      setGoogleMapsApiKey(key);
+      showToast(key ? '✅ Google Maps API key saved' : 'API key cleared', key ? 'success' : 'info');
+      renderSettings();
+    }
+
+    function clearGoogleMapsKey() {
+      setGoogleMapsApiKey('');
+      showToast('Google Maps API key removed', 'info');
+      renderSettings();
+    }
+
+    function toggleGoogleMapsKeyVisibility() {
+      const input = document.getElementById('googleMapsKeyInput');
+      if (input) {
+        input.type = input.type === 'password' ? 'text' : 'password';
+      }
+    }
+
+    async function testGoogleMapsKey() {
+      const key = document.getElementById('googleMapsKeyInput')?.value?.trim();
+      const resultDiv = document.getElementById('googleMapsTestResult');
+      if (!resultDiv) return;
+
+      if (!key) {
+        resultDiv.innerHTML = '<div style="color:#ef4444">Please enter an API key first</div>';
+        return;
+      }
+
+      resultDiv.innerHTML = '<div style="color:var(--text-muted)">Testing connection...</div>';
+
+      try {
+        const response = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=New+York,+NY&key=${key}`
+        );
+        const data = await response.json();
+
+        if (data.status === 'OK') {
+          resultDiv.innerHTML = '<div style="color:#22c55e">✅ Connection successful! Geocoding API is working.</div>';
+        } else if (data.status === 'REQUEST_DENIED') {
+          resultDiv.innerHTML = '<div style="color:#ef4444">❌ API key invalid or Geocoding API not enabled</div>';
+        } else {
+          resultDiv.innerHTML = `<div style="color:#f59e0b">⚠️ Response: ${data.status}</div>`;
+        }
+      } catch(e) {
+        resultDiv.innerHTML = '<div style="color:#ef4444">❌ Connection failed: ' + e.message + '</div>';
+      }
+    }
+
     function showProxyCode() {
       const proxyCode = `// Samsara API Proxy - Cloudflare Worker
 // Deploy this at dash.cloudflare.com -> Workers & Pages
