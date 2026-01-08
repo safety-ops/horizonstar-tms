@@ -25443,15 +25443,11 @@ ${rateText}`
 
       tripOrders.forEach(order => {
         const hasLocalFee = parseFloat(order.local_fee || 0) > 0;
-        const hasBrokerFee = parseFloat(order.broker_fee || 0) > 0;
-        // Terminal pickup = local driver picked up car and delivered to terminal
-        // This happens when there's a local fee OR broker fee with local pickup
-        const isTerminalPickup = hasLocalFee || hasBrokerFee;
         const pickupAddr = order.pickup_full_address || order.origin || '';
         const deliveryAddr = order.delivery_full_address || order.destination || '';
 
-        // Add PICKUP only if NOT a terminal pickup (terminal pickup means car is already at terminal)
-        if (!isTerminalPickup && pickupAddr) {
+        // Add PICKUP only if no local fee (local fee = local driver picked up car to terminal)
+        if (!hasLocalFee && pickupAddr) {
           stops.push({
             orderId: order.id,
             type: 'PICKUP',
@@ -25474,7 +25470,7 @@ ${rateText}`
             vehicle: `${order.vehicle_year || ''} ${order.vehicle_make || ''} ${order.vehicle_model || ''}`.trim(),
             date: order.dropoff_date,
             sequence: order.delivery_sequence || 999,
-            isTerminalPickup: isTerminalPickup,
+            isTerminalPickup: hasLocalFee,
             coords: null
           });
         }
