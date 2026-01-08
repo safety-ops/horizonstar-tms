@@ -20,7 +20,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
   <!-- External CSS Files -->
-  <link rel="stylesheet" href="assets/css/variables.css">
+  <link rel="styleshe2et" href="assets/css/variables.css">
   <link rel="stylesheet" href="assets/css/base.css">
   <link rel="stylesheet" href="assets/css/print.css" media="print">
 
@@ -12693,9 +12693,9 @@
       // Get current category
       const currentCat = loadBoardCategories.find(cat => cat.id === selectedLoadCategory) || loadBoardCategories[0];
       
-      // Filter orders for display and sort by earliest pickup date first
+      // Filter orders for display and sort by recently added first
       let displayOrders = unassignedOrders.filter(o => o.load_category === selectedLoadCategory)
-        .sort((a, b) => (a.pickup_date || '').localeCompare(b.pickup_date || ''));
+        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
       if (selectedLoadSub) {
         displayOrders = displayOrders.filter(o => o.load_subcategory === selectedLoadSub);
       }
