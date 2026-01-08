@@ -25693,11 +25693,14 @@ ${rateText}`
       }
 
       // Identify which deliveries can happen anytime (terminal pickups / no pickup in trip)
-      const pickupOrderIds = new Set(stopsWithCoords.filter(s => s.type === 'PICKUP').map(s => s.orderId));
+      // Check against ALL stops (not just stopsWithCoords) to see if pickup exists
+      const allPickupOrderIds = new Set(tripMapStops.filter(s => s.type === 'PICKUP').map(s => s.orderId));
       const canDeliverAnytime = new Set();
+
       for (const stop of stopsWithCoords) {
         if (stop.type === 'DELIVERY') {
-          if (stop.isTerminalPickup || !pickupOrderIds.has(stop.orderId)) {
+          // Can deliver anytime if: terminal pickup OR no pickup stop exists for this order
+          if (stop.isTerminalPickup || !allPickupOrderIds.has(stop.orderId)) {
             canDeliverAnytime.add(stop.orderId);
           }
         }
