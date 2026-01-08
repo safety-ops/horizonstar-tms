@@ -25692,70 +25692,67 @@ ${rateText}`
         return;
       }
 
-      // Sort by longitude (west = negative, east = positive in US)
+      // Identify which deliveries can happen anytime (terminal pickups / no pickup in trip)
+      const pickupOrderIds = new Set(stopsWithCoords.filter(s => s.type === 'PICKUP').map(s => s.orderId));
+      const canDeliverAnytime = new Set();
+      for (const stop of stopsWithCoords) {
+        if (stop.type === 'DELIVERY') {
+          if (stop.isTerminalPickup || !pickupOrderIds.has(stop.orderId)) {
+            canDeliverAnytime.add(stop.orderId);
+          }
+        }
+      }
+
+      // Sort ALL stops by longitude
       // East→West: sort by longitude descending (most east first)
       // West→East: sort by longitude ascending (most west first)
       stopsWithCoords.sort((a, b) => {
         if (isReturnTrip) {
-          // West to East (return trip)
-          return a.coords.lng - b.coords.lng;
+          return a.coords.lng - b.coords.lng; // West to East
         } else {
-          // East to West (outbound trip)
-          return b.coords.lng - a.coords.lng;
+          return b.coords.lng - a.coords.lng; // East to West
         }
       });
 
-      // Walk through in geographic order, interleaving pickups and deliveries
+      // Build result: process in geographic order
+      // - Pickups: add immediately, mark order as picked up
+      // - Deliveries that can happen anytime: add at their geographic position
+      // - Deliveries that need pickup first: defer until their pickup is done
       const result = [];
-      const pickedUp = new Set(); // Track which orders have been picked up
-
-      // Pre-mark terminal pickups (isTerminalPickup = true means local driver already delivered to terminal)
-      // These deliveries can happen anytime - no pickup stop needed
-      for (const stop of stopsWithCoords) {
-        if (stop.type === 'DELIVERY' && stop.isTerminalPickup) {
-          pickedUp.add(stop.orderId);
-        }
-      }
-
-      // Also check: if a delivery has no corresponding pickup in our stops, treat as terminal
-      const pickupOrderIds = new Set(stopsWithCoords.filter(s => s.type === 'PICKUP').map(s => s.orderId));
-      for (const stop of stopsWithCoords) {
-        if (stop.type === 'DELIVERY' && !pickupOrderIds.has(stop.orderId)) {
-          pickedUp.add(stop.orderId);
-        }
-      }
-
-      const deferred = []; // Deliveries we can't do yet (pickup not done)
+      const pickedUp = new Set(canDeliverAnytime); // Pre-mark terminal pickups
+      const deferred = []; // Deliveries waiting for pickup
 
       for (const stop of stopsWithCoords) {
         if (stop.type === 'PICKUP') {
-          // Always add pickups
           result.push(stop);
           pickedUp.add(stop.orderId);
 
-          // Check if any deferred deliveries can now be done
-          for (let i = deferred.length - 1; i >= 0; i--) {
-            if (pickedUp.has(deferred[i].orderId)) {
-              result.push(deferred[i]);
-              deferred.splice(i, 1);
+          // After each pickup, add any deferred deliveries that are now ready
+          // Sort deferred by longitude to add them in geographic order
+          const nowReady = deferred.filter(d => pickedUp.has(d.orderId));
+          if (nowReady.length > 0) {
+            nowReady.sort((a, b) => isReturnTrip
+              ? a.coords.lng - b.coords.lng
+              : b.coords.lng - a.coords.lng
+            );
+            for (const ready of nowReady) {
+              result.push(ready);
+              deferred.splice(deferred.indexOf(ready), 1);
             }
           }
         } else {
           // DELIVERY
           if (pickedUp.has(stop.orderId)) {
-            // Car already picked up (or terminal pickup), can deliver
             result.push(stop);
           } else {
-            // Car not picked up yet, defer this delivery
             deferred.push(stop);
           }
         }
       }
 
-      // Add any remaining deferred deliveries at the end
+      // Add remaining deferred at end (shouldn't happen normally)
       result.push(...deferred);
 
-      // Combine with stops without coords at the end
       tripMapStops = [...result, ...stopsWithoutCoords];
 
       renderTripMapStopList();
