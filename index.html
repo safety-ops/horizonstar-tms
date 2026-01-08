@@ -10051,13 +10051,9 @@
       // Navigation bar
       const navBar = `
         <nav class="login-nav">
-          <div class="login-nav-logo">
-            <div class="login-nav-logo-icon">🚛</div>
-            <span>Horizon<span style="color:#22c55e">Star</span></span>
-          </div>
+          <button class="login-nav-btn" onclick="renderDriverApplication()" style="background:transparent;border:2px solid #22c55e;color:#22c55e">APPLY TO DRIVE</button>
           <div class="login-nav-links"></div>
           <div class="login-nav-buttons">
-            <button class="login-nav-btn" onclick="renderDriverApplication()" style="background:transparent;border:2px solid #22c55e;color:#22c55e;margin-right:12px">🚛 APPLY TO DRIVE</button>
             <button class="login-nav-btn login" onclick="renderLogin()">LOGIN</button>
           </div>
         </nav>
@@ -10118,10 +10114,10 @@
 
       // Footer bar
       const footerBar = `
-        <div class="login-footer-bar">
-          <span>Powered by <strong>Horizon Star LLC</strong></span>
-          <span>•</span>
-          <span>Built by <a href="#">Levani Grigolia</a></span>
+        <div class="login-footer-bar" style="color:rgba(255,255,255,0.5)">
+          <span>Powered by <strong style="color:#22c55e">Horizon Star LLC</strong></span>
+          <span style="color:rgba(255,255,255,0.3)">•</span>
+          <span>Built by <a href="#" style="color:#22c55e;text-decoration:none">Levani Grigolia</a></span>
         </div>
       `;
 
