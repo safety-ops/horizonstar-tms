@@ -10121,6 +10121,8 @@
         <div class="login-footer-bar" style="color:rgba(255,255,255,0.5)">
           <span>Powered by <strong style="color:#22c55e">Horizon Star LLC</strong></span>
           <span style="color:rgba(255,255,255,0.3)">•</span>
+          <a href="#" onclick="showPrivacyPolicy();return false;" style="color:#22c55e;text-decoration:none">Privacy Policy</a>
+          <span style="color:rgba(255,255,255,0.3)">•</span>
           <span>Built by <a href="#" style="color:#22c55e;text-decoration:none">Levani Grigolia</a></span>
         </div>
       `;
@@ -11313,6 +11315,106 @@
         btnEl.textContent = 'Sign In';
         btnEl.disabled = false;
       }
+    }
+
+    // Privacy Policy Modal
+    function showPrivacyPolicy() {
+      const m = document.createElement('div');
+      m.className = 'modal-overlay';
+      m.onclick = e => { if (e.target === m) m.remove(); };
+      m.innerHTML = `
+        <div class="modal" style="max-width:700px;max-height:90vh">
+          <div class="modal-header">
+            <h3>🔒 Privacy Policy</h3>
+            <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+          </div>
+          <div class="modal-body" style="max-height:70vh;overflow-y:auto;font-size:14px;line-height:1.7">
+            <p style="color:var(--text-secondary);margin-bottom:16px"><strong>Last Updated:</strong> January 9, 2026</p>
+
+            <h4 style="color:var(--primary);margin:20px 0 12px">1. Introduction</h4>
+            <p style="color:var(--text-secondary);margin-bottom:12px">
+              Horizon Star LLC ("we", "our", or "us") operates the Horizon Star Driver mobile application and web-based Transportation Management System (TMS). This Privacy Policy explains how we collect, use, disclose, and safeguard your information.
+            </p>
+
+            <h4 style="color:var(--primary);margin:20px 0 12px">2. Information We Collect</h4>
+            <p style="color:var(--text-secondary);margin-bottom:8px"><strong>Personal Information:</strong></p>
+            <ul style="color:var(--text-secondary);margin-left:20px;margin-bottom:12px">
+              <li>Name, email address, phone number</li>
+              <li>Driver identification (PIN code)</li>
+              <li>Employment information (cut percentage, assigned trips)</li>
+            </ul>
+            <p style="color:var(--text-secondary);margin-bottom:8px"><strong>Vehicle Inspection Data:</strong></p>
+            <ul style="color:var(--text-secondary);margin-left:20px;margin-bottom:12px">
+              <li>Photos and videos of vehicles during pickup/delivery inspections</li>
+              <li>Vehicle condition reports and damage documentation</li>
+              <li>Odometer readings and VIN numbers</li>
+              <li>Digital signatures from drivers and customers</li>
+            </ul>
+            <p style="color:var(--text-secondary);margin-bottom:8px"><strong>Trip and Financial Data:</strong></p>
+            <ul style="color:var(--text-secondary);margin-left:20px;margin-bottom:12px">
+              <li>Trip assignments, routes, and delivery information</li>
+              <li>Payment records and earnings history</li>
+              <li>Expense reports and receipt images</li>
+            </ul>
+
+            <h4 style="color:var(--primary);margin:20px 0 12px">3. How We Use Your Information</h4>
+            <ul style="color:var(--text-secondary);margin-left:20px;margin-bottom:12px">
+              <li>To facilitate vehicle transportation and delivery services</li>
+              <li>To document vehicle conditions for insurance and liability purposes</li>
+              <li>To process driver payroll and track earnings</li>
+              <li>To communicate trip assignments and updates</li>
+              <li>To generate Bills of Lading and inspection reports</li>
+              <li>To comply with transportation regulations (FMCSA, DOT)</li>
+            </ul>
+
+            <h4 style="color:var(--primary);margin:20px 0 12px">4. Data Storage and Security</h4>
+            <p style="color:var(--text-secondary);margin-bottom:12px">
+              Your data is stored securely using Supabase cloud infrastructure with encryption at rest and in transit. We implement industry-standard security measures including secure HTTPS connections, authenticated API access, and regular security audits.
+            </p>
+
+            <h4 style="color:var(--primary);margin:20px 0 12px">5. Data Sharing</h4>
+            <p style="color:var(--text-secondary);margin-bottom:12px">
+              We do not sell your personal information. We may share data with:
+            </p>
+            <ul style="color:var(--text-secondary);margin-left:20px;margin-bottom:12px">
+              <li>Customers receiving vehicle deliveries (inspection reports, signatures)</li>
+              <li>Insurance providers when required for claims</li>
+              <li>Law enforcement when required by law</li>
+              <li>Service providers who assist our operations (under confidentiality agreements)</li>
+            </ul>
+
+            <h4 style="color:var(--primary);margin:20px 0 12px">6. Data Retention</h4>
+            <p style="color:var(--text-secondary);margin-bottom:12px">
+              We retain inspection records, photos, and trip data for a minimum of 3 years to comply with transportation industry regulations. Payroll records are retained for 7 years per IRS requirements. You may request deletion of non-essential data at any time.
+            </p>
+
+            <h4 style="color:var(--primary);margin:20px 0 12px">7. Your Rights</h4>
+            <p style="color:var(--text-secondary);margin-bottom:12px">You have the right to:</p>
+            <ul style="color:var(--text-secondary);margin-left:20px;margin-bottom:12px">
+              <li>Access your personal data</li>
+              <li>Request correction of inaccurate data</li>
+              <li>Request deletion of your data (subject to legal retention requirements)</li>
+              <li>Withdraw consent for optional data processing</li>
+            </ul>
+
+            <h4 style="color:var(--primary);margin:20px 0 12px">8. Contact Us</h4>
+            <p style="color:var(--text-secondary);margin-bottom:12px">
+              For privacy-related questions or to exercise your rights, contact us at:<br>
+              <strong>Email:</strong> privacy@horizonstarllc.com<br>
+              <strong>Company:</strong> Horizon Star LLC
+            </p>
+
+            <h4 style="color:var(--primary);margin:20px 0 12px">9. Changes to This Policy</h4>
+            <p style="color:var(--text-secondary);margin-bottom:12px">
+              We may update this Privacy Policy from time to time. We will notify users of any material changes via the app or email.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove()">Close</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(m);
     }
 
     // Forgot Password Flow
