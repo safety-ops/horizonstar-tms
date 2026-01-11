@@ -22184,9 +22184,12 @@ ${rateText}`
       const totalVariableCosts = totalFuelFromRecords + totalMaintenanceCost + totalOtherVariableCosts;
       
       // Calculate profits
+      // NOTE: Trip expenses are NOT included in overall business financials
+      // They only affect trip-level profitability. Business costs come from:
+      // fuel_transactions, maintenance_records, fixed_costs, variable_costs
       const cleanRevenue = totalRevenue - totalBrokerFees - totalLocalFees;
       const grossProfit = cleanRevenue - totalDriverPay;
-      const operatingProfit = grossProfit - totalTripExpenses - totalVariableCosts;
+      const operatingProfit = grossProfit - totalVariableCosts;
       const netProfit = operatingProfit - totalFixedCosts;
       const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue * 100) : 0;
       
@@ -24690,9 +24693,12 @@ ${rateText}`
       const totalFixedCosts = monthlyFixedCosts * monthsInData;
       
       // TOTAL COSTS & TRUE NET PROFIT (using accurate data from getTripFin)
-      const totalAllCosts = totalBrokerFees + totalLocalFees + totalDriverPay + totalTripExpenses + totalVariableCosts + totalFixedCosts;
+      // NOTE: Trip expenses are NOT included in overall business financials
+      // They only affect trip-level profitability. Business costs come from:
+      // fuel_transactions, maintenance_records, fixed_costs, variable_costs
+      const totalAllCosts = totalBrokerFees + totalLocalFees + totalDriverPay + totalVariableCosts + totalFixedCosts;
       const grossProfit = cleanRevenue - totalDriverPay;
-      const operatingProfit = grossProfit - totalTripExpenses - totalVariableCosts;
+      const operatingProfit = grossProfit - totalVariableCosts;
       const trueNetProfit = operatingProfit - totalFixedCosts;
       const profitMargin = totalRevenue > 0 ? (trueNetProfit / totalRevenue * 100) : 0;
       
