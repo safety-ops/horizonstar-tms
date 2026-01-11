@@ -22217,6 +22217,7 @@ ${rateText}`
             <button class="btn ${finTab === 'drivers' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='drivers';renderConsolidatedFinancials(document.getElementById('main-content'))">👤 By Driver</button>
             <button class="btn ${finTab === 'brokers' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='brokers';renderConsolidatedFinancials(document.getElementById('main-content'))">🤝 By Broker</button>
             <button class="btn ${finTab === 'lanes' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='lanes';renderConsolidatedFinancials(document.getElementById('main-content'))">🗺️ By Lane</button>
+            <button class="btn ${finTab === 'trucks' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='trucks';renderConsolidatedFinancials(document.getElementById('main-content'))">🚚 By Truck</button>
           </div>
           <div style="display:flex;align-items:center;gap:8px;background:#f8fafc;padding:8px 12px;border-radius:6px">
             <label style="font-weight:600;color:#475569;font-size:13px">Year:</label>
@@ -22248,8 +22249,10 @@ ${rateText}`
         content = renderFinByBroker(orders, trips);
       } else if (finTab === 'lanes') {
         content = renderFinByLane(orders, trips);
+      } else if (finTab === 'trucks') {
+        content = renderFinByTruck(trips, trucks, fuelRecords, maintenance);
       }
-      
+
       c.innerHTML = '<div class="header"><h2>💰 Financials</h2></div>' + tabs + content;
     }
     
@@ -22625,6 +22628,209 @@ ${rateText}`
           <div class="table-wrapper">
             <table>
               <thead><tr><th>Lane</th><th>Trips</th><th>Cars</th><th>Miles</th><th>Revenue</th><th>Clean Revenue</th><th>Rev/Mile</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // Track truck P&L period filter
+    let truckPLPeriod = 'year'; // 'all', 'year', 'quarter', 'month'
+
+    function renderFinByTruck(trips, trucks, fuelRecords, maintenanceRecords) {
+      const allFuel = appData.fuel_transactions || [];
+      const allMaintenance = appData.maintenance_records || [];
+
+      // Build period filter UI
+      const periodOptions = `
+        <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;">
+          <span style="font-weight:600;color:#475569;">Period:</span>
+          <button class="btn ${truckPLPeriod === 'month' ? 'btn-primary' : 'btn-secondary'}" style="padding:4px 12px;font-size:12px" onclick="truckPLPeriod='month';renderConsolidatedFinancials(document.getElementById('main-content'))">This Month</button>
+          <button class="btn ${truckPLPeriod === 'quarter' ? 'btn-primary' : 'btn-secondary'}" style="padding:4px 12px;font-size:12px" onclick="truckPLPeriod='quarter';renderConsolidatedFinancials(document.getElementById('main-content'))">This Quarter</button>
+          <button class="btn ${truckPLPeriod === 'year' ? 'btn-primary' : 'btn-secondary'}" style="padding:4px 12px;font-size:12px" onclick="truckPLPeriod='year';renderConsolidatedFinancials(document.getElementById('main-content'))">This Year</button>
+          <button class="btn ${truckPLPeriod === 'all' ? 'btn-primary' : 'btn-secondary'}" style="padding:4px 12px;font-size:12px" onclick="truckPLPeriod='all';renderConsolidatedFinancials(document.getElementById('main-content'))">All Time</button>
+        </div>
+      `;
+
+      // Calculate date range based on period
+      const now = new Date();
+      let startDate, endDate;
+      if (truckPLPeriod === 'month') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+      } else if (truckPLPeriod === 'quarter') {
+        const quarter = Math.floor(now.getMonth() / 3);
+        startDate = new Date(now.getFullYear(), quarter * 3, 1).toISOString().split('T')[0];
+        endDate = new Date(now.getFullYear(), (quarter + 1) * 3, 0).toISOString().split('T')[0];
+      } else if (truckPLPeriod === 'year') {
+        startDate = financialsYear + '-01-01';
+        endDate = financialsYear + '-12-31';
+      } else {
+        startDate = '2000-01-01';
+        endDate = '2099-12-31';
+      }
+
+      // Filter trips by date range
+      const filteredTrips = trips.filter(t => {
+        if (!t.trip_date) return false;
+        return t.trip_date >= startDate && t.trip_date <= endDate;
+      });
+
+      // Filter fuel by date range
+      const filteredFuel = allFuel.filter(f => {
+        if (!f.transaction_date) return false;
+        return f.transaction_date >= startDate && f.transaction_date <= endDate;
+      });
+
+      // Filter maintenance by date range
+      const filteredMaintenance = allMaintenance.filter(m => {
+        const mDate = m.service_date || m.created_at;
+        if (!mDate) return false;
+        return mDate >= startDate && mDate <= endDate;
+      });
+
+      // Build truck stats
+      const truckStats = {};
+      trucks.forEach(t => {
+        if (t.status !== 'ACTIVE' && truckPLPeriod !== 'all') return; // Only show active trucks unless viewing all time
+        truckStats[t.id] = {
+          truckNumber: t.truck_number || 'Unknown',
+          truckType: t.truck_type || '-',
+          trips: 0,
+          cars: 0,
+          miles: 0,
+          revenue: 0,
+          driverPay: 0,
+          brokerFees: 0,
+          localFees: 0,
+          tripExpenses: 0,
+          fuelCost: 0,
+          maintenanceCost: 0,
+          profit: 0
+        };
+      });
+
+      // Aggregate trip data by truck
+      filteredTrips.forEach(t => {
+        if (t.truck_id && truckStats[t.truck_id]) {
+          const fin = getTripFin(t.id);
+          truckStats[t.truck_id].trips++;
+          truckStats[t.truck_id].cars += fin.vehicleCount;
+          truckStats[t.truck_id].miles += parseFloat(t.miles || 0);
+          truckStats[t.truck_id].revenue += fin.loadRevenue;
+          truckStats[t.truck_id].driverPay += fin.driverCut;
+          truckStats[t.truck_id].brokerFees += fin.brokerFee;
+          truckStats[t.truck_id].localFees += fin.localFees;
+          truckStats[t.truck_id].tripExpenses += fin.totalExpenses;
+        }
+      });
+
+      // Add fuel costs by truck
+      filteredFuel.forEach(f => {
+        if (f.truck_id && truckStats[f.truck_id]) {
+          truckStats[f.truck_id].fuelCost += parseFloat(f.total_cost || f.amount || 0);
+        }
+      });
+
+      // Add maintenance costs by truck
+      filteredMaintenance.forEach(m => {
+        if (m.truck_id && truckStats[m.truck_id]) {
+          truckStats[m.truck_id].maintenanceCost += parseFloat(m.total_cost || 0);
+        }
+      });
+
+      // Calculate profit for each truck
+      // Truck Profit = Revenue - Broker Fees - Local Fees - Driver Pay - Fuel - Maintenance
+      Object.values(truckStats).forEach(stat => {
+        stat.cleanRevenue = stat.revenue - stat.brokerFees - stat.localFees;
+        stat.grossProfit = stat.cleanRevenue - stat.driverPay;
+        stat.totalCosts = stat.fuelCost + stat.maintenanceCost;
+        stat.profit = stat.grossProfit - stat.totalCosts;
+        stat.profitPerMile = stat.miles > 0 ? stat.profit / stat.miles : 0;
+        stat.profitPerCar = stat.cars > 0 ? stat.profit / stat.cars : 0;
+        stat.costPerMile = stat.miles > 0 ? stat.totalCosts / stat.miles : 0;
+      });
+
+      // Sort by profit descending
+      const truckList = Object.values(truckStats)
+        .filter(t => t.trips > 0 || t.fuelCost > 0 || t.maintenanceCost > 0)
+        .sort((a, b) => b.profit - a.profit);
+
+      // Calculate totals
+      const totals = truckList.reduce((acc, t) => {
+        acc.trips += t.trips;
+        acc.cars += t.cars;
+        acc.miles += t.miles;
+        acc.revenue += t.revenue;
+        acc.fuelCost += t.fuelCost;
+        acc.maintenanceCost += t.maintenanceCost;
+        acc.profit += t.profit;
+        return acc;
+      }, { trips: 0, cars: 0, miles: 0, revenue: 0, fuelCost: 0, maintenanceCost: 0, profit: 0 });
+
+      const rows = truckList.length === 0
+        ? '<tr><td colspan="10" style="text-align:center;padding:40px;color:#64748b">No truck data for this period</td></tr>'
+        : truckList.map(t => `<tr>
+            <td><strong>${t.truckNumber}</strong><div style="font-size:11px;color:#64748b">${t.truckType}</div></td>
+            <td>${t.trips}</td>
+            <td>${t.cars}</td>
+            <td>${Math.round(t.miles).toLocaleString()}</td>
+            <td class="money">${formatMoney(t.revenue)}</td>
+            <td class="money" style="color:#ef4444">${formatMoney(t.fuelCost)}</td>
+            <td class="money" style="color:#f59e0b">${formatMoney(t.maintenanceCost)}</td>
+            <td class="money ${t.profit >= 0 ? '' : 'negative'}" style="font-weight:700;color:${t.profit >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(t.profit)}</td>
+            <td style="color:${t.profitPerMile >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(t.profitPerMile)}/mi</td>
+            <td style="color:${t.profitPerCar >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(t.profitPerCar)}/car</td>
+          </tr>`).join('');
+
+      // Summary cards
+      const summaryCards = `
+        <div class="stats-grid" style="margin-bottom:20px;">
+          <div class="stat-card" style="border-left:4px solid #22c55e">
+            <div class="label">Total Revenue</div>
+            <div class="value" style="color:#22c55e">${formatMoney(totals.revenue)}</div>
+            <div style="font-size:12px;color:#64748b">${totals.cars} cars • ${totals.trips} trips</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #ef4444">
+            <div class="label">Total Fuel</div>
+            <div class="value" style="color:#ef4444">${formatMoney(totals.fuelCost)}</div>
+            <div style="font-size:12px;color:#64748b">${totals.miles > 0 ? formatMoney(totals.fuelCost / totals.miles) + '/mile' : '-'}</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #f59e0b">
+            <div class="label">Total Maintenance</div>
+            <div class="value" style="color:#f59e0b">${formatMoney(totals.maintenanceCost)}</div>
+            <div style="font-size:12px;color:#64748b">${truckList.length} trucks</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid ${totals.profit >= 0 ? '#22c55e' : '#ef4444'}">
+            <div class="label">Net Profit</div>
+            <div class="value" style="color:${totals.profit >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(totals.profit)}</div>
+            <div style="font-size:12px;color:#64748b">${totals.miles > 0 ? formatMoney(totals.profit / totals.miles) + '/mile' : '-'}</div>
+          </div>
+        </div>
+      `;
+
+      return `
+        ${periodOptions}
+        ${summaryCards}
+        <div class="card">
+          <div class="card-header"><h3>🚚 Profitability by Truck</h3></div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Truck</th>
+                  <th>Trips</th>
+                  <th>Cars</th>
+                  <th>Miles</th>
+                  <th>Revenue</th>
+                  <th>Fuel</th>
+                  <th>Maintenance</th>
+                  <th>Net Profit</th>
+                  <th>Profit/Mile</th>
+                  <th>Profit/Car</th>
+                </tr>
+              </thead>
               <tbody>${rows}</tbody>
             </table>
           </div>
