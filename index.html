@@ -1966,6 +1966,7 @@
     }
     .badge-green { background: #dcfce7; color: #15803d; }
     .badge-amber { background: transparent; border: 1px solid #f59e0b; color: #f59e0b; }
+    .badge-yellow { background: #fef3c7; color: #b45309; }
     .badge-blue { background: transparent; border: 1px solid #3b82f6; color: #3b82f6; }
     .badge-red { background: transparent; border: 1px solid #ef4444; color: #ef4444; }
     .badge-gray { background: transparent; border: 1px solid var(--text-muted); color: var(--text-muted); }
@@ -12593,7 +12594,39 @@
         '<div style="background:#ede9fe;padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#7c3aed">Bill (Invoice)</div><div style="font-size:20px;font-weight:700;color:#7c3aed">' + formatMoney(billAmount) + '</div></div>' +
         '</div>' +
         '</div>' +
-        
+
+        // Invoice Status Widget
+        (function() {
+          const uninvoicedOrders = yearOrders.filter(o => !o.payment_status || o.payment_status === 'UNINVOICED');
+          const invoicedOrders = yearOrders.filter(o => o.payment_status === 'INVOICED');
+          const paidOrders = yearOrders.filter(o => o.payment_status === 'PAID');
+
+          const uninvoicedTotal = uninvoicedOrders.reduce((s, o) => s + parseFloat(o.revenue || 0), 0);
+          const invoicedTotal = invoicedOrders.reduce((s, o) => s + parseFloat(o.revenue || 0), 0);
+          const paidTotal = paidOrders.reduce((s, o) => s + parseFloat(o.revenue || 0), 0);
+
+          return '<div class="card" style="padding:20px;margin-bottom:20px">' +
+            '<h3 style="margin-bottom:16px;color:#8b5cf6;border-bottom:2px solid #8b5cf6;padding-bottom:8px">📋 INVOICE STATUS (QuickBooks Tracking)</h3>' +
+            '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">' +
+            '<div style="background:#fee2e2;padding:16px;border-radius:8px;text-align:center;cursor:pointer" onclick="ordersFilter.paymentStatus=\'UNINVOICED\';navigate(\'orders\')">' +
+            '<div style="font-size:12px;color:#dc2626">⏳ Uninvoiced</div>' +
+            '<div style="font-size:24px;font-weight:700;color:#dc2626">' + formatMoney(uninvoicedTotal) + '</div>' +
+            '<div style="font-size:12px;color:#dc2626">' + uninvoicedOrders.length + ' orders</div>' +
+            '</div>' +
+            '<div style="background:#fef3c7;padding:16px;border-radius:8px;text-align:center;cursor:pointer" onclick="ordersFilter.paymentStatus=\'INVOICED\';navigate(\'orders\')">' +
+            '<div style="font-size:12px;color:#b45309">📤 Invoiced (Outstanding)</div>' +
+            '<div style="font-size:24px;font-weight:700;color:#b45309">' + formatMoney(invoicedTotal) + '</div>' +
+            '<div style="font-size:12px;color:#b45309">' + invoicedOrders.length + ' orders</div>' +
+            '</div>' +
+            '<div style="background:#d1fae5;padding:16px;border-radius:8px;text-align:center;cursor:pointer" onclick="ordersFilter.paymentStatus=\'PAID\';navigate(\'orders\')">' +
+            '<div style="font-size:12px;color:#047857">✓ Paid</div>' +
+            '<div style="font-size:24px;font-weight:700;color:#047857">' + formatMoney(paidTotal) + '</div>' +
+            '<div style="font-size:12px;color:#047857">' + paidOrders.length + ' orders</div>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+        })() +
+
         // Cost Trend Sparklines Section
         (function() {
           // Get last 12 weeks of expense data
@@ -15447,7 +15480,7 @@ ${rateText}`
 
     let selectedOrders = [];
 
-    let ordersFilter = { search: '', status: 'all', broker: 'all' };
+    let ordersFilter = { search: '', status: 'all', broker: 'all', paymentStatus: 'all' };
     // Orders page year filter (default to current year)
     let ordersYear = new Date().getFullYear();
     
@@ -15513,7 +15546,12 @@ ${rateText}`
       if (ordersFilter.broker !== 'all') {
         filteredOrders = filteredOrders.filter(o => o.broker_name === ordersFilter.broker);
       }
-      
+
+      // Apply payment status filter
+      if (ordersFilter.paymentStatus !== 'all') {
+        filteredOrders = filteredOrders.filter(o => (o.payment_status || 'UNINVOICED') === ordersFilter.paymentStatus);
+      }
+
       // Get unique brokers for filter
       const uniqueBrokers = [...new Set(appData.orders.map(o => o.broker_name).filter(b => b))];
       const brokerOptions = uniqueBrokers.map(b => '<option value="' + b + '"' + (ordersFilter.broker === b ? ' selected' : '') + '>' + b + '</option>').join('');
@@ -15531,20 +15569,24 @@ ${rateText}`
         '<div style="flex:1;min-width:200px"><input type="text" id="orderSearch" placeholder="🔍 Search by Order ID, Broker, or Vehicle..." value="' + ordersFilter.search + '" oninput="debouncedOrderSearch(this.value)" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:6px;font-size:14px"></div>' +
         '<div style="display:flex;align-items:center;gap:8px"><label style="font-weight:600;color:#475569">Status:</label><select onchange="ordersFilter.status=this.value;renderOrders(document.getElementById(\'main-content\'))" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:14px"><option value="all"' + (ordersFilter.status === 'all' ? ' selected' : '') + '>All</option><option value="PENDING"' + (ordersFilter.status === 'PENDING' ? ' selected' : '') + '>Pending</option><option value="IN_TRANSIT"' + (ordersFilter.status === 'IN_TRANSIT' ? ' selected' : '') + '>In Transit</option><option value="DELIVERED"' + (ordersFilter.status === 'DELIVERED' ? ' selected' : '') + '>Delivered</option></select></div>' +
         '<div style="display:flex;align-items:center;gap:8px"><label style="font-weight:600;color:#475569">Broker:</label><select onchange="ordersFilter.broker=this.value;renderOrders(document.getElementById(\'main-content\'))" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:14px"><option value="all"' + (ordersFilter.broker === 'all' ? ' selected' : '') + '>All Brokers</option>' + brokerOptions + '</select></div>' +
-        '<button class="btn btn-secondary" style="padding:8px 16px" onclick="ordersFilter={search:\'\',status:\'all\',broker:\'all\'};renderOrders(document.getElementById(\'main-content\'))">Clear</button>' +
+        '<div style="display:flex;align-items:center;gap:8px"><label style="font-weight:600;color:#475569">Payment:</label><select onchange="ordersFilter.paymentStatus=this.value;renderOrders(document.getElementById(\'main-content\'))" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:14px"><option value="all"' + (ordersFilter.paymentStatus === 'all' ? ' selected' : '') + '>All</option><option value="UNINVOICED"' + (ordersFilter.paymentStatus === 'UNINVOICED' ? ' selected' : '') + '>Uninvoiced</option><option value="INVOICED"' + (ordersFilter.paymentStatus === 'INVOICED' ? ' selected' : '') + '>Invoiced</option><option value="PAID"' + (ordersFilter.paymentStatus === 'PAID' ? ' selected' : '') + '>Paid</option></select></div>' +
+        '<button class="btn btn-secondary" style="padding:8px 16px" onclick="ordersFilter={search:\'\',status:\'all\',broker:\'all\',paymentStatus:\'all\'};renderOrders(document.getElementById(\'main-content\'))">Clear</button>' +
         '<span style="color:#64748b;font-size:13px">Showing ' + filteredOrders.length + ' of ' + yearFilteredOrders.length + '</span>' +
         '</div>' +
         
-        '<div class="card"><div class="table-wrapper"><table><thead><tr><th style="width:40px"><input type="checkbox" id="selectAllOrders" onchange="toggleSelectAllOrders(this.checked)"></th><th>Order</th><th>Trip</th><th>Driver</th><th>Broker</th><th>Vehicle</th><th>Origin</th><th>Destination</th><th>📞</th><th>Pick-Up</th><th>Delivery</th><th>Payment</th><th>Broker Fee</th><th>Local Fee</th><th>Revenue</th><th>Status</th><th class="sticky-col">Actions</th></tr></thead><tbody>' + 
-        (filteredOrders.length === 0 ? '<tr><td colspan="18" style="text-align:center;padding:40px">No orders found</td></tr>' : 
+        '<div class="card"><div class="table-wrapper"><table><thead><tr><th style="width:40px"><input type="checkbox" id="selectAllOrders" onchange="toggleSelectAllOrders(this.checked)"></th><th>Order</th><th>Trip</th><th>Driver</th><th>Broker</th><th>Vehicle</th><th>Origin</th><th>Destination</th><th>📞</th><th>Pick-Up</th><th>Delivery</th><th>Payment</th><th>Broker Fee</th><th>Local Fee</th><th>Revenue</th><th>Status</th><th>Invoice</th><th class="sticky-col">Actions</th></tr></thead><tbody>' + 
+        (filteredOrders.length === 0 ? '<tr><td colspan="19" style="text-align:center;padding:40px">No orders found</td></tr>' : 
         filteredOrders.map(o => { 
           const t = appData.trips.find(x => x.id === o.trip_id);
           const driver = t ? appData.drivers.find(d => d.id === t.driver_id) : null;
           const driverName = driver ? driver.first_name.charAt(0) + '. ' + driver.last_name : '-';
           const phoneInfo = (o.pickup_phone || o.delivery_phone) ? '<span title="P: ' + (o.pickup_phone || '-') + '&#10;D: ' + (o.delivery_phone || '-') + '" style="cursor:help">📞</span>' : '-';
-          const noteHtml = o.dispatcher_notes ? '<tr style="background:#fef3c7"><td></td><td colspan="17" style="padding:8px 16px;font-size:13px"><span style="font-weight:600;color:#92400e">📝 Note:</span> ' + o.dispatcher_notes + '</td></tr>' : '';
+          const noteHtml = o.dispatcher_notes ? '<tr style="background:#fef3c7"><td></td><td colspan="18" style="padding:8px 16px;font-size:13px"><span style="font-weight:600;color:#92400e">📝 Note:</span> ' + o.dispatcher_notes + '</td></tr>' : '';
           const assignBtn = t ? '<button class="action-btn" style="background:#fee2e2;color:#dc2626" onclick="unassignOrderFromTrip(' + o.id + ')" title="Unassign from trip">✕</button>' : '<button class="action-btn" style="background:#dbeafe;color:#1d4ed8" onclick="openAssignToTrip(' + o.id + ')" title="Assign to trip">+🚛</button>';
-          return '<tr><td><input type="checkbox" class="order-checkbox" data-id="' + o.id + '" onchange="toggleOrderSelection(' + o.id + ')"></td><td><strong>' + o.order_number + '</strong></td><td>' + (t ? '<span class="badge badge-purple">' + t.trip_number + '</span>' : '<span style="color:#94a3b8">Unassigned</span>') + '</td><td>' + (driver ? '<span class="badge badge-green">' + driverName + '</span>' : '<span style="color:#94a3b8">-</span>') + '</td><td>' + (o.broker_name || '-') + '</td><td>' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + '</td><td title="' + (o.pickup_full_address || o.origin || '') + '">' + (o.origin || '-') + '</td><td title="' + (o.delivery_full_address || o.destination || '') + '">' + (o.destination || '-') + '</td><td>' + phoneInfo + '</td><td>' + (o.pickup_date ? formatDate(o.pickup_date) : '-') + '</td><td>' + (o.dropoff_date ? formatDate(o.dropoff_date) : '-') + '</td><td><span class="badge badge-blue">' + (o.payment_type || '-') + '</span></td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee || 0) + '</td><td class="money">' + formatMoney(o.revenue) + '</td><td><span class="badge ' + getBadge(o.status) + '">' + o.status + '</span></td><td class="sticky-col"><div class="actions">' + assignBtn + (o.dispatcher_notes ? '<button class="action-btn" style="background:#fef3c7;color:#92400e" title="' + o.dispatcher_notes.replace(/"/g, '&quot;') + '">📝</button>' : '') + '<button class="action-btn edit" onclick="openOrderModal(' + o.id + ')">Edit</button><button class="action-btn delete" onclick="deleteOrder(' + o.id + ')">Del</button></div></td></tr>' + noteHtml; 
+          const paymentStatus = o.payment_status || 'UNINVOICED';
+          const paymentBadgeColor = paymentStatus === 'PAID' ? 'badge-green' : paymentStatus === 'INVOICED' ? 'badge-yellow' : 'badge-gray';
+          const invoiceCell = '<td><span class="badge ' + paymentBadgeColor + '" style="cursor:pointer" onclick="openPaymentStatusModal(' + o.id + ')" title="Click to update">' + paymentStatus + '</span>' + (o.invoice_number ? '<div style="font-size:10px;color:#64748b">#' + o.invoice_number + '</div>' : '') + '</td>';
+          return '<tr><td><input type="checkbox" class="order-checkbox" data-id="' + o.id + '" onchange="toggleOrderSelection(' + o.id + ')"></td><td><strong>' + o.order_number + '</strong></td><td>' + (t ? '<span class="badge badge-purple">' + t.trip_number + '</span>' : '<span style="color:#94a3b8">Unassigned</span>') + '</td><td>' + (driver ? '<span class="badge badge-green">' + driverName + '</span>' : '<span style="color:#94a3b8">-</span>') + '</td><td>' + (o.broker_name || '-') + '</td><td>' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + '</td><td title="' + (o.pickup_full_address || o.origin || '') + '">' + (o.origin || '-') + '</td><td title="' + (o.delivery_full_address || o.destination || '') + '">' + (o.destination || '-') + '</td><td>' + phoneInfo + '</td><td>' + (o.pickup_date ? formatDate(o.pickup_date) : '-') + '</td><td>' + (o.dropoff_date ? formatDate(o.dropoff_date) : '-') + '</td><td><span class="badge badge-blue">' + (o.payment_type || '-') + '</span></td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee || 0) + '</td><td class="money">' + formatMoney(o.revenue) + '</td><td><span class="badge ' + getBadge(o.status) + '">' + o.status + '</span></td>' + invoiceCell + '<td class="sticky-col"><div class="actions">' + assignBtn + (o.dispatcher_notes ? '<button class="action-btn" style="background:#fef3c7;color:#92400e" title="' + o.dispatcher_notes.replace(/"/g, '&quot;') + '">📝</button>' : '') + '<button class="action-btn edit" onclick="openOrderModal(' + o.id + ')">Edit</button><button class="action-btn delete" onclick="deleteOrder(' + o.id + ')">Del</button></div></td></tr>' + noteHtml; 
         }).join('')) + 
         '</tbody></table></div></div>';
     }
@@ -15636,12 +15678,94 @@ ${rateText}`
       } catch (e) { showToast(e.message, 'error'); }
     }
 
-    async function deleteOrder(id) { 
-      if (!confirm('Delete?')) return; 
+    async function deleteOrder(id) {
+      if (!confirm('Delete?')) return;
       const order = appData.orders.find(o => o.id === id);
-      await dbDelete('orders', id); 
+      await dbDelete('orders', id);
       await logActivity('ORDER_DELETED', { order_id: id, order_number: order?.order_number });
-      showToast('Deleted'); await loadAllData(true); renderOrders(document.getElementById('main-content')); 
+      showToast('Deleted'); await loadAllData(true); renderOrders(document.getElementById('main-content'));
+    }
+
+    // Payment Status Modal for quick status updates
+    function openPaymentStatusModal(orderId) {
+      const o = appData.orders.find(x => x.id === orderId);
+      if (!o) return;
+
+      const currentStatus = o.payment_status || 'UNINVOICED';
+      const m = document.createElement('div');
+      m.className = 'modal-overlay';
+      m.onclick = e => { if (e.target === m) m.remove(); };
+
+      m.innerHTML = `
+        <div class="modal" style="max-width:400px">
+          <div class="modal-header">
+            <h3>💳 Update Payment Status</h3>
+            <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+          </div>
+          <div class="modal-body">
+            <div style="margin-bottom:16px;padding:12px;background:#f8fafc;border-radius:8px">
+              <strong>${o.order_number}</strong>
+              <div style="font-size:13px;color:#64748b">${o.broker_name || 'Unknown Broker'} • ${formatMoney(o.revenue)}</div>
+            </div>
+
+            <div class="form-group">
+              <label>Payment Status</label>
+              <select id="pmtStatus" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:6px">
+                <option value="UNINVOICED"${currentStatus === 'UNINVOICED' ? ' selected' : ''}>UNINVOICED</option>
+                <option value="INVOICED"${currentStatus === 'INVOICED' ? ' selected' : ''}>INVOICED</option>
+                <option value="PAID"${currentStatus === 'PAID' ? ' selected' : ''}>PAID</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Invoice # (from QuickBooks)</label>
+              <input type="text" id="pmtInvoiceNum" value="${o.invoice_number || ''}" placeholder="e.g. INV-1234" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:6px">
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Invoice Date</label>
+                <input type="date" id="pmtInvoiceDate" value="${o.invoice_date || ''}" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:6px">
+              </div>
+              <div class="form-group">
+                <label>Payment Received</label>
+                <input type="date" id="pmtReceivedDate" value="${o.payment_received_date || ''}" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:6px">
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+            <button class="btn btn-primary" onclick="savePaymentStatus(${orderId})">Save</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(m);
+    }
+
+    async function savePaymentStatus(orderId) {
+      const data = {
+        payment_status: document.getElementById('pmtStatus').value,
+        invoice_number: document.getElementById('pmtInvoiceNum').value || null,
+        invoice_date: document.getElementById('pmtInvoiceDate').value || null,
+        payment_received_date: document.getElementById('pmtReceivedDate').value || null
+      };
+
+      try {
+        await dbUpdate('orders', orderId, data);
+        const order = appData.orders.find(o => o.id === orderId);
+        await logActivity('PAYMENT_STATUS_UPDATED', {
+          order_id: orderId,
+          order_number: order?.order_number,
+          status: data.payment_status,
+          invoice_number: data.invoice_number
+        });
+        document.querySelector('.modal-overlay').remove();
+        showToast('Payment status updated!');
+        await loadAllData(true);
+        renderOrders(document.getElementById('main-content'));
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
     }
 
     function renderDrivers(c) {
