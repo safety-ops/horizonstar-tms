@@ -9999,6 +9999,11 @@
         // Load Samsara settings from database (shared across all users)
         await loadSamsaraSettings();
 
+        // Load PrePass settings and toll data
+        await loadPrePassSettings();
+        await loadTollTransactions();
+        await loadTransponderMappings();
+
         // NOTE: We intentionally do NOT call renderPage() here anymore.
         // The data is now loaded and cached - views will use it on next interaction.
         // Calling renderPage() from background async code caused race conditions
@@ -22819,6 +22824,7 @@ ${rateText}`
       trucks.forEach(t => {
         if (t.status !== 'ACTIVE' && truckPLPeriod !== 'all') return; // Only show active trucks unless viewing all time
         truckStats[t.id] = {
+          truckId: t.id,
           truckNumber: t.truck_number || 'Unknown',
           truckType: t.truck_type || '-',
           trips: 0,
@@ -22831,6 +22837,7 @@ ${rateText}`
           tripExpenses: 0,
           fuelCost: 0,
           maintenanceCost: 0,
+          tollCost: 0,
           profit: 0
         };
       });
@@ -22864,12 +22871,17 @@ ${rateText}`
         }
       });
 
+      // Add toll costs by truck (from PrePass or manual entry)
+      Object.values(truckStats).forEach(stat => {
+        stat.tollCost = getTruckTolls(stat.truckId, startDate, endDate);
+      });
+
       // Calculate profit for each truck
-      // Truck Profit = Revenue - Broker Fees - Local Fees - Driver Pay - Fuel - Maintenance
+      // Truck Profit = Revenue - Broker Fees - Local Fees - Driver Pay - Fuel - Maintenance - Tolls
       Object.values(truckStats).forEach(stat => {
         stat.cleanRevenue = stat.revenue - stat.brokerFees - stat.localFees;
         stat.grossProfit = stat.cleanRevenue - stat.driverPay;
-        stat.totalCosts = stat.fuelCost + stat.maintenanceCost;
+        stat.totalCosts = stat.fuelCost + stat.maintenanceCost + stat.tollCost;
         stat.profit = stat.grossProfit - stat.totalCosts;
         stat.profitPerMile = stat.miles > 0 ? stat.profit / stat.miles : 0;
         stat.profitPerCar = stat.cars > 0 ? stat.profit / stat.cars : 0;
@@ -22878,7 +22890,7 @@ ${rateText}`
 
       // Sort by profit descending
       const truckList = Object.values(truckStats)
-        .filter(t => t.trips > 0 || t.fuelCost > 0 || t.maintenanceCost > 0)
+        .filter(t => t.trips > 0 || t.fuelCost > 0 || t.maintenanceCost > 0 || t.tollCost > 0)
         .sort((a, b) => b.profit - a.profit);
 
       // Calculate totals
@@ -22889,12 +22901,13 @@ ${rateText}`
         acc.revenue += t.revenue;
         acc.fuelCost += t.fuelCost;
         acc.maintenanceCost += t.maintenanceCost;
+        acc.tollCost += t.tollCost;
         acc.profit += t.profit;
         return acc;
-      }, { trips: 0, cars: 0, miles: 0, revenue: 0, fuelCost: 0, maintenanceCost: 0, profit: 0 });
+      }, { trips: 0, cars: 0, miles: 0, revenue: 0, fuelCost: 0, maintenanceCost: 0, tollCost: 0, profit: 0 });
 
       const rows = truckList.length === 0
-        ? '<tr><td colspan="10" style="text-align:center;padding:40px;color:#64748b">No truck data for this period</td></tr>'
+        ? '<tr><td colspan="11" style="text-align:center;padding:40px;color:#64748b">No truck data for this period</td></tr>'
         : truckList.map(t => `<tr>
             <td><strong>${t.truckNumber}</strong><div style="font-size:11px;color:#64748b">${t.truckType}</div></td>
             <td>${t.trips}</td>
@@ -22903,6 +22916,7 @@ ${rateText}`
             <td class="money">${formatMoney(t.revenue)}</td>
             <td class="money" style="color:#ef4444">${formatMoney(t.fuelCost)}</td>
             <td class="money" style="color:#f59e0b">${formatMoney(t.maintenanceCost)}</td>
+            <td class="money" style="color:#8b5cf6">${formatMoney(t.tollCost)}</td>
             <td class="money ${t.profit >= 0 ? '' : 'negative'}" style="font-weight:700;color:${t.profit >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(t.profit)}</td>
             <td style="color:${t.profitPerMile >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(t.profitPerMile)}/mi</td>
             <td style="color:${t.profitPerCar >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(t.profitPerCar)}/car</td>
@@ -22925,6 +22939,11 @@ ${rateText}`
             <div class="label">Total Maintenance</div>
             <div class="value" style="color:#f59e0b">${formatMoney(totals.maintenanceCost)}</div>
             <div style="font-size:12px;color:#64748b">${truckList.length} trucks</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #8b5cf6">
+            <div class="label">Total Tolls</div>
+            <div class="value" style="color:#8b5cf6">${formatMoney(totals.tollCost)}</div>
+            <div style="font-size:12px;color:#64748b">${totals.miles > 0 ? formatMoney(totals.tollCost / totals.miles) + '/mile' : '-'}</div>
           </div>
           <div class="stat-card" style="border-left:4px solid ${totals.profit >= 0 ? '#22c55e' : '#ef4444'}">
             <div class="label">Net Profit</div>
@@ -22950,6 +22969,7 @@ ${rateText}`
                   <th>Revenue</th>
                   <th>Fuel</th>
                   <th>Maintenance</th>
+                  <th>Tolls</th>
                   <th>Net Profit</th>
                   <th>Profit/Mile</th>
                   <th>Profit/Car</th>
@@ -25574,7 +25594,43 @@ ${rateText}`
         '</ol>' +
         '<div style="background:#dbeafe;padding:12px;border-radius:8px;margin-top:16px"><strong style="color:#1d4ed8">Free Tier:</strong> 100 emails/day, 3,000 emails/month</div>' +
         '</div></div>' +
-        
+
+        // PrePass Integration Section
+        '<div class="card" style="max-width:700px;margin-top:24px"><div class="card-header"><h3>🛣️ PrePass Toll Integration</h3></div>' +
+        '<div style="padding:20px">' +
+        '<p style="color:#64748b;margin-bottom:20px">Connect to PrePass to automatically import toll transactions and track toll costs per truck.</p>' +
+
+        '<div class="form-group"><label>PrePass Account ID</label><input type="text" id="prepassAccountInput" value="' + getPrePassAccountId() + '" placeholder="Your PrePass account ID" style="width:100%"></div>' +
+
+        '<div class="form-group"><label>PrePass API Key</label><div style="display:flex;gap:12px"><input type="password" id="prepassKeyInput" value="' + getPrePassApiKey() + '" placeholder="Your PrePass API key" style="flex:1"><button class="btn btn-secondary" onclick="togglePrePassKeyVisibility()">👁️</button></div></div>' +
+
+        '<div class="form-group"><label>Environment</label><select id="prepassEnvInput" style="width:100%"><option value="production"' + (getPrePassEnv() === 'production' ? ' selected' : '') + '>Production</option><option value="sandbox"' + (getPrePassEnv() === 'sandbox' ? ' selected' : '') + '>Sandbox (Testing)</option></select></div>' +
+
+        (getPrePassApiKey() ? '<div style="background:#d1fae5;padding:12px;border-radius:8px;margin-bottom:16px"><span style="color:#059669">✓ PrePass API configured</span>' + (prepassSettings.last_sync ? '<br><span style="color:#047857;font-size:13px">Last sync: ' + new Date(prepassSettings.last_sync).toLocaleString() + '</span>' : '') + '</div>' : '<div style="background:#fef3c7;padding:12px;border-radius:8px;margin-bottom:16px"><span style="color:#92400e">⚠️ No PrePass API key. Toll import disabled.</span></div>') +
+
+        '<div style="display:flex;gap:12px;flex-wrap:wrap"><button class="btn btn-primary" onclick="savePrePassSettings()">💾 Save Settings</button>' +
+        (getPrePassApiKey() ? '<button class="btn btn-secondary" style="background:#fee2e2;color:#dc2626" onclick="clearPrePassSettings()">🗑️ Remove</button>' : '') +
+        '<button class="btn btn-secondary" onclick="testPrePassConnection()">🧪 Test Connection</button>' +
+        (getPrePassApiKey() ? '<button class="btn btn-secondary" onclick="syncPrePassTolls()">🔄 Sync Tolls Now</button>' : '') +
+        (getPrePassApiKey() ? '<button class="btn btn-secondary" onclick="manageTransponderMappings()">🚛 Map Transponders</button>' : '') +
+        '</div>' +
+
+        '<div id="prepassTestResult" style="margin-top:16px"></div>' +
+        '</div></div>' +
+
+        '<div class="card" style="max-width:700px;margin-top:24px"><div class="card-header"><h3>📋 How to Get PrePass API Access</h3></div>' +
+        '<div style="padding:20px">' +
+        '<ol style="color:#64748b;line-height:2.2">' +
+        '<li>Log into <a href="https://prepassplus.com" target="_blank" style="color:#1d4ed8">prepassplus.com</a></li>' +
+        '<li>Go to <strong>Account Settings</strong> → <strong>API Access</strong></li>' +
+        '<li>Request API access if not already enabled</li>' +
+        '<li>Generate an API key</li>' +
+        '<li>Copy your Account ID and API Key above</li>' +
+        '<li>Map your transponders to trucks using the "Map Transponders" button</li>' +
+        '</ol>' +
+        '<div style="background:#dbeafe;padding:12px;border-radius:8px;margin-top:16px"><strong style="color:#1d4ed8">Note:</strong> PrePass API access may require contacting PrePass support for fleet accounts.</div>' +
+        '</div></div>' +
+
         // Claude API Section
         '<div class="card" style="max-width:700px;margin-top:24px"><div class="card-header"><h3>🤖 AI Integration (Claude API)</h3></div>' +
         '<div style="padding:20px">' +
@@ -25663,7 +25719,7 @@ ${rateText}`
         api_key: samsaraSettings.api_key,
         proxy_url: samsaraSettings.proxy_url
       };
-      
+
       try {
         // Try to upsert
         const existing = await dbFetch('app_settings', { key: 'eq.samsara' });
@@ -25679,7 +25735,377 @@ ${rateText}`
         return false;
       }
     }
-    
+
+    // ============ PREPASS TOLL INTEGRATION ============
+    // Global storage for PrePass settings
+    let prepassSettings = {
+      account_id: '',
+      api_key: '',
+      environment: 'production',
+      last_sync: null
+    };
+
+    // Global storage for toll transactions and transponder mappings
+    let tollTransactions = [];
+    let transponderMappings = [];
+
+    function getPrePassAccountId() {
+      return prepassSettings.account_id || localStorage.getItem('prepass_account_id') || '';
+    }
+
+    function getPrePassApiKey() {
+      return prepassSettings.api_key || localStorage.getItem('prepass_api_key') || '';
+    }
+
+    function getPrePassEnv() {
+      return prepassSettings.environment || localStorage.getItem('prepass_env') || 'production';
+    }
+
+    async function loadPrePassSettings() {
+      try {
+        const configs = await dbFetch('prepass_config', {});
+        if (configs && configs.length > 0) {
+          const config = configs[0];
+          prepassSettings.account_id = config.account_id || '';
+          prepassSettings.api_key = config.api_key || '';
+          prepassSettings.environment = config.environment || 'production';
+          prepassSettings.last_sync = config.last_sync_date;
+          // Sync to localStorage
+          if (prepassSettings.account_id) localStorage.setItem('prepass_account_id', prepassSettings.account_id);
+          if (prepassSettings.api_key) localStorage.setItem('prepass_api_key', prepassSettings.api_key);
+          localStorage.setItem('prepass_env', prepassSettings.environment);
+        }
+      } catch (e) {
+        console.log('PrePass config table not available, using localStorage');
+        prepassSettings.account_id = localStorage.getItem('prepass_account_id') || '';
+        prepassSettings.api_key = localStorage.getItem('prepass_api_key') || '';
+        prepassSettings.environment = localStorage.getItem('prepass_env') || 'production';
+      }
+    }
+
+    async function loadTollTransactions() {
+      try {
+        tollTransactions = await dbFetch('toll_transactions', { order: 'transaction_date.desc' }) || [];
+      } catch (e) {
+        console.log('Toll transactions table not available');
+        tollTransactions = [];
+      }
+    }
+
+    async function loadTransponderMappings() {
+      try {
+        transponderMappings = await dbFetch('transponder_mappings', { active: 'eq.true' }) || [];
+      } catch (e) {
+        console.log('Transponder mappings table not available');
+        transponderMappings = [];
+      }
+    }
+
+    function togglePrePassKeyVisibility() {
+      const input = document.getElementById('prepassKeyInput');
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    async function savePrePassSettings() {
+      const accountId = document.getElementById('prepassAccountInput').value.trim();
+      const apiKey = document.getElementById('prepassKeyInput').value.trim();
+      const env = document.getElementById('prepassEnvInput').value;
+
+      if (!accountId || !apiKey) {
+        showToast('Please enter both Account ID and API Key', 'error');
+        return;
+      }
+
+      prepassSettings.account_id = accountId;
+      prepassSettings.api_key = apiKey;
+      prepassSettings.environment = env;
+
+      // Save to localStorage
+      localStorage.setItem('prepass_account_id', accountId);
+      localStorage.setItem('prepass_api_key', apiKey);
+      localStorage.setItem('prepass_env', env);
+
+      // Try to save to database
+      try {
+        const existing = await dbFetch('prepass_config', {});
+        if (existing && existing.length > 0) {
+          await dbUpdate('prepass_config', existing[0].id, {
+            account_id: accountId,
+            api_key: apiKey,
+            environment: env,
+            updated_at: new Date().toISOString()
+          });
+        } else {
+          await dbInsert('prepass_config', {
+            account_id: accountId,
+            api_key: apiKey,
+            environment: env,
+            sync_enabled: true
+          });
+        }
+        showToast('PrePass settings saved!', 'success');
+      } catch (e) {
+        console.log('Could not save to DB, using localStorage only');
+        showToast('PrePass settings saved locally', 'success');
+      }
+
+      renderSettings(document.getElementById('main-content'));
+    }
+
+    async function clearPrePassSettings() {
+      if (!confirm('Remove PrePass integration settings?')) return;
+
+      prepassSettings = { account_id: '', api_key: '', environment: 'production', last_sync: null };
+      localStorage.removeItem('prepass_account_id');
+      localStorage.removeItem('prepass_api_key');
+      localStorage.removeItem('prepass_env');
+
+      try {
+        const existing = await dbFetch('prepass_config', {});
+        if (existing && existing.length > 0) {
+          await dbDelete('prepass_config', existing[0].id);
+        }
+      } catch (e) {
+        console.log('Could not delete from DB');
+      }
+
+      showToast('PrePass settings removed', 'success');
+      renderSettings(document.getElementById('main-content'));
+    }
+
+    async function testPrePassConnection() {
+      const resultDiv = document.getElementById('prepassTestResult');
+      resultDiv.innerHTML = '<div style="color:#64748b">Testing PrePass connection...</div>';
+
+      const accountId = document.getElementById('prepassAccountInput').value.trim();
+      const apiKey = document.getElementById('prepassKeyInput').value.trim();
+
+      if (!accountId || !apiKey) {
+        resultDiv.innerHTML = '<div style="color:#dc2626">Please enter Account ID and API Key first</div>';
+        return;
+      }
+
+      // Note: PrePass API requires server-side proxy due to CORS
+      resultDiv.innerHTML = `
+        <div style="background:#fef3c7;padding:16px;border-radius:8px">
+          <div style="color:#92400e;font-weight:600;margin-bottom:8px">Server Proxy Required</div>
+          <div style="color:#78350f;font-size:13px">
+            PrePass API requires a server-side proxy (similar to Samsara).
+            <br><br>
+            <strong>To complete setup:</strong>
+            <ol style="margin:8px 0 0 16px;line-height:1.8">
+              <li>Create a Cloudflare Worker or similar proxy</li>
+              <li>Configure it to forward requests to PrePass API</li>
+              <li>Use the Token API to authenticate first</li>
+              <li>Then use the Toll Transaction API to fetch tolls</li>
+            </ol>
+            <br>
+            <strong>API Endpoints:</strong><br>
+            Token: <code style="background:#fef9c3;padding:2px 6px">POST /oauth/token</code><br>
+            Tolls: <code style="background:#fef9c3;padding:2px 6px">GET /api/v1/toll-transactions</code>
+          </div>
+        </div>
+      `;
+    }
+
+    async function syncPrePassTolls() {
+      const resultDiv = document.getElementById('prepassTestResult');
+      resultDiv.innerHTML = '<div style="color:#64748b">Syncing toll transactions from PrePass...</div>';
+
+      // This would normally call the PrePass API through a proxy
+      // For now, show manual import option
+      resultDiv.innerHTML = `
+        <div style="background:#dbeafe;padding:16px;border-radius:8px">
+          <div style="color:#1d4ed8;font-weight:600;margin-bottom:8px">Manual Toll Import</div>
+          <div style="color:#1e40af;font-size:13px;margin-bottom:12px">
+            Until the API proxy is set up, you can import toll transactions manually:
+          </div>
+          <button class="btn btn-primary" onclick="showManualTollImport()">Import Tolls Manually</button>
+        </div>
+      `;
+    }
+
+    function showManualTollImport() {
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.id = 'tollImportModal';
+      modal.innerHTML = `
+        <div class="modal" style="max-width:600px">
+          <div class="modal-header">
+            <h3>Import Toll Transaction</h3>
+            <button class="btn btn-secondary" onclick="closeModal('tollImportModal')">X</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Truck</label>
+              <select id="tollTruckId" style="width:100%">
+                <option value="">Select truck...</option>
+                ${trucks.map(t => `<option value="${t.id}">${t.unit_number} - ${t.make} ${t.model}</option>`).join('')}
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Transaction Date</label>
+              <input type="datetime-local" id="tollDate" style="width:100%">
+            </div>
+            <div class="form-group">
+              <label>Plaza/Location</label>
+              <input type="text" id="tollPlaza" placeholder="e.g., Oklahoma Turnpike - Tulsa" style="width:100%">
+            </div>
+            <div class="form-group">
+              <label>State</label>
+              <input type="text" id="tollState" placeholder="e.g., OK" maxlength="2" style="width:100px">
+            </div>
+            <div class="form-group">
+              <label>Amount ($)</label>
+              <input type="number" id="tollAmount" step="0.01" placeholder="0.00" style="width:150px">
+            </div>
+            <div class="form-group">
+              <label>Transponder ID (optional)</label>
+              <input type="text" id="tollTransponder" placeholder="PrePass transponder #" style="width:100%">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('tollImportModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="saveTollTransaction()">Save Toll</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    async function saveTollTransaction() {
+      const truckId = document.getElementById('tollTruckId').value;
+      const date = document.getElementById('tollDate').value;
+      const plaza = document.getElementById('tollPlaza').value.trim();
+      const state = document.getElementById('tollState').value.trim().toUpperCase();
+      const amount = parseFloat(document.getElementById('tollAmount').value) || 0;
+      const transponder = document.getElementById('tollTransponder').value.trim();
+
+      if (!truckId || !date || !amount) {
+        showToast('Please fill in truck, date, and amount', 'error');
+        return;
+      }
+
+      try {
+        await dbInsert('toll_transactions', {
+          truck_id: truckId,
+          transaction_date: new Date(date).toISOString(),
+          plaza_name: plaza,
+          state: state,
+          amount: amount,
+          transponder_id: transponder || null,
+          lane_type: 'TOLL'
+        });
+
+        showToast('Toll transaction saved!', 'success');
+        closeModal('tollImportModal');
+        await loadTollTransactions();
+      } catch (e) {
+        console.error('Error saving toll:', e);
+        showToast('Error saving toll transaction', 'error');
+      }
+    }
+
+    function manageTransponderMappings() {
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.id = 'transponderModal';
+
+      const mappingsHtml = transponderMappings.length > 0
+        ? transponderMappings.map(m => {
+            const truck = trucks.find(t => t.id === m.truck_id);
+            return `
+              <tr>
+                <td>${m.transponder_id}</td>
+                <td>${truck ? truck.unit_number : 'Unknown'}</td>
+                <td><button class="btn btn-secondary" style="padding:4px 8px" onclick="deleteTransponderMapping('${m.id}')">Remove</button></td>
+              </tr>
+            `;
+          }).join('')
+        : '<tr><td colspan="3" style="text-align:center;color:#64748b">No transponder mappings yet</td></tr>';
+
+      modal.innerHTML = `
+        <div class="modal" style="max-width:600px">
+          <div class="modal-header">
+            <h3>Transponder to Truck Mappings</h3>
+            <button class="btn btn-secondary" onclick="closeModal('transponderModal')">X</button>
+          </div>
+          <div class="modal-body">
+            <p style="color:#64748b;margin-bottom:16px">Map PrePass transponder IDs to trucks for automatic toll assignment.</p>
+
+            <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+              <input type="text" id="newTransponderId" placeholder="Transponder ID" style="width:200px">
+              <select id="newTransponderTruck" style="width:200px">
+                <option value="">Select truck...</option>
+                ${trucks.map(t => `<option value="${t.id}">${t.unit_number}</option>`).join('')}
+              </select>
+              <button class="btn btn-primary" onclick="addTransponderMapping()">Add Mapping</button>
+            </div>
+
+            <table class="data-table">
+              <thead><tr><th>Transponder ID</th><th>Truck</th><th>Actions</th></tr></thead>
+              <tbody>${mappingsHtml}</tbody>
+            </table>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('transponderModal')">Close</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    async function addTransponderMapping() {
+      const transponderId = document.getElementById('newTransponderId').value.trim();
+      const truckId = document.getElementById('newTransponderTruck').value;
+
+      if (!transponderId || !truckId) {
+        showToast('Please enter transponder ID and select a truck', 'error');
+        return;
+      }
+
+      try {
+        await dbInsert('transponder_mappings', {
+          transponder_id: transponderId,
+          truck_id: truckId,
+          active: true
+        });
+        showToast('Transponder mapping added!', 'success');
+        await loadTransponderMappings();
+        closeModal('transponderModal');
+        manageTransponderMappings();
+      } catch (e) {
+        console.error('Error adding mapping:', e);
+        showToast('Error: Transponder ID may already be mapped', 'error');
+      }
+    }
+
+    async function deleteTransponderMapping(id) {
+      if (!confirm('Remove this transponder mapping?')) return;
+      try {
+        await dbDelete('transponder_mappings', id);
+        showToast('Mapping removed', 'success');
+        await loadTransponderMappings();
+        closeModal('transponderModal');
+        manageTransponderMappings();
+      } catch (e) {
+        showToast('Error removing mapping', 'error');
+      }
+    }
+
+    // Get toll costs for a truck within a date range
+    function getTruckTolls(truckId, startDate, endDate) {
+      return tollTransactions
+        .filter(t => {
+          if (t.truck_id !== truckId) return false;
+          const txDate = new Date(t.transaction_date);
+          if (startDate && txDate < new Date(startDate)) return false;
+          if (endDate && txDate > new Date(endDate)) return false;
+          return true;
+        })
+        .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+    }
+
     // ============ GOOGLE MAPS INTEGRATION ============
     // For Trip Map feature - geocoding and routing
 
