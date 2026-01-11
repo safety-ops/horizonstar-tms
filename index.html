@@ -22347,6 +22347,7 @@ ${rateText}`
             <button class="btn ${finTab === 'brokers' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='brokers';renderConsolidatedFinancials(document.getElementById('main-content'))">🤝 By Broker</button>
             <button class="btn ${finTab === 'lanes' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='lanes';renderConsolidatedFinancials(document.getElementById('main-content'))">🗺️ By Lane</button>
             <button class="btn ${finTab === 'trucks' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='trucks';renderConsolidatedFinancials(document.getElementById('main-content'))">🚚 By Truck</button>
+            <button class="btn ${finTab === 'trends' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='trends';renderConsolidatedFinancials(document.getElementById('main-content'))">📉 Trends</button>
           </div>
           <div style="display:flex;align-items:center;gap:8px;background:#f8fafc;padding:8px 12px;border-radius:6px">
             <label style="font-weight:600;color:#475569;font-size:13px">Year:</label>
@@ -22380,6 +22381,8 @@ ${rateText}`
         content = renderFinByLane(orders, trips);
       } else if (finTab === 'trucks') {
         content = renderFinByTruck(trips, trucks, fuelRecords, maintenance);
+      } else if (finTab === 'trends') {
+        content = renderFinTrends(trips, trucks, fuelRecords, maintenance, orders);
       }
 
       c.innerHTML = '<div class="header"><h2>💰 Financials</h2></div>' + tabs + content;
@@ -22976,6 +22979,380 @@ ${rateText}`
                 </tr>
               </thead>
               <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // ============ FINANCIAL TRENDS ============
+    let trendsView = 'monthly'; // 'monthly', 'quarterly', 'yearly'
+    let trendsMetric = 'profit'; // 'profit', 'revenue', 'costs', 'margin'
+
+    function renderFinTrends(trips, trucks, fuelRecords, maintenance, orders) {
+      const allFuel = appData.fuel_transactions || [];
+      const allMaintenance = appData.maintenance_records || [];
+
+      // View selector
+      const viewSelector = `
+        <div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span style="font-weight:600;color:#475569;">View:</span>
+            <button class="btn ${trendsView === 'monthly' ? 'btn-primary' : 'btn-secondary'}" style="padding:4px 12px;font-size:12px" onclick="trendsView='monthly';renderConsolidatedFinancials(document.getElementById('main-content'))">Monthly</button>
+            <button class="btn ${trendsView === 'quarterly' ? 'btn-primary' : 'btn-secondary'}" style="padding:4px 12px;font-size:12px" onclick="trendsView='quarterly';renderConsolidatedFinancials(document.getElementById('main-content'))">Quarterly</button>
+            <button class="btn ${trendsView === 'yearly' ? 'btn-primary' : 'btn-secondary'}" style="padding:4px 12px;font-size:12px" onclick="trendsView='yearly';renderConsolidatedFinancials(document.getElementById('main-content'))">Yearly</button>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span style="font-weight:600;color:#475569;">Metric:</span>
+            <button class="btn ${trendsMetric === 'profit' ? 'btn-primary' : 'btn-secondary'}" style="padding:4px 12px;font-size:12px" onclick="trendsMetric='profit';renderConsolidatedFinancials(document.getElementById('main-content'))">Profit</button>
+            <button class="btn ${trendsMetric === 'revenue' ? 'btn-primary' : 'btn-secondary'}" style="padding:4px 12px;font-size:12px" onclick="trendsMetric='revenue';renderConsolidatedFinancials(document.getElementById('main-content'))">Revenue</button>
+            <button class="btn ${trendsMetric === 'costs' ? 'btn-primary' : 'btn-secondary'}" style="padding:4px 12px;font-size:12px" onclick="trendsMetric='costs';renderConsolidatedFinancials(document.getElementById('main-content'))">Costs</button>
+            <button class="btn ${trendsMetric === 'margin' ? 'btn-primary' : 'btn-secondary'}" style="padding:4px 12px;font-size:12px" onclick="trendsMetric='margin';renderConsolidatedFinancials(document.getElementById('main-content'))">Margin %</button>
+          </div>
+        </div>
+      `;
+
+      // Calculate period data
+      const periodData = {};
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+      // Helper to get period key
+      function getPeriodKey(dateStr) {
+        if (!dateStr) return null;
+        const d = new Date(dateStr);
+        const year = d.getFullYear();
+        const month = d.getMonth();
+        if (trendsView === 'monthly') {
+          return `${year}-${String(month + 1).padStart(2, '0')}`;
+        } else if (trendsView === 'quarterly') {
+          const quarter = Math.floor(month / 3) + 1;
+          return `${year}-Q${quarter}`;
+        } else {
+          return `${year}`;
+        }
+      }
+
+      function getPeriodLabel(key) {
+        if (trendsView === 'monthly') {
+          const [year, month] = key.split('-');
+          return `${monthNames[parseInt(month) - 1]} ${year}`;
+        } else if (trendsView === 'quarterly') {
+          return key.replace('-', ' ');
+        } else {
+          return key;
+        }
+      }
+
+      // Initialize periods
+      function initPeriod(key) {
+        if (!periodData[key]) {
+          periodData[key] = {
+            key,
+            label: getPeriodLabel(key),
+            revenue: 0,
+            brokerFees: 0,
+            localFees: 0,
+            driverPay: 0,
+            fuelCost: 0,
+            maintenanceCost: 0,
+            tollCost: 0,
+            trips: 0,
+            cars: 0,
+            miles: 0
+          };
+        }
+      }
+
+      // Aggregate trip data
+      trips.forEach(t => {
+        const key = getPeriodKey(t.trip_date);
+        if (!key) return;
+        initPeriod(key);
+        const fin = getTripFin(t.id);
+        periodData[key].trips++;
+        periodData[key].cars += fin.vehicleCount;
+        periodData[key].miles += parseFloat(t.miles || 0);
+        periodData[key].revenue += fin.loadRevenue;
+        periodData[key].brokerFees += fin.brokerFee;
+        periodData[key].localFees += fin.localFees;
+        periodData[key].driverPay += fin.driverCut;
+      });
+
+      // Aggregate fuel data
+      allFuel.forEach(f => {
+        const key = getPeriodKey(f.transaction_date);
+        if (!key) return;
+        initPeriod(key);
+        periodData[key].fuelCost += parseFloat(f.total_cost || f.amount || 0);
+      });
+
+      // Aggregate maintenance data
+      allMaintenance.forEach(m => {
+        const mDate = m.service_date || m.created_at;
+        const key = getPeriodKey(mDate);
+        if (!key) return;
+        initPeriod(key);
+        periodData[key].maintenanceCost += parseFloat(m.total_cost || 0);
+      });
+
+      // Aggregate toll data
+      tollTransactions.forEach(t => {
+        const key = getPeriodKey(t.transaction_date);
+        if (!key) return;
+        initPeriod(key);
+        periodData[key].tollCost += parseFloat(t.amount || 0);
+      });
+
+      // Calculate derived metrics for each period
+      Object.values(periodData).forEach(p => {
+        p.cleanRevenue = p.revenue - p.brokerFees - p.localFees;
+        p.grossProfit = p.cleanRevenue - p.driverPay;
+        p.totalCosts = p.fuelCost + p.maintenanceCost + p.tollCost;
+        p.netProfit = p.grossProfit - p.totalCosts;
+        p.margin = p.revenue > 0 ? (p.netProfit / p.revenue) * 100 : 0;
+        p.profitPerMile = p.miles > 0 ? p.netProfit / p.miles : 0;
+        p.profitPerCar = p.cars > 0 ? p.netProfit / p.cars : 0;
+      });
+
+      // Sort periods chronologically
+      const periods = Object.values(periodData).sort((a, b) => a.key.localeCompare(b.key));
+
+      // Get the metric value for display
+      function getMetricValue(p) {
+        if (trendsMetric === 'profit') return p.netProfit;
+        if (trendsMetric === 'revenue') return p.revenue;
+        if (trendsMetric === 'costs') return p.totalCosts;
+        if (trendsMetric === 'margin') return p.margin;
+        return p.netProfit;
+      }
+
+      function formatMetric(value) {
+        if (trendsMetric === 'margin') return value.toFixed(1) + '%';
+        return formatMoney(value);
+      }
+
+      // Calculate changes
+      periods.forEach((p, i) => {
+        if (i > 0) {
+          const prevValue = getMetricValue(periods[i - 1]);
+          const currValue = getMetricValue(p);
+          p.change = currValue - prevValue;
+          p.changePercent = prevValue !== 0 ? ((currValue - prevValue) / Math.abs(prevValue)) * 100 : 0;
+        } else {
+          p.change = 0;
+          p.changePercent = 0;
+        }
+      });
+
+      // Find max value for bar chart scaling
+      const maxValue = Math.max(...periods.map(p => Math.abs(getMetricValue(p))), 1);
+
+      // Build bar chart
+      const chartBars = periods.length === 0
+        ? '<div style="text-align:center;padding:40px;color:#64748b">No data available</div>'
+        : periods.map(p => {
+            const value = getMetricValue(p);
+            const barHeight = Math.abs(value) / maxValue * 150;
+            const isPositive = value >= 0;
+            const color = trendsMetric === 'costs'
+              ? '#ef4444'
+              : (trendsMetric === 'margin'
+                ? (value >= 10 ? '#22c55e' : value >= 0 ? '#f59e0b' : '#ef4444')
+                : (isPositive ? '#22c55e' : '#ef4444'));
+
+            const changeIndicator = p.change !== 0
+              ? `<div style="font-size:10px;color:${p.change >= 0 ? '#22c55e' : '#ef4444'}">${p.change >= 0 ? '▲' : '▼'} ${Math.abs(p.changePercent).toFixed(1)}%</div>`
+              : '';
+
+            return `
+              <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:60px;max-width:100px">
+                <div style="font-size:11px;font-weight:600;color:${color};margin-bottom:4px">${formatMetric(value)}</div>
+                ${changeIndicator}
+                <div style="width:100%;height:${barHeight}px;background:${color};border-radius:4px 4px 0 0;min-height:4px"></div>
+                <div style="font-size:10px;color:#64748b;margin-top:8px;text-align:center">${p.label}</div>
+              </div>
+            `;
+          }).join('');
+
+      // Build comparison table
+      const tableRows = periods.length === 0
+        ? '<tr><td colspan="12" style="text-align:center;padding:40px;color:#64748b">No data available</td></tr>'
+        : periods.slice().reverse().map((p, i, arr) => {
+            const prevPeriod = arr[i + 1];
+            const profitChange = prevPeriod ? p.netProfit - prevPeriod.netProfit : 0;
+            const revenueChange = prevPeriod ? p.revenue - prevPeriod.revenue : 0;
+
+            return `<tr>
+              <td><strong>${p.label}</strong></td>
+              <td>${p.trips}</td>
+              <td>${p.cars}</td>
+              <td>${Math.round(p.miles).toLocaleString()}</td>
+              <td class="money">${formatMoney(p.revenue)}</td>
+              <td class="money" style="color:#ef4444">${formatMoney(p.fuelCost)}</td>
+              <td class="money" style="color:#f59e0b">${formatMoney(p.maintenanceCost)}</td>
+              <td class="money" style="color:#8b5cf6">${formatMoney(p.tollCost)}</td>
+              <td class="money" style="font-weight:700;color:${p.netProfit >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(p.netProfit)}</td>
+              <td style="color:${p.margin >= 10 ? '#22c55e' : p.margin >= 0 ? '#f59e0b' : '#ef4444'}">${p.margin.toFixed(1)}%</td>
+              <td style="color:${profitChange >= 0 ? '#22c55e' : '#ef4444'}">${profitChange >= 0 ? '+' : ''}${formatMoney(profitChange)}</td>
+              <td style="color:${p.profitPerMile >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(p.profitPerMile)}/mi</td>
+            </tr>`;
+          }).join('');
+
+      // Year-over-Year comparison
+      let yoyComparison = '';
+      if (trendsView === 'monthly' && periods.length > 12) {
+        const currentYear = new Date().getFullYear();
+        const lastYear = currentYear - 1;
+
+        const thisYearData = periods.filter(p => p.key.startsWith(currentYear.toString()));
+        const lastYearData = periods.filter(p => p.key.startsWith(lastYear.toString()));
+
+        const thisYearTotal = thisYearData.reduce((sum, p) => sum + p.netProfit, 0);
+        const lastYearTotal = lastYearData.reduce((sum, p) => sum + p.netProfit, 0);
+        const thisYearRevenue = thisYearData.reduce((sum, p) => sum + p.revenue, 0);
+        const lastYearRevenue = lastYearData.reduce((sum, p) => sum + p.revenue, 0);
+        const thisYearCars = thisYearData.reduce((sum, p) => sum + p.cars, 0);
+        const lastYearCars = lastYearData.reduce((sum, p) => sum + p.cars, 0);
+
+        const profitChange = thisYearTotal - lastYearTotal;
+        const profitChangePercent = lastYearTotal !== 0 ? (profitChange / Math.abs(lastYearTotal)) * 100 : 0;
+        const revenueChange = thisYearRevenue - lastYearRevenue;
+        const carsChange = thisYearCars - lastYearCars;
+
+        yoyComparison = `
+          <div class="card" style="margin-bottom:20px">
+            <div class="card-header"><h3>📊 Year-over-Year Comparison</h3></div>
+            <div style="padding:20px">
+              <div class="stats-grid">
+                <div class="stat-card" style="border-left:4px solid ${profitChange >= 0 ? '#22c55e' : '#ef4444'}">
+                  <div class="label">${currentYear} Profit vs ${lastYear}</div>
+                  <div class="value" style="color:${profitChange >= 0 ? '#22c55e' : '#ef4444'}">${profitChange >= 0 ? '+' : ''}${formatMoney(profitChange)}</div>
+                  <div style="font-size:12px;color:${profitChange >= 0 ? '#22c55e' : '#ef4444'}">${profitChangePercent >= 0 ? '▲' : '▼'} ${Math.abs(profitChangePercent).toFixed(1)}%</div>
+                </div>
+                <div class="stat-card" style="border-left:4px solid ${revenueChange >= 0 ? '#22c55e' : '#ef4444'}">
+                  <div class="label">${currentYear} Revenue vs ${lastYear}</div>
+                  <div class="value" style="color:${revenueChange >= 0 ? '#22c55e' : '#ef4444'}">${revenueChange >= 0 ? '+' : ''}${formatMoney(revenueChange)}</div>
+                  <div style="font-size:12px;color:#64748b">${currentYear}: ${formatMoney(thisYearRevenue)}</div>
+                </div>
+                <div class="stat-card" style="border-left:4px solid ${carsChange >= 0 ? '#22c55e' : '#ef4444'}">
+                  <div class="label">${currentYear} Cars vs ${lastYear}</div>
+                  <div class="value" style="color:${carsChange >= 0 ? '#22c55e' : '#ef4444'}">${carsChange >= 0 ? '+' : ''}${carsChange}</div>
+                  <div style="font-size:12px;color:#64748b">${currentYear}: ${thisYearCars} cars</div>
+                </div>
+                <div class="stat-card">
+                  <div class="label">${lastYear} Summary</div>
+                  <div class="value">${formatMoney(lastYearTotal)}</div>
+                  <div style="font-size:12px;color:#64748b">${lastYearCars} cars • ${formatMoney(lastYearRevenue)} revenue</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Quarter comparison for current year
+      let quarterComparison = '';
+      if (trendsView === 'quarterly') {
+        const currentYear = financialsYear;
+        const quarters = periods.filter(p => p.key.startsWith(currentYear.toString())).slice(-4);
+
+        if (quarters.length >= 2) {
+          const latestQ = quarters[quarters.length - 1];
+          const prevQ = quarters[quarters.length - 2];
+          const qChange = latestQ.netProfit - prevQ.netProfit;
+          const qChangePercent = prevQ.netProfit !== 0 ? (qChange / Math.abs(prevQ.netProfit)) * 100 : 0;
+
+          quarterComparison = `
+            <div class="card" style="margin-bottom:20px">
+              <div class="card-header"><h3>📈 Quarter-over-Quarter</h3></div>
+              <div style="padding:20px">
+                <div class="stats-grid">
+                  <div class="stat-card" style="border-left:4px solid ${qChange >= 0 ? '#22c55e' : '#ef4444'}">
+                    <div class="label">${latestQ.label} vs ${prevQ.label}</div>
+                    <div class="value" style="color:${qChange >= 0 ? '#22c55e' : '#ef4444'}">${qChange >= 0 ? '+' : ''}${formatMoney(qChange)}</div>
+                    <div style="font-size:12px;color:${qChange >= 0 ? '#22c55e' : '#ef4444'}">${qChangePercent >= 0 ? '▲' : '▼'} ${Math.abs(qChangePercent).toFixed(1)}%</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="label">${latestQ.label}</div>
+                    <div class="value" style="color:${latestQ.netProfit >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(latestQ.netProfit)}</div>
+                    <div style="font-size:12px;color:#64748b">${latestQ.cars} cars • ${latestQ.margin.toFixed(1)}% margin</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="label">${prevQ.label}</div>
+                    <div class="value" style="color:${prevQ.netProfit >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(prevQ.netProfit)}</div>
+                    <div style="font-size:12px;color:#64748b">${prevQ.cars} cars • ${prevQ.margin.toFixed(1)}% margin</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // Best/worst periods
+      const sortedByProfit = [...periods].sort((a, b) => b.netProfit - a.netProfit);
+      const bestPeriod = sortedByProfit[0];
+      const worstPeriod = sortedByProfit[sortedByProfit.length - 1];
+
+      const highlights = periods.length > 0 ? `
+        <div class="stats-grid" style="margin-bottom:20px;">
+          <div class="stat-card" style="border-left:4px solid #22c55e">
+            <div class="label">Best Period</div>
+            <div class="value" style="color:#22c55e">${bestPeriod?.label || '-'}</div>
+            <div style="font-size:12px;color:#64748b">${bestPeriod ? formatMoney(bestPeriod.netProfit) + ' profit' : ''}</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #ef4444">
+            <div class="label">Worst Period</div>
+            <div class="value" style="color:#ef4444">${worstPeriod?.label || '-'}</div>
+            <div style="font-size:12px;color:#64748b">${worstPeriod ? formatMoney(worstPeriod.netProfit) + ' profit' : ''}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Average Profit</div>
+            <div class="value">${formatMoney(periods.reduce((s, p) => s + p.netProfit, 0) / periods.length || 0)}</div>
+            <div style="font-size:12px;color:#64748b">per ${trendsView === 'monthly' ? 'month' : trendsView === 'quarterly' ? 'quarter' : 'year'}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Average Margin</div>
+            <div class="value">${(periods.reduce((s, p) => s + p.margin, 0) / periods.length || 0).toFixed(1)}%</div>
+            <div style="font-size:12px;color:#64748b">${periods.length} periods analyzed</div>
+          </div>
+        </div>
+      ` : '';
+
+      return `
+        ${viewSelector}
+        ${highlights}
+        ${yoyComparison}
+        ${quarterComparison}
+
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header"><h3>📊 ${trendsMetric.charAt(0).toUpperCase() + trendsMetric.slice(1)} Trend</h3></div>
+          <div style="padding:20px;display:flex;gap:8px;align-items:flex-end;justify-content:space-around;min-height:200px;border-bottom:2px solid #e2e8f0">
+            ${chartBars}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>📋 Period Details</h3></div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Period</th>
+                  <th>Trips</th>
+                  <th>Cars</th>
+                  <th>Miles</th>
+                  <th>Revenue</th>
+                  <th>Fuel</th>
+                  <th>Maint.</th>
+                  <th>Tolls</th>
+                  <th>Profit</th>
+                  <th>Margin</th>
+                  <th>Change</th>
+                  <th>$/Mile</th>
+                </tr>
+              </thead>
+              <tbody>${tableRows}</tbody>
             </table>
           </div>
         </div>
