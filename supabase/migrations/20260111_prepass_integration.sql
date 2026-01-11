@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS prepass_config (
 -- Store toll transactions from PrePass
 CREATE TABLE IF NOT EXISTS toll_transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    truck_id UUID REFERENCES trucks(id),
+    truck_id INTEGER REFERENCES trucks(id),
     transaction_date TIMESTAMP WITH TIME ZONE NOT NULL,
     posted_date TIMESTAMP WITH TIME ZONE,
     plaza_name TEXT,
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS toll_transactions (
     transponder_id TEXT,
     prepass_reference TEXT UNIQUE, -- For deduplication
     lane_type TEXT, -- 'TOLL', 'WEIGH_STATION', etc.
-    trip_id UUID REFERENCES trips(id), -- Optional link to trip
+    trip_id INTEGER REFERENCES trips(id), -- Optional link to trip
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS toll_transactions (
 CREATE TABLE IF NOT EXISTS transponder_mappings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     transponder_id TEXT NOT NULL UNIQUE,
-    truck_id UUID REFERENCES trucks(id) NOT NULL,
+    truck_id INTEGER REFERENCES trucks(id) NOT NULL,
     active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
