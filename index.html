@@ -16029,7 +16029,9 @@ ${rateText}`
         // Payment Info Section
         '<h4 style="margin:20px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)">💵 Payment Information</h4>' +
         '<div class="form-row"><div class="form-group"><label>Pay To</label><input id="dPayToName" value="' + (d?.pay_to_name || '') + '" placeholder="Name to pay to (if different)"></div><div class="form-group"><label>Company</label><input id="dPayToCompany" value="' + (d?.pay_to_company || '') + '" placeholder="Company name (if paid as company)"></div></div>' +
-        '<div class="form-row"><div class="form-group"><label>Company EIN #</label><input id="dPayToCompanyEIN" value="' + (d?.pay_to_company_ein || '') + '" placeholder="XX-XXXXXXX"></div><div class="form-group"><label>Address</label><input id="dPayToAddress" value="' + (d?.pay_to_address || '') + '" placeholder="Payment address"></div></div>' +
+        '<div class="form-group"><label>Company EIN #</label><input id="dPayToCompanyEIN" value="' + (d?.pay_to_company_ein || '') + '" placeholder="XX-XXXXXXX"></div>' +
+        '<div class="form-group"><label>Street Address</label><input id="dPayToStreet" value="' + (d?.pay_to_street || '') + '" placeholder="123 Main St"></div>' +
+        '<div class="form-row"><div class="form-group"><label>City</label><input id="dPayToCity" value="' + (d?.pay_to_city || '') + '" placeholder="City"></div><div class="form-group"><label>State</label><select id="dPayToState"><option value="">Select</option>' + states.map(s => '<option value="' + s + '"' + (d?.pay_to_state === s ? ' selected' : '') + '>' + s + '</option>').join('') + '</select></div><div class="form-group"><label>Zip Code</label><input id="dPayToZip" value="' + (d?.pay_to_zip || '') + '" placeholder="12345" maxlength="10"></div></div>' +
 
         '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveDriver(' + id + ')">Save</button></div></div>';
       document.body.appendChild(m);
@@ -16055,9 +16057,12 @@ ${rateText}`
         account_number: document.getElementById('dAccountNum').value || null,
         routing_number: document.getElementById('dRoutingNum').value || null,
         pay_to_name: document.getElementById('dPayToName').value || null,
-        pay_to_address: document.getElementById('dPayToAddress').value || null,
         pay_to_company: document.getElementById('dPayToCompany').value || null,
-        pay_to_company_ein: document.getElementById('dPayToCompanyEIN').value || null
+        pay_to_company_ein: document.getElementById('dPayToCompanyEIN').value || null,
+        pay_to_street: document.getElementById('dPayToStreet').value || null,
+        pay_to_city: document.getElementById('dPayToCity').value || null,
+        pay_to_state: document.getElementById('dPayToState').value || null,
+        pay_to_zip: document.getElementById('dPayToZip').value || null
       };
       try { 
         if (id) { 
