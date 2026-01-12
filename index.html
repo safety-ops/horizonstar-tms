@@ -21208,8 +21208,8 @@ ${rateText}`
         (completedTrips.length === 0 ? '<p style="color:#64748b;text-align:center;padding:20px">No completed trips</p>' :
         completedTrips.map(t => {
           const f = getTripFin(t.id);
-          const settlement = f.cleanGross - f.dispatchFee;
-          return '<label style="display:flex;align-items:center;gap:8px;padding:8px;cursor:pointer;border-bottom:1px solid #f1f5f9"><input type="checkbox" class="settlement-trip" value="' + t.id + '"><span><strong>' + t.trip_number + '</strong> - ' + formatDate(t.trip_date) + '</span><span style="margin-left:auto;color:#f59e0b;font-weight:600">' + formatMoney(settlement) + '</span></label>';
+          const settlement = f.cleanGross - f.dispatchFee - f.cashCollected;
+          return '<label style="display:flex;align-items:center;gap:8px;padding:8px;cursor:pointer;border-bottom:1px solid #f1f5f9"><input type="checkbox" class="settlement-trip" value="' + t.id + '"><span><strong>' + t.trip_number + '</strong> - ' + formatDate(t.trip_date) + '</span><span style="margin-left:auto;color:#f59e0b;font-weight:600">' + formatMoney(settlement) + (f.cashCollected > 0 ? ' <span style="font-size:10px;color:#64748b">(Cash: ' + formatMoney(f.cashCollected) + ')</span>' : '') + '</span></label>';
         }).join('')) +
         '</div></div>' +
         '<div class="form-row"><div class="form-group"><label>Settlement #</label><input type="number" id="settlementNumber" value="' + (1000 + Math.floor(Math.random() * 9000)) + '"></div><div class="form-group"><label>Check #</label><input type="number" id="checkNumber" value="' + (10000 + Math.floor(Math.random() * 90000)) + '"></div></div>' +
@@ -21232,7 +21232,7 @@ ${rateText}`
       }
 
       // Calculate totals
-      let totalRevenue = 0, totalBrokerFee = 0, totalLocalFee = 0, totalDispatchFee = 0;
+      let totalRevenue = 0, totalBrokerFee = 0, totalLocalFee = 0, totalDispatchFee = 0, totalCashCollected = 0;
       const tripDetails = [];
 
       selectedTripIds.forEach(tripId => {
@@ -21246,6 +21246,7 @@ ${rateText}`
         totalBrokerFee += fin.brokerFee;
         totalLocalFee += fin.localFees;
         totalDispatchFee += fin.dispatchFee;
+        totalCashCollected += fin.cashCollected;
         tripDetails.push({
           tripNumber: trip.trip_number,
           date: trip.trip_date,
@@ -21254,12 +21255,13 @@ ${rateText}`
           localFee: fin.localFees,
           cleanGross: fin.cleanGross,
           dispatchFee: fin.dispatchFee,
-          settlement: fin.cleanGross - fin.dispatchFee
+          cashCollected: fin.cashCollected,
+          settlement: fin.cleanGross - fin.dispatchFee - fin.cashCollected
         });
       });
 
       const totalCleanGross = totalRevenue - totalBrokerFee - totalLocalFee;
-      const totalSettlement = totalCleanGross - totalDispatchFee;
+      const totalSettlement = totalCleanGross - totalDispatchFee - totalCashCollected;
 
       const periodStart = document.getElementById('periodStart')?.value;
       const periodEnd = document.getElementById('periodEnd')?.value;
@@ -21268,7 +21270,7 @@ ${rateText}`
       const checkNumber = document.getElementById('checkNumber')?.value;
 
       // Generate PDF
-      const pdfBlob = await generateSettlementPDF(driver, tripDetails, totalRevenue, totalBrokerFee, totalLocalFee, totalCleanGross, totalDispatchFee, totalSettlement, dispatchFeePercent, periodStart, periodEnd, payDate, settlementNumber, checkNumber);
+      const pdfBlob = await generateSettlementPDF(driver, tripDetails, totalRevenue, totalBrokerFee, totalLocalFee, totalCleanGross, totalDispatchFee, totalCashCollected, totalSettlement, dispatchFeePercent, periodStart, periodEnd, payDate, settlementNumber, checkNumber);
 
       if (action === 'print' || action === 'both') {
         const url = URL.createObjectURL(pdfBlob);
@@ -21288,7 +21290,7 @@ ${rateText}`
     }
 
     // Generate Settlement PDF for Owner-Operators
-    async function generateSettlementPDF(driver, tripDetails, totalRevenue, totalBrokerFee, totalLocalFee, totalCleanGross, totalDispatchFee, totalSettlement, dispatchFeePercent, periodStart, periodEnd, payDate, settlementNumber, checkNumber) {
+    async function generateSettlementPDF(driver, tripDetails, totalRevenue, totalBrokerFee, totalLocalFee, totalCleanGross, totalDispatchFee, totalCashCollected, totalSettlement, dispatchFeePercent, periodStart, periodEnd, payDate, settlementNumber, checkNumber) {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
@@ -21379,7 +21381,7 @@ ${rateText}`
 
       doc.autoTable({
         startY: y,
-        head: [['Date', 'Trip #', 'Revenue', 'Broker Fee', 'Local Fee', 'Clean Gross', 'Dispatch Fee', 'Settlement']],
+        head: [['Date', 'Trip #', 'Revenue', 'Broker Fee', 'Local Fee', 'Clean Gross', 'Dispatch Fee', 'Cash Coll.', 'Settlement']],
         body: tripDetails.map(t => [
           fmtDate(t.date),
           t.tripNumber,
@@ -21388,23 +21390,25 @@ ${rateText}`
           fmtMoney(t.localFee),
           fmtMoney(t.cleanGross),
           fmtMoney(t.dispatchFee),
+          fmtMoney(t.cashCollected),
           fmtMoney(t.settlement)
         ]),
-        foot: [['TOTALS', '', fmtMoney(totalRevenue), fmtMoney(totalBrokerFee), fmtMoney(totalLocalFee), fmtMoney(totalCleanGross), fmtMoney(totalDispatchFee), fmtMoney(totalSettlement)]],
+        foot: [['TOTALS', '', fmtMoney(totalRevenue), fmtMoney(totalBrokerFee), fmtMoney(totalLocalFee), fmtMoney(totalCleanGross), fmtMoney(totalDispatchFee), fmtMoney(totalCashCollected), fmtMoney(totalSettlement)]],
         theme: 'grid',
-        headStyles: { fillColor: orange, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
-        footStyles: { fillColor: [254, 243, 199], textColor: darkGray, fontStyle: 'bold', fontSize: 8 },
-        bodyStyles: { fontSize: 8 },
+        headStyles: { fillColor: orange, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7 },
+        footStyles: { fillColor: [254, 243, 199], textColor: darkGray, fontStyle: 'bold', fontSize: 7 },
+        bodyStyles: { fontSize: 7 },
         margin: { left: margin, right: margin },
         columnStyles: {
-          0: { cellWidth: 22 },
-          1: { cellWidth: 20 },
-          2: { cellWidth: 22, halign: 'right' },
-          3: { cellWidth: 22, halign: 'right' },
-          4: { cellWidth: 20, halign: 'right' },
-          5: { cellWidth: 24, halign: 'right' },
-          6: { cellWidth: 24, halign: 'right' },
-          7: { cellWidth: 24, halign: 'right' }
+          0: { cellWidth: 18 },
+          1: { cellWidth: 18 },
+          2: { cellWidth: 20, halign: 'right' },
+          3: { cellWidth: 20, halign: 'right' },
+          4: { cellWidth: 18, halign: 'right' },
+          5: { cellWidth: 22, halign: 'right' },
+          6: { cellWidth: 22, halign: 'right' },
+          7: { cellWidth: 20, halign: 'right' },
+          8: { cellWidth: 22, halign: 'right' }
         }
       });
 
@@ -21412,7 +21416,7 @@ ${rateText}`
 
       // Summary Box
       doc.setFillColor(254, 243, 199);
-      doc.roundedRect(margin, y, pageWidth - margin * 2, 35, 2, 2, 'F');
+      doc.roundedRect(margin, y, pageWidth - margin * 2, 42, 2, 2, 'F');
       doc.setTextColor(...darkGray);
       doc.setFontSize(10);
       const col1 = margin + 10;
@@ -21430,11 +21434,13 @@ ${rateText}`
       doc.setFont('helvetica', 'normal');
       doc.text('Less: Dispatch Fee (' + dispatchFeePercent + '%):', col2, y + 14);
       doc.text('(' + fmtMoney(totalDispatchFee) + ')', col2 + 50, y + 14, { align: 'right' });
+      doc.text('Less: Cash Collected:', col2, y + 20);
+      doc.text('(' + fmtMoney(totalCashCollected) + ')', col2 + 50, y + 20, { align: 'right' });
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(12);
       doc.setTextColor(...orange);
-      doc.text('OWNER SETTLEMENT:', col2, y + 26);
-      doc.text(fmtMoney(totalSettlement), col2 + 50, y + 26, { align: 'right' });
+      doc.text('OWNER SETTLEMENT:', col2, y + 32);
+      doc.text(fmtMoney(totalSettlement), col2 + 50, y + 32, { align: 'right' });
 
       // Footer
       const footerY = doc.internal.pageSize.getHeight() - 15;
