@@ -21296,7 +21296,7 @@ ${rateText}`
         return;
       }
 
-      // Calculate totals
+      // Calculate totals - now at ORDER level for detailed view
       let totalRevenue = 0, totalBrokerFee = 0, totalLocalFee = 0, totalDispatchFee = 0, totalCashCollected = 0;
       const tripDetails = [];
 
@@ -21306,22 +21306,43 @@ ${rateText}`
           console.warn('Trip not found:', tripId);
           return;
         }
-        const fin = getTripFin(tripId);
-        totalRevenue += fin.loadRevenue;
-        totalBrokerFee += fin.brokerFee;
-        totalLocalFee += fin.localFees;
-        totalDispatchFee += fin.dispatchFee;
-        totalCashCollected += fin.cashCollected;
-        tripDetails.push({
-          tripNumber: trip.trip_number,
-          date: trip.trip_date,
-          revenue: fin.loadRevenue,
-          brokerFee: fin.brokerFee,
-          localFee: fin.localFees,
-          cleanGross: fin.cleanGross,
-          dispatchFee: fin.dispatchFee,
-          cashCollected: fin.cashCollected,
-          settlement: fin.cleanGross - fin.dispatchFee - fin.cashCollected
+        const orders = appData.orders.filter(o => String(o.trip_id) === String(tripId));
+
+        // Create one row per order for detailed view
+        orders.forEach(o => {
+          const revenue = parseFloat(o.revenue || 0);
+          const brokerFee = parseFloat(o.broker_fee || 0);
+          const localFee = parseFloat(o.local_fee || 0);
+          const cleanGross = revenue - brokerFee - localFee;
+          const orderDispatchFee = cleanGross * (dispatchFeePercent / 100);
+          const isCash = o.payment_type === 'COD' || o.payment_type === 'COP' || o.payment_type === 'LOCAL_COD';
+          const hasBillPortion = parseFloat(o.bill_amount || 0) > 0;
+          const cashCollected = isCash ? (hasBillPortion ? parseFloat(o.cod_amount || 0) : revenue) : 0;
+          const settlement = cleanGross - orderDispatchFee - cashCollected;
+
+          // Build order/vehicle label
+          const vehicleInfo = [o.vehicle_year, o.vehicle_make].filter(Boolean).join(' ');
+          const orderVehicle = o.order_number ? (o.order_number + (vehicleInfo ? ' ' + vehicleInfo : '')) : (vehicleInfo || 'N/A');
+
+          totalRevenue += revenue;
+          totalBrokerFee += brokerFee;
+          totalLocalFee += localFee;
+          totalDispatchFee += orderDispatchFee;
+          totalCashCollected += cashCollected;
+
+          tripDetails.push({
+            tripNumber: trip.trip_number,
+            date: trip.trip_date,
+            orderVehicle,
+            paymentType: o.payment_type || 'BILL',
+            revenue,
+            brokerFee,
+            localFee,
+            cleanGross,
+            dispatchFee: orderDispatchFee,
+            cashCollected,
+            settlement
+          });
         });
       });
 
@@ -21437,19 +21458,21 @@ ${rateText}`
       doc.text(fmtDate(payDate), margin + 38, y + 18);
       y += 26;
 
-      // Trip Details Table
+      // Trip Details Table - now with Order/Vehicle and Type columns
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...darkGray);
-      doc.text('Trip Details', margin, y);
+      doc.text('Order Details', margin, y);
       y += 6;
 
       doc.autoTable({
         startY: y,
-        head: [['Date', 'Trip #', 'Revenue', 'Broker Fee', 'Local Fee', 'Clean Gross', 'Dispatch Fee', 'Cash Coll.', 'Settlement']],
+        head: [['Date', 'Trip', 'Order/Vehicle', 'Type', 'Revenue', 'Broker', 'Local', 'Clean', 'Disp', 'Cash', 'Settle']],
         body: tripDetails.map(t => [
           fmtDate(t.date),
           t.tripNumber,
+          t.orderVehicle || 'N/A',
+          t.paymentType || 'BILL',
           fmtMoney(t.revenue),
           fmtMoney(t.brokerFee),
           fmtMoney(t.localFee),
@@ -21458,22 +21481,38 @@ ${rateText}`
           fmtMoney(t.cashCollected),
           fmtMoney(t.settlement)
         ]),
-        foot: [['TOTALS', '', fmtMoney(totalRevenue), fmtMoney(totalBrokerFee), fmtMoney(totalLocalFee), fmtMoney(totalCleanGross), fmtMoney(totalDispatchFee), fmtMoney(totalCashCollected), fmtMoney(totalSettlement)]],
+        foot: [['TOTALS', '', '', '', fmtMoney(totalRevenue), fmtMoney(totalBrokerFee), fmtMoney(totalLocalFee), fmtMoney(totalCleanGross), fmtMoney(totalDispatchFee), fmtMoney(totalCashCollected), fmtMoney(totalSettlement)]],
         theme: 'grid',
-        headStyles: { fillColor: orange, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7 },
-        footStyles: { fillColor: [254, 243, 199], textColor: darkGray, fontStyle: 'bold', fontSize: 7 },
-        bodyStyles: { fontSize: 7 },
+        headStyles: { fillColor: orange, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 6 },
+        footStyles: { fillColor: [254, 243, 199], textColor: darkGray, fontStyle: 'bold', fontSize: 6 },
+        bodyStyles: { fontSize: 6 },
         margin: { left: margin, right: margin },
         columnStyles: {
-          0: { cellWidth: 18 },
-          1: { cellWidth: 18 },
-          2: { cellWidth: 20, halign: 'right' },
-          3: { cellWidth: 20, halign: 'right' },
-          4: { cellWidth: 18, halign: 'right' },
-          5: { cellWidth: 22, halign: 'right' },
-          6: { cellWidth: 22, halign: 'right' },
-          7: { cellWidth: 20, halign: 'right' },
-          8: { cellWidth: 22, halign: 'right' }
+          0: { cellWidth: 14 },  // Date
+          1: { cellWidth: 14 },  // Trip
+          2: { cellWidth: 26 },  // Order/Vehicle
+          3: { cellWidth: 12 },  // Type
+          4: { cellWidth: 16, halign: 'right' },  // Revenue
+          5: { cellWidth: 14, halign: 'right' },  // Broker
+          6: { cellWidth: 14, halign: 'right' },  // Local
+          7: { cellWidth: 16, halign: 'right' },  // Clean
+          8: { cellWidth: 14, halign: 'right' },  // Disp
+          9: { cellWidth: 14, halign: 'right' },  // Cash
+          10: { cellWidth: 16, halign: 'right' }  // Settle
+        },
+        didParseCell: function(data) {
+          // Color-code payment type column
+          if (data.column.index === 3 && data.section === 'body') {
+            const type = data.cell.raw;
+            if (type === 'COD' || type === 'COP') {
+              data.cell.styles.textColor = [245, 158, 11]; // orange
+              data.cell.styles.fontStyle = 'bold';
+            } else if (type === 'CHECK') {
+              data.cell.styles.textColor = [16, 185, 129]; // green
+            } else if (type === 'LOCAL_COD') {
+              data.cell.styles.textColor = [234, 179, 8]; // yellow
+            }
+          }
         }
       });
 
@@ -21706,11 +21745,13 @@ ${rateText}`
 
       y += 10;
 
-      // Build table with AutoTable
-      const tableHeaders = ['Date', 'Trip', 'Revenue', 'Broker', 'Local', 'Clean', 'Driver Cut', '%', 'Cash'];
+      // Build table with AutoTable - includes Order/Vehicle and Payment Type columns
+      const tableHeaders = ['Date', 'Trip', 'Order/Vehicle', 'Type', 'Revenue', 'Broker', 'Local', 'Clean', 'Cut', '%', 'Cash'];
       const tableData = earnings.map(e => [
         fmtDate(e.date),
         e.tripNumber,
+        e.orderVehicle || 'N/A',
+        e.paymentType || 'BILL',
         fmtMoney(e.revenue),
         e.brokerFee > 0 ? '-' + fmtMoney(e.brokerFee) : '—',
         e.localFee > 0 ? '-' + fmtMoney(e.localFee) : '—',
@@ -21722,7 +21763,7 @@ ${rateText}`
 
       // Add total row
       tableData.push([
-        'TOTAL', '',
+        'TOTAL', '', '', '',
         fmtMoney(totalRevenue),
         '-' + fmtMoney(totalBrokerFee),
         '-' + fmtMoney(totalLocalFee),
@@ -21737,24 +21778,38 @@ ${rateText}`
         head: [tableHeaders],
         body: tableData,
         margin: { left: margin, right: margin },
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [249, 250, 251], textColor: [107, 114, 128], fontStyle: 'bold' },
+        styles: { fontSize: 6, cellPadding: 1.5 },
+        headStyles: { fillColor: [249, 250, 251], textColor: [107, 114, 128], fontStyle: 'bold', fontSize: 6 },
         bodyStyles: { textColor: [17, 24, 39] },
         columnStyles: {
-          0: { cellWidth: 18 },
-          1: { cellWidth: 16 },
-          2: { halign: 'right' },
-          3: { halign: 'right', textColor: red },
-          4: { halign: 'right', textColor: red },
-          5: { halign: 'right' },
-          6: { halign: 'right', textColor: green, fontStyle: 'bold' },
-          7: { halign: 'center', cellWidth: 12 },
-          8: { halign: 'right' }
+          0: { cellWidth: 14 },  // Date
+          1: { cellWidth: 14 },  // Trip
+          2: { cellWidth: 28 },  // Order/Vehicle
+          3: { cellWidth: 12 },  // Type
+          4: { halign: 'right', cellWidth: 16 },  // Revenue
+          5: { halign: 'right', textColor: red, cellWidth: 14 },  // Broker
+          6: { halign: 'right', textColor: red, cellWidth: 14 },  // Local
+          7: { halign: 'right', cellWidth: 16 },  // Clean
+          8: { halign: 'right', textColor: green, fontStyle: 'bold', cellWidth: 16 },  // Cut
+          9: { halign: 'center', cellWidth: 10 },  // %
+          10: { halign: 'right', cellWidth: 16 }  // Cash
         },
         didParseCell: function(data) {
           if (data.row.index === tableData.length - 1) {
             data.cell.styles.fillColor = [243, 244, 246];
             data.cell.styles.fontStyle = 'bold';
+          }
+          // Color-code payment type
+          if (data.column.index === 3 && data.row.index < tableData.length - 1) {
+            const type = data.cell.raw;
+            if (type === 'COD' || type === 'COP') {
+              data.cell.styles.textColor = [245, 158, 11]; // orange
+              data.cell.styles.fontStyle = 'bold';
+            } else if (type === 'CHECK') {
+              data.cell.styles.textColor = [16, 185, 129]; // green
+            } else if (type === 'LOCAL_COD') {
+              data.cell.styles.textColor = [234, 179, 8]; // yellow
+            }
           }
         }
       });
@@ -21973,9 +22028,15 @@ ${rateText}`
           const hasBillPortion = parseFloat(o.bill_amount || 0) > 0;
           const cashOnHand = isCash ? (hasBillPortion ? parseFloat(o.cod_amount || 0) : revenue) : 0;
           
+          // Build order/vehicle label
+          const vehicleInfo = [o.vehicle_year, o.vehicle_make].filter(Boolean).join(' ');
+          const orderVehicle = o.order_number ? (o.order_number + (vehicleInfo ? ' ' + vehicleInfo : '')) : (vehicleInfo || 'N/A');
+
           earnings.push({
             date: trip.trip_date,
             tripNumber: trip.trip_number,
+            orderVehicle,
+            paymentType: o.payment_type || 'BILL',
             revenue,
             brokerFee,
             localFee,
