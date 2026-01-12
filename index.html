@@ -8453,9 +8453,10 @@
     }
 
     function getTripFin(tripId) {
-      const trip = appData.trips.find(t => t.id === tripId);
-      const orders = appData.orders.filter(o => o.trip_id === tripId);
-      const expenses = appData.expenses.filter(e => e.trip_id === tripId);
+      const tripIdStr = String(tripId);
+      const trip = appData.trips.find(t => String(t.id) === tripIdStr);
+      const orders = appData.orders.filter(o => String(o.trip_id) === tripIdStr);
+      const expenses = appData.expenses.filter(e => String(e.trip_id) === tripIdStr);
       const loadRevenue = orders.reduce((s, o) => s + parseFloat(o.revenue || 0), 0);
       const localFees = orders.reduce((s, o) => s + parseFloat(o.local_fee || 0), 0);
       const brokerFee = orders.reduce((s, o) => s + parseFloat(o.broker_fee || 0), 0) + parseFloat(trip?.broker_fee || 0);
