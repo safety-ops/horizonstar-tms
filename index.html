@@ -15695,7 +15695,7 @@ ${rateText}`
         const isOwnerOp = d.driver_type === 'OWNER_OP';
         const percentLabel = isOwnerOp ? (d.dispatch_fee_percent || 0) + '% dispatch fee' : (d.cut_percent || 32) + '% cut';
         const typeBadge = isOwnerOp ? '<span class="badge" style="background:#f59e0b;color:white;font-size:10px;margin-left:8px">Owner-OP</span>' : '';
-        return '<div class="driver-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:16px"><div class="driver-avatar">' + d.first_name[0] + d.last_name[0] + '</div><div><h4 style="margin:0">' + d.first_name + ' ' + d.last_name + typeBadge + '</h4><p style="color:#64748b;font-size:12px;margin:0">' + percentLabel + '</p></div><span class="badge ' + getBadge(d.status) + '" style="margin-left:auto">' + d.status + '</span></div><p style="color:#64748b;font-size:13px">📞 ' + d.phone + '</p>' + (d.email ? '<p style="color:#64748b;font-size:13px">📧 ' + d.email + '</p>' : '') + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><span style="font-size:11px;background:#dbeafe;color:#1d4ed8;padding:4px 8px;border-radius:4px">📁 ' + qualFiles + ' Qual</span><span style="font-size:11px;background:#f3e8ff;color:#7c3aed;padding:4px 8px;border-radius:4px">🔒 ' + persFiles + ' Pers</span>' + (expiredCount > 0 ? '<span style="font-size:11px;background:#fee2e2;color:#dc2626;padding:4px 8px;border-radius:4px">⚠️ ' + expiredCount + ' Exp</span>' : '') + (openTickets > 0 ? '<span style="font-size:11px;background:#fef3c7;color:#d97706;padding:4px 8px;border-radius:4px">🎫 ' + openTickets + '</span>' : '') + (openViolations > 0 ? '<span style="font-size:11px;background:#fce7f3;color:#be185d;padding:4px 8px;border-radius:4px">⚠️ ' + openViolations + '</span>' : '') + (openClaims > 0 ? '<span style="font-size:11px;background:#fed7aa;color:#c2410c;padding:4px 8px;border-radius:4px">💥 ' + openClaims + '</span>' : '') + '</div><div style="display:flex;justify-content:space-between;margin-top:16px;padding-top:16px;border-top:1px solid #f1f5f9"><div><div style="font-size:18px;font-weight:700">' + trips.length + '</div><div style="font-size:11px;color:#64748b">Trips</div></div><div><div style="font-size:18px;font-weight:700;color:#10b981">' + formatMoney(earn) + '</div><div style="font-size:11px;color:#64748b">Earnings</div></div><div class="actions"><button class="action-btn view" onclick="viewDriverProfile(' + d.id + ')">View</button><button class="action-btn edit" onclick="openDriverModal(' + d.id + ')">Edit</button></div></div></div>'; 
+        return '<div class="driver-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:16px"><div class="driver-avatar">' + d.first_name[0] + d.last_name[0] + '</div><div><h4 style="margin:0">' + d.first_name + ' ' + d.last_name + typeBadge + '</h4><p style="color:#64748b;font-size:12px;margin:0">' + percentLabel + '</p></div><span class="badge ' + getBadge(d.status) + '" style="margin-left:auto">' + d.status + '</span></div><p style="color:#64748b;font-size:13px">📞 ' + d.phone + '</p>' + (d.email ? '<p style="color:#64748b;font-size:13px">📧 ' + d.email + '</p>' : '') + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><span style="font-size:11px;background:#dbeafe;color:#1d4ed8;padding:4px 8px;border-radius:4px">📁 ' + qualFiles + ' Qual</span><span style="font-size:11px;background:#f3e8ff;color:#7c3aed;padding:4px 8px;border-radius:4px">🔒 ' + persFiles + ' Pers</span>' + (expiredCount > 0 ? '<span style="font-size:11px;background:#fee2e2;color:#dc2626;padding:4px 8px;border-radius:4px">⚠️ ' + expiredCount + ' Exp</span>' : '') + (openTickets > 0 ? '<span style="font-size:11px;background:#fef3c7;color:#d97706;padding:4px 8px;border-radius:4px">🎫 ' + openTickets + '</span>' : '') + (openViolations > 0 ? '<span style="font-size:11px;background:#fce7f3;color:#be185d;padding:4px 8px;border-radius:4px">⚠️ ' + openViolations + '</span>' : '') + (openClaims > 0 ? '<span style="font-size:11px;background:#fed7aa;color:#c2410c;padding:4px 8px;border-radius:4px">💥 ' + openClaims + '</span>' : '') + '</div><div style="display:flex;justify-content:space-between;margin-top:16px;padding-top:16px;border-top:1px solid #f1f5f9"><div><div style="font-size:18px;font-weight:700">' + trips.length + '</div><div style="font-size:11px;color:#64748b">Trips</div></div><div><div style="font-size:18px;font-weight:700;color:#10b981">' + formatMoney(earn) + '</div><div style="font-size:11px;color:#64748b">Earnings</div></div><div class="actions"><button class="action-btn view" onclick="viewDriverProfile(' + d.id + ')">View</button><button class="action-btn edit" onclick="openDriverModal(' + d.id + ')">Edit</button><button class="action-btn delete" onclick="deleteDriver(' + d.id + ')">Del</button></div></div></div>'; 
       }).join('')) + '</div>';
     }
 
@@ -16105,6 +16105,24 @@ ${rateText}`
           await logActivity('DRIVER_CREATED', { driver_id: newDriver.id, driver_name: data.first_name + ' ' + data.last_name, data: data });
         } 
         document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(); renderDrivers(document.getElementById('main-content')); 
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    async function deleteDriver(id) {
+      const d = appData.drivers.find(x => x.id === id);
+      if (!d) return;
+      const trips = appData.trips.filter(t => t.driver_id === id);
+      if (trips.length > 0) {
+        showToast('Cannot delete driver with ' + trips.length + ' assigned trips. Reassign or delete trips first.', 'error');
+        return;
+      }
+      if (!confirm('Delete driver ' + d.first_name + ' ' + d.last_name + '? This cannot be undone.')) return;
+      try {
+        await dbDelete('drivers', id);
+        await logActivity('DRIVER_DELETED', { driver_id: id, driver_name: d.first_name + ' ' + d.last_name });
+        showToast('Driver deleted');
+        await loadAllData();
+        renderDrivers(document.getElementById('main-content'));
       } catch (e) { showToast(e.message, 'error'); }
     }
 
