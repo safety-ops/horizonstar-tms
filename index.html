@@ -21520,31 +21520,33 @@ ${rateText}`
 
       // Summary Box
       doc.setFillColor(254, 243, 199);
-      doc.roundedRect(margin, y, pageWidth - margin * 2, 42, 2, 2, 'F');
+      doc.roundedRect(margin, y, pageWidth - margin * 2, 50, 2, 2, 'F');
       doc.setTextColor(...darkGray);
-      doc.setFontSize(10);
-      const col1 = margin + 10;
-      const col2 = pageWidth / 2 + 10;
+      doc.setFontSize(9);
+      const col1 = margin + 5;
+      const col1Val = margin + 55;
+      const col2 = pageWidth / 2 + 5;
+      const col2Val = pageWidth - margin - 5;
       doc.setFont('helvetica', 'normal');
       doc.text('Total Load Revenue:', col1, y + 8);
-      doc.text(fmtMoney(totalRevenue), col1 + 60, y + 8, { align: 'right' });
+      doc.text(fmtMoney(totalRevenue), col1Val, y + 8, { align: 'right' });
       doc.text('Less: Broker Fees:', col1, y + 14);
-      doc.text('(' + fmtMoney(totalBrokerFee) + ')', col1 + 60, y + 14, { align: 'right' });
+      doc.text('(' + fmtMoney(totalBrokerFee) + ')', col1Val, y + 14, { align: 'right' });
       doc.text('Less: Local Fees:', col1, y + 20);
-      doc.text('(' + fmtMoney(totalLocalFee) + ')', col1 + 60, y + 20, { align: 'right' });
+      doc.text('(' + fmtMoney(totalLocalFee) + ')', col1Val, y + 20, { align: 'right' });
       doc.setFont('helvetica', 'bold');
       doc.text('Clean Revenue:', col2, y + 8);
-      doc.text(fmtMoney(totalCleanGross), col2 + 50, y + 8, { align: 'right' });
+      doc.text(fmtMoney(totalCleanGross), col2Val, y + 8, { align: 'right' });
       doc.setFont('helvetica', 'normal');
-      doc.text('Less: Dispatch Fee (' + dispatchFeePercent + '%):', col2, y + 14);
-      doc.text('(' + fmtMoney(totalDispatchFee) + ')', col2 + 50, y + 14, { align: 'right' });
+      doc.text('Less: Dispatch (' + dispatchFeePercent + '%):', col2, y + 14);
+      doc.text('(' + fmtMoney(totalDispatchFee) + ')', col2Val, y + 14, { align: 'right' });
       doc.text('Less: Cash Collected:', col2, y + 20);
-      doc.text('(' + fmtMoney(totalCashCollected) + ')', col2 + 50, y + 20, { align: 'right' });
+      doc.text('(' + fmtMoney(totalCashCollected) + ')', col2Val, y + 20, { align: 'right' });
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
+      doc.setFontSize(11);
       doc.setTextColor(...orange);
-      doc.text('OWNER SETTLEMENT:', col2, y + 32);
-      doc.text(fmtMoney(totalSettlement), col2 + 50, y + 32, { align: 'right' });
+      doc.text('OWNER SETTLEMENT:', col2, y + 38);
+      doc.text(fmtMoney(totalSettlement), col2Val, y + 38, { align: 'right' });
 
       // Footer
       const footerY = doc.internal.pageSize.getHeight() - 15;
