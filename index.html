@@ -21432,18 +21432,26 @@ ${rateText}`
       y += 24;
 
       // Owner Info
+      const hasCompany = driver.pay_to_company && driver.pay_to_company.trim();
+      const infoBoxHeight = hasCompany ? 26 : 20;
       doc.setFillColor(...lightGray);
-      doc.roundedRect(margin, y, pageWidth - margin * 2, 20, 2, 2, 'F');
+      doc.roundedRect(margin, y, pageWidth - margin * 2, infoBoxHeight, 2, 2, 'F');
       doc.setTextColor(...darkGray);
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
       doc.text('Owner-Operator:', margin + 4, y + 6);
       doc.setFont('helvetica', 'normal');
       doc.text(driver.first_name + ' ' + driver.last_name, margin + 40, y + 6);
+      if (hasCompany) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Company:', margin + 4, y + 12);
+        doc.setFont('helvetica', 'normal');
+        doc.text(driver.pay_to_company, margin + 28, y + 12);
+      }
       doc.setFont('helvetica', 'bold');
-      doc.text('Dispatch Fee:', margin + 4, y + 12);
+      doc.text('Dispatch Fee:', margin + 4, y + (hasCompany ? 18 : 12));
       doc.setFont('helvetica', 'normal');
-      doc.text(dispatchFeePercent + '%', margin + 32, y + 12);
+      doc.text(dispatchFeePercent + '%', margin + 32, y + (hasCompany ? 18 : 12));
       doc.setFont('helvetica', 'bold');
       doc.text('Settlement #:', pageWidth / 2, y + 6);
       doc.setFont('helvetica', 'normal');
@@ -21453,10 +21461,10 @@ ${rateText}`
       doc.setFont('helvetica', 'normal');
       doc.text(fmtDate(periodStart) + ' - ' + fmtDate(periodEnd), pageWidth / 2 + 16, y + 12);
       doc.setFont('helvetica', 'bold');
-      doc.text('Settlement Date:', margin + 4, y + 18);
+      doc.text('Settlement Date:', pageWidth / 2, y + 18);
       doc.setFont('helvetica', 'normal');
-      doc.text(fmtDate(payDate), margin + 38, y + 18);
-      y += 26;
+      doc.text(fmtDate(payDate), pageWidth / 2 + 36, y + 18);
+      y += infoBoxHeight + 6;
 
       // Trip Details Table - now with Order/Vehicle and Type columns
       doc.setFontSize(11);
