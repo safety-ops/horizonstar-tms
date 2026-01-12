@@ -21235,7 +21235,11 @@ ${rateText}`
       const tripDetails = [];
 
       selectedTripIds.forEach(tripId => {
-        const trip = appData.trips.find(t => t.id === tripId);
+        const trip = appData.trips.find(t => String(t.id) === String(tripId));
+        if (!trip) {
+          console.warn('Trip not found:', tripId);
+          return;
+        }
         const fin = getTripFin(tripId);
         totalRevenue += fin.loadRevenue;
         totalBrokerFee += fin.brokerFee;
