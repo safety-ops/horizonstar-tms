@@ -8466,24 +8466,26 @@
       const driver = appData.drivers.find(d => d.id === trip?.driver_id);
       const isOwnerOp = driver?.driver_type === 'OWNER_OP';
 
-      let driverCut, directTripExpenses, netProfit;
+      let driverCut, dispatchFee, directTripExpenses, netProfit;
 
       if (isOwnerOp) {
         // OWNER-OPERATOR: Dispatch fee is company profit, expenses are NOT deducted
         const dispatchFeePercent = driver?.dispatch_fee_percent || 5;
-        driverCut = cleanGross * (dispatchFeePercent / 100); // This is actually dispatch fee (company revenue)
+        dispatchFee = cleanGross * (dispatchFeePercent / 100); // Company's profit from this trip
+        driverCut = 0; // Owner-Ops are NOT paid by the company - they keep revenue minus dispatch fee
         // For Owner-Ops: Profit = Dispatch Fee only (no expenses deducted - owner's responsibility)
-        directTripExpenses = brokerFee + localFees; // Don't include driverCut or expenses
-        netProfit = driverCut; // Dispatch fee IS the profit for Owner-Ops
+        directTripExpenses = brokerFee + localFees; // Don't include expenses (owner's responsibility)
+        netProfit = dispatchFee; // Dispatch fee IS the profit for Owner-Ops
       } else {
         // COMPANY DRIVER: Normal calculation - driver gets cut, expenses deducted
+        dispatchFee = 0; // No dispatch fee for company drivers
         driverCut = cleanGross * ((trip?.driver_cut_percent || driver?.cut_percent || 32) / 100);
         directTripExpenses = brokerFee + localFees + driverCut + totalExpenses;
         netProfit = loadRevenue - directTripExpenses;
       }
-      
+
       // Keep these for backward compatibility
-      const truckGross = cleanGross - driverCut;
+      const truckGross = cleanGross - driverCut - dispatchFee;
       
       // Cash collected = COD and COP payments, but for split payments use cod_amount instead of full revenue
       const cashCollected = orders.filter(o => o.payment_type === 'COD' || o.payment_type === 'COP').reduce((s, o) => {
@@ -8499,11 +8501,12 @@
         localFees,
         brokerFee,
         cleanGross,
-        driverCut,           // For Company Driver: driver's pay | For Owner-Op: dispatch fee (company profit)
+        driverCut,           // Company Driver: driver's pay | Owner-Op: 0 (not paid by company)
+        dispatchFee,         // Owner-Op: company's profit | Company Driver: 0
         truckGross,
         totalExpenses,
         directTripExpenses,  // All costs for this trip
-        netProfit,           // Revenue - All Costs (for Owner-Op: just dispatch fee)
+        netProfit,           // Revenue - All Costs (for Owner-Op: dispatch fee)
         vehicleCount: orders.length,
         cashCollected,
         isOwnerOp            // Flag to indicate Owner-Operator trip
@@ -12241,8 +12244,8 @@
     function getDashboardDateRange() {
       const year = dashboardYear;
       if (dashboardPeriod === 'all') {
-        // Changed: 'all' now means full selected year only (not 2020-2030)
-        return { start: year + '-01-01', end: year + '-12-31' };
+        // All Time: from earliest possible year to current date
+        return { start: '2020-01-01', end: new Date().toISOString().split('T')[0] };
       }
       if (dashboardPeriod === 'year') {
         return { start: year + '-01-01', end: year + '-12-31' };
@@ -12333,11 +12336,24 @@
       const fleetFuelGallons = fleetFuelRecords.reduce((s, f) => s + parseFloat(f.gallons || 0), 0);
       
       // Dispatcher performance from orders (filtered by year)
+      // Also add standalone orders (orders without trip_id) to revenue
       yearOrders.forEach(o => {
         if (o.dispatcher_id) {
           if (!dispPerf[o.dispatcher_id]) dispPerf[o.dispatcher_id] = { cars: 0, rev: 0 };
           dispPerf[o.dispatcher_id].cars++;
           dispPerf[o.dispatcher_id].rev += parseFloat(o.revenue || 0);
+        }
+        // Add standalone orders to revenue (orders not assigned to a trip)
+        if (!o.trip_id) {
+          const orderRev = parseFloat(o.revenue || 0);
+          const orderBrokerFee = parseFloat(o.broker_fee || 0);
+          const orderLocalFee = parseFloat(o.local_fee || 0);
+          totalRev += orderRev;
+          totalBrokerFees += orderBrokerFee;
+          totalLocalFees += orderLocalFee;
+          // Standalone orders contribute to profit (revenue - fees, no driver cut or expenses)
+          totalProfit += orderRev - orderBrokerFee - orderLocalFee;
+          totalCars++;
         }
       });
 
@@ -12440,8 +12456,13 @@
           const monthlyFixedCosts = (appData.fixed_costs || []).reduce((s, fc) => s + parseFloat(fc.amount || 0), 0);
           const periodMonths = Math.max(1, Object.keys(calculateTripVolume(yearTrips).monthlyData).length);
           const totalFixedCosts = monthlyFixedCosts * periodMonths;
-          const yearMaintenanceRecords = (appData.maintenance_records || []).filter(m => new Date(m.service_date || m.created_at).getFullYear() === dashboardYear);
-          const maintenanceCosts = yearMaintenanceRecords.reduce((s, m) => s + parseFloat(m.total_cost || 0), 0);
+          // Filter maintenance by the same period as dashboard (respects Q1/Q2/month filters)
+          const periodMaintenanceRecords = (appData.maintenance_records || []).filter(m => {
+            const mDate = m.service_date || m.date || m.created_at;
+            if (!mDate) return false;
+            return mDate >= dateRange.start && mDate <= dateRange.end;
+          });
+          const maintenanceCosts = periodMaintenanceRecords.reduce((s, m) => s + parseFloat(m.total_cost || 0), 0);
           const totalOperatingCosts = totalBrokerFees + totalLocalFees + totalDriverCut + totalExpenses + totalFixedCosts + maintenanceCosts;
           const cpm = totalMiles > 0 ? (totalOperatingCosts / totalMiles) : 0;
           const rpm = totalMiles > 0 ? (totalRev / totalMiles) : 0;
@@ -22220,7 +22241,7 @@ ${rateText}`
       const monthsInData = isCurrentYear ? now.getMonth() + 1 : 12;
 
       // ═══ REVENUE & COSTS FROM TRIPS ═══
-      let totalRevenue = 0, totalBrokerFees = 0, totalLocalFees = 0, totalDriverPay = 0, totalTripExpenses = 0;
+      let totalRevenue = 0, totalBrokerFees = 0, totalLocalFees = 0, totalDriverPay = 0, totalDispatchFees = 0, totalTripExpenses = 0;
       let tripMilesTotal = 0, totalCars = 0;
 
       trips.forEach(t => {
@@ -22228,8 +22249,12 @@ ${rateText}`
         totalRevenue += fin.loadRevenue;
         totalBrokerFees += fin.brokerFee;
         totalLocalFees += fin.localFees;
-        totalDriverPay += fin.driverCut;
-        totalTripExpenses += fin.totalExpenses;
+        totalDriverPay += fin.driverCut;        // Company drivers only (Owner-Ops have 0)
+        totalDispatchFees += fin.dispatchFee;   // Owner-Ops only (this is company profit)
+        // Only count expenses for Company Driver trips - Owner-Op expenses are their responsibility
+        if (!fin.isOwnerOp) {
+          totalTripExpenses += fin.totalExpenses;
+        }
         tripMilesTotal += parseFloat(t.miles || 0);
         totalCars += fin.vehicleCount;
       });
@@ -22248,8 +22273,15 @@ ${rateText}`
       const totalVariableCosts = totalFuelFromRecords + totalMaintenanceCost + totalOtherVariableCosts;
       
       // Calculate profits
+      // For Company Drivers: profit = cleanRevenue - driverCut - expenses
+      // For Owner-Ops: profit = dispatch fee only (company doesn't pay driver or expenses)
+      // totalDispatchFees represents pure profit from Owner-Op trips
+      // totalDriverPay is only from Company Driver trips (Owner-Ops have driverCut=0)
       const cleanRevenue = totalRevenue - totalBrokerFees - totalLocalFees;
-      const grossProfit = cleanRevenue - totalDriverPay;
+      // Gross Profit = what's left after paying drivers (Company Drivers only)
+      // Plus dispatch fees which are pure profit from Owner-Ops
+      const grossProfit = (cleanRevenue - totalDriverPay) + totalDispatchFees;
+      // Operating Profit = after trip expenses (only from Company Driver trips - Owner-Op expenses are their responsibility)
       const operatingProfit = grossProfit - totalTripExpenses - totalVariableCosts;
       const netProfit = operatingProfit - totalFixedCosts;
       const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue * 100) : 0;
@@ -22575,49 +22607,64 @@ ${rateText}`
     
     function renderFinByBroker(orders, trips) {
       const brokerStats = {};
-      
+
       orders.forEach(o => {
         const brokerName = o.broker_name || 'Unknown';
         if (!brokerStats[brokerName]) {
-          brokerStats[brokerName] = { revenue: 0, brokerFee: 0, localFee: 0, cars: 0, trips: new Set() };
+          brokerStats[brokerName] = { revenue: 0, brokerFee: 0, localFee: 0, driverPay: 0, dispatchFee: 0, cars: 0, trips: new Set() };
         }
         brokerStats[brokerName].revenue += parseFloat(o.revenue || 0);
         brokerStats[brokerName].brokerFee += parseFloat(o.broker_fee || 0);
         brokerStats[brokerName].localFee += parseFloat(o.local_fee || 0);
         brokerStats[brokerName].cars++;
-        if (o.trip_id) brokerStats[brokerName].trips.add(o.trip_id);
+        if (o.trip_id) {
+          brokerStats[brokerName].trips.add(o.trip_id);
+          // Get driver pay/dispatch fee from trip for profit calculation
+          const fin = getTripFin(o.trip_id);
+          const tripOrderCount = orders.filter(ord => ord.trip_id === o.trip_id).length || 1;
+          // Allocate driver pay proportionally to each order in the trip
+          brokerStats[brokerName].driverPay += fin.driverCut / tripOrderCount;
+          brokerStats[brokerName].dispatchFee += fin.dispatchFee / tripOrderCount;
+        }
       });
-      
+
       const brokerList = Object.entries(brokerStats)
-        .map(([name, data]) => ({
-          name,
-          revenue: data.revenue,
-          brokerFee: data.brokerFee,
-          cleanRevenue: data.revenue - data.brokerFee - data.localFee,
-          feePercent: data.revenue > 0 ? (data.brokerFee / data.revenue * 100) : 0,
-          cars: data.cars,
-          trips: data.trips.size
-        }))
-        .sort((a, b) => b.cleanRevenue - a.cleanRevenue);
-      
+        .map(([name, data]) => {
+          const cleanRevenue = data.revenue - data.brokerFee - data.localFee;
+          // Net profit = clean revenue - driver pay + dispatch fees (dispatch fees are company profit)
+          const netProfit = cleanRevenue - data.driverPay + data.dispatchFee;
+          return {
+            name,
+            revenue: data.revenue,
+            brokerFee: data.brokerFee,
+            cleanRevenue: cleanRevenue,
+            netProfit: netProfit,
+            feePercent: data.revenue > 0 ? (data.brokerFee / data.revenue * 100) : 0,
+            cars: data.cars,
+            trips: data.trips.size
+          };
+        })
+        .sort((a, b) => b.netProfit - a.netProfit);
+
       const rows = brokerList.length === 0
-        ? '<tr><td colspan="7" style="text-align:center;padding:40px;color:#64748b">No broker data yet</td></tr>'
+        ? '<tr><td colspan="8" style="text-align:center;padding:40px;color:#64748b">No broker data yet</td></tr>'
         : brokerList.map(b => `<tr>
             <td><strong>${b.name}</strong></td>
             <td>${b.trips}</td>
             <td>${b.cars}</td>
             <td class="money">${formatMoney(b.revenue)}</td>
             <td class="money negative">${formatMoney(b.brokerFee)} <span style="color:#64748b;font-size:11px">(${b.feePercent.toFixed(1)}%)</span></td>
-            <td class="money" style="color:#22c55e;font-weight:700">${formatMoney(b.cleanRevenue)}</td>
-            <td>${b.cars > 0 ? formatMoney(b.cleanRevenue / b.cars) : '-'}</td>
+            <td class="money">${formatMoney(b.cleanRevenue)}</td>
+            <td class="money" style="color:#22c55e;font-weight:700">${formatMoney(b.netProfit)}</td>
+            <td>${b.cars > 0 ? formatMoney(b.netProfit / b.cars) : '-'}</td>
           </tr>`).join('');
-      
+
       return `
         <div class="card">
           <div class="card-header"><h3>🤝 Profitability by Broker</h3></div>
           <div class="table-wrapper">
             <table>
-              <thead><tr><th>Broker</th><th>Trips</th><th>Cars</th><th>Revenue</th><th>Broker Fee</th><th>Clean Revenue</th><th>Per Car</th></tr></thead>
+              <thead><tr><th>Broker</th><th>Trips</th><th>Cars</th><th>Revenue</th><th>Broker Fee</th><th>Clean Rev</th><th>Net Profit</th><th>Profit/Car</th></tr></thead>
               <tbody>${rows}</tbody>
             </table>
           </div>
@@ -22627,21 +22674,21 @@ ${rateText}`
     
     function renderFinByLane(orders, trips) {
       const laneStats = {};
-      
+
       orders.forEach(o => {
         if (!o.origin || !o.destination) return;
         const originState = extractState(o.origin);
         const destState = extractState(o.destination);
         const lane = originState + ' → ' + destState;
-        
+
         if (!laneStats[lane]) {
-          laneStats[lane] = { revenue: 0, cleanRevenue: 0, miles: 0, cars: 0, trips: new Set() };
+          laneStats[lane] = { revenue: 0, cleanRevenue: 0, driverPay: 0, dispatchFee: 0, miles: 0, cars: 0, trips: new Set() };
         }
-        
+
         const revenue = parseFloat(o.revenue || 0);
         const brokerFee = parseFloat(o.broker_fee || 0);
         const localFee = parseFloat(o.local_fee || 0);
-        
+
         laneStats[lane].revenue += revenue;
         laneStats[lane].cleanRevenue += revenue - brokerFee - localFee;
         laneStats[lane].cars++;
@@ -22651,41 +22698,51 @@ ${rateText}`
           if (trip) {
             const tripOrderCount = orders.filter(ord => ord.trip_id === o.trip_id).length || 1;
             laneStats[lane].miles += parseFloat(trip.miles || 0) / tripOrderCount;
+            // Get driver pay/dispatch fee for accurate profit
+            const fin = getTripFin(o.trip_id);
+            laneStats[lane].driverPay += fin.driverCut / tripOrderCount;
+            laneStats[lane].dispatchFee += fin.dispatchFee / tripOrderCount;
           }
         }
       });
-      
+
       const laneList = Object.entries(laneStats)
-        .map(([lane, data]) => ({
-          lane,
-          revenue: data.revenue,
-          cleanRevenue: data.cleanRevenue,
-          cars: data.cars,
-          trips: data.trips.size,
-          miles: Math.round(data.miles),
-          rpm: data.miles > 0 ? data.revenue / data.miles : 0
-        }))
-        .sort((a, b) => b.cleanRevenue - a.cleanRevenue)
+        .map(([lane, data]) => {
+          // Net profit = clean revenue - driver pay + dispatch fees
+          const netProfit = data.cleanRevenue - data.driverPay + data.dispatchFee;
+          return {
+            lane,
+            revenue: data.revenue,
+            cleanRevenue: data.cleanRevenue,
+            netProfit: netProfit,
+            cars: data.cars,
+            trips: data.trips.size,
+            miles: Math.round(data.miles),
+            rpm: data.miles > 0 ? data.cleanRevenue / data.miles : 0  // Use clean revenue for RPM
+          };
+        })
+        .sort((a, b) => b.netProfit - a.netProfit)
         .slice(0, 20);
-      
+
       const rows = laneList.length === 0
-        ? '<tr><td colspan="7" style="text-align:center;padding:40px;color:#64748b">No lane data yet</td></tr>'
+        ? '<tr><td colspan="8" style="text-align:center;padding:40px;color:#64748b">No lane data yet</td></tr>'
         : laneList.map(l => `<tr>
             <td><strong>${l.lane}</strong></td>
             <td>${l.trips}</td>
             <td>${l.cars}</td>
             <td>${l.miles.toLocaleString()}</td>
             <td class="money">${formatMoney(l.revenue)}</td>
-            <td class="money" style="color:#22c55e;font-weight:700">${formatMoney(l.cleanRevenue)}</td>
+            <td class="money">${formatMoney(l.cleanRevenue)}</td>
+            <td class="money" style="color:#22c55e;font-weight:700">${formatMoney(l.netProfit)}</td>
             <td>${formatMoney(l.rpm)}/mi</td>
           </tr>`).join('');
-      
+
       return `
         <div class="card">
           <div class="card-header"><h3>🗺️ Profitability by Lane</h3></div>
           <div class="table-wrapper">
             <table>
-              <thead><tr><th>Lane</th><th>Trips</th><th>Cars</th><th>Miles</th><th>Revenue</th><th>Clean Revenue</th><th>Rev/Mile</th></tr></thead>
+              <thead><tr><th>Lane</th><th>Trips</th><th>Cars</th><th>Miles</th><th>Revenue</th><th>Clean Rev</th><th>Net Profit</th><th>Rev/Mile</th></tr></thead>
               <tbody>${rows}</tbody>
             </table>
           </div>
