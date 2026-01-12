@@ -13796,6 +13796,28 @@ ${rateText}`
       { id: 'CA_TO_FL', label: 'CA TO FL', color: '#f59e0b' }
     ];
 
+    // Auto-detect vehicle direction based on origin/destination
+    function detectVehicleDirection(origin, destination) {
+      if (!origin || !destination) return null;
+
+      const originState = extractState(origin);
+      const destState = extractState(destination);
+
+      if (!originState || !destState) return null;
+
+      // East Coast states (HOME region - Fairless Hills, PA)
+      const EAST_STATES = ['PA', 'NJ', 'NY', 'CT', 'MA', 'MD', 'DE', 'VA', 'WV', 'OH', 'MI', 'IN', 'RI', 'NH', 'VT', 'ME', 'DC'];
+
+      const originIsEast = EAST_STATES.includes(originState);
+      const destIsEast = EAST_STATES.includes(destState);
+
+      // Simple: East to West = HOME_TO_CA, West to East = CA_TO_HOME
+      if (originIsEast && !destIsEast) return 'HOME_TO_CA';
+      if (!originIsEast && destIsEast) return 'CA_TO_HOME';
+
+      return null; // Can't auto-detect, let dispatcher choose manually
+    }
+
     // Vehicle Years (1920 to current year + 1)
     const vehicleYears = [];
     for (let y = new Date().getFullYear() + 1; y >= 1920; y--) { vehicleYears.push(y); }
@@ -14102,8 +14124,11 @@ ${rateText}`
     }
     
     function selectLocation(inputId, value) {
-      document.getElementById(inputId).value = value;
+      const input = document.getElementById(inputId);
+      input.value = value;
       document.getElementById(inputId + '-dropdown').style.display = 'none';
+      // Dispatch change event to trigger auto-direction detection
+      input.dispatchEvent(new Event('change', { bubbles: true }));
     }
     
     // Address autocomplete - combines street addresses with city database
@@ -14779,12 +14804,32 @@ ${rateText}`
       
       // Setup year autocomplete
       setupYearAutocomplete('vehYear');
-      
+
       // Setup make autocomplete
       setupMakeAutocomplete('vehMake');
-      
+
       // Setup model autocomplete (depends on make)
       setupModelAutocomplete('vehModel');
+
+      // Auto-detect direction when origin/destination changes
+      const originInput = document.getElementById('orderOrigin');
+      const destInput = document.getElementById('orderDest');
+      const directionSelect = document.getElementById('orderDirection');
+
+      function updateAutoDirection() {
+        const origin = originInput?.value || '';
+        const dest = destInput?.value || '';
+        const detected = detectVehicleDirection(origin, dest);
+        if (detected && directionSelect) {
+          directionSelect.value = detected;
+        }
+      }
+
+      originInput?.addEventListener('change', updateAutoDirection);
+      destInput?.addEventListener('change', updateAutoDirection);
+      // Also trigger on blur in case autocomplete doesn't fire change
+      originInput?.addEventListener('blur', updateAutoDirection);
+      destInput?.addEventListener('blur', updateAutoDirection);
     }
     
     function setupBrokerAutocomplete(inputId) {
@@ -21090,11 +21135,19 @@ ${rateText}`
 
     function openPaystubModal(driverId) {
       const driver = appData.drivers.find(d => d.id === driverId);
+      const isOwnerOp = driver?.driver_type === 'OWNER_OP';
+
+      // If Owner-Operator, use different settlement modal
+      if (isOwnerOp) {
+        openSettlementModal(driverId);
+        return;
+      }
+
       // Filter by payrollYear
       const yearStart = payrollYear + '-01-01';
       const yearEnd = payrollYear + '-12-31';
       const completedTrips = appData.trips.filter(t => t.driver_id === driverId && t.status === 'COMPLETED' && t.trip_date >= yearStart && t.trip_date <= yearEnd);
-      
+
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
       m.innerHTML = '<div class="modal" style="max-width:600px;max-height:90vh;display:flex;flex-direction:column"><div class="modal-header"><h3>📄 Generate Paystub</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
         '<div class="form-row"><div class="form-group"><label>Driver</label><input value="' + driver.first_name + ' ' + driver.last_name + '" readonly style="background:#f1f5f9"></div><div class="form-group"><label>Driver Email</label><input type="email" id="driverEmail" value="' + (driver.email || '') + '" placeholder="driver@email.com"></div></div>' +
@@ -21135,7 +21188,289 @@ ${rateText}`
         '</div><div class="modal-footer" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="generatePaystub(' + driverId + ', \'print\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/><path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7z"/></svg>Print</button><button class="btn btn-primary" style="background:#059669" onclick="generatePaystub(' + driverId + ', \'email\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>Send Email</button><button class="btn btn-secondary" onclick="generatePaystub(' + driverId + ', \'both\')">Print & Email</button></div></div>';
       document.body.appendChild(m);
     }
-    
+
+    // Owner-Operator Settlement Modal (different from Company Driver paystub)
+    function openSettlementModal(driverId) {
+      const driver = appData.drivers.find(d => d.id === driverId);
+      const dispatchFeePercent = driver?.dispatch_fee_percent || 5;
+
+      // Filter by payrollYear
+      const yearStart = payrollYear + '-01-01';
+      const yearEnd = payrollYear + '-12-31';
+      const completedTrips = appData.trips.filter(t => t.driver_id === driverId && t.status === 'COMPLETED' && t.trip_date >= yearStart && t.trip_date <= yearEnd);
+
+      const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
+      m.innerHTML = '<div class="modal" style="max-width:600px;max-height:90vh;display:flex;flex-direction:column"><div class="modal-header" style="background:#f59e0b;color:white"><h3>📋 Generate Settlement Statement</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()" style="color:white">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
+        '<div style="background:#fef3c7;padding:12px;border-radius:8px;margin-bottom:16px;border:2px solid #f59e0b"><div style="font-weight:600;color:#92400e">🚛 Owner-Operator Settlement</div><div style="font-size:12px;color:#92400e">Dispatch Fee: ' + dispatchFeePercent + '%</div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Owner-Operator</label><input value="' + driver.first_name + ' ' + driver.last_name + '" readonly style="background:#f1f5f9"></div><div class="form-group"><label>Email</label><input type="email" id="driverEmail" value="' + (driver.email || '') + '" placeholder="owner@email.com"></div></div>' +
+        '<div class="form-group"><label>Select Trip(s) for Settlement</label><div style="max-height:150px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px;padding:8px">' +
+        (completedTrips.length === 0 ? '<p style="color:#64748b;text-align:center;padding:20px">No completed trips</p>' :
+        completedTrips.map(t => {
+          const f = getTripFin(t.id);
+          const settlement = f.cleanGross - f.dispatchFee;
+          return '<label style="display:flex;align-items:center;gap:8px;padding:8px;cursor:pointer;border-bottom:1px solid #f1f5f9"><input type="checkbox" class="settlement-trip" value="' + t.id + '"><span><strong>' + t.trip_number + '</strong> - ' + formatDate(t.trip_date) + '</span><span style="margin-left:auto;color:#f59e0b;font-weight:600">' + formatMoney(settlement) + '</span></label>';
+        }).join('')) +
+        '</div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Settlement #</label><input type="number" id="settlementNumber" value="' + (1000 + Math.floor(Math.random() * 9000)) + '"></div><div class="form-group"><label>Check #</label><input type="number" id="checkNumber" value="' + (10000 + Math.floor(Math.random() * 90000)) + '"></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Period Starting</label><input type="date" id="periodStart" value="' + new Date().toISOString().split('T')[0] + '"></div><div class="form-group"><label>Period Ending</label><input type="date" id="periodEnd" value="' + new Date().toISOString().split('T')[0] + '"></div></div>' +
+        '<div class="form-group"><label>Settlement Date</label><input type="date" id="payDate" value="' + new Date().toISOString().split('T')[0] + '"></div>' +
+        '</div><div class="modal-footer" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" style="background:#f59e0b" onclick="generateSettlement(' + driverId + ', \'print\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/><path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7z"/></svg>Print</button><button class="btn btn-primary" style="background:#059669" onclick="generateSettlement(' + driverId + ', \'email\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>Send Email</button></div></div>';
+      document.body.appendChild(m);
+    }
+
+    // Generate Owner-Operator Settlement
+    async function generateSettlement(driverId, action = 'print') {
+      const driver = appData.drivers.find(d => d.id === driverId);
+      const dispatchFeePercent = driver?.dispatch_fee_percent || 5;
+
+      // Get selected trips
+      const selectedTripIds = Array.from(document.querySelectorAll('.settlement-trip:checked')).map(cb => cb.value);
+      if (selectedTripIds.length === 0) {
+        showToast('Please select at least one trip', 'error');
+        return;
+      }
+
+      // Calculate totals
+      let totalRevenue = 0, totalBrokerFee = 0, totalLocalFee = 0, totalDispatchFee = 0;
+      const tripDetails = [];
+
+      selectedTripIds.forEach(tripId => {
+        const trip = appData.trips.find(t => t.id === tripId);
+        const fin = getTripFin(tripId);
+        totalRevenue += fin.loadRevenue;
+        totalBrokerFee += fin.brokerFee;
+        totalLocalFee += fin.localFees;
+        totalDispatchFee += fin.dispatchFee;
+        tripDetails.push({
+          tripNumber: trip.trip_number,
+          date: trip.trip_date,
+          revenue: fin.loadRevenue,
+          brokerFee: fin.brokerFee,
+          localFee: fin.localFees,
+          cleanGross: fin.cleanGross,
+          dispatchFee: fin.dispatchFee,
+          settlement: fin.cleanGross - fin.dispatchFee
+        });
+      });
+
+      const totalCleanGross = totalRevenue - totalBrokerFee - totalLocalFee;
+      const totalSettlement = totalCleanGross - totalDispatchFee;
+
+      const periodStart = document.getElementById('periodStart')?.value;
+      const periodEnd = document.getElementById('periodEnd')?.value;
+      const payDate = document.getElementById('payDate')?.value;
+      const settlementNumber = document.getElementById('settlementNumber')?.value;
+      const checkNumber = document.getElementById('checkNumber')?.value;
+
+      // Generate PDF
+      const pdfBlob = await generateSettlementPDF(driver, tripDetails, totalRevenue, totalBrokerFee, totalLocalFee, totalCleanGross, totalDispatchFee, totalSettlement, dispatchFeePercent, periodStart, periodEnd, payDate, settlementNumber, checkNumber);
+
+      if (action === 'print' || action === 'both') {
+        const url = URL.createObjectURL(pdfBlob);
+        window.open(url, '_blank');
+      }
+
+      if (action === 'email' || action === 'both') {
+        const driverEmail = document.getElementById('driverEmail')?.value;
+        if (!driverEmail) {
+          showToast('Please enter owner email address', 'error');
+          return;
+        }
+        await sendSettlementEmail(pdfBlob, driverEmail, driver, selectedTripIds, payDate, totalSettlement);
+      }
+
+      document.querySelector('.modal-overlay')?.remove();
+    }
+
+    // Generate Settlement PDF for Owner-Operators
+    async function generateSettlementPDF(driver, tripDetails, totalRevenue, totalBrokerFee, totalLocalFee, totalCleanGross, totalDispatchFee, totalSettlement, dispatchFeePercent, periodStart, periodEnd, payDate, settlementNumber, checkNumber) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 15;
+      let y = margin;
+
+      // Colors
+      const orange = [245, 158, 11];
+      const darkGray = [17, 24, 39];
+      const medGray = [107, 114, 128];
+      const lightGray = [243, 244, 246];
+
+      const fmtMoney = (amt) => '$' + (amt || 0).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+      const fmtDate = (d) => d ? new Date(d).toLocaleDateString() : 'N/A';
+
+      // === HEADER ===
+      try {
+        const logoImg = new Image();
+        logoImg.crossOrigin = 'anonymous';
+        await new Promise((resolve, reject) => {
+          logoImg.onload = resolve;
+          logoImg.onerror = reject;
+          logoImg.src = 'images/Asset 3@4x.png';
+        });
+        doc.addImage(logoImg, 'PNG', margin, y, 55, 14);
+      } catch (e) {
+        doc.setFillColor(...darkGray);
+        doc.rect(margin, y, 18, 14, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.text('HORIZON', margin + 2, y + 6);
+        doc.text('STAR', margin + 2, y + 11);
+      }
+
+      // Title
+      doc.setFontSize(18);
+      doc.setTextColor(...orange);
+      doc.setFont('helvetica', 'bold');
+      doc.text('SETTLEMENT STATEMENT', pageWidth - margin, y + 10, { align: 'right' });
+      y += 20;
+
+      // Settlement banner
+      doc.setFillColor(...orange);
+      doc.roundedRect(margin, y, pageWidth - margin * 2, 18, 3, 3, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(10);
+      doc.text('OWNER SETTLEMENT', margin + 5, y + 7);
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text(fmtMoney(totalSettlement), pageWidth - margin - 5, y + 13, { align: 'right' });
+      y += 24;
+
+      // Owner Info
+      doc.setFillColor(...lightGray);
+      doc.roundedRect(margin, y, pageWidth - margin * 2, 20, 2, 2, 'F');
+      doc.setTextColor(...darkGray);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Owner-Operator:', margin + 4, y + 6);
+      doc.setFont('helvetica', 'normal');
+      doc.text(driver.first_name + ' ' + driver.last_name, margin + 40, y + 6);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Dispatch Fee:', margin + 4, y + 12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(dispatchFeePercent + '%', margin + 32, y + 12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Settlement #:', pageWidth / 2, y + 6);
+      doc.setFont('helvetica', 'normal');
+      doc.text(settlementNumber || 'N/A', pageWidth / 2 + 28, y + 6);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Period:', pageWidth / 2, y + 12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(fmtDate(periodStart) + ' - ' + fmtDate(periodEnd), pageWidth / 2 + 16, y + 12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Settlement Date:', margin + 4, y + 18);
+      doc.setFont('helvetica', 'normal');
+      doc.text(fmtDate(payDate), margin + 38, y + 18);
+      y += 26;
+
+      // Trip Details Table
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...darkGray);
+      doc.text('Trip Details', margin, y);
+      y += 6;
+
+      doc.autoTable({
+        startY: y,
+        head: [['Date', 'Trip #', 'Revenue', 'Broker Fee', 'Local Fee', 'Clean Gross', 'Dispatch Fee', 'Settlement']],
+        body: tripDetails.map(t => [
+          fmtDate(t.date),
+          t.tripNumber,
+          fmtMoney(t.revenue),
+          fmtMoney(t.brokerFee),
+          fmtMoney(t.localFee),
+          fmtMoney(t.cleanGross),
+          fmtMoney(t.dispatchFee),
+          fmtMoney(t.settlement)
+        ]),
+        foot: [['TOTALS', '', fmtMoney(totalRevenue), fmtMoney(totalBrokerFee), fmtMoney(totalLocalFee), fmtMoney(totalCleanGross), fmtMoney(totalDispatchFee), fmtMoney(totalSettlement)]],
+        theme: 'grid',
+        headStyles: { fillColor: orange, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+        footStyles: { fillColor: [254, 243, 199], textColor: darkGray, fontStyle: 'bold', fontSize: 8 },
+        bodyStyles: { fontSize: 8 },
+        margin: { left: margin, right: margin },
+        columnStyles: {
+          0: { cellWidth: 22 },
+          1: { cellWidth: 20 },
+          2: { cellWidth: 22, halign: 'right' },
+          3: { cellWidth: 22, halign: 'right' },
+          4: { cellWidth: 20, halign: 'right' },
+          5: { cellWidth: 24, halign: 'right' },
+          6: { cellWidth: 24, halign: 'right' },
+          7: { cellWidth: 24, halign: 'right' }
+        }
+      });
+
+      y = doc.lastAutoTable.finalY + 10;
+
+      // Summary Box
+      doc.setFillColor(254, 243, 199);
+      doc.roundedRect(margin, y, pageWidth - margin * 2, 35, 2, 2, 'F');
+      doc.setTextColor(...darkGray);
+      doc.setFontSize(10);
+      const col1 = margin + 10;
+      const col2 = pageWidth / 2 + 10;
+      doc.setFont('helvetica', 'normal');
+      doc.text('Total Load Revenue:', col1, y + 8);
+      doc.text(fmtMoney(totalRevenue), col1 + 60, y + 8, { align: 'right' });
+      doc.text('Less: Broker Fees:', col1, y + 14);
+      doc.text('(' + fmtMoney(totalBrokerFee) + ')', col1 + 60, y + 14, { align: 'right' });
+      doc.text('Less: Local Fees:', col1, y + 20);
+      doc.text('(' + fmtMoney(totalLocalFee) + ')', col1 + 60, y + 20, { align: 'right' });
+      doc.setFont('helvetica', 'bold');
+      doc.text('Clean Revenue:', col2, y + 8);
+      doc.text(fmtMoney(totalCleanGross), col2 + 50, y + 8, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      doc.text('Less: Dispatch Fee (' + dispatchFeePercent + '%):', col2, y + 14);
+      doc.text('(' + fmtMoney(totalDispatchFee) + ')', col2 + 50, y + 14, { align: 'right' });
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(...orange);
+      doc.text('OWNER SETTLEMENT:', col2, y + 26);
+      doc.text(fmtMoney(totalSettlement), col2 + 50, y + 26, { align: 'right' });
+
+      // Footer
+      const footerY = doc.internal.pageSize.getHeight() - 15;
+      doc.setFontSize(8);
+      doc.setTextColor(...medGray);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Horizon Star LLC | (800) 555-1234 | settlements@horizonstar.com', pageWidth / 2, footerY, { align: 'center' });
+      doc.text('Generated: ' + new Date().toLocaleString(), pageWidth / 2, footerY + 4, { align: 'center' });
+
+      return doc.output('blob');
+    }
+
+    // Send Settlement Email
+    async function sendSettlementEmail(pdfBlob, email, driver, tripIds, payDate, amount) {
+      try {
+        const base64 = await blobToBase64(pdfBlob);
+        const tripNumbers = tripIds.map(id => appData.trips.find(t => t.id === id)?.trip_number).filter(Boolean).join(', ');
+
+        const response = await fetch(SUPABASE_URL + '/functions/v1/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+          body: JSON.stringify({
+            to: email,
+            subject: 'Settlement Statement - ' + driver.first_name + ' ' + driver.last_name + ' - ' + formatDate(payDate),
+            html: '<p>Please find attached your settlement statement for trips: ' + tripNumbers + '</p><p>Settlement Amount: <strong>' + formatMoney(amount) + '</strong></p><p>Settlement Date: ' + formatDate(payDate) + '</p><p>Thank you for your partnership!</p><p>- Horizon Star LLC</p>',
+            attachment: { filename: 'Settlement_' + driver.last_name + '_' + payDate + '.pdf', content: base64, type: 'application/pdf' }
+          })
+        });
+
+        if (response.ok) {
+          showToast('Settlement emailed to ' + email, 'success');
+          await logActivity('SETTLEMENT_EMAILED', { driver_id: driver.id, driver_name: driver.first_name + ' ' + driver.last_name, email: email, trips: tripNumbers, amount: amount });
+        } else {
+          throw new Error('Email failed');
+        }
+      } catch (e) {
+        console.error('Email error:', e);
+        showToast('Failed to send email', 'error');
+      }
+    }
+
     function updatePaystubTotals() {
       const deductions = ['dedInsurance', 'dedFuel', 'dedFuelDeposit', 'dedELD', 'dedTolls', 'dedIFTA', 'ded2290', 'dedRegRenewal', 'dedOther'];
       const bonuses = ['bonusLevel1', 'bonusLevel2', 'bonusLevel3', 'bonusOther'];
