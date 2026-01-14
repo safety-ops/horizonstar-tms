@@ -23426,10 +23426,19 @@ ${rateText}`
 
         const extracted = JSON.parse(jsonMatch[0]);
 
+        // Generate unique order number - check for duplicates
+        let orderNumber = extracted.order_number || 'ORD-' + Date.now().toString().slice(-6);
+        const existingOrder = appData.orders.find(o => o.order_number === orderNumber);
+        if (existingOrder) {
+          // Order number already exists - append timestamp to make unique
+          orderNumber = orderNumber + '-' + Date.now().toString().slice(-4);
+        }
+
+        // Build order data with only known safe columns
         const orderData = {
-          order_number: extracted.order_number || 'ORD-' + Date.now().toString().slice(-6),
+          order_number: orderNumber,
           broker_name: extracted.broker_name || null,
-          vehicle_year: extracted.vehicle_year || new Date().getFullYear(),
+          vehicle_year: extracted.vehicle_year ? parseInt(extracted.vehicle_year) : new Date().getFullYear(),
           vehicle_make: extracted.vehicle_make || '',
           vehicle_model: extracted.vehicle_model || '',
           vehicle_vin: extracted.vehicle_vin || null,
