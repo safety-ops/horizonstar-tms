@@ -1625,11 +1625,11 @@
     }
     
     /* ============ CARDS - Adapts to Theme ============ */
-    .card { 
+    .card {
       background: var(--bg-secondary);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow);
-      overflow: hidden; 
+      overflow: visible;
       margin-bottom: 14px;
       border: 1px solid var(--border);
     }
@@ -13466,7 +13466,7 @@
                       <span class="route-date-label">Scheduled:</span>
                       <span class="route-date-value">${order.pickup_date ? formatDate(order.pickup_date) : 'Not scheduled'}</span>
                     </div>
-                    ${pickupInspection ? '<div class="route-date-row"><span class="route-date-label">Picked up:</span><span class="route-date-value success">' + formatDate(pickupInspection.inspection_date) + '</span></div>' : ''}
+                    ${pickupInspection ? '<div class="route-date-row"><span class="route-date-label">Picked up:</span><span class="route-date-value success">' + formatDate(pickupInspection.completed_at || pickupInspection.started_at || pickupInspection.created_at) + '</span></div>' : ''}
                   </div>
                   <div class="route-contact">
                     <div class="route-contact-title">Contact</div>
@@ -13501,7 +13501,7 @@
                       <span class="route-date-label">Scheduled:</span>
                       <span class="route-date-value">${order.dropoff_date ? formatDate(order.dropoff_date) : 'Not scheduled'}</span>
                     </div>
-                    ${deliveryInspection ? '<div class="route-date-row"><span class="route-date-label">Delivered:</span><span class="route-date-value success">' + formatDate(deliveryInspection.inspection_date) + '</span></div>' : ''}
+                    ${deliveryInspection ? '<div class="route-date-row"><span class="route-date-label">Delivered:</span><span class="route-date-value success">' + formatDate(deliveryInspection.completed_at || deliveryInspection.started_at || deliveryInspection.created_at) + '</span></div>' : ''}
                   </div>
                   <div class="route-contact">
                     <div class="route-contact-title">Contact</div>
@@ -13725,7 +13725,7 @@
                 <span class="assigned-name">${driver ? driver.first_name + ' ' + driver.last_name : 'Unassigned'}</span>
               </div>
               <div class="header-actions">
-                <button class="btn btn-primary" onclick="showToast('Invoice feature coming soon')">Send Invoice</button>
+                <button class="btn btn-primary" onclick="sendInvoiceToBroker(${order.id})">Send Invoice</button>
                 <button class="btn btn-secondary" onclick="openOrderModal(${order.id})">Edit Load</button>
               </div>
             </div>
@@ -13800,7 +13800,7 @@
             <div class="inspection-additional">
               <div class="additional-title">Additional Inspection</div>
               <div class="additional-info">
-                <div class="additional-row"><span>Odometer:</span><strong>${inspection.odometer_reading ? inspection.odometer_reading.toLocaleString() + ' mi' : 'N/A'}</strong></div>
+                <div class="additional-row"><span>Odometer:</span><strong>${inspection.odometer ? inspection.odometer.toLocaleString() + ' mi' : 'N/A'}</strong></div>
               </div>
             </div>
           </div>
@@ -13823,10 +13823,10 @@
       ` : '';
 
       const conditions = [];
-      if (inspection.is_dark) conditions.push('🌙 Dark');
-      if (inspection.is_snowing) conditions.push('❄️ Snow');
-      if (inspection.is_raining) conditions.push('🌧️ Rain');
-      if (inspection.is_dirty_vehicle) conditions.push('🚿 Dirty');
+      if (inspection.condition_dark) conditions.push('🌙 Dark');
+      if (inspection.condition_snow) conditions.push('❄️ Snow');
+      if (inspection.condition_rain) conditions.push('🌧️ Rain');
+      if (inspection.condition_dirty_vehicle) conditions.push('🚿 Dirty');
 
       return `
         <div class="order-detail-card inspection-card enhanced">
@@ -13849,10 +13849,10 @@
                 ${conditions.map(c => '<span class="condition-badge">' + c + '</span>').join('')}
               </div>
             ` : ''}
-            ${inspection.customer_signer_name ? `
+            ${inspection.customer_name ? `
               <div class="inspection-signer">
-                <span>✍️ Signed by: <strong>${inspection.customer_signer_name}</strong></span>
-                ${inspection.created_at ? '<span class="signer-date">' + formatDate(inspection.created_at) + '</span>' : ''}
+                <span>✍️ Signed by: <strong>${inspection.customer_name}</strong></span>
+                ${inspection.customer_signed_at ? '<span class="signer-date">' + formatDate(inspection.customer_signed_at) + '</span>' : ''}
               </div>
             ` : ''}
           </div>
@@ -14052,8 +14052,9 @@
     }
 
     function renderSignaturesCard(pickupInsp, deliveryInsp) {
-      const hasSignatures = pickupInsp?.customer_signature_url || pickupInsp?.driver_signature_url ||
-                           deliveryInsp?.customer_signature_url || deliveryInsp?.driver_signature_url;
+      // Check for signatures - stored as base64 in customer_signature/driver_signature fields
+      const hasSignatures = pickupInsp?.customer_signature || pickupInsp?.driver_signature ||
+                           deliveryInsp?.customer_signature || deliveryInsp?.driver_signature;
 
       if (!hasSignatures) return '';
 
@@ -14064,30 +14065,34 @@
           </div>
           <div class="order-detail-card-body">
             <div class="signatures-grid">
-              ${pickupInsp?.customer_signature_url ? `
+              ${pickupInsp?.customer_signature ? `
                 <div class="signature-item">
                   <div class="signature-label">Pickup - Customer</div>
-                  <img src="${pickupInsp.customer_signature_url}" alt="Customer signature" class="signature-img">
-                  <div class="signature-name">${pickupInsp.customer_signer_name || ''}</div>
+                  <img src="${pickupInsp.customer_signature}" alt="Customer signature" class="signature-img">
+                  <div class="signature-name">${pickupInsp.customer_name || ''}</div>
+                  ${pickupInsp.customer_signed_at ? '<div class="signature-time">' + formatDate(pickupInsp.customer_signed_at) + '</div>' : ''}
                 </div>
               ` : ''}
-              ${pickupInsp?.driver_signature_url ? `
+              ${pickupInsp?.driver_signature ? `
                 <div class="signature-item">
                   <div class="signature-label">Pickup - Driver</div>
-                  <img src="${pickupInsp.driver_signature_url}" alt="Driver signature" class="signature-img">
+                  <img src="${pickupInsp.driver_signature}" alt="Driver signature" class="signature-img">
+                  ${pickupInsp.driver_signed_at ? '<div class="signature-time">' + formatDate(pickupInsp.driver_signed_at) + '</div>' : ''}
                 </div>
               ` : ''}
-              ${deliveryInsp?.customer_signature_url ? `
+              ${deliveryInsp?.customer_signature ? `
                 <div class="signature-item">
                   <div class="signature-label">Delivery - Customer</div>
-                  <img src="${deliveryInsp.customer_signature_url}" alt="Customer signature" class="signature-img">
-                  <div class="signature-name">${deliveryInsp.customer_signer_name || ''}</div>
+                  <img src="${deliveryInsp.customer_signature}" alt="Customer signature" class="signature-img">
+                  <div class="signature-name">${deliveryInsp.customer_name || ''}</div>
+                  ${deliveryInsp.customer_signed_at ? '<div class="signature-time">' + formatDate(deliveryInsp.customer_signed_at) + '</div>' : ''}
                 </div>
               ` : ''}
-              ${deliveryInsp?.driver_signature_url ? `
+              ${deliveryInsp?.driver_signature ? `
                 <div class="signature-item">
                   <div class="signature-label">Delivery - Driver</div>
-                  <img src="${deliveryInsp.driver_signature_url}" alt="Driver signature" class="signature-img">
+                  <img src="${deliveryInsp.driver_signature}" alt="Driver signature" class="signature-img">
+                  ${deliveryInsp.driver_signed_at ? '<div class="signature-time">' + formatDate(deliveryInsp.driver_signed_at) + '</div>' : ''}
                 </div>
               ` : ''}
             </div>
@@ -18293,7 +18298,11 @@ ${rateText}`
           : '<div class="form-group"><label>Cut %</label><input type="number" id="dCut" value="' + (d?.cut_percent || 32) + '" step="0.5"><small style="color:#64748b">% driver receives from clean revenue</small></div>'
         ) +
         '<div class="form-group"><label>Status</label><select id="dStatus"><option value="ACTIVE"' + (d?.status === 'ACTIVE' ? ' selected' : '') + '>ACTIVE</option><option value="INACTIVE"' + (d?.status === 'INACTIVE' ? ' selected' : '') + '>INACTIVE</option><option value="ON_LEAVE"' + (d?.status === 'ON_LEAVE' ? ' selected' : '') + '>ON LEAVE</option><option value="TERMINATED"' + (d?.status === 'TERMINATED' ? ' selected' : '') + '>TERMINATED</option></select></div></div>' +
-        
+
+        // Driver App Access Section
+        '<h4 style="margin:20px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)">📱 Driver App Access</h4>' +
+        '<div class="form-row"><div class="form-group"><label>App PIN (6 digits)</label><input type="text" id="dPinCode" value="' + (d?.pin_code || '') + '" placeholder="123456" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,\'\').slice(0,6)"><small style="color:#64748b">Driver uses this PIN to log into the mobile app</small></div><div class="form-group"><label>&nbsp;</label><button type="button" class="btn btn-secondary" onclick="document.getElementById(\'dPinCode\').value = String(Math.floor(100000 + Math.random() * 900000))">Generate PIN</button></div></div>' +
+
         // CDL Section
         '<h4 style="margin:20px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)">🪪 CDL Information</h4>' +
         '<div class="form-row"><div class="form-group"><label>CDL Number</label><input id="dCDL" value="' + (d?.cdl_number || '') + '" placeholder="License number"></div><div class="form-group"><label>CDL State</label><select id="dCDLState"><option value="">Select State</option>' + stateOpts + '</select></div></div>' +
@@ -18344,7 +18353,8 @@ ${rateText}`
         pay_to_street: document.getElementById('dPayToStreet').value || null,
         pay_to_city: document.getElementById('dPayToCity').value || null,
         pay_to_state: document.getElementById('dPayToState').value || null,
-        pay_to_zip: document.getElementById('dPayToZip').value || null
+        pay_to_zip: document.getElementById('dPayToZip').value || null,
+        pin_code: document.getElementById('dPinCode').value || null
       };
       try { 
         if (id) { 
@@ -25473,9 +25483,9 @@ ${rateText}`
     }
 
     // ============ BILL OF LADING (BOL) PDF GENERATION ============
-    async function generateBOLPDF(orderId) {
+    async function generateBOLPDF(orderId, returnBase64 = false) {
       const order = appData.orders.find(o => o.id === orderId);
-      if (!order) { showToast('Order not found', 'error'); return; }
+      if (!order) { showToast('Order not found', 'error'); return null; }
 
       showToast('Generating Bill of Lading...', 'info');
 
@@ -25616,7 +25626,15 @@ ${rateText}`
       if (pickupInsp) {
         doc.setFont('helvetica', 'bold');
         doc.text('Odometer: ' + (pickupInsp.odometer || 'N/A'), margin + 4, y + 34);
-        doc.text('Date: ' + fmtDate(pickupInsp.inspection_date || pickupInsp.created_at), margin + colWidth/2, y + 34);
+        doc.text('Date: ' + fmtDate(pickupInsp.completed_at || pickupInsp.started_at || pickupInsp.created_at), margin + colWidth/2, y + 34);
+        // Show inspection location if available
+        if (pickupInsp.location_address) {
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(6);
+          doc.setTextColor(...medGray);
+          doc.text('GPS: ' + pickupInsp.location_address, margin + 4, y + 39);
+          doc.setTextColor(...darkGray);
+        }
       }
 
       // Delivery Box
@@ -25636,7 +25654,15 @@ ${rateText}`
       if (deliveryInsp) {
         doc.setFont('helvetica', 'bold');
         doc.text('Odometer: ' + (deliveryInsp.odometer || 'N/A'), margin + colWidth + 10, y + 34);
-        doc.text('Date: ' + fmtDate(deliveryInsp.inspection_date || deliveryInsp.created_at), margin + colWidth + colWidth/2, y + 34);
+        doc.text('Date: ' + fmtDate(deliveryInsp.completed_at || deliveryInsp.started_at || deliveryInsp.created_at), margin + colWidth + colWidth/2, y + 34);
+        // Show inspection location if available
+        if (deliveryInsp.location_address) {
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(6);
+          doc.setTextColor(...medGray);
+          doc.text('GPS: ' + deliveryInsp.location_address, margin + colWidth + 10, y + 39);
+          doc.setTextColor(...darkGray);
+        }
       }
       y += 48;
 
@@ -25651,8 +25677,8 @@ ${rateText}`
       const sigWidth = (pageWidth - margin * 2 - 6) / 2;
       const sigHeight = 28;
 
-      // Helper to draw signature box
-      const drawSignatureBox = async (x, yPos, title, signatureUrl, signerName, timestamp) => {
+      // Helper to draw signature box - signatures are stored as base64 data URIs
+      const drawSignatureBox = async (x, yPos, title, signatureBase64, signerName, timestamp) => {
         doc.setFillColor(...lightGray);
         doc.roundedRect(x, yPos, sigWidth, sigHeight, 2, 2, 'F');
         doc.setFontSize(7);
@@ -25660,17 +25686,12 @@ ${rateText}`
         doc.setTextColor(...medGray);
         doc.text(title.toUpperCase(), x + 3, yPos + 5);
 
-        if (signatureUrl) {
+        if (signatureBase64) {
           try {
-            const sigImg = new Image();
-            sigImg.crossOrigin = 'anonymous';
-            await new Promise((resolve, reject) => {
-              sigImg.onload = resolve;
-              sigImg.onerror = reject;
-              sigImg.src = signatureUrl;
-            });
-            doc.addImage(sigImg, 'PNG', x + 3, yPos + 7, sigWidth - 40, 16);
+            // Signature is stored as base64 data URI (e.g., "data:image/png;base64,...")
+            doc.addImage(signatureBase64, 'PNG', x + 3, yPos + 7, sigWidth - 40, 16);
           } catch (e) {
+            console.error('Error rendering signature:', e);
             doc.setTextColor(...darkGray);
             doc.setFontSize(8);
             doc.text('[Signature on file]', x + 3, yPos + 16);
@@ -25687,12 +25708,12 @@ ${rateText}`
         if (timestamp) doc.text(fmtDateTime(timestamp), x + sigWidth - 35, yPos + 17);
       };
 
-      // Draw 4 signature boxes
-      await drawSignatureBox(margin, y, 'Pickup - Customer', pickupInsp?.customer_signature_url, pickupInsp?.customer_signer_name, pickupInsp?.created_at);
-      await drawSignatureBox(margin + sigWidth + 6, y, 'Pickup - Driver', pickupInsp?.driver_signature_url, driver ? driver.first_name + ' ' + driver.last_name : null, pickupInsp?.created_at);
+      // Draw 4 signature boxes - use customer_signature/driver_signature (base64) fields
+      await drawSignatureBox(margin, y, 'Pickup - Customer', pickupInsp?.customer_signature, pickupInsp?.customer_name, pickupInsp?.customer_signed_at);
+      await drawSignatureBox(margin + sigWidth + 6, y, 'Pickup - Driver', pickupInsp?.driver_signature, driver ? driver.first_name + ' ' + driver.last_name : null, pickupInsp?.driver_signed_at);
       y += sigHeight + 4;
-      await drawSignatureBox(margin, y, 'Delivery - Customer', deliveryInsp?.customer_signature_url, deliveryInsp?.customer_signer_name, deliveryInsp?.created_at);
-      await drawSignatureBox(margin + sigWidth + 6, y, 'Delivery - Driver', deliveryInsp?.driver_signature_url, driver ? driver.first_name + ' ' + driver.last_name : null, deliveryInsp?.created_at);
+      await drawSignatureBox(margin, y, 'Delivery - Customer', deliveryInsp?.customer_signature, deliveryInsp?.customer_name, deliveryInsp?.customer_signed_at);
+      await drawSignatureBox(margin + sigWidth + 6, y, 'Delivery - Driver', deliveryInsp?.driver_signature, driver ? driver.first_name + ' ' + driver.last_name : null, deliveryInsp?.driver_signed_at);
       y += sigHeight + 10;
 
       // Notes Section
@@ -25790,17 +25811,22 @@ ${rateText}`
         }
       }
 
-      // Open PDF in new tab
-      const pdfBlob = doc.output('blob');
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      window.open(pdfUrl, '_blank');
-      showToast('Bill of Lading generated!');
+      // Return base64 for email attachment or open in new tab
+      if (returnBase64) {
+        return doc.output('datauristring').split(',')[1];
+      } else {
+        const pdfBlob = doc.output('blob');
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        window.open(pdfUrl, '_blank');
+        showToast('Bill of Lading generated!');
+        return null;
+      }
     }
 
     // ============ INVOICE PDF GENERATION ============
-    async function generateInvoicePDF(orderId) {
+    async function generateInvoicePDF(orderId, returnBase64 = false) {
       const order = appData.orders.find(o => o.id === orderId);
-      if (!order) { showToast('Order not found', 'error'); return; }
+      if (!order) { showToast('Order not found', 'error'); return null; }
 
       showToast('Generating Invoice...', 'info');
 
@@ -26022,11 +26048,266 @@ ${rateText}`
       doc.text('Horizon Star, LLC | 118 Mary Ambler Way, Ambler, PA 19002 | (267) 334-1834', pageWidth/2, pageHeight - 10, { align: 'center' });
       doc.text('Thank you for your business!', pageWidth/2, pageHeight - 6, { align: 'center' });
 
-      // Open PDF in new tab
-      const pdfBlob = doc.output('blob');
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      window.open(pdfUrl, '_blank');
-      showToast('Invoice generated!');
+      // Return base64 for email attachment or open in new tab
+      if (returnBase64) {
+        return doc.output('datauristring').split(',')[1]; // Return base64 only
+      } else {
+        const pdfBlob = doc.output('blob');
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        window.open(pdfUrl, '_blank');
+        showToast('Invoice generated!');
+        return null;
+      }
+    }
+
+    // ============ SEND INVOICE TO BROKER ============
+    async function sendInvoiceToBroker(orderId) {
+      const order = appData.orders.find(o => o.id === orderId);
+      if (!order) { showToast('Order not found', 'error'); return; }
+
+      // Get broker email from brokers table
+      const broker = order.broker_name ? (appData.brokers || []).find(b => b.name === order.broker_name) : null;
+      const brokerEmail = broker?.email || '';
+
+      // Calculate amount due
+      const revenue = parseFloat(order.revenue) || 0;
+      const brokerFee = parseFloat(order.broker_fee) || 0;
+      const localFee = parseFloat(order.local_fee) || 0;
+      const amountDue = revenue - brokerFee - localFee;
+      const fmtMoney = (amt) => '$' + (parseFloat(amt) || 0).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+
+      const modalHTML = `
+        <div class="modal-overlay" onclick="if(event.target===this)this.remove()">
+          <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #f59e0b, #d97706); border-bottom: none;">
+              <h3 style="color: white; display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 24px;">📧</span> Send Invoice
+              </h3>
+              <button class="modal-close" onclick="this.closest('.modal-overlay').remove()" style="color: white;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 24px;">
+              <p style="margin-bottom: 20px; color: var(--text-muted); font-size: 14px;">
+                Send invoice for <strong style="color: var(--text-primary);">${order.order_number || 'this order'}</strong> to the broker.
+              </p>
+
+              <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px;">Recipient Email <span style="color: #ef4444;">*</span></label>
+                <input type="email" id="invoiceEmail" value="${brokerEmail}" placeholder="broker@example.com"
+                       style="width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--bg-darker);">
+              </div>
+
+              <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px;">CC Email <span style="color: var(--text-muted); font-weight: 400;">(optional)</span></label>
+                <input type="email" id="invoiceCcEmail" value="" placeholder="accounting@company.com"
+                       style="width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--bg-darker);">
+              </div>
+
+              <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 1px solid #f59e0b; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+                <div style="font-size: 11px; font-weight: 700; color: #92400e; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Invoice Preview</div>
+                <div style="display: grid; gap: 8px; font-size: 13px; color: #78350f;">
+                  <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #92400e;">Invoice #</span>
+                    <strong>INV-${order.order_number || 'N/A'}</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #92400e;">Vehicle</span>
+                    <strong>${order.vehicle_year || ''} ${order.vehicle_make || ''} ${order.vehicle_model || ''}</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #92400e;">Route</span>
+                    <strong>${order.origin || order.pickup_state || 'Origin'} → ${order.destination || order.delivery_state || 'Dest'}</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px dashed #d97706; margin-top: 4px;">
+                    <span style="color: #92400e; font-weight: 600;">Amount Due</span>
+                    <strong style="font-size: 16px; color: #b45309;">${fmtMoney(amountDue)}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; color: var(--text-muted);">
+                <input type="checkbox" id="markInvoiceSent" checked style="width: 18px; height: 18px; accent-color: #f59e0b;">
+                <span>Mark invoice as sent in system</span>
+              </label>
+            </div>
+            <div class="modal-footer" style="background: var(--bg-darker); border-top: 1px solid var(--border); padding: 16px 24px; display: flex; gap: 12px; justify-content: flex-end;">
+              <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+              <button class="btn btn-primary" onclick="confirmSendInvoice(${orderId})" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; display: flex; align-items: center; gap: 8px;">
+                <span>📤</span> Send Invoice
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    async function confirmSendInvoice(orderId) {
+      const emailInput = document.getElementById('invoiceEmail');
+      const ccEmailInput = document.getElementById('invoiceCcEmail');
+      const markSentCheckbox = document.getElementById('markInvoiceSent');
+
+      const email = emailInput?.value?.trim();
+      const ccEmail = ccEmailInput?.value?.trim();
+      const markAsSent = markSentCheckbox?.checked;
+
+      if (!email) {
+        showToast('Email address is required', 'error');
+        return;
+      }
+
+      if (!email.includes('@')) {
+        showToast('Please enter a valid email address', 'error');
+        return;
+      }
+
+      const order = appData.orders.find(o => o.id === orderId);
+      if (!order) { showToast('Order not found', 'error'); return; }
+
+      // Close modal and show sending toast
+      document.querySelector('.modal-overlay')?.remove();
+      showToast('Generating and sending invoice...', 'info');
+
+      try {
+        // Generate Invoice PDF as base64
+        const invoiceBase64 = await generateInvoicePDF(orderId, true);
+        if (!invoiceBase64) {
+          showToast('Failed to generate invoice PDF', 'error');
+          return;
+        }
+
+        // Generate BOL PDF as base64 (may fail if no inspection data, that's ok)
+        let bolBase64 = null;
+        try {
+          bolBase64 = await generateBOLPDF(orderId, true);
+        } catch (e) {
+          console.log('BOL generation skipped:', e.message);
+        }
+
+        // Calculate amounts for email
+        const revenue = parseFloat(order.revenue) || 0;
+        const brokerFee = parseFloat(order.broker_fee) || 0;
+        const localFee = parseFloat(order.local_fee) || 0;
+        const amountDue = revenue - brokerFee - localFee;
+        const fmtMoney = (amt) => '$' + (parseFloat(amt) || 0).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+
+        // Build email body
+        const emailHtml = `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+            <div style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 32px; text-align: center;">
+              <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">HORIZON STAR</h1>
+              <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0; font-size: 14px;">Transportation Services</p>
+            </div>
+
+            <div style="padding: 32px;">
+              <h2 style="color: #1f2937; margin: 0 0 8px; font-size: 22px;">Invoice Attached</h2>
+              <p style="color: #6b7280; margin: 0 0 24px; font-size: 14px;">Please find your invoice attached to this email.</p>
+
+              <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 8px 0; color: #92400e; font-size: 14px;">Invoice Number</td>
+                    <td style="padding: 8px 0; color: #78350f; font-weight: 600; text-align: right;">INV-${order.order_number || 'N/A'}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #92400e; font-size: 14px;">Order Number</td>
+                    <td style="padding: 8px 0; color: #78350f; font-weight: 600; text-align: right;">${order.order_number || 'N/A'}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #92400e; font-size: 14px;">Vehicle</td>
+                    <td style="padding: 8px 0; color: #78350f; font-weight: 600; text-align: right;">${order.vehicle_year || ''} ${order.vehicle_make || ''} ${order.vehicle_model || ''}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #92400e; font-size: 14px;">Route</td>
+                    <td style="padding: 8px 0; color: #78350f; font-weight: 600; text-align: right;">${order.origin || order.pickup_state || ''} → ${order.destination || order.delivery_state || ''}</td>
+                  </tr>
+                  <tr style="border-top: 2px solid #fde68a;">
+                    <td style="padding: 12px 0 8px; color: #92400e; font-size: 16px; font-weight: 600;">Amount Due</td>
+                    <td style="padding: 12px 0 8px; color: #b45309; font-weight: 700; text-align: right; font-size: 20px;">${fmtMoney(amountDue)}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <div style="background: #f3f4f6; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+                <h3 style="color: #374151; margin: 0 0 12px; font-size: 14px; font-weight: 600;">Payment Information</h3>
+                <p style="color: #6b7280; margin: 0; font-size: 13px; line-height: 1.6;">
+                  <strong>Make checks payable to:</strong> Horizon Star, LLC<br>
+                  <strong>Mail to:</strong> 118 Mary Ambler Way, Ambler, PA 19002<br>
+                  <strong>Questions?</strong> billing@horizonstarllc.com | (267) 334-1834
+                </p>
+              </div>
+
+              <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
+                Thank you for your business!
+              </p>
+            </div>
+
+            <div style="background: #1f2937; padding: 20px; text-align: center;">
+              <p style="color: #9ca3af; margin: 0; font-size: 12px;">
+                Horizon Star, LLC | 118 Mary Ambler Way, Ambler, PA 19002<br>
+                (267) 334-1834 | billing@horizonstarllc.com
+              </p>
+            </div>
+          </div>
+        `;
+
+        // Build attachments array (Invoice always, BOL if available)
+        const attachments = [
+          {
+            filename: 'Invoice-' + (order.order_number || orderId) + '.pdf',
+            content: invoiceBase64
+          }
+        ];
+        if (bolBase64) {
+          attachments.push({
+            filename: 'BOL-' + (order.order_number || orderId) + '.pdf',
+            content: bolBase64
+          });
+        }
+
+        // Build request payload
+        const payload = {
+          to: email,
+          subject: 'Invoice INV-' + (order.order_number || orderId) + ' - Horizon Star Transport',
+          from_name: 'Horizon Star Billing',
+          html: emailHtml,
+          attachments: attachments
+        };
+
+        // Add CC if provided
+        if (ccEmail && ccEmail.includes('@')) {
+          payload.cc = ccEmail;
+        }
+
+        // Send email
+        const response = await fetch(SUPABASE_URL + '/functions/v1/send-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + SUPABASE_KEY
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Failed to send email');
+        }
+
+        // Log activity
+        await logActivity('INVOICE_SENT', {
+          order_id: orderId,
+          order_number: order.order_number,
+          recipient: email,
+          cc: ccEmail || null,
+          amount: amountDue
+        });
+
+        showToast('Invoice sent successfully!', 'success');
+
+      } catch (error) {
+        console.error('Failed to send invoice:', error);
+        showToast('Failed to send invoice: ' + error.message, 'error');
+      }
     }
 
     // ============ ROUTE SHEET PDF GENERATION ============
