@@ -13379,11 +13379,11 @@
       let damages = [];
 
       try {
-        inspections = await dbFetch('vehicle_inspections', { order_id: 'eq.' + orderId }) || [];
+        inspections = await dbFetch('vehicle_inspections', { filter: { order_id: 'eq.' + orderId } }) || [];
         if (inspections.length > 0) {
           const inspectionIds = inspections.map(i => i.id);
-          photos = await dbFetch('inspection_photos', { inspection_id: 'in.(' + inspectionIds.join(',') + ')' }) || [];
-          damages = await dbFetch('inspection_damages', { inspection_id: 'in.(' + inspectionIds.join(',') + ')' }) || [];
+          photos = await dbFetch('inspection_photos', { filter: { inspection_id: 'in.(' + inspectionIds.join(',') + ')' } }) || [];
+          damages = await dbFetch('inspection_damages', { filter: { inspection_id: 'in.(' + inspectionIds.join(',') + ')' } }) || [];
         }
       } catch (e) {
         console.log('Could not load inspections:', e);
@@ -25456,10 +25456,10 @@ ${rateText}`
       // Fetch inspections, photos, and damages
       let inspections = [], photos = [];
       try {
-        inspections = await dbFetch('vehicle_inspections', { order_id: 'eq.' + orderId }) || [];
+        inspections = await dbFetch('vehicle_inspections', { filter: { order_id: 'eq.' + orderId } }) || [];
         if (inspections.length > 0) {
           const inspectionIds = inspections.map(i => i.id);
-          photos = await dbFetch('inspection_photos', { inspection_id: 'in.(' + inspectionIds.join(',') + ')' }) || [];
+          photos = await dbFetch('inspection_photos', { filter: { inspection_id: 'in.(' + inspectionIds.join(',') + ')' } }) || [];
         }
       } catch (e) {
         console.log('Could not load inspections:', e);
@@ -26496,7 +26496,7 @@ ${rateText}`
       let deliveryInspection = null;
       if (order) {
         try {
-          const inspections = await dbFetch('vehicle_inspections', { order_id: 'eq.' + order.id });
+          const inspections = await dbFetch('vehicle_inspections', { filter: { order_id: 'eq.' + order.id } });
           if (inspections && inspections.length > 0) {
             pickupInspection = inspections.find(i => i.inspection_type === 'pickup' && i.status === 'completed');
             deliveryInspection = inspections.find(i => i.inspection_type === 'delivery' && i.status === 'completed');

@@ -246,9 +246,13 @@ function stopRealtimeSync() {
  */
 async function logActivity(action, details = {}) {
   try {
+    // Get user's full name for display in activity log
+    const userName = currentUser ? (currentUser.first_name + ' ' + currentUser.last_name).trim() : null;
+
     await dbInsert('activity_log', {
       user_id: currentUser?.id || null,
       user_email: currentUser?.email || details.email || 'unknown',
+      user_name: userName || details.user_name || 'System',
       action: action,
       details: JSON.stringify(details),
       ip_address: 'client', // Can't get real IP from client
