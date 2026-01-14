@@ -11132,12 +11132,13 @@
         ]);
         
         // Set initial data
-        appData = { 
+        appData = {
           users, trucks, drivers, dispatchers, trips, orders, brokers: brokers || [],
           tasks: tasks || [],
-          local_drivers: [], expenses: [], fixed_costs: [], variable_costs: [], 
-          driver_files: [], truck_files: [], fuel_transactions: [], 
-          maintenance_records: [], claims: [], tickets: [], violations: [], ticket_files: [], violation_files: [], claim_files: [], compliance_tasks: [], accidents: []
+          local_drivers: [], expenses: [], fixed_costs: [], variable_costs: [],
+          driver_files: [], truck_files: [], fuel_transactions: [],
+          maintenance_records: [], claims: [], tickets: [], violations: [], ticket_files: [], violation_files: [], claim_files: [], compliance_tasks: [], accidents: [],
+          vehicle_inspections: [], inspection_photos: [], inspection_damages: [], order_attachments: []
         };
         
         // For force reload (like real-time sync), wait for ALL data including secondary
@@ -11198,6 +11199,14 @@
         let accidents = [];
         try { accidents = await dbFetch('accidents', { order: 'accident_date.desc' }) || []; } catch(e) { accidents = []; }
 
+        // Load vehicle inspections data
+        let vehicle_inspections = [];
+        try { vehicle_inspections = await dbFetch('vehicle_inspections', { order: 'created_at.desc' }) || []; } catch(e) { vehicle_inspections = []; }
+        let inspection_photos = [];
+        try { inspection_photos = await dbFetch('inspection_photos', { order: 'captured_at.desc' }) || []; } catch(e) { inspection_photos = []; }
+        let inspection_damages = [];
+        try { inspection_damages = await dbFetch('inspection_damages', { order: 'created_at.desc' }) || []; } catch(e) { inspection_damages = []; }
+
         // Try to load order attachments
         let order_attachments = [];
         try { order_attachments = await dbFetch('order_attachments', { order: 'uploaded_at.desc' }) || []; } catch(e) { order_attachments = []; }
@@ -11242,6 +11251,9 @@
           claim_files: claim_files,
           compliance_tasks: compliance_tasks,
           accidents: accidents,
+          vehicle_inspections: vehicle_inspections,
+          inspection_photos: inspection_photos,
+          inspection_damages: inspection_damages,
           order_attachments: order_attachments
         });
         
