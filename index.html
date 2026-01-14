@@ -15370,7 +15370,14 @@
         showToast('Please paste the rate confirmation text', 'error');
         return;
       }
-      
+
+      // Check if API key is configured
+      const apiKey = getApiKey();
+      if (!apiKey) {
+        showToast('Please add your Anthropic API key in Settings first', 'error');
+        return;
+      }
+
       // Show loading state
       const btn = event.target;
       const originalText = btn.innerHTML;
@@ -15383,7 +15390,7 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': ANTHROPIC_API_KEY,
+            'x-api-key': getApiKey(),
             'anthropic-version': '2023-06-01',
             'anthropic-dangerous-direct-browser-access': 'true'
           },
@@ -23359,6 +23366,13 @@ ${rateText}`
         return;
       }
 
+      // Check if API key is configured
+      const apiKey = getApiKey();
+      if (!apiKey) {
+        showToast('Please add your Anthropic API key in Settings first', 'error');
+        return;
+      }
+
       document.getElementById('createLoadUploadArea').style.display = 'none';
       document.getElementById('createLoadFilePreview').style.display = 'none';
       document.getElementById('createLoadProgress').style.display = 'block';
@@ -23372,7 +23386,7 @@ ${rateText}`
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': ANTHROPIC_API_KEY,
+            'x-api-key': getApiKey(),
             'anthropic-version': '2023-06-01',
             'anthropic-dangerous-direct-browser-access': 'true'
           },
