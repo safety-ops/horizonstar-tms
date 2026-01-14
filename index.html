@@ -3402,7 +3402,7 @@
     .money.positive { color: var(--success); }
     .money.negative { color: var(--danger); }
     
-    .actions { display: flex; gap: 8px; }
+    .actions { display: flex; gap: 8px; flex-wrap: nowrap; white-space: nowrap; }
     .action-btn { 
       padding: 8px 12px;
       border: none;
@@ -8235,6 +8235,7 @@
       position: sticky !important;
       right: 0 !important;
       box-shadow: -4px 0 8px rgba(0,0,0,0.15);
+      min-width: 200px;
     }
     table td.sticky-col {
       z-index: 2 !important;
