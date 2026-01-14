@@ -9113,9 +9113,13 @@
     // Activity Logging
     async function logActivity(action, details = {}) {
       try {
+        // Get user's full name
+        const userName = currentUser ? (currentUser.first_name + ' ' + currentUser.last_name).trim() : null;
+
         await dbInsert('activity_log', {
           user_id: currentUser?.id || null,
           user_email: currentUser?.email || details.email || 'unknown',
+          user_name: userName || details.user_name || 'System',
           action: action,
           details: JSON.stringify(details),
           ip_address: 'client', // Can't get real IP from client
@@ -26418,11 +26422,13 @@ ${rateText}`
           showToast('Tracking link sent to ' + email, 'success');
           document.querySelector('.modal-overlay')?.remove();
 
-          // Log activity
+          // Log activity with dispatcher name
+          const dispatcherName = currentUser ? (currentUser.first_name + ' ' + currentUser.last_name).trim() : 'Unknown';
           await logActivity('TRACKING_LINK_SENT', {
             order_id: orderId,
             order_number: order.order_number,
-            recipient_email: email
+            recipient_email: email,
+            sent_by: dispatcherName
           });
         } else {
           throw new Error('Email failed to send');
@@ -34396,10 +34402,12 @@ function jsonResponse(data, status = 200) {
                 details = Object.entries(d).map(([k, v]) => '<span style="background:var(--bg-tertiary);padding:2px 6px;border-radius:4px;margin-right:4px;margin-bottom:2px;display:inline-block;font-size:11px"><strong>' + k.replace(/_/g, ' ') + ':</strong> ' + (v || '-') + '</span>').join('');
               } catch (e) { details = a.details || '-'; }
               
+              // Display user name if available, otherwise fall back to email
+              const displayName = a.user_name || a.user_email || 'System';
               return '<tr style="cursor:pointer" onclick="showActivityDetail(' + JSON.stringify(a).replace(/"/g, '&quot;') + ')">' +
                 '<td style="font-size:20px;text-align:center">' + icon + '</td>' +
                 '<td style="font-size:13px;white-space:nowrap">' + formatDateTime(a.created_at) + '</td>' +
-                '<td style="font-weight:500">' + (a.user_email || 'System') + '</td>' +
+                '<td style="font-weight:500">' + displayName + '</td>' +
                 '<td><span style="background:' + color + '22;color:' + color + ';padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600">' + a.action.replace(/_/g, ' ') + '</span></td>' +
                 '<td style="font-size:12px">' + details + '</td>' +
                 '</tr>';
