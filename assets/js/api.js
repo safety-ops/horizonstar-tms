@@ -122,7 +122,8 @@ async function dbUpdate(table, id, data, skipConflictCheck = false) {
     .from(table)
     .update(data)
     .eq('id', id)
-    .select();
+    .select()
+    .single();
 
   if (error) throw new Error(error.message || 'Update failed');
 
@@ -172,6 +173,7 @@ function startRealtimeSync() {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'drivers' }, handleRealtimeChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'trucks' }, handleRealtimeChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, handleRealtimeChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, handleRealtimeChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_messages' }, handleChatRealtimeChange)
     .subscribe((status) => {
       if (status === 'SUBSCRIBED') {

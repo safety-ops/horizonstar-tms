@@ -14876,7 +14876,7 @@
           completed_at: complete ? new Date().toISOString() : null
         });
         showToast(complete ? 'Task completed! ✓' : 'Task reopened');
-        await loadAllData();
+        await loadAllData(true);
         renderDashboard(document.getElementById('main-content'));
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
@@ -15272,17 +15272,19 @@
         lbVehicleList = [];
         
         document.querySelector('.modal-overlay').remove();
-        await loadAllData();
+        await loadAllData(true);
         renderLoadBoard(document.getElementById('main-content'));
       } catch (e) { showToast(e.message, 'error'); }
     }
 
     async function deleteLoadBoardOrder(id) {
       if (!confirm('Delete this vehicle?')) return;
-      await dbDelete('orders', id);
-      showToast('Deleted');
-      await loadAllData();
-      renderLoadBoard(document.getElementById('main-content'));
+      try {
+        await dbDelete('orders', id);
+        showToast('Deleted');
+        await loadAllData(true);
+        renderLoadBoard(document.getElementById('main-content'));
+      } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     // ============ IMPORT LOAD FUNCTION ============
@@ -15536,7 +15538,7 @@ ${rateText}`
         await logActivity('LOAD_IMPORTED', { order_number: orderData.order_number, category: category, vehicle: orderData.vehicle_year + ' ' + orderData.vehicle_make + ' ' + orderData.vehicle_model });
         document.querySelector('.modal-overlay').remove();
         showToast('✅ Load imported to ' + loadBoardCategories.find(c => c.id === category)?.name + '!');
-        await loadAllData();
+        await loadAllData(true);
         
         // Switch to the imported category
         selectedLoadCategory = category;
@@ -15876,12 +15878,14 @@ ${rateText}`
       } catch (e) { showToast(e.message, 'error'); }
     }
 
-    async function deleteTrip(id) { 
-      if (!confirm('Delete this trip?')) return; 
+    async function deleteTrip(id) {
+      if (!confirm('Delete this trip?')) return;
       const trip = appData.trips.find(t => t.id === id);
-      await dbDelete('trips', id); 
-      await logActivity('TRIP_DELETED', { trip_id: id, trip_number: trip?.trip_number });
-      showToast('Deleted'); await loadAllData(true); renderTrips(document.getElementById('main-content')); 
+      try {
+        await dbDelete('trips', id);
+        await logActivity('TRIP_DELETED', { trip_id: id, trip_number: trip?.trip_number });
+        showToast('Deleted'); await loadAllData(true); renderTrips(document.getElementById('main-content'));
+      } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     // Vehicle directions for trips
@@ -16797,8 +16801,10 @@ ${rateText}`
     }
 
     async function assignDriver(tripId) {
-      await dbUpdate('trips', tripId, { driver_id: parseInt(document.getElementById('assignDriver').value) || null, driver_cut_percent: parseFloat(document.getElementById('assignCut').value) || 32 });
-      document.querySelector('.modal-overlay').remove(); showToast('Driver assigned'); await loadAllData(true); viewTrip(tripId);
+      try {
+        await dbUpdate('trips', tripId, { driver_id: parseInt(document.getElementById('assignDriver').value) || null, driver_cut_percent: parseFloat(document.getElementById('assignCut').value) || 32 });
+        document.querySelector('.modal-overlay').remove(); showToast('Driver assigned'); await loadAllData(true); viewTrip(tripId);
+      } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     function openAssignTruck(tripId) {
@@ -16809,8 +16815,10 @@ ${rateText}`
     }
 
     async function assignTruck(tripId) {
-      await dbUpdate('trips', tripId, { truck_id: parseInt(document.getElementById('assignTruck').value) || null });
-      document.querySelector('.modal-overlay').remove(); showToast('Truck assigned'); await loadAllData(true); viewTrip(tripId);
+      try {
+        await dbUpdate('trips', tripId, { truck_id: parseInt(document.getElementById('assignTruck').value) || null });
+        document.querySelector('.modal-overlay').remove(); showToast('Truck assigned'); await loadAllData(true); viewTrip(tripId);
+      } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     // Vehicle list for multi-vehicle orders
@@ -17493,12 +17501,19 @@ ${rateText}`
       }
     }
 
-    async function removeOrder(orderId, tripId) { 
-      if (!confirm('Remove?')) return; 
+    async function removeOrder(orderId, tripId) {
+      if (!confirm('Remove?')) return;
       const order = appData.orders.find(o => o.id === orderId);
-      await dbUpdate('orders', orderId, { trip_id: null }); 
-      await logActivity('VEHICLE_REMOVED_FROM_TRIP', { order_id: orderId, trip_id: tripId, vehicle: order?.vehicle_year + ' ' + order?.vehicle_make + ' ' + order?.vehicle_model });
-      showToast('Removed'); await loadAllData(true); viewTrip(tripId); 
+      try {
+        await dbUpdate('orders', orderId, {
+          trip_id: null,
+          vehicle_direction: null,
+          pickup_sequence: null,
+          delivery_sequence: null
+        });
+        await logActivity('VEHICLE_REMOVED_FROM_TRIP', { order_id: orderId, trip_id: tripId, vehicle: order?.vehicle_year + ' ' + order?.vehicle_make + ' ' + order?.vehicle_model });
+        showToast('Removed'); await loadAllData(true); viewTrip(tripId);
+      } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     function openEditVehicle(orderId, tripId) {
@@ -17683,12 +17698,14 @@ ${rateText}`
       }
     }
 
-    async function deleteExpense(id, tripId) { 
-      if (!confirm('Delete?')) return; 
+    async function deleteExpense(id, tripId) {
+      if (!confirm('Delete?')) return;
       const expense = appData.expenses.find(e => e.id === id);
-      await dbDelete('expenses', id); 
-      await logActivity('EXPENSE_DELETED', { expense_id: id, trip_id: tripId, category: expense?.category, amount: expense?.amount });
-      showToast('Deleted'); await loadAllData(true); viewTrip(tripId); 
+      try {
+        await dbDelete('expenses', id);
+        await logActivity('EXPENSE_DELETED', { expense_id: id, trip_id: tripId, category: expense?.category, amount: expense?.amount });
+        showToast('Deleted'); await loadAllData(true); viewTrip(tripId);
+      } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     let selectedOrders = [];
@@ -17914,12 +17931,14 @@ ${rateText}`
       } catch (e) { showToast(e.message, 'error'); }
     }
 
-    async function deleteOrder(id) { 
-      if (!confirm('Delete?')) return; 
+    async function deleteOrder(id) {
+      if (!confirm('Delete?')) return;
       const order = appData.orders.find(o => o.id === id);
-      await dbDelete('orders', id); 
-      await logActivity('ORDER_DELETED', { order_id: id, order_number: order?.order_number });
-      showToast('Deleted'); await loadAllData(true); renderOrders(document.getElementById('main-content')); 
+      try {
+        await dbDelete('orders', id);
+        await logActivity('ORDER_DELETED', { order_id: id, order_number: order?.order_number });
+        showToast('Deleted'); await loadAllData(true); renderOrders(document.getElementById('main-content'));
+      } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     function renderDrivers(c) {
@@ -18164,7 +18183,7 @@ ${rateText}`
           await dbInsert('driver_files', data);
           document.querySelector('.modal-overlay').remove();
           showToast('File uploaded successfully!');
-          await loadAllData();
+          await loadAllData(true);
           viewDriverProfile(driverId);
         } catch (e) {
           showToast('Upload failed: ' + e.message, 'error');
@@ -18196,7 +18215,7 @@ ${rateText}`
       try {
         await dbDelete('driver_files', fileId);
         showToast('File deleted');
-        await loadAllData();
+        await loadAllData(true);
         viewDriverProfile(driverId);
       } catch (e) {
         showToast('Delete failed: ' + e.message, 'error');
@@ -18264,7 +18283,7 @@ ${rateText}`
           await dbInsert(table, data);
           document.querySelector('.modal-overlay').remove();
           showToast('File uploaded successfully!');
-          await loadAllData();
+          await loadAllData(true);
           if (entityType === 'driver') {
             viewDriverProfile(entityId);
           } else {
@@ -18373,7 +18392,7 @@ ${rateText}`
           const newDriver = await dbInsert('drivers', data); 
           await logActivity('DRIVER_CREATED', { driver_id: newDriver.id, driver_name: data.first_name + ' ' + data.last_name, data: data });
         } 
-        document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(); renderDrivers(document.getElementById('main-content')); 
+        document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(true); renderDrivers(document.getElementById('main-content')); 
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -18390,7 +18409,7 @@ ${rateText}`
         await dbDelete('drivers', id);
         await logActivity('DRIVER_DELETED', { driver_id: id, driver_name: d.first_name + ' ' + d.last_name });
         showToast('Driver deleted');
-        await loadAllData();
+        await loadAllData(true);
         renderDrivers(document.getElementById('main-content'));
       } catch (e) { showToast(e.message, 'error'); }
     }
@@ -18514,16 +18533,18 @@ ${rateText}`
           const newTruck = await dbInsert('trucks', data); 
           await logActivity('TRUCK_CREATED', { truck_id: newTruck.id, truck_number: data.truck_number, data: data });
         } 
-        document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(); renderTrucks(document.getElementById('main-content')); 
+        document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(true); renderTrucks(document.getElementById('main-content')); 
       } catch (e) { showToast(e.message, 'error'); }
     }
 
-    async function deleteTruck(id) { 
-      if (!confirm('Delete?')) return; 
+    async function deleteTruck(id) {
+      if (!confirm('Delete?')) return;
       const truck = appData.trucks.find(t => t.id === id);
-      await dbDelete('trucks', id); 
-      await logActivity('TRUCK_DELETED', { truck_id: id, truck_number: truck?.truck_number });
-      showToast('Deleted'); await loadAllData(); renderTrucks(document.getElementById('main-content')); 
+      try {
+        await dbDelete('trucks', id);
+        await logActivity('TRUCK_DELETED', { truck_id: id, truck_number: truck?.truck_number });
+        showToast('Deleted'); await loadAllData(true); renderTrucks(document.getElementById('main-content'));
+      } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     // ============ LOCAL DRIVERS SECTION ============
@@ -18694,7 +18715,7 @@ ${rateText}`
         }
         document.querySelector('.modal-overlay').remove();
         showToast('Local driver saved!');
-        await loadAllData();
+        await loadAllData(true);
         renderLocalDrivers(document.getElementById('main-content'));
       } catch (e) { showToast(e.message, 'error'); }
     }
@@ -18706,7 +18727,7 @@ ${rateText}`
         await dbDelete('local_drivers', id);
         await logActivity('LOCAL_DRIVER_DELETED', { local_driver_id: id, driver_name: driver?.name });
         showToast('Deleted');
-        await loadAllData();
+        await loadAllData(true);
         renderLocalDrivers(document.getElementById('main-content'));
       } catch (e) { showToast(e.message, 'error'); }
     }
@@ -18806,7 +18827,7 @@ ${rateText}`
       try {
         await dbUpdate('orders', orderId, { not_for_local_delivery: true });
         showToast('Marked as not for local delivery');
-        await loadAllData();
+        await loadAllData(true);
         renderLocalDrivers(document.getElementById('main-content'));
       } catch (e) { showToast(e.message, 'error'); }
     }
@@ -18843,7 +18864,7 @@ ${rateText}`
         });
         document.querySelector('.modal-overlay').remove();
         showToast('Local driver assigned!');
-        await loadAllData();
+        await loadAllData(true);
         renderLocalDrivers(document.getElementById('main-content'));
       } catch (e) { showToast(e.message, 'error'); }
     }
@@ -18929,7 +18950,7 @@ ${rateText}`
       try {
         await dbUpdate('orders', orderId, { local_delivery_status: 'DELIVERED' });
         showToast('Marked as delivered!');
-        await loadAllData();
+        await loadAllData(true);
         viewLocalDriverDetails(localDriverId);
       } catch (e) { showToast(e.message, 'error'); }
     }
@@ -18939,7 +18960,7 @@ ${rateText}`
       try {
         await dbUpdate('orders', orderId, { local_driver_id: null, local_delivery_status: null });
         showToast('Unassigned');
-        await loadAllData();
+        await loadAllData(true);
         viewLocalDriverDetails(localDriverId);
       } catch (e) { showToast(e.message, 'error'); }
     }
@@ -19223,7 +19244,7 @@ ${rateText}`
         }
         document.querySelector('.modal-overlay').remove();
         showToast('Broker saved!');
-        await loadAllData();
+        await loadAllData(true);
         renderBrokers(document.getElementById('main-content'));
       } catch (e) { showToast(e.message, 'error'); }
     }
@@ -19235,7 +19256,7 @@ ${rateText}`
         await dbDelete('brokers', id);
         await logActivity('BROKER_DELETED', { broker_id: id, broker_name: broker?.name });
         showToast('Broker deleted');
-        await loadAllData();
+        await loadAllData(true);
         renderBrokers(document.getElementById('main-content'));
       } catch (e) { showToast(e.message, 'error'); }
     }
@@ -19261,16 +19282,18 @@ ${rateText}`
           const newDisp = await dbInsert('dispatchers', data); 
           await logActivity('DISPATCHER_CREATED', { dispatcher_id: newDisp.id, dispatcher_name: data.name, dispatcher_code: data.code });
         } 
-        document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(); renderDispatchers(document.getElementById('main-content')); 
+        document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(true); renderDispatchers(document.getElementById('main-content')); 
       } catch (e) { showToast(e.message, 'error'); }
     }
 
-    async function deleteDisp(id) { 
-      if (!confirm('Delete?')) return; 
+    async function deleteDisp(id) {
+      if (!confirm('Delete?')) return;
       const disp = appData.dispatchers.find(d => d.id === id);
-      await dbDelete('dispatchers', id); 
-      await logActivity('DISPATCHER_DELETED', { dispatcher_id: id, dispatcher_name: disp?.name });
-      showToast('Deleted'); await loadAllData(); renderDispatchers(document.getElementById('main-content')); 
+      try {
+        await dbDelete('dispatchers', id);
+        await logActivity('DISPATCHER_DELETED', { dispatcher_id: id, dispatcher_name: disp?.name });
+        showToast('Deleted'); await loadAllData(true); renderDispatchers(document.getElementById('main-content'));
+      } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     // ============ DISPATCHER RANKING SECTION ============
@@ -20162,7 +20185,7 @@ ${rateText}`
       }
       
       showToast('Deleted ' + deleted + ' transactions');
-      await loadAllData();
+      await loadAllData(true);
       renderFuelTracking(document.getElementById('main-content'));
     }
 
@@ -20671,7 +20694,7 @@ ${rateText}`
       document.querySelector('.modal-overlay').remove();
       showToast('Saved ' + saved + ' transactions' + (skipped > 0 ? ' (' + skipped + ' duplicates skipped)' : ''));
       parsedFuelData = [];
-      await loadAllData();
+      await loadAllData(true);
       renderFuelTracking(document.getElementById('main-content'));
     }
 
@@ -21338,7 +21361,7 @@ ${rateText}`
         }
         document.querySelector('.modal-overlay').remove();
         showToast(id ? 'Task updated!' : 'Task created!');
-        await loadAllData();
+        await loadAllData(true);
         renderTasks(document.getElementById('main-content'));
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
@@ -21352,7 +21375,7 @@ ${rateText}`
         });
         await logActivity(complete ? 'TASK_COMPLETED' : 'TASK_REOPENED', { task_id: id, task_title: task?.title });
         showToast(complete ? 'Task completed! ✓' : 'Task reopened');
-        await loadAllData();
+        await loadAllData(true);
         renderTasks(document.getElementById('main-content'));
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
@@ -21364,7 +21387,7 @@ ${rateText}`
         await dbDelete('tasks', id);
         await logActivity('TASK_DELETED', { task_id: id, task_title: task?.title });
         showToast('Task deleted');
-        await loadAllData();
+        await loadAllData(true);
         renderTasks(document.getElementById('main-content'));
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
@@ -22015,7 +22038,7 @@ ${rateText}`
           await dbInsert('truck_files', data);
           document.querySelector('.modal-overlay').remove();
           showToast('File uploaded successfully!');
-          await loadAllData();
+          await loadAllData(true);
           viewTruckCompliance(truckId);
         } catch (e) {
           showToast('Upload failed: ' + e.message, 'error');
@@ -22045,7 +22068,7 @@ ${rateText}`
       try {
         await dbDelete('truck_files', fileId);
         showToast('File deleted');
-        await loadAllData();
+        await loadAllData(true);
         viewTruckCompliance(truckId);
       } catch (e) {
         showToast('Delete failed: ' + e.message, 'error');
@@ -22377,7 +22400,7 @@ ${rateText}`
         }
         document.querySelector('.modal-overlay').remove();
         showToast(hasInvoice ? '✓ Maintenance record saved with invoice!' : 'Maintenance record saved!');
-        await loadAllData();
+        await loadAllData(true);
         // Stay on current page - if on maintenance page, refresh it; otherwise go to truck compliance
         if (currentPage === 'maintenance') {
           renderMaintenance(document.getElementById('main-content'));
@@ -22412,7 +22435,7 @@ ${rateText}`
         await dbDelete('maintenance_records', recordId);
         await logActivity('MAINTENANCE_DELETED', { record_id: recordId, truck_id: truckId, truck_number: truck?.truck_number, service_type: record?.service_type, total_cost: record?.total_cost });
         showToast('Record deleted');
-        await loadAllData();
+        await loadAllData(true);
         if (truckId && typeof viewTruckCompliance === 'function') {
           viewTruckCompliance(truckId);
         } else if (currentPage === 'maintenance') {
@@ -23491,7 +23514,7 @@ ${rateText}`
 
         document.querySelector('.modal-overlay').remove();
 
-        await loadAllData();
+        await loadAllData(true);
         showToast('Order created from document!');
         openOrderDetailPage(newOrder.id);
 
@@ -28644,7 +28667,7 @@ ${rateText}`
           const newCost = await dbInsert('fixed_costs', data); 
           await logActivity('FIXED_COST_CREATED', { cost_id: newCost.id, category: data.category, name: data.name, amount: data.amount });
         } 
-        document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(); renderFixedCosts(document.getElementById('main-content')); 
+        document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(true); renderFixedCosts(document.getElementById('main-content')); 
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -28653,7 +28676,7 @@ ${rateText}`
       const cost = (appData.fixed_costs || []).find(fc => fc.id === id);
       await dbDelete('fixed_costs', id); 
       await logActivity('FIXED_COST_DELETED', { cost_id: id, category: cost?.category, name: cost?.name, amount: cost?.amount });
-      showToast('Deleted'); await loadAllData(); renderFixedCosts(document.getElementById('main-content')); 
+      showToast('Deleted'); await loadAllData(true); renderFixedCosts(document.getElementById('main-content')); 
     }
 
     // ============ VARIABLE COSTS ============
@@ -28788,7 +28811,7 @@ ${rateText}`
         }
         document.querySelector('.modal-overlay').remove();
         showToast('Variable cost saved!');
-        await loadAllData();
+        await loadAllData(true);
         renderVariableCosts(document.getElementById('main-content'));
       } catch (e) { showToast(e.message, 'error'); }
     }
@@ -28800,7 +28823,7 @@ ${rateText}`
         await dbDelete('variable_costs', id);
         await logActivity('VARIABLE_COST_DELETED', { cost_id: id, category: cost?.category, amount: cost?.amount });
         showToast('Deleted');
-        await loadAllData();
+        await loadAllData(true);
         renderVariableCosts(document.getElementById('main-content'));
       } catch (e) { showToast(e.message, 'error'); }
     }
@@ -34572,16 +34595,18 @@ function jsonResponse(data, status = 200) {
           const newUser = await dbInsert('users', data); 
           await logActivity('USER_CREATED', { target_user_id: newUser.id, user_email: data.email, role: data.role });
         } 
-        document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(); renderUsers(document.getElementById('main-content')); 
+        document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(true); renderUsers(document.getElementById('main-content')); 
       } catch (e) { showToast(e.message, 'error'); }
     }
 
-    async function deleteUser(id) { 
-      if (!confirm('Delete?')) return; 
+    async function deleteUser(id) {
+      if (!confirm('Delete?')) return;
       const user = appData.users.find(u => u.id === id);
-      await dbDelete('users', id); 
-      await logActivity('USER_DELETED', { target_user_id: id, user_email: user?.email });
-      showToast('Deleted'); await loadAllData(); renderUsers(document.getElementById('main-content')); 
+      try {
+        await dbDelete('users', id);
+        await logActivity('USER_DELETED', { target_user_id: id, user_email: user?.email });
+        showToast('Deleted'); await loadAllData(true); renderUsers(document.getElementById('main-content'));
+      } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     // ============ ACTIVITY LOG SECTION ============
