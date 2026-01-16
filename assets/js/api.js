@@ -33,6 +33,10 @@ async function dbFetch(table, options = {}) {
         query = query.like(key, value.substring(5));
       } else if (value.startsWith('ilike.')) {
         query = query.ilike(key, value.substring(6));
+      } else if (value.startsWith('in.(')) {
+        // Parse in.(val1,val2,val3) format
+        const values = value.substring(4, value.length - 1).split(',').map(v => v.trim());
+        query = query.in(key, values);
       } else {
         query = query.eq(key, value);
       }
