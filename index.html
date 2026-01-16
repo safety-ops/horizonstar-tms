@@ -9726,7 +9726,8 @@
       } else {
         // COMPANY DRIVER: Normal calculation - driver gets cut, expenses deducted
         dispatchFee = 0; // No dispatch fee for company drivers
-        driverCut = cleanGross * ((trip?.driver_cut_percent || driver?.cut_percent || 32) / 100);
+        const cutPercent = trip?.driver_cut_percent ?? driver?.cut_percent ?? 32;
+        driverCut = cleanGross * (cutPercent / 100);
         directTripExpenses = brokerFee + localFees + driverCut + totalExpenses;
         netProfit = loadRevenue - directTripExpenses;
       }
@@ -9734,8 +9735,8 @@
       // Keep these for backward compatibility
       const truckGross = cleanGross - driverCut - dispatchFee;
       
-      // Cash collected = COD and COP payments, but for split payments use cod_amount instead of full revenue
-      const cashCollected = orders.filter(o => o.payment_type === 'COD' || o.payment_type === 'COP').reduce((s, o) => {
+      // Cash collected = COD, COP, and LOCAL_COD payments, but for split payments use cod_amount instead of full revenue
+      const cashCollected = orders.filter(o => o.payment_type === 'COD' || o.payment_type === 'COP' || o.payment_type === 'LOCAL_COD').reduce((s, o) => {
         // If bill_amount > 0, this is a split payment - only count cod_amount as cash
         if (parseFloat(o.bill_amount || 0) > 0) {
           return s + parseFloat(o.cod_amount || 0);
@@ -10102,7 +10103,7 @@
         
         const tripExpenses = (appData.expenses || []).filter(e => e.trip_id === trip.id);
         tripExpenses.forEach(exp => {
-          const amount = parseFloat(exp.amount || 0);
+          const amount = isNaN(parseFloat(exp.amount)) ? 0 : parseFloat(exp.amount);
           if (exp.category === 'FUEL') fuelCosts += amount;
           else if (exp.category === 'TOLLS' || exp.category === 'PERMITS') tollsPermits += amount;
           else otherDirectCosts += amount;
@@ -14169,9 +14170,8 @@
       const newStatus = order.payment_status === 'paid' ? 'pending' : 'paid';
       try {
         await dbUpdate('orders', orderId, { payment_status: newStatus });
-        order.payment_status = newStatus;
         showToast(newStatus === 'paid' ? 'Order marked as paid' : 'Order marked as unpaid');
-        // Refresh the page
+        await loadAllData(true);
         openOrderDetailPage(orderId);
       } catch (e) {
         showToast('Failed to update payment status', 'error');
@@ -15858,10 +15858,21 @@ ${rateText}`
     async function saveTrip(id) {
       const truckId = parseInt(document.getElementById('tripTruck').value) || null;
       if (!truckId) { showToast('Please select a truck first', 'error'); return; }
+      const driverId = parseInt(document.getElementById('tripDriver').value) || null;
+      // Validate driver_id if provided
+      if (driverId && !appData.drivers.find(d => d.id === driverId)) {
+        showToast('Invalid driver selected', 'error');
+        return;
+      }
+      // Validate truck_id
+      if (!appData.trucks.find(t => t.id === truckId)) {
+        showToast('Invalid truck selected', 'error');
+        return;
+      }
       const periodStart = document.getElementById('tripPeriodStart').value || null;
       const periodEnd = document.getElementById('tripPeriodEnd').value || null;
       const newStatus = document.getElementById('tripStatus').value;
-      const data = { trip_number: document.getElementById('tripNumber').value, trip_date: document.getElementById('tripDate').value, trip_type: 'STANDARD', status: newStatus, driver_id: parseInt(document.getElementById('tripDriver').value) || null, truck_id: truckId, driver_cut_percent: parseFloat(document.getElementById('tripCut').value) || 32, period_start_date: periodStart, period_end_date: periodEnd };
+      const data = { trip_number: document.getElementById('tripNumber').value, trip_date: document.getElementById('tripDate').value, trip_type: 'STANDARD', status: newStatus, driver_id: driverId, truck_id: truckId, driver_cut_percent: parseFloat(document.getElementById('tripCut').value) || 32, period_start_date: periodStart, period_end_date: periodEnd };
       try { 
         if (id) { 
           await dbUpdate('trips', id, data); 
@@ -15881,6 +15892,15 @@ ${rateText}`
     async function deleteTrip(id) {
       if (!confirm('Delete this trip?')) return;
       const trip = appData.trips.find(t => t.id === id);
+      // Check for attached orders
+      const attachedOrders = appData.orders.filter(o => o.trip_id === id);
+      if (attachedOrders.length > 0) {
+        if (!confirm('This trip has ' + attachedOrders.length + ' order(s) attached. They will be unassigned. Continue?')) return;
+        // Unassign orders from trip before deleting
+        for (const order of attachedOrders) {
+          await dbUpdate('orders', order.id, { trip_id: null, vehicle_direction: null, pickup_sequence: null, delivery_sequence: null });
+        }
+      }
       try {
         await dbDelete('trips', id);
         await logActivity('TRIP_DELETED', { trip_id: id, trip_number: trip?.trip_number });
@@ -17606,8 +17626,8 @@ ${rateText}`
       const data = { 
         order_number: document.getElementById('editOrderNum').value, 
         broker_id: brokerId, 
-        broker_name: brokerName, 
-        vehicle_year: parseInt(document.getElementById('editVehYear').value), 
+        broker_name: brokerName,
+        vehicle_year: parseInt(document.getElementById('editVehYear').value) || null,
         vehicle_make: document.getElementById('editVehMake').value, 
         vehicle_model: document.getElementById('editVehModel').value, 
         origin: document.getElementById('editOrderOrigin').value, 
@@ -17918,7 +17938,20 @@ ${rateText}`
     }
 
     async function saveOrder(id) {
-      const data = { order_number: document.getElementById('orderNum').value, trip_id: parseInt(document.getElementById('orderTrip').value) || null, broker_name: document.getElementById('orderBroker').value || null, vehicle_year: parseInt(document.getElementById('vehYear').value), vehicle_make: document.getElementById('vehMake').value, vehicle_model: document.getElementById('vehModel').value, origin: document.getElementById('orderOrigin').value, destination: document.getElementById('orderDest').value, revenue: parseFloat(document.getElementById('orderRev').value) || 0, local_fee: parseFloat(document.getElementById('orderFee').value) || 0, payment_type: document.getElementById('orderPay').value, status: document.getElementById('orderStatus').value, dispatcher_notes: document.getElementById('orderNotes').value || null };
+      const tripId = parseInt(document.getElementById('orderTrip').value) || null;
+      // Validate trip_id if provided
+      if (tripId && !appData.trips.find(t => t.id === tripId)) {
+        showToast('Invalid trip selected', 'error');
+        return;
+      }
+      const orderNumber = document.getElementById('orderNum').value;
+      // Check for duplicate order number (excluding current order if editing)
+      const duplicate = appData.orders.find(o => o.order_number === orderNumber && o.id !== id);
+      if (duplicate) {
+        showToast('Order number already exists', 'error');
+        return;
+      }
+      const data = { order_number: orderNumber, trip_id: tripId, broker_name: document.getElementById('orderBroker').value || null, vehicle_year: parseInt(document.getElementById('vehYear').value) || null, vehicle_make: document.getElementById('vehMake').value, vehicle_model: document.getElementById('vehModel').value, origin: document.getElementById('orderOrigin').value, destination: document.getElementById('orderDest').value, revenue: parseFloat(document.getElementById('orderRev').value) || 0, local_fee: parseFloat(document.getElementById('orderFee').value) || 0, payment_type: document.getElementById('orderPay').value, status: document.getElementById('orderStatus').value, dispatcher_notes: document.getElementById('orderNotes').value || null };
       try { 
         if (id) { 
           await dbUpdate('orders', id, data); 
@@ -18525,8 +18558,11 @@ ${rateText}`
         notes: document.getElementById('tNotes').value || null
       };
       if (!data.truck_number) { showToast('Unit # is required', 'error'); return; }
-      try { 
-        if (id) { 
+      // Check for duplicate truck number (excluding current truck if editing)
+      const duplicate = appData.trucks.find(t => t.truck_number === data.truck_number && t.id !== id);
+      if (duplicate) { showToast('Truck number already exists', 'error'); return; }
+      try {
+        if (id) {
           await dbUpdate('trucks', id, data); 
           await logActivity('TRUCK_UPDATED', { truck_id: id, truck_number: data.truck_number, changes: data });
         } else { 
@@ -18540,6 +18576,12 @@ ${rateText}`
     async function deleteTruck(id) {
       if (!confirm('Delete?')) return;
       const truck = appData.trucks.find(t => t.id === id);
+      // Check for trips using this truck
+      const attachedTrips = appData.trips.filter(t => t.truck_id === id);
+      if (attachedTrips.length > 0) {
+        showToast('Cannot delete: This truck is assigned to ' + attachedTrips.length + ' trip(s). Unassign the truck first.', 'error');
+        return;
+      }
       try {
         await dbDelete('trucks', id);
         await logActivity('TRUCK_DELETED', { truck_id: id, truck_number: truck?.truck_number });
@@ -20819,7 +20861,7 @@ ${rateText}`
       
       if (iftaMileageData.length > 0) {
         totalMiles = iftaMileageData.reduce((s, m) => s + m.miles, 0);
-        totalTaxableGallons = totalMiles / fleetMPG;
+        totalTaxableGallons = fleetMPG > 0 ? (totalMiles / fleetMPG) : 0;
         
         iftaMileageData.forEach(m => {
           const state = m.state.toUpperCase();
@@ -21452,7 +21494,8 @@ ${rateText}`
       appData.drivers.forEach(d => {
         const files = (appData.driver_files || []).filter(f => f.driver_id === d.id && f.expiration_date);
         files.forEach(f => {
-          if (f.expiration_date >= todayStr && f.expiration_date <= next7Days) {
+          const expDate = new Date(f.expiration_date);
+          if (expDate >= today && expDate <= new Date(next7Days)) {
             driverTasks.push({ driver: d.first_name + ' ' + d.last_name, task: f.file_type.replace(/_/g, ' '), due: f.expiration_date });
           }
         });
@@ -21476,21 +21519,22 @@ ${rateText}`
       appData.trucks.forEach(t => {
         const files = (appData.truck_files || []).filter(f => f.truck_id === t.id && f.expiration_date);
         files.forEach(f => {
-          if (f.expiration_date >= todayStr && f.expiration_date <= next7Days) {
+          const expDate = new Date(f.expiration_date);
+          if (expDate >= today && expDate <= new Date(next7Days)) {
             vehicleTasks.push({ unit: '#' + t.truck_number, task: f.file_type.replace(/_/g, ' '), due: f.expiration_date });
           }
         });
       });
       
       // Court dates in next 30 days
-      const courtDates = tickets.filter(t => t.court_date && t.court_date >= todayStr && t.court_date <= next30Days && !['RESOLVED', 'DISMISSED'].includes(t.status))
+      const courtDates = tickets.filter(t => t.court_date && new Date(t.court_date) >= today && new Date(t.court_date) <= new Date(next30Days) && !['RESOLVED', 'DISMISSED'].includes(t.status))
         .map(t => {
           const driver = appData.drivers.find(d => d.id === t.driver_id);
           return { driver: driver ? driver.first_name + ' ' + driver.last_name : 'Unknown', date: t.court_date };
         });
       
       // Compliance tasks due in next 30 days
-      const upcomingCompTasks = compTasks.filter(t => t.next_due_date && t.next_due_date >= todayStr && t.next_due_date <= next30Days)
+      const upcomingCompTasks = compTasks.filter(t => t.next_due_date && new Date(t.next_due_date) >= today && new Date(t.next_due_date) <= new Date(next30Days))
         .map(t => ({ task: t.task_name, due: t.next_due_date }));
       
       c.innerHTML = '<div class="card" style="margin-bottom:24px;background:linear-gradient(135deg,#1e40af,#3b82f6);color:white;padding:24px"><h3 style="margin:0 0 16px">📊 Compliance Report</h3>' +
@@ -23850,7 +23894,7 @@ ${rateText}`
           const tripOrders = appData.orders.filter(o => o.trip_id === trip.id);
           // For split payments, only count cod_amount as cash collected, not full revenue
           cashCollected += tripOrders
-            .filter(o => o.payment_type === 'COD' || o.payment_type === 'COP')
+            .filter(o => o.payment_type === 'COD' || o.payment_type === 'COP' || o.payment_type === 'LOCAL_COD')
             .reduce((sum, o) => {
               if (parseFloat(o.bill_amount || 0) > 0) {
                 return sum + parseFloat(o.cod_amount || 0);
@@ -24877,7 +24921,7 @@ ${rateText}`
           const localFee = parseFloat(o.local_fee || 0);
           const cleanGross = revenue - brokerFee - localFee;
           const driverCut = cleanGross * (cutPercent / 100);
-          const isCash = o.payment_type === 'COD' || o.payment_type === 'COP';
+          const isCash = o.payment_type === 'COD' || o.payment_type === 'COP' || o.payment_type === 'LOCAL_COD';
           // For split payments, only count cod_amount as cash on hand
           const hasBillPortion = parseFloat(o.bill_amount || 0) > 0;
           const cashOnHand = isCash ? (hasBillPortion ? parseFloat(o.cod_amount || 0) : revenue) : 0;
@@ -29925,8 +29969,8 @@ ${rateText}`
       // Trip Net Profit = Revenue - All Trip Costs
       const tripNetProfit = loadRevenue - directTripExpenses;
       
-      // Cash collected (COD + COP only) - handle split payments
-      const cashCollected = orders.filter(o => o.payment_type === 'COD' || o.payment_type === 'COP').reduce((s, o) => {
+      // Cash collected (COD + COP + LOCAL_COD) - handle split payments
+      const cashCollected = orders.filter(o => o.payment_type === 'COD' || o.payment_type === 'COP' || o.payment_type === 'LOCAL_COD').reduce((s, o) => {
         // If bill_amount > 0, this is a split payment - use cod_amount instead of revenue
         if (parseFloat(o.bill_amount || 0) > 0) {
           return s + parseFloat(o.cod_amount || 0);
@@ -35254,7 +35298,7 @@ function jsonResponse(data, status = 200) {
         }, 0);
         
         // Cash collected - handle split payments (bill_amount > 0 means use cod_amount)
-        const cashCollected = driverOrders.filter(o => o.payment_type === 'COD' || o.payment_type === 'COP').reduce((s, o) => {
+        const cashCollected = driverOrders.filter(o => o.payment_type === 'COD' || o.payment_type === 'COP' || o.payment_type === 'LOCAL_COD').reduce((s, o) => {
           if (parseFloat(o.bill_amount || 0) > 0) {
             return s + parseFloat(o.cod_amount || 0);
           }
@@ -35617,7 +35661,7 @@ function jsonResponse(data, status = 200) {
       const monthlyProfit = monthlyRevenue - driverCuts - monthlyExpenses - monthlyFixedCosts;
       const profitPerTruck = activeTrucks > 0 ? monthlyProfit / activeTrucks : 0;
       const cashCollected = monthlyOrders.filter(o => o.driver_paid_status === 'PAID').reduce((s, o) => s + parseFloat(o.driver_paid_amount || 0), 0);
-      const outstanding = monthlyOrders.filter(o => o.driver_paid_status !== 'PAID' && (o.payment_type === 'COD' || o.payment_type === 'COP')).reduce((s, o) => s + parseFloat(o.revenue || 0), 0);
+      const outstanding = monthlyOrders.filter(o => o.driver_paid_status !== 'PAID' && (o.payment_type === 'COD' || o.payment_type === 'COP' || o.payment_type === 'LOCAL_COD')).reduce((s, o) => s + parseFloat(o.revenue || 0), 0);
 
       return {
         monthlyRevenue, monthlyProfit, activeTrucks, profitPerTruck,
