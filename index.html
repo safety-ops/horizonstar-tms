@@ -18510,9 +18510,16 @@ ${rateText}`
           const cabCardExpired = t.cab_card_exp && t.cab_card_exp < today;
           const annualExpired = t.annual_insp_exp && t.annual_insp_exp < today;
           const complianceIssues = (cabCardExpired ? 1 : 0) + (annualExpired ? 1 : 0) + (!t.is_2290_paid ? 1 : 0) + (!t.has_ifta_decal ? 1 : 0);
-          
+
+          // Get assigned trailer info for trucks
+          const assignedTrailer = t.vehicle_type === 'TRUCK' && t.assigned_trailer_id ?
+            appData.trucks.find(tr => tr.id === t.assigned_trailer_id) : null;
+          const trailerBadge = assignedTrailer ?
+            '<br><span class="badge badge-blue" style="font-size:10px;cursor:pointer" onclick="event.stopPropagation();openTruckModal(\'' + assignedTrailer.id + '\')" title="Click to edit trailer">🚛 ' + assignedTrailer.truck_number + '</span>' :
+            (t.vehicle_type === 'TRUCK' ? '<br><span class="badge badge-gray" style="font-size:10px;opacity:0.5">No Trailer</span>' : '');
+
           return '<tr>' +
-            '<td><strong>#' + t.truck_number + '</strong>' + (t.vehicle_type === 'TRAILER' ? '<br><span class="badge badge-gray" style="font-size:10px">TRAILER</span>' : '') + '</td>' +
+            '<td><strong>#' + t.truck_number + '</strong>' + (t.vehicle_type === 'TRAILER' ? '<br><span class="badge badge-gray" style="font-size:10px">TRAILER</span>' : trailerBadge) + '</td>' +
             '<td>' + (t.truck_type || '-') + '<br><span style="font-size:11px;color:var(--text-muted)">' + (t.capacity || 0) + ' cars</span></td>' +
             '<td style="font-size:12px">' + yearMakeModel + (t.color ? '<br><span style="color:var(--text-muted)">' + t.color + '</span>' : '') + '</td>' +
             '<td style="font-size:11px;font-family:monospace">' + (t.vin ? t.vin.slice(-6) : '-') + '</td>' +
@@ -18534,14 +18541,37 @@ ${rateText}`
       const years = [];
       for (let y = currentYear + 1; y >= 1990; y--) years.push(y);
       const yearOpts = years.map(y => '<option value="' + y + '"' + (t?.year == y ? ' selected' : '') + '>' + y + '</option>').join('');
-      
+
+      // Get available trailers for assignment (trailers not assigned to other trucks, or assigned to this truck)
+      const availableTrailers = appData.trucks.filter(tr =>
+        tr.vehicle_type === 'TRAILER' &&
+        tr.status === 'ACTIVE' &&
+        (!tr.assigned_trailer_id || appData.trucks.every(truck => truck.assigned_trailer_id !== tr.id || truck.id === id))
+      );
+      // Also include the currently assigned trailer if editing
+      const currentlyAssignedTrailer = t?.assigned_trailer_id ? appData.trucks.find(tr => tr.id === t.assigned_trailer_id) : null;
+      if (currentlyAssignedTrailer && !availableTrailers.find(tr => tr.id === currentlyAssignedTrailer.id)) {
+        availableTrailers.unshift(currentlyAssignedTrailer);
+      }
+      const trailerOpts = availableTrailers.map(tr =>
+        '<option value="' + tr.id + '"' + (t?.assigned_trailer_id === tr.id ? ' selected' : '') + '>' +
+        tr.truck_number + (tr.year ? ' - ' + tr.year : '') + (tr.make ? ' ' + tr.make : '') +
+        '</option>'
+      ).join('');
+
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
       m.innerHTML = '<div class="modal" style="max-width:750px"><div class="modal-header"><h3>' + (t ? 'Edit' : 'New') + ' Truck</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body" style="max-height:75vh;overflow-y:auto">' +
-        
+
         // Basic Info
         '<h4 style="margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)">🚚 Basic Information</h4>' +
-        '<div class="form-row"><div class="form-group"><label>Unit # *</label><input type="text" id="tNum" value="' + (t?.truck_number || '') + '" placeholder="e.g., 101"></div><div class="form-group"><label>Vehicle Type *</label><select id="tVehicleType"><option value="TRUCK"' + (t?.vehicle_type === 'TRUCK' ? ' selected' : '') + '>Truck</option><option value="TRAILER"' + (t?.vehicle_type === 'TRAILER' ? ' selected' : '') + '>Trailer</option></select></div><div class="form-group"><label>Hauler Type</label><select id="tType"><option value="7-Car Hauler"' + (t?.truck_type === '7-Car Hauler' ? ' selected' : '') + '>7-Car Hauler</option><option value="8-Car Hauler"' + (t?.truck_type === '8-Car Hauler' || !t ? ' selected' : '') + '>8-Car Hauler</option><option value="9-Car Hauler"' + (t?.truck_type === '9-Car Hauler' ? ' selected' : '') + '>9-Car Hauler</option><option value="Flatbed"' + (t?.truck_type === 'Flatbed' ? ' selected' : '') + '>Flatbed</option><option value="Enclosed"' + (t?.truck_type === 'Enclosed' ? ' selected' : '') + '>Enclosed</option></select></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Unit # *</label><input type="text" id="tNum" value="' + (t?.truck_number || '') + '" placeholder="e.g., 101"></div><div class="form-group"><label>Vehicle Type *</label><select id="tVehicleType" onchange="toggleTrailerAssignment()"><option value="TRUCK"' + (t?.vehicle_type === 'TRUCK' ? ' selected' : '') + '>Truck</option><option value="TRAILER"' + (t?.vehicle_type === 'TRAILER' ? ' selected' : '') + '>Trailer</option></select></div><div class="form-group"><label>Hauler Type</label><select id="tType"><option value="7-Car Hauler"' + (t?.truck_type === '7-Car Hauler' ? ' selected' : '') + '>7-Car Hauler</option><option value="8-Car Hauler"' + (t?.truck_type === '8-Car Hauler' || !t ? ' selected' : '') + '>8-Car Hauler</option><option value="9-Car Hauler"' + (t?.truck_type === '9-Car Hauler' ? ' selected' : '') + '>9-Car Hauler</option><option value="Flatbed"' + (t?.truck_type === 'Flatbed' ? ' selected' : '') + '>Flatbed</option><option value="Enclosed"' + (t?.truck_type === 'Enclosed' ? ' selected' : '') + '>Enclosed</option></select></div></div>' +
         '<div class="form-row"><div class="form-group"><label>Capacity (Cars)</label><input type="number" id="tCap" value="' + (t?.capacity || 8) + '"></div><div class="form-group"><label>Status</label><select id="tStatus"><option value="ACTIVE"' + (t?.status === 'ACTIVE' ? ' selected' : '') + '>ACTIVE</option><option value="INACTIVE"' + (t?.status === 'INACTIVE' ? ' selected' : '') + '>INACTIVE</option><option value="MAINTENANCE"' + (t?.status === 'MAINTENANCE' ? ' selected' : '') + '>MAINTENANCE</option><option value="SOLD"' + (t?.status === 'SOLD' ? ' selected' : '') + '>SOLD</option></select></div></div>' +
+
+        // Trailer Assignment (only for trucks)
+        '<div id="trailerAssignmentSection" style="' + (t?.vehicle_type === 'TRAILER' ? 'display:none' : '') + '">' +
+        '<h4 style="margin:20px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)">🚛 Trailer Assignment</h4>' +
+        '<div class="form-row"><div class="form-group"><label>Assigned Trailer</label><select id="tAssignedTrailer"><option value="">No Trailer Assigned</option>' + trailerOpts + '</select></div></div>' +
+        '</div>' +
         
         // Vehicle Details
         '<h4 style="margin:20px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)">📋 Vehicle Details</h4>' +
@@ -18580,12 +18610,26 @@ ${rateText}`
       document.body.appendChild(m);
     }
 
+    function toggleTrailerAssignment() {
+      const vehicleType = document.getElementById('tVehicleType').value;
+      const section = document.getElementById('trailerAssignmentSection');
+      if (section) {
+        section.style.display = vehicleType === 'TRUCK' ? '' : 'none';
+        if (vehicleType === 'TRAILER') {
+          document.getElementById('tAssignedTrailer').value = '';
+        }
+      }
+    }
+
     async function saveTruck(id) {
-      const data = { 
-        truck_number: document.getElementById('tNum').value.trim(), 
-        vehicle_type: document.getElementById('tVehicleType').value,
-        truck_type: document.getElementById('tType').value, 
-        capacity: parseInt(document.getElementById('tCap').value) || 8, 
+      const vehicleType = document.getElementById('tVehicleType').value;
+      const assignedTrailerId = vehicleType === 'TRUCK' ? (document.getElementById('tAssignedTrailer').value || null) : null;
+
+      const data = {
+        truck_number: document.getElementById('tNum').value.trim(),
+        vehicle_type: vehicleType,
+        truck_type: document.getElementById('tType').value,
+        capacity: parseInt(document.getElementById('tCap').value) || 8,
         status: document.getElementById('tStatus').value,
         year: document.getElementById('tYear').value ? parseInt(document.getElementById('tYear').value) : null,
         make: document.getElementById('tMake').value || null,
@@ -18605,18 +18649,28 @@ ${rateText}`
         is_2290_paid: document.getElementById('t2290Paid').checked,
         has_ifta_decal: document.getElementById('tIFTADecal').checked,
         inspector_qual_uploaded: document.getElementById('tInspectorQual').checked,
-        notes: document.getElementById('tNotes').value || null
+        notes: document.getElementById('tNotes').value || null,
+        assigned_trailer_id: assignedTrailerId
       };
       if (!data.truck_number) { showToast('Unit # is required', 'error'); return; }
       // Check for duplicate truck number (excluding current truck if editing)
       const duplicate = appData.trucks.find(t => t.truck_number === data.truck_number && t.id !== id);
       if (duplicate) { showToast('Truck number already exists', 'error'); return; }
+
       try {
+        // If assigning a trailer, clear it from any other truck first (exclusive assignment)
+        if (assignedTrailerId) {
+          const otherTruckWithTrailer = appData.trucks.find(t => t.assigned_trailer_id === assignedTrailerId && t.id !== id);
+          if (otherTruckWithTrailer) {
+            await dbUpdate('trucks', otherTruckWithTrailer.id, { assigned_trailer_id: null });
+          }
+        }
+
         if (id) {
-          await dbUpdate('trucks', id, data); 
+          await dbUpdate('trucks', id, data);
           await logActivity('TRUCK_UPDATED', { truck_id: id, truck_number: data.truck_number, changes: data });
-        } else { 
-          const newTruck = await dbInsert('trucks', data); 
+        } else {
+          const newTruck = await dbInsert('trucks', data);
           await logActivity('TRUCK_CREATED', { truck_id: newTruck.id, truck_number: data.truck_number, data: data });
         } 
         document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(true); renderTrucks(document.getElementById('main-content')); 
