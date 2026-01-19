@@ -23682,6 +23682,8 @@ ${rateText}`
     // ========================================
 
     let billingSearchTerm = '';
+    let billingTab = 'overview'; // 'overview' | 'brokers' | 'invoices'
+    let brokerBillingSearchTerm = '';
 
     function calculateOrderAging(order) {
       const now = new Date();
@@ -23726,6 +23728,124 @@ ${rateText}`
         });
     }
 
+    // Calculate real avg days to pay from payment_date
+    function calculateAvgDaysToPay(paidOrders) {
+      const ordersWithPaymentDate = paidOrders.filter(o => o.payment_date);
+      if (ordersWithPaymentDate.length === 0) return null;
+
+      const totalDays = ordersWithPaymentDate.reduce((sum, o) => {
+        const invoiceDate = new Date(o.delivery_date || o.dropoff_date || o.created_at);
+        const paidDate = new Date(o.payment_date);
+        const days = Math.floor((paidDate - invoiceDate) / (1000 * 60 * 60 * 24));
+        return sum + Math.max(0, days);
+      }, 0);
+
+      return Math.round(totalDays / ordersWithPaymentDate.length);
+    }
+
+    // Aggregate billing data by broker
+    function getBrokerBillingStats() {
+      const unpaidOrders = getUnpaidBillOrders();
+      const paidOrders = getPaidBillOrders();
+
+      const brokerMap = new Map();
+
+      // Process unpaid orders
+      unpaidOrders.forEach(o => {
+        const brokerKey = o.broker_name || 'Unknown';
+        if (!brokerMap.has(brokerKey)) {
+          brokerMap.set(brokerKey, {
+            brokerName: brokerKey,
+            brokerId: o.broker_id,
+            totalInvoiced: 0,
+            totalPaid: 0,
+            outstanding: 0,
+            overdue: 0,
+            invoiceCount: 0,
+            paidCount: 0,
+            unpaidOrders: [],
+            paidOrders: [],
+            aging: { current: 0, days1_30: 0, days31_60: 0, days61_90: 0, days90Plus: 0 }
+          });
+        }
+        const stats = brokerMap.get(brokerKey);
+        stats.totalInvoiced += o.billAmount;
+        stats.outstanding += o.billAmount;
+        stats.invoiceCount++;
+        stats.unpaidOrders.push(o);
+
+        // Aging buckets
+        if (o.daysOverdue <= 0) stats.aging.current += o.billAmount;
+        else if (o.daysOverdue <= 30) stats.aging.days1_30 += o.billAmount;
+        else if (o.daysOverdue <= 60) stats.aging.days31_60 += o.billAmount;
+        else if (o.daysOverdue <= 90) stats.aging.days61_90 += o.billAmount;
+        else stats.aging.days90Plus += o.billAmount;
+
+        if (o.daysOverdue > 0) stats.overdue += o.billAmount;
+      });
+
+      // Process paid orders
+      paidOrders.forEach(o => {
+        const brokerKey = o.broker_name || 'Unknown';
+        if (!brokerMap.has(brokerKey)) {
+          brokerMap.set(brokerKey, {
+            brokerName: brokerKey,
+            brokerId: o.broker_id,
+            totalInvoiced: 0,
+            totalPaid: 0,
+            outstanding: 0,
+            overdue: 0,
+            invoiceCount: 0,
+            paidCount: 0,
+            unpaidOrders: [],
+            paidOrders: [],
+            aging: { current: 0, days1_30: 0, days31_60: 0, days61_90: 0, days90Plus: 0 }
+          });
+        }
+        const stats = brokerMap.get(brokerKey);
+        stats.totalInvoiced += o.billAmount;
+        stats.totalPaid += o.billAmount;
+        stats.paidCount++;
+        stats.paidOrders.push(o);
+      });
+
+      // Calculate avg days to pay per broker
+      brokerMap.forEach(stats => {
+        const paidWithDates = stats.paidOrders.filter(o => o.payment_date);
+        if (paidWithDates.length > 0) {
+          const totalDays = paidWithDates.reduce((sum, o) => {
+            const invoiceDate = new Date(o.delivery_date || o.dropoff_date || o.created_at);
+            const paidDate = new Date(o.payment_date);
+            return sum + Math.max(0, Math.floor((paidDate - invoiceDate) / (1000 * 60 * 60 * 24)));
+          }, 0);
+          stats.avgDaysToPay = Math.round(totalDays / paidWithDates.length);
+        } else {
+          stats.avgDaysToPay = null;
+        }
+      });
+
+      return Array.from(brokerMap.values()).sort((a, b) => b.outstanding - a.outstanding);
+    }
+
+    // Mini aging bar for broker table
+    function renderMiniAgingBar(aging, total) {
+      if (total <= 0) return '<div style="height:8px;background:#e2e8f0;border-radius:4px;width:100px"></div>';
+
+      const currentPct = (aging.current / total) * 100;
+      const d1_30Pct = (aging.days1_30 / total) * 100;
+      const d31_60Pct = (aging.days31_60 / total) * 100;
+      const d61_90Pct = (aging.days61_90 / total) * 100;
+      const d90PlusPct = (aging.days90Plus / total) * 100;
+
+      return '<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;width:100px" title="Current: ' + formatMoney(aging.current) + ' | 1-30: ' + formatMoney(aging.days1_30) + ' | 31-60: ' + formatMoney(aging.days31_60) + ' | 61-90: ' + formatMoney(aging.days61_90) + ' | 90+: ' + formatMoney(aging.days90Plus) + '">' +
+        (currentPct > 0 ? '<div style="width:' + currentPct + '%;background:#22c55e"></div>' : '') +
+        (d1_30Pct > 0 ? '<div style="width:' + d1_30Pct + '%;background:#eab308"></div>' : '') +
+        (d31_60Pct > 0 ? '<div style="width:' + d31_60Pct + '%;background:#f97316"></div>' : '') +
+        (d61_90Pct > 0 ? '<div style="width:' + d61_90Pct + '%;background:#ef4444"></div>' : '') +
+        (d90PlusPct > 0 ? '<div style="width:' + d90PlusPct + '%;background:#dc2626"></div>' : '') +
+        '</div>';
+    }
+
     function getInvoiceNumber(order) {
       const year = new Date(order.created_at || Date.now()).getFullYear();
       return 'INV-' + year + String(order.id).padStart(4, '0');
@@ -23755,8 +23875,10 @@ ${rateText}`
       if (!order) return;
 
       try {
-        await dbUpdate('orders', orderId, { payment_status: 'paid' });
+        const now = new Date().toISOString();
+        await dbUpdate('orders', orderId, { payment_status: 'paid', payment_date: now });
         order.payment_status = 'paid';
+        order.payment_date = now;
         showToast('Invoice marked as paid');
         renderBillingPage(document.getElementById('main-content'));
       } catch (e) {
@@ -23767,15 +23889,17 @@ ${rateText}`
     function renderBillingPage(c) {
       const unpaidOrders = getUnpaidBillOrders();
       const paidOrders = getPaidBillOrders();
+      const brokerStats = getBrokerBillingStats();
 
       // Calculate metrics
       const totalReceivables = unpaidOrders.reduce((s, o) => s + o.billAmount, 0);
       const collected = paidOrders.reduce((s, o) => s + o.billAmount, 0);
+      const totalInvoiced = totalReceivables + collected;
       const overdueAmount = unpaidOrders.filter(o => o.daysOverdue > 0).reduce((s, o) => s + o.billAmount, 0);
-      const avgDaysToPay = paidOrders.length > 0 ? 32 : 0; // Placeholder - would need payment_date tracking
+      const avgDaysToPay = calculateAvgDaysToPay(paidOrders);
       const collectionRate = (collected + totalReceivables) > 0 ? Math.round((collected / (collected + totalReceivables)) * 100) : 0;
 
-      // Aging buckets (5 tiers like the reference)
+      // Aging buckets
       const current = unpaidOrders.filter(o => o.daysOverdue <= 0);
       const days1_30 = unpaidOrders.filter(o => o.daysOverdue > 0 && o.daysOverdue <= 30);
       const days31_60 = unpaidOrders.filter(o => o.daysOverdue > 30 && o.daysOverdue <= 60);
@@ -23793,56 +23917,91 @@ ${rateText}`
       // Header with Export button
       html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px">';
       html += '<div><h2 style="margin:0;font-size:24px;font-weight:700">Receivables Dashboard</h2>';
-      html += '<p style="margin:4px 0 0;color:#64748b;font-size:14px">Manage invoices, track payments, monitor aging</p></div>';
+      html += '<p style="margin:4px 0 0;color:#64748b;font-size:14px">Manage invoices, track payments, monitor aging by broker</p></div>';
       html += '<button class="btn btn-secondary" onclick="window.print()" style="display:flex;align-items:center;gap:8px">📄 Export</button>';
       html += '</div>';
 
-      // Summary Cards (5 cards)
-      html += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:24px">';
+      // Tab Navigation
+      html += '<div style="display:flex;gap:8px;margin-bottom:24px">';
+      html += '<button class="btn ' + (billingTab === 'overview' ? 'btn-primary' : 'btn-secondary') + '" onclick="billingTab=\'overview\';renderBillingPage(document.getElementById(\'main-content\'))">📊 Overview</button>';
+      html += '<button class="btn ' + (billingTab === 'brokers' ? 'btn-primary' : 'btn-secondary') + '" onclick="billingTab=\'brokers\';renderBillingPage(document.getElementById(\'main-content\'))">🏢 Brokers (' + brokerStats.length + ')</button>';
+      html += '<button class="btn ' + (billingTab === 'invoices' ? 'btn-primary' : 'btn-secondary') + '" onclick="billingTab=\'invoices\';renderBillingPage(document.getElementById(\'main-content\'))">📄 Invoices (' + unpaidOrders.length + ')</button>';
+      html += '</div>';
 
-      // Total Receivables
+      // Render based on active tab
+      if (billingTab === 'overview') {
+        html += renderBillingOverviewTab(unpaidOrders, paidOrders, brokerStats, {
+          totalReceivables, collected, totalInvoiced, overdueAmount, avgDaysToPay, collectionRate,
+          currentAmt, days1_30Amt, days31_60Amt, days61_90Amt, days90PlusAmt
+        });
+      } else if (billingTab === 'brokers') {
+        html += renderBillingBrokersTab(brokerStats);
+      } else {
+        html += renderBillingInvoicesTab(unpaidOrders);
+      }
+
+      c.innerHTML = html;
+    }
+
+    // Overview Tab - Enhanced Dashboard
+    function renderBillingOverviewTab(unpaidOrders, paidOrders, brokerStats, m) {
+      let html = '';
+
+      // Summary Cards (6 cards)
+      html += '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-bottom:24px">';
+
+      // Total Invoiced
       html += '<div style="background:var(--bg-card);border-radius:12px;padding:20px;border:1px solid var(--border)">';
       html += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
-      html += '<div><div style="color:#64748b;font-size:12px;margin-bottom:8px">Total Receivables</div>';
-      html += '<div style="font-size:28px;font-weight:700;color:var(--text-primary)">' + formatMoney(totalReceivables) + '</div>';
-      html += '<div style="color:#94a3b8;font-size:12px;margin-top:4px">Outstanding balance</div></div>';
-      html += '<div style="width:36px;height:36px;background:#3b82f620;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#3b82f6">💰</div>';
+      html += '<div><div style="color:#64748b;font-size:12px;margin-bottom:8px">Total Invoiced</div>';
+      html += '<div style="font-size:24px;font-weight:700;color:#8b5cf6">' + formatMoney(m.totalInvoiced) + '</div>';
+      html += '<div style="color:#94a3b8;font-size:12px;margin-top:4px">' + (unpaidOrders.length + paidOrders.length) + ' invoices</div></div>';
+      html += '<div style="width:32px;height:32px;background:#8b5cf620;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px">📋</div>';
       html += '</div></div>';
 
-      // Collected
+      // Total Paid
       html += '<div style="background:var(--bg-card);border-radius:12px;padding:20px;border:1px solid var(--border)">';
       html += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
-      html += '<div><div style="color:#64748b;font-size:12px;margin-bottom:8px">Collected</div>';
-      html += '<div style="font-size:28px;font-weight:700;color:#22c55e">' + formatMoney(collected) + '</div>';
-      html += '<div style="color:#94a3b8;font-size:12px;margin-top:4px">' + paidOrders.length + ' invoices paid</div></div>';
-      html += '<div style="width:36px;height:36px;background:#22c55e20;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#22c55e">✓</div>';
+      html += '<div><div style="color:#64748b;font-size:12px;margin-bottom:8px">Total Paid</div>';
+      html += '<div style="font-size:24px;font-weight:700;color:#22c55e">' + formatMoney(m.collected) + '</div>';
+      html += '<div style="color:#94a3b8;font-size:12px;margin-top:4px">' + paidOrders.length + ' paid</div></div>';
+      html += '<div style="width:32px;height:32px;background:#22c55e20;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px">✓</div>';
+      html += '</div></div>';
+
+      // Outstanding
+      html += '<div style="background:var(--bg-card);border-radius:12px;padding:20px;border:1px solid var(--border)">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
+      html += '<div><div style="color:#64748b;font-size:12px;margin-bottom:8px">Outstanding</div>';
+      html += '<div style="font-size:24px;font-weight:700;color:#3b82f6">' + formatMoney(m.totalReceivables) + '</div>';
+      html += '<div style="color:#94a3b8;font-size:12px;margin-top:4px">' + unpaidOrders.length + ' pending</div></div>';
+      html += '<div style="width:32px;height:32px;background:#3b82f620;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px">💰</div>';
       html += '</div></div>';
 
       // Overdue
       html += '<div style="background:var(--bg-card);border-radius:12px;padding:20px;border:1px solid var(--border)">';
       html += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
       html += '<div><div style="color:#64748b;font-size:12px;margin-bottom:8px">Overdue</div>';
-      html += '<div style="font-size:28px;font-weight:700;color:#ef4444">' + formatMoney(overdueAmount) + '</div>';
+      html += '<div style="font-size:24px;font-weight:700;color:#ef4444">' + formatMoney(m.overdueAmount) + '</div>';
       html += '<div style="color:#94a3b8;font-size:12px;margin-top:4px">Needs attention</div></div>';
-      html += '<div style="width:36px;height:36px;background:#ef444420;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#ef4444">⚠️</div>';
+      html += '<div style="width:32px;height:32px;background:#ef444420;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px">⚠️</div>';
       html += '</div></div>';
 
       // Avg Days to Pay
       html += '<div style="background:var(--bg-card);border-radius:12px;padding:20px;border:1px solid var(--border)">';
       html += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
       html += '<div><div style="color:#64748b;font-size:12px;margin-bottom:8px">Avg Days to Pay</div>';
-      html += '<div style="font-size:28px;font-weight:700;color:var(--text-primary)">' + avgDaysToPay + ' <span style="font-size:16px;font-weight:400">days</span></div>';
+      html += '<div style="font-size:24px;font-weight:700;color:var(--text-primary)">' + (m.avgDaysToPay !== null ? m.avgDaysToPay + ' <span style="font-size:14px;font-weight:400">days</span>' : '-') + '</div>';
       html += '<div style="color:#94a3b8;font-size:12px;margin-top:4px">Collection time</div></div>';
-      html += '<div style="width:36px;height:36px;background:#8b5cf620;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#8b5cf6">📅</div>';
+      html += '<div style="width:32px;height:32px;background:#f59e0b20;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px">📅</div>';
       html += '</div></div>';
 
       // Collection Rate
       html += '<div style="background:var(--bg-card);border-radius:12px;padding:20px;border:1px solid var(--border)">';
       html += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
       html += '<div><div style="color:#64748b;font-size:12px;margin-bottom:8px">Collection Rate</div>';
-      html += '<div style="font-size:28px;font-weight:700;color:' + (collectionRate >= 70 ? '#22c55e' : collectionRate >= 50 ? '#f59e0b' : '#ef4444') + '">' + collectionRate + '%</div>';
+      html += '<div style="font-size:24px;font-weight:700;color:' + (m.collectionRate >= 70 ? '#22c55e' : m.collectionRate >= 50 ? '#f59e0b' : '#ef4444') + '">' + m.collectionRate + '%</div>';
       html += '<div style="color:#94a3b8;font-size:12px;margin-top:4px">Of total billed</div></div>';
-      html += '<div style="width:36px;height:36px;background:#06b6d420;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#06b6d4">📈</div>';
+      html += '<div style="width:32px;height:32px;background:#06b6d420;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px">📈</div>';
       html += '</div></div>';
 
       html += '</div>';
@@ -23851,16 +24010,15 @@ ${rateText}`
       html += '<div style="background:var(--bg-card);border-radius:12px;padding:20px;border:1px solid var(--border);margin-bottom:24px">';
       html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">';
       html += '<h3 style="margin:0;font-size:16px;font-weight:600">Aging Summary</h3>';
-      html += '<div style="color:#64748b;font-size:14px">Total: <strong style="color:var(--text-primary)">' + formatMoney(totalReceivables) + '</strong></div>';
+      html += '<div style="color:#64748b;font-size:14px">Outstanding: <strong style="color:var(--text-primary)">' + formatMoney(m.totalReceivables) + '</strong></div>';
       html += '</div>';
 
-      // Stacked bar
-      if (totalReceivables > 0) {
-        const currentPct = (currentAmt / totalReceivables) * 100;
-        const days1_30Pct = (days1_30Amt / totalReceivables) * 100;
-        const days31_60Pct = (days31_60Amt / totalReceivables) * 100;
-        const days61_90Pct = (days61_90Amt / totalReceivables) * 100;
-        const days90PlusPct = (days90PlusAmt / totalReceivables) * 100;
+      if (m.totalReceivables > 0) {
+        const currentPct = (m.currentAmt / m.totalReceivables) * 100;
+        const days1_30Pct = (m.days1_30Amt / m.totalReceivables) * 100;
+        const days31_60Pct = (m.days31_60Amt / m.totalReceivables) * 100;
+        const days61_90Pct = (m.days61_90Amt / m.totalReceivables) * 100;
+        const days90PlusPct = (m.days90PlusAmt / m.totalReceivables) * 100;
 
         html += '<div style="display:flex;height:24px;border-radius:6px;overflow:hidden;margin-bottom:16px">';
         if (currentPct > 0) html += '<div style="width:' + currentPct + '%;background:#22c55e"></div>';
@@ -23873,14 +24031,113 @@ ${rateText}`
         html += '<div style="height:24px;background:#e2e8f0;border-radius:6px;margin-bottom:16px"></div>';
       }
 
-      // Legend
       html += '<div style="display:flex;flex-wrap:wrap;gap:20px;font-size:13px">';
-      html += '<div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;background:#22c55e;border-radius:3px"></div>Current: <strong>' + formatMoney(currentAmt) + '</strong></div>';
-      html += '<div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;background:#eab308;border-radius:3px"></div>1-30: <strong>' + formatMoney(days1_30Amt) + '</strong></div>';
-      html += '<div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;background:#f97316;border-radius:3px"></div>31-60: <strong>' + formatMoney(days31_60Amt) + '</strong></div>';
-      html += '<div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;background:#ef4444;border-radius:3px"></div>61-90: <strong>' + formatMoney(days61_90Amt) + '</strong></div>';
-      html += '<div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;background:#dc2626;border-radius:3px"></div>90+: <strong>' + formatMoney(days90PlusAmt) + '</strong></div>';
+      html += '<div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;background:#22c55e;border-radius:3px"></div>Current: <strong>' + formatMoney(m.currentAmt) + '</strong></div>';
+      html += '<div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;background:#eab308;border-radius:3px"></div>1-30: <strong>' + formatMoney(m.days1_30Amt) + '</strong></div>';
+      html += '<div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;background:#f97316;border-radius:3px"></div>31-60: <strong>' + formatMoney(m.days31_60Amt) + '</strong></div>';
+      html += '<div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;background:#ef4444;border-radius:3px"></div>61-90: <strong>' + formatMoney(m.days61_90Amt) + '</strong></div>';
+      html += '<div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;background:#dc2626;border-radius:3px"></div>90+: <strong>' + formatMoney(m.days90PlusAmt) + '</strong></div>';
       html += '</div></div>';
+
+      // Top Brokers by Outstanding
+      html += '<div class="card" style="margin-bottom:24px">';
+      html += '<div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">';
+      html += '<h3 style="margin:0;font-size:16px;font-weight:600">🏢 Top Brokers by Outstanding</h3>';
+      html += '<button class="btn btn-sm btn-secondary" onclick="billingTab=\'brokers\';renderBillingPage(document.getElementById(\'main-content\'))">View All</button>';
+      html += '</div>';
+      html += '<div class="table-wrapper"><table>';
+      html += '<thead><tr><th>Broker</th><th style="text-align:right">Outstanding</th><th style="text-align:right">Total Invoiced</th><th style="text-align:right">Paid</th><th style="text-align:right">Overdue</th><th>Aging</th><th style="width:80px">Actions</th></tr></thead><tbody>';
+
+      if (brokerStats.length === 0) {
+        html += '<tr><td colspan="7" style="text-align:center;padding:40px;color:#64748b">No broker billing data</td></tr>';
+      } else {
+        brokerStats.slice(0, 5).forEach(b => {
+          const statusColor = b.overdue > 0 ? '#ef4444' : b.outstanding > 0 ? '#f59e0b' : '#22c55e';
+          html += '<tr style="cursor:pointer" onclick="openBrokerBillingDetail(\'' + escapeHtml(b.brokerName).replace(/'/g, "\\'") + '\')">';
+          html += '<td><strong>' + escapeHtml(b.brokerName) + '</strong><br><span style="font-size:12px;color:#64748b">' + b.unpaidOrders.length + ' outstanding</span></td>';
+          html += '<td style="text-align:right;font-weight:600;color:' + statusColor + '">' + formatMoney(b.outstanding) + '</td>';
+          html += '<td style="text-align:right">' + formatMoney(b.totalInvoiced) + '</td>';
+          html += '<td style="text-align:right;color:#22c55e">' + formatMoney(b.totalPaid) + '</td>';
+          html += '<td style="text-align:right;color:#ef4444">' + formatMoney(b.overdue) + '</td>';
+          html += '<td>' + renderMiniAgingBar(b.aging, b.outstanding) + '</td>';
+          html += '<td onclick="event.stopPropagation()"><button class="btn btn-sm btn-secondary" onclick="openBrokerBillingDetail(\'' + escapeHtml(b.brokerName).replace(/'/g, "\\'") + '\')">View</button></td>';
+          html += '</tr>';
+        });
+      }
+
+      html += '</tbody></table></div></div>';
+
+      return html;
+    }
+
+    // Brokers Tab - Full Broker Accounts
+    function renderBillingBrokersTab(brokerStats) {
+      let html = '';
+
+      // Search bar
+      html += '<div style="margin-bottom:16px">';
+      html += '<input type="text" id="broker-billing-search" placeholder="Search brokers..." ';
+      html += 'value="' + brokerBillingSearchTerm + '" ';
+      html += 'oninput="brokerBillingSearchTerm=this.value;renderBillingPage(document.getElementById(\'main-content\'))" ';
+      html += 'style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;width:300px;background:var(--bg-card);color:var(--text-primary)">';
+      html += '</div>';
+
+      // Filter brokers
+      let filteredBrokers = brokerStats;
+      if (brokerBillingSearchTerm.trim()) {
+        const term = brokerBillingSearchTerm.toLowerCase().trim();
+        filteredBrokers = brokerStats.filter(b => b.brokerName.toLowerCase().includes(term));
+      }
+
+      // Broker accounts table
+      html += '<div class="card"><div class="table-wrapper"><table>';
+      html += '<thead><tr>';
+      html += '<th>Broker</th>';
+      html += '<th style="text-align:right">Total Invoiced</th>';
+      html += '<th style="text-align:right">Paid</th>';
+      html += '<th style="text-align:right">Outstanding</th>';
+      html += '<th style="text-align:right">Overdue</th>';
+      html += '<th>Aging</th>';
+      html += '<th style="text-align:center">Avg Days</th>';
+      html += '<th style="width:100px">Actions</th>';
+      html += '</tr></thead><tbody>';
+
+      if (filteredBrokers.length === 0) {
+        html += '<tr><td colspan="8" style="text-align:center;padding:60px;color:#64748b">';
+        html += '<div style="font-size:48px;margin-bottom:16px">' + (brokerBillingSearchTerm ? '🔍' : '📋') + '</div>';
+        html += '<div style="font-size:18px;font-weight:600;margin-bottom:8px">' + (brokerBillingSearchTerm ? 'No brokers found' : 'No billing data') + '</div>';
+        html += '</td></tr>';
+      } else {
+        filteredBrokers.forEach(b => {
+          const statusColor = b.overdue > 0 ? '#ef4444' : b.outstanding > 0 ? '#f59e0b' : '#22c55e';
+          const statusBadge = b.overdue > 0 ? '<span class="badge badge-red" style="font-size:10px;margin-left:8px">OVERDUE</span>' :
+                             b.outstanding > 0 ? '<span class="badge badge-amber" style="font-size:10px;margin-left:8px">PENDING</span>' :
+                             '<span class="badge badge-green" style="font-size:10px;margin-left:8px">CLEAR</span>';
+
+          html += '<tr style="cursor:pointer" onclick="openBrokerBillingDetail(\'' + escapeHtml(b.brokerName).replace(/'/g, "\\'") + '\')">';
+          html += '<td><div style="font-weight:600">' + escapeHtml(b.brokerName) + statusBadge + '</div>';
+          html += '<div style="font-size:12px;color:#64748b">' + b.unpaidOrders.length + ' outstanding, ' + b.paidCount + ' paid</div></td>';
+          html += '<td style="text-align:right;font-weight:500">' + formatMoney(b.totalInvoiced) + '</td>';
+          html += '<td style="text-align:right;color:#22c55e">' + formatMoney(b.totalPaid) + '</td>';
+          html += '<td style="text-align:right;font-weight:600;color:' + statusColor + '">' + formatMoney(b.outstanding) + '</td>';
+          html += '<td style="text-align:right;color:#ef4444">' + formatMoney(b.overdue) + '</td>';
+          html += '<td>' + renderMiniAgingBar(b.aging, b.outstanding) + '</td>';
+          html += '<td style="text-align:center">' + (b.avgDaysToPay !== null ? b.avgDaysToPay + 'd' : '-') + '</td>';
+          html += '<td onclick="event.stopPropagation()"><button class="btn btn-sm btn-primary" onclick="openBrokerBillingDetail(\'' + escapeHtml(b.brokerName).replace(/'/g, "\\'") + '\')">View</button></td>';
+          html += '</tr>';
+        });
+      }
+
+      html += '</tbody></table></div>';
+      html += '<div style="padding:12px 16px;color:#64748b;font-size:13px;border-top:1px solid var(--border)">Showing ' + filteredBrokers.length + ' brokers</div>';
+      html += '</div>';
+
+      return html;
+    }
+
+    // Invoices Tab - Original invoice table
+    function renderBillingInvoicesTab(unpaidOrders) {
+      let html = '';
 
       // Search bar
       html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">';
@@ -23933,39 +24190,20 @@ ${rateText}`
           const ageColor = o.daysOverdue <= 0 ? '#22c55e' : '#ef4444';
 
           html += '<tr style="cursor:pointer" onclick="openOrderDetailPage(' + o.id + ')">';
-
-          // Invoice
           html += '<td><strong style="color:var(--text-primary)">' + invoiceNum + '</strong></td>';
-
-          // Customer
           html += '<td><div style="font-weight:500">' + (o.broker_name || 'Unknown') + '</div>';
           html += '<div style="font-size:12px;color:#64748b">broker</div></td>';
-
-          // Load
           html += '<td><div style="font-weight:500">' + (o.order_number || 'ORD-' + o.id) + '</div>';
           html += '<div style="font-size:12px;color:#64748b">' + (o.origin || '?') + ' → ' + (o.destination || '?') + '</div></td>';
-
-          // Amount
           html += '<td style="text-align:right;font-weight:600">' + formatMoney(o.billAmount) + '</td>';
-
-          // Due
           html += '<td>' + formatDueDateShort(o.dueDate) + '</td>';
-
-          // Age
           html += '<td><span style="color:' + ageColor + ';font-weight:600">' + ageText + '</span></td>';
-
-          // Status
           html += '<td><span style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;background:' + statusInfo.bg + ';color:' + statusInfo.color + '">' + statusInfo.text + '</span></td>';
-
-          // Type
           html += '<td><span style="display:inline-block;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:600;border:1px solid ' + typeBadge.border + ';color:' + typeBadge.color + '">' + typeBadge.text + '</span></td>';
-
-          // Actions
           html += '<td onclick="event.stopPropagation()" style="text-align:center">';
           html += '<button onclick="markBillingOrderPaid(' + o.id + ')" style="background:none;border:none;cursor:pointer;padding:4px;color:#64748b;font-size:16px" title="Mark as Paid">✓</button>';
           html += '<button onclick="openOrderDetailPage(' + o.id + ')" style="background:none;border:none;cursor:pointer;padding:4px;color:#64748b;font-size:16px" title="View Details">👁</button>';
           html += '</td>';
-
           html += '</tr>';
         });
       }
@@ -23974,7 +24212,118 @@ ${rateText}`
       html += '<div style="padding:12px 16px;color:#64748b;font-size:13px;border-top:1px solid var(--border)">Showing ' + filteredOrders.length + (billingSearchTerm ? ' of ' + unpaidOrders.length : '') + ' invoices</div>';
       html += '</div>';
 
-      c.innerHTML = html;
+      return html;
+    }
+
+    // Broker Detail Modal
+    function openBrokerBillingDetail(brokerName) {
+      const brokerStats = getBrokerBillingStats().find(b => b.brokerName === brokerName);
+      if (!brokerStats) return;
+
+      const m = document.createElement('div');
+      m.className = 'modal-overlay';
+      m.onclick = e => { if (e.target === m) m.remove(); };
+
+      let html = '<div class="modal" style="max-width:900px;max-height:90vh">';
+      html += '<div class="modal-header"><h3>🏢 ' + escapeHtml(brokerStats.brokerName) + '</h3>';
+      html += '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div>';
+      html += '<div class="modal-body" style="max-height:75vh;overflow-y:auto">';
+
+      // Summary Cards
+      html += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px">';
+      html += '<div style="background:var(--bg-main);padding:16px;border-radius:8px;text-align:center">';
+      html += '<div style="font-size:11px;color:#64748b;margin-bottom:4px">Total Invoiced</div>';
+      html += '<div style="font-size:20px;font-weight:700;color:#8b5cf6">' + formatMoney(brokerStats.totalInvoiced) + '</div></div>';
+      html += '<div style="background:var(--bg-main);padding:16px;border-radius:8px;text-align:center">';
+      html += '<div style="font-size:11px;color:#64748b;margin-bottom:4px">Paid</div>';
+      html += '<div style="font-size:20px;font-weight:700;color:#22c55e">' + formatMoney(brokerStats.totalPaid) + '</div></div>';
+      html += '<div style="background:var(--bg-main);padding:16px;border-radius:8px;text-align:center">';
+      html += '<div style="font-size:11px;color:#64748b;margin-bottom:4px">Outstanding</div>';
+      html += '<div style="font-size:20px;font-weight:700;color:#3b82f6">' + formatMoney(brokerStats.outstanding) + '</div></div>';
+      html += '<div style="background:var(--bg-main);padding:16px;border-radius:8px;text-align:center">';
+      html += '<div style="font-size:11px;color:#64748b;margin-bottom:4px">Overdue</div>';
+      html += '<div style="font-size:20px;font-weight:700;color:#ef4444">' + formatMoney(brokerStats.overdue) + '</div></div>';
+      html += '<div style="background:var(--bg-main);padding:16px;border-radius:8px;text-align:center">';
+      html += '<div style="font-size:11px;color:#64748b;margin-bottom:4px">Avg Days to Pay</div>';
+      html += '<div style="font-size:20px;font-weight:700;color:var(--text-primary)">' + (brokerStats.avgDaysToPay !== null ? brokerStats.avgDaysToPay + 'd' : '-') + '</div></div>';
+      html += '</div>';
+
+      // Aging Breakdown
+      html += '<div style="margin-bottom:24px">';
+      html += '<div style="font-size:12px;color:#64748b;margin-bottom:8px;font-weight:600">AGING BREAKDOWN</div>';
+      if (brokerStats.outstanding > 0) {
+        const a = brokerStats.aging;
+        const total = brokerStats.outstanding;
+        html += '<div style="display:flex;height:16px;border-radius:6px;overflow:hidden;margin-bottom:8px">';
+        if (a.current > 0) html += '<div style="width:' + (a.current/total*100) + '%;background:#22c55e" title="Current: ' + formatMoney(a.current) + '"></div>';
+        if (a.days1_30 > 0) html += '<div style="width:' + (a.days1_30/total*100) + '%;background:#eab308" title="1-30 Days: ' + formatMoney(a.days1_30) + '"></div>';
+        if (a.days31_60 > 0) html += '<div style="width:' + (a.days31_60/total*100) + '%;background:#f97316" title="31-60 Days: ' + formatMoney(a.days31_60) + '"></div>';
+        if (a.days61_90 > 0) html += '<div style="width:' + (a.days61_90/total*100) + '%;background:#ef4444" title="61-90 Days: ' + formatMoney(a.days61_90) + '"></div>';
+        if (a.days90Plus > 0) html += '<div style="width:' + (a.days90Plus/total*100) + '%;background:#dc2626" title="90+ Days: ' + formatMoney(a.days90Plus) + '"></div>';
+        html += '</div>';
+        html += '<div style="display:flex;flex-wrap:wrap;gap:16px;font-size:12px">';
+        html += '<span><span style="display:inline-block;width:10px;height:10px;background:#22c55e;border-radius:2px;margin-right:4px"></span>Current: ' + formatMoney(a.current) + '</span>';
+        html += '<span><span style="display:inline-block;width:10px;height:10px;background:#eab308;border-radius:2px;margin-right:4px"></span>1-30: ' + formatMoney(a.days1_30) + '</span>';
+        html += '<span><span style="display:inline-block;width:10px;height:10px;background:#f97316;border-radius:2px;margin-right:4px"></span>31-60: ' + formatMoney(a.days31_60) + '</span>';
+        html += '<span><span style="display:inline-block;width:10px;height:10px;background:#ef4444;border-radius:2px;margin-right:4px"></span>61-90: ' + formatMoney(a.days61_90) + '</span>';
+        html += '<span><span style="display:inline-block;width:10px;height:10px;background:#dc2626;border-radius:2px;margin-right:4px"></span>90+: ' + formatMoney(a.days90Plus) + '</span>';
+        html += '</div>';
+      } else {
+        html += '<div style="color:#22c55e;font-weight:500">No outstanding balance</div>';
+      }
+      html += '</div>';
+
+      // Outstanding Invoices
+      if (brokerStats.unpaidOrders.length > 0) {
+        html += '<div style="margin-bottom:24px">';
+        html += '<div style="font-size:12px;color:#64748b;margin-bottom:8px;font-weight:600">OUTSTANDING INVOICES (' + brokerStats.unpaidOrders.length + ')</div>';
+        html += '<div class="table-wrapper"><table style="font-size:13px">';
+        html += '<thead><tr><th>Invoice</th><th>Order</th><th style="text-align:right">Amount</th><th>Due</th><th>Age</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+        brokerStats.unpaidOrders.forEach(o => {
+          const ageText = o.daysOverdue <= 0 ? Math.abs(o.daysOverdue) + 'd left' : o.daysOverdue + 'd over';
+          const ageColor = o.daysOverdue <= 0 ? '#22c55e' : '#ef4444';
+          const statusInfo = getPaymentStatusInfo(o);
+          html += '<tr>';
+          html += '<td><strong>' + getInvoiceNumber(o) + '</strong></td>';
+          html += '<td>' + (o.order_number || 'ORD-' + o.id) + '</td>';
+          html += '<td style="text-align:right;font-weight:600">' + formatMoney(o.billAmount) + '</td>';
+          html += '<td>' + formatDueDateShort(o.dueDate) + '</td>';
+          html += '<td><span style="color:' + ageColor + ';font-weight:600">' + ageText + '</span></td>';
+          html += '<td><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:' + statusInfo.bg + ';color:' + statusInfo.color + '">' + statusInfo.text + '</span></td>';
+          html += '<td><button class="btn btn-sm btn-green" onclick="markBillingOrderPaid(' + o.id + ');this.closest(\'.modal-overlay\').remove()">Mark Paid</button></td>';
+          html += '</tr>';
+        });
+        html += '</tbody></table></div></div>';
+      }
+
+      // Payment History
+      if (brokerStats.paidOrders.length > 0) {
+        html += '<div>';
+        html += '<div style="font-size:12px;color:#64748b;margin-bottom:8px;font-weight:600">PAYMENT HISTORY (' + brokerStats.paidCount + ' paid)</div>';
+        html += '<div class="table-wrapper"><table style="font-size:13px">';
+        html += '<thead><tr><th>Invoice</th><th>Order</th><th style="text-align:right">Amount</th><th>Invoiced</th><th>Paid</th><th>Days to Pay</th></tr></thead><tbody>';
+        brokerStats.paidOrders.slice(0, 10).forEach(o => {
+          const invoiceDate = new Date(o.delivery_date || o.created_at);
+          const paidDate = o.payment_date ? new Date(o.payment_date) : null;
+          const daysToPay = paidDate ? Math.floor((paidDate - invoiceDate) / (1000 * 60 * 60 * 24)) : '-';
+          html += '<tr>';
+          html += '<td>' + getInvoiceNumber(o) + '</td>';
+          html += '<td>' + (o.order_number || 'ORD-' + o.id) + '</td>';
+          html += '<td style="text-align:right">' + formatMoney(o.billAmount) + '</td>';
+          html += '<td>' + formatDueDateShort(invoiceDate) + '</td>';
+          html += '<td>' + (paidDate ? formatDueDateShort(paidDate) : '-') + '</td>';
+          html += '<td>' + (typeof daysToPay === 'number' ? daysToPay + 'd' : '-') + '</td>';
+          html += '</tr>';
+        });
+        if (brokerStats.paidOrders.length > 10) {
+          html += '<tr><td colspan="6" style="text-align:center;color:#64748b;font-size:12px">... and ' + (brokerStats.paidOrders.length - 10) + ' more</td></tr>';
+        }
+        html += '</tbody></table></div></div>';
+      }
+
+      html += '</div></div>';
+      m.innerHTML = html;
+      document.body.appendChild(m);
     }
 
     // Payroll year filter (default to current year)
