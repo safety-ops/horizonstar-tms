@@ -106,18 +106,24 @@ async function dbUpdate(table, id, data, skipConflictCheck = false) {
     const originalTimestamp = getEditingTimestamp(table, id);
     if (originalTimestamp) {
       // Fetch current record to check if it was modified
-      const { data: current } = await sb.from(table).select('updated_at').eq('id', id).single();
-      if (current && current.updated_at && current.updated_at !== originalTimestamp) {
-        const confirmOverwrite = confirm(
-          '⚠️ This record was modified by another user while you were editing.\n\n' +
-          'Click OK to save your changes anyway (will overwrite their changes)\n' +
-          'Click Cancel to refresh and see the latest version'
-        );
-        if (!confirmOverwrite) {
-          await loadAllData(true); // Force refresh
-          showToast('Data refreshed - please review and try again', 'info');
-          return null; // Signal that save was cancelled
+      try {
+        const { data: current, error } = await sb.from(table).select('updated_at').eq('id', id).single();
+        // Only check conflict if we successfully got data with updated_at column
+        if (!error && current && current.updated_at && current.updated_at !== originalTimestamp) {
+          const confirmOverwrite = confirm(
+            '⚠️ This record was modified by another user while you were editing.\n\n' +
+            'Click OK to save your changes anyway (will overwrite their changes)\n' +
+            'Click Cancel to refresh and see the latest version'
+          );
+          if (!confirmOverwrite) {
+            await loadAllData(true); // Force refresh
+            showToast('Data refreshed - please review and try again', 'info');
+            return null; // Signal that save was cancelled
+          }
         }
+      } catch (e) {
+        // If conflict check fails (e.g., updated_at column doesn't exist), skip it
+        console.warn('Conflict check skipped:', e.message);
       }
     }
   }
@@ -364,6 +370,10 @@ async function loadSecondaryData() {
     let accidents = [];
     try { accidents = await dbFetch('accidents', { order: 'accident_date.desc' }) || []; } catch(e) { accidents = []; }
 
+    // Try to load company files
+    let company_files = [];
+    try { company_files = await dbFetch('company_files', { order: 'id.desc' }) || []; } catch(e) { company_files = []; }
+
     // Update appData with secondary data
     Object.assign(appData, {
       local_drivers: local_drivers || [],
@@ -381,7 +391,8 @@ async function loadSecondaryData() {
       violation_files: violation_files,
       claim_files: claim_files,
       compliance_tasks: compliance_tasks,
-      accidents: accidents
+      accidents: accidents,
+      company_files: company_files
     });
 
     // Update cache

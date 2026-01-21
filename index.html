@@ -8868,18 +8868,24 @@
         const originalTimestamp = getEditingTimestamp(table, id);
         if (originalTimestamp) {
           // Fetch current record to check if it was modified
-          const { data: current } = await sb.from(table).select('updated_at').eq('id', id).single();
-          if (current && current.updated_at && current.updated_at !== originalTimestamp) {
-            const confirmOverwrite = confirm(
-              '⚠️ This record was modified by another user while you were editing.\n\n' +
-              'Click OK to save your changes anyway (will overwrite their changes)\n' +
-              'Click Cancel to refresh and see the latest version'
-            );
-            if (!confirmOverwrite) {
-              await loadAllData(true); // Force refresh
-              showToast('Data refreshed - please review and try again', 'info');
-              return null; // Signal that save was cancelled
+          try {
+            const { data: current, error } = await sb.from(table).select('updated_at').eq('id', id).single();
+            // Only check conflict if we successfully got data with updated_at column
+            if (!error && current && current.updated_at && current.updated_at !== originalTimestamp) {
+              const confirmOverwrite = confirm(
+                '⚠️ This record was modified by another user while you were editing.\n\n' +
+                'Click OK to save your changes anyway (will overwrite their changes)\n' +
+                'Click Cancel to refresh and see the latest version'
+              );
+              if (!confirmOverwrite) {
+                await loadAllData(true); // Force refresh
+                showToast('Data refreshed - please review and try again', 'info');
+                return null; // Signal that save was cancelled
+              }
             }
+          } catch (e) {
+            // If conflict check fails (e.g., updated_at column doesn't exist), skip it
+            console.warn('Conflict check skipped:', e.message);
           }
         }
       }
@@ -21542,18 +21548,19 @@ ${rateText}`
     let complianceTab = 'drivers';
 
     // Compliance tab state
-    let complianceMainTab = 'dashboard'; // dashboard, tasks, driver_files, truck_files, driver_compliance, accidents
-    
+    let complianceMainTab = 'dashboard'; // dashboard, tasks, driver_files, truck_files, company_files, driver_compliance, accidents
+
     function renderCompliance(c) {
       const today = new Date();
       const todayStr = today.toISOString().split('T')[0];
-      
+
       // Tab buttons
       const tabs = [
         { id: 'dashboard', label: '📊 Dashboard', color: '#3b82f6' },
         { id: 'tasks', label: '📋 Compliance Tasks', color: '#8b5cf6' },
         { id: 'driver_files', label: '👤 Driver Files', color: '#1e40af' },
         { id: 'truck_files', label: '🚚 Truck Files', color: '#0891b2' },
+        { id: 'company_files', label: '🏢 Company Files', color: '#059669' },
         { id: 'driver_compliance', label: '🎫 Tickets/Violations', color: '#dc2626' },
         { id: 'accidents', label: '🚨 Accident Registry', color: '#f59e0b' }
       ];
@@ -21569,6 +21576,7 @@ ${rateText}`
       else if (complianceMainTab === 'tasks') renderComplianceTasks(content);
       else if (complianceMainTab === 'driver_files') renderComplianceDriverFiles(content);
       else if (complianceMainTab === 'truck_files') renderComplianceTruckFiles(content);
+      else if (complianceMainTab === 'company_files') renderComplianceCompanyFiles(content);
       else if (complianceMainTab === 'driver_compliance') renderComplianceDriverSection(content);
       else if (complianceMainTab === 'accidents') renderAccidentRegistry(content);
     }
@@ -21668,7 +21676,26 @@ ${rateText}`
         (vehicleTasks.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px">No tasks due</div>' :
         vehicleTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + t.unit + '</strong><br><span style="font-size:12px;color:var(--text-muted)">' + t.task + '</span></div><div style="font-size:12px;color:#f59e0b">' + formatDate(t.due) + '</div></div>').join('')) +
         '</div></div>' +
-        
+
+        // Company Files Tasks
+        (function() {
+          const companyFiles = appData.company_files || [];
+          const companyTasks = [];
+          companyFiles.forEach(f => {
+            if (f.expiration_date && f.category !== 'CUSTOM') {
+              const expDate = new Date(f.expiration_date);
+              const daysUntil = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+              if (daysUntil <= 7) {
+                companyTasks.push({ doc: f.file_type.replace(/_/g, ' '), due: f.expiration_date, days: daysUntil });
+              }
+            }
+          });
+          return '<div class="card"><div class="card-header"><h4 style="margin:0">🏢 Company Files (Next 7 Days)</h4></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
+            (companyTasks.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px">No files expiring</div>' :
+            companyTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + t.doc + '</strong></div><div style="font-size:12px;color:' + (t.days < 0 ? '#dc2626' : '#059669') + '">' + (t.days < 0 ? 'EXPIRED' : formatDate(t.due)) + '</div></div>').join('')) +
+            '</div></div>';
+        })() +
+
         // Court Dates
         '<div class="card"><div class="card-header"><h4 style="margin:0">⚖️ Court Dates (Next 30 Days)</h4></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
         (courtDates.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px">No court dates found</div>' :
@@ -21890,7 +21917,247 @@ ${rateText}`
         }).join('')) +
         '</tbody></table></div></div>';
     }
-    
+
+    // ========== COMPANY FILES TAB ==========
+    // Company file types configuration
+    const COMPANY_FILE_TYPES = [
+      { key: 'OPERATING_AUTHORITY', label: 'Operating Authority (MC/FF)', hasExpiry: true },
+      { key: 'USDOT_REGISTRATION', label: 'USDOT Registration', hasExpiry: true },
+      { key: 'LIABILITY_INSURANCE', label: 'General Liability Insurance', hasExpiry: true },
+      { key: 'CARGO_INSURANCE', label: 'Cargo Insurance', hasExpiry: true },
+      { key: 'BOC3', label: 'BOC-3 Filing', hasExpiry: false },
+      { key: 'UCR_REGISTRATION', label: 'UCR Registration', hasExpiry: true },
+      { key: 'IFTA_LICENSE', label: 'IFTA License', hasExpiry: true },
+      { key: 'IRP_CREDENTIALS', label: 'IRP Credentials', hasExpiry: true }
+    ];
+
+    function renderComplianceCompanyFiles(c) {
+      const today = new Date();
+      const files = appData.company_files || [];
+
+      // Calculate alerts for expiring files
+      const alerts = [];
+      files.forEach(f => {
+        if (f.expiration_date && f.category !== 'CUSTOM') {
+          const expDate = new Date(f.expiration_date);
+          const daysUntil = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+          if (daysUntil <= 7) {
+            const fileType = COMPANY_FILE_TYPES.find(t => t.key === f.file_type);
+            alerts.push({ doc: fileType?.label || f.file_type.replace(/_/g, ' '), days: daysUntil });
+          }
+        }
+      });
+
+      // Get custom folders
+      const customFiles = files.filter(f => f.category === 'CUSTOM');
+      const customFolders = [...new Set(customFiles.map(f => f.folder_name).filter(Boolean))];
+
+      const alertsHtml = alerts.length > 0 ? '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:#dc2626">⚠️ Expiring Soon (' + alerts.length + ')</strong><div style="margin-top:8px">' + alerts.slice(0, 5).map(a => '<span class="badge badge-amber" style="margin:4px">' + a.doc + ' (' + (a.days < 0 ? 'EXPIRED' : a.days + 'd') + ')</span>').join('') + '</div></div>' : '';
+
+      // Build file status rows
+      const getFileStatus = (fileType) => {
+        const file = files.find(f => f.file_type === fileType.key && f.category !== 'CUSTOM');
+        if (!file) return { status: '<span class="badge badge-gray">Missing</span>', expires: '-', hasFile: false, fileId: null };
+        if (!file.expiration_date || !fileType.hasExpiry) return { status: '<span class="badge badge-green">✓</span>', expires: fileType.hasExpiry ? '-' : 'N/A', hasFile: true, fileId: file.id };
+        const exp = new Date(file.expiration_date);
+        const days = Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
+        let statusBadge;
+        if (days < 0) statusBadge = '<span class="badge badge-red">EXPIRED</span>';
+        else if (days <= 7) statusBadge = '<span class="badge badge-amber">' + days + 'd</span>';
+        else statusBadge = '<span class="badge badge-green">✓</span>';
+        return { status: statusBadge, expires: formatDate(file.expiration_date), hasFile: true, fileId: file.id };
+      };
+
+      c.innerHTML = alertsHtml +
+        '<div class="card" style="margin-bottom:24px"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3>🏢 Company Qualification Files</h3></div>' +
+        '<div class="table-wrapper"><table><thead><tr><th>Document</th><th>Status</th><th>Expires</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
+        COMPANY_FILE_TYPES.map(ft => {
+          const status = getFileStatus(ft);
+          return '<tr><td><strong>' + ft.label + '</strong></td><td>' + status.status + '</td><td>' + status.expires + '</td><td class="sticky-col">' +
+            (status.hasFile ?
+              '<div class="actions"><button class="action-btn view" onclick="viewCompanyFile(' + status.fileId + ')">View</button><button class="action-btn delete" onclick="deleteCompanyFile(' + status.fileId + ')">Del</button></div>' :
+              '<button class="action-btn edit" onclick="openCompanyFileUploadModal(\'' + ft.key + '\', ' + ft.hasExpiry + ')">Upload</button>') +
+            '</td></tr>';
+        }).join('') +
+        '</tbody></table></div></div>' +
+
+        // Custom Folders Section
+        '<div class="card"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3>📂 Custom Folders</h3><button class="btn btn-primary btn-sm" onclick="openCompanyFolderModal()">+ New Folder</button></div>' +
+        '<div style="padding:16px">' +
+        (customFolders.length === 0 ? '<div style="text-align:center;color:var(--text-muted);padding:20px">No custom folders. Click "+ New Folder" to create one.</div>' :
+        customFolders.map(folder => {
+          const folderFiles = customFiles.filter(f => f.folder_name === folder);
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--bg-darker);border-radius:8px;margin-bottom:8px"><div><strong>📁 ' + folder + '</strong><span style="margin-left:8px;font-size:12px;color:var(--text-muted)">(' + folderFiles.length + ' file' + (folderFiles.length !== 1 ? 's' : '') + ')</span></div><div class="actions"><button class="action-btn view" onclick="viewCompanyFolder(\'' + folder.replace(/'/g, "\\'") + '\')">Manage</button></div></div>';
+        }).join('')) +
+        '</div></div>';
+    }
+
+    // View a company file (opens in new tab)
+    function viewCompanyFile(fileId) {
+      const file = (appData.company_files || []).find(f => f.id === fileId);
+      if (!file) { showToast('File not found', 'error'); return; }
+
+      const w = window.open('', '_blank');
+      if (file.file_data.startsWith('data:application/pdf') || file.file_data.startsWith('data:image')) {
+        w.document.write('<html><head><title>' + file.file_name + '</title></head><body style="margin:0"><iframe src="' + file.file_data + '" style="width:100%;height:100vh;border:none"></iframe></body></html>');
+      } else {
+        w.document.write('<html><head><title>' + file.file_name + '</title><style>body{font-family:system-ui;padding:40px;max-width:600px;margin:0 auto}</style></head><body><h2>' + file.file_name + '</h2><p><strong>Type:</strong> ' + file.file_type.replace(/_/g, ' ') + '</p>' + (file.notes ? '<p><strong>Notes:</strong> ' + file.notes + '</p>' : '') + (file.expiration_date ? '<p><strong>Expires:</strong> ' + formatDate(file.expiration_date) + '</p>' : '') + '<a href="' + file.file_data + '" download="' + file.file_name + '" style="display:inline-block;padding:10px 20px;background:#3b82f6;color:white;text-decoration:none;border-radius:6px;margin-top:20px">Download File</a></body></html>');
+      }
+      w.document.close();
+    }
+
+    // Delete a company file
+    async function deleteCompanyFile(fileId) {
+      if (!confirm('Delete this file?')) return;
+      try {
+        await dbDelete('company_files', fileId);
+        showToast('File deleted');
+        await loadAllData(true);
+        renderCompliance(document.getElementById('main-content'));
+      } catch (e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
+    // Upload modal for company files
+    function openCompanyFileUploadModal(fileType, hasExpiry) {
+      const fileTypeInfo = COMPANY_FILE_TYPES.find(t => t.key === fileType);
+      const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
+      m.innerHTML = '<div class="modal" style="max-width:500px"><div class="modal-header"><h3>Upload ' + (fileTypeInfo?.label || fileType.replace(/_/g, ' ')) + '</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body">' +
+        '<div class="form-group"><label>File *</label><input type="file" id="companyFileInput" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"></div>' +
+        '<div class="form-group"><label>Notes</label><input id="companyFileNotes" placeholder="Optional notes"></div>' +
+        (hasExpiry ? '<div class="form-group"><label>Expiration Date</label><input type="date" id="companyFileExpiry"></div>' : '') +
+        '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="uploadCompanyFile(\'' + fileType + '\', ' + hasExpiry + ')">Upload</button></div></div>';
+      document.body.appendChild(m);
+    }
+
+    // Upload company file
+    async function uploadCompanyFile(fileType, hasExpiry) {
+      const fileInput = document.getElementById('companyFileInput');
+      const notes = document.getElementById('companyFileNotes')?.value || null;
+      const expiry = hasExpiry ? document.getElementById('companyFileExpiry')?.value || null : null;
+
+      if (!fileInput.files.length) { showToast('Please select a file', 'error'); return; }
+
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const data = {
+            file_type: fileType,
+            category: 'QUALIFICATION',
+            file_name: file.name,
+            file_data: e.target.result,
+            notes: notes,
+            expiration_date: expiry
+          };
+          await dbInsert('company_files', data);
+          document.querySelector('.modal-overlay').remove();
+          showToast('File uploaded!');
+          await loadAllData(true);
+          renderCompliance(document.getElementById('main-content'));
+        } catch (err) { showToast('Error: ' + err.message, 'error'); }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Create new custom folder modal
+    function openCompanyFolderModal() {
+      const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
+      m.innerHTML = '<div class="modal" style="max-width:400px"><div class="modal-header"><h3>Create Custom Folder</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body">' +
+        '<div class="form-group"><label>Folder Name *</label><input id="companyFolderName" placeholder="e.g., Contracts, Permits, Agreements"></div>' +
+        '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="createCompanyFolder()">Create & Upload File</button></div></div>';
+      document.body.appendChild(m);
+    }
+
+    // Create folder and open file upload
+    function createCompanyFolder() {
+      const folderName = document.getElementById('companyFolderName')?.value?.trim();
+      if (!folderName) { showToast('Please enter a folder name', 'error'); return; }
+      document.querySelector('.modal-overlay').remove();
+      openCompanyCustomFileUpload(folderName);
+    }
+
+    // Upload to custom folder modal
+    function openCompanyCustomFileUpload(folderName) {
+      const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
+      m.innerHTML = '<div class="modal" style="max-width:500px"><div class="modal-header"><h3>Upload to: ' + folderName + '</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body">' +
+        '<div class="form-group"><label>File *</label><input type="file" id="customCompanyFileInput" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"></div>' +
+        '<div class="form-group"><label>File Label/Type</label><input id="customCompanyFileType" placeholder="e.g., Service Agreement, Permit"></div>' +
+        '<div class="form-group"><label>Notes</label><input id="customCompanyFileNotes" placeholder="Optional notes"></div>' +
+        '<div class="form-group"><label>Expiration Date (optional)</label><input type="date" id="customCompanyFileExpiry"></div>' +
+        '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="uploadCompanyCustomFile(\'' + folderName.replace(/'/g, "\\'") + '\')">Upload</button></div></div>';
+      document.body.appendChild(m);
+    }
+
+    // Upload custom folder file
+    async function uploadCompanyCustomFile(folderName) {
+      const fileInput = document.getElementById('customCompanyFileInput');
+      const fileType = document.getElementById('customCompanyFileType')?.value || 'CUSTOM_FILE';
+      const notes = document.getElementById('customCompanyFileNotes')?.value || null;
+      const expiry = document.getElementById('customCompanyFileExpiry')?.value || null;
+
+      if (!fileInput.files.length) { showToast('Please select a file', 'error'); return; }
+
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const data = {
+            file_type: fileType.toUpperCase().replace(/\s+/g, '_'),
+            category: 'CUSTOM',
+            folder_name: folderName,
+            file_name: file.name,
+            file_data: e.target.result,
+            notes: notes,
+            expiration_date: expiry || null
+          };
+          await dbInsert('company_files', data);
+          document.querySelector('.modal-overlay').remove();
+          showToast('File uploaded!');
+          await loadAllData(true);
+          renderCompliance(document.getElementById('main-content'));
+        } catch (err) { showToast('Error: ' + err.message, 'error'); }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // View files in a custom folder
+    function viewCompanyFolder(folderName) {
+      const today = new Date();
+      const files = (appData.company_files || []).filter(f => f.category === 'CUSTOM' && f.folder_name === folderName);
+
+      const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
+      m.innerHTML = '<div class="modal" style="max-width:700px"><div class="modal-header"><h3>📁 ' + folderName + '</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body" style="max-height:60vh;overflow-y:auto">' +
+        '<div style="margin-bottom:16px"><button class="btn btn-primary btn-sm" onclick="this.closest(\'.modal-overlay\').remove();openCompanyCustomFileUpload(\'' + folderName.replace(/'/g, "\\'") + '\')">+ Add File</button></div>' +
+        (files.length === 0 ? '<div style="text-align:center;padding:40px;color:var(--text-muted)">No files in this folder</div>' :
+        '<table style="width:100%"><thead><tr><th>File</th><th>Type</th><th>Expires</th><th>Actions</th></tr></thead><tbody>' +
+        files.map(f => {
+          let expStatus = '-';
+          if (f.expiration_date) {
+            const exp = new Date(f.expiration_date);
+            const days = Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
+            if (days < 0) expStatus = '<span class="badge badge-red">EXPIRED</span>';
+            else if (days <= 7) expStatus = '<span class="badge badge-amber">' + days + 'd</span>';
+            else expStatus = formatDate(f.expiration_date);
+          }
+          return '<tr><td><strong>' + f.file_name + '</strong>' + (f.notes ? '<br><span style="font-size:11px;color:var(--text-muted)">' + f.notes + '</span>' : '') + '</td><td>' + f.file_type.replace(/_/g, ' ') + '</td><td>' + expStatus + '</td><td><div class="actions"><button class="action-btn view" onclick="viewCompanyFile(' + f.id + ')">View</button><button class="action-btn delete" onclick="deleteCompanyFileFromFolder(' + f.id + ',\'' + folderName.replace(/'/g, "\\'") + '\')">Del</button></div></td></tr>';
+        }).join('') +
+        '</tbody></table>') +
+        '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Close</button></div></div>';
+      document.body.appendChild(m);
+    }
+
+    // Delete file from folder view (refreshes folder view)
+    async function deleteCompanyFileFromFolder(fileId, folderName) {
+      if (!confirm('Delete this file?')) return;
+      try {
+        await dbDelete('company_files', fileId);
+        showToast('File deleted');
+        await loadAllData(true);
+        document.querySelector('.modal-overlay').remove();
+        viewCompanyFolder(folderName);
+      } catch (e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
     // ========== DRIVER COMPLIANCE (TICKETS/VIOLATIONS/CLAIMS) ==========
     function renderComplianceDriverSection(c) {
       // Render the driver compliance content here (reuse from driver_compliance page)
@@ -23684,6 +23951,7 @@ ${rateText}`
     let billingSearchTerm = '';
     let billingTab = 'overview'; // 'overview' | 'brokers' | 'invoices'
     let brokerBillingSearchTerm = '';
+    let billingFilter = 'all'; // 'all' | 'paid' | 'outstanding' | 'overdue'
 
     function calculateOrderAging(order) {
       const now = new Date();
@@ -23726,6 +23994,19 @@ ${rateText}`
             parseFloat(o.bill_amount || 0) : parseFloat(o.revenue || 0);
           return { ...o, billAmount: amount };
         });
+    }
+
+    // Get delivered BILL orders that haven't been formally invoiced yet
+    function getOrdersNeedingInvoice() {
+      return appData.orders
+        .filter(o =>
+          (o.payment_type === 'BILL' || o.payment_type === 'SPLIT') &&
+          o.payment_status !== 'paid' &&
+          (o.delivery_status === 'delivered' || o.status === 'DELIVERED') &&
+          !o.invoiced_at
+        )
+        .map(o => ({ ...o, ...calculateOrderAging(o) }))
+        .sort((a, b) => new Date(a.delivery_date || a.dropoff_date) - new Date(b.delivery_date || b.dropoff_date));
     }
 
     // Calculate real avg days to pay from payment_date
@@ -23886,6 +24167,59 @@ ${rateText}`
       }
     }
 
+    async function markOrderInvoiced(orderId, invoiceNumber = null) {
+      const order = appData.orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      try {
+        const now = new Date().toISOString();
+        const updateData = { invoiced_at: now };
+        if (invoiceNumber) updateData.invoice_number = invoiceNumber;
+
+        await dbUpdate('orders', orderId, updateData);
+        order.invoiced_at = now;
+        if (invoiceNumber) order.invoice_number = invoiceNumber;
+        showToast('Order marked as invoiced');
+        renderBillingPage(document.getElementById('main-content'));
+      } catch (e) {
+        showToast('Failed to update: ' + e.message, 'error');
+      }
+    }
+
+    function openMarkInvoicedModal(orderId) {
+      const order = appData.orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      const modalHtml = `
+        <div id="mark-invoiced-modal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10000">
+          <div style="background:var(--bg);border-radius:12px;padding:24px;max-width:400px;width:90%">
+            <h3 style="margin:0 0 16px 0;font-size:18px">Mark as Invoiced</h3>
+            <p style="color:var(--text-secondary);margin:0 0 16px 0">
+              Order #${order.order_number || order.id} - ${order.broker_name || 'Unknown Broker'}
+            </p>
+            <div style="margin-bottom:16px">
+              <label style="display:block;margin-bottom:4px;font-size:14px;color:var(--text-secondary)">Invoice Number (optional)</label>
+              <input type="text" id="invoice-number-input" placeholder="e.g., INV-2024-001"
+                style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text)">
+            </div>
+            <div style="display:flex;gap:12px;justify-content:flex-end">
+              <button onclick="document.getElementById('mark-invoiced-modal').remove()"
+                style="padding:10px 20px;border:1px solid var(--border);border-radius:8px;background:var(--bg);cursor:pointer;color:var(--text)">Cancel</button>
+              <button onclick="submitMarkInvoiced(${orderId})"
+                style="padding:10px 20px;border:none;border-radius:8px;background:#3b82f6;color:white;cursor:pointer">Mark Invoiced</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    async function submitMarkInvoiced(orderId) {
+      const invoiceNumber = document.getElementById('invoice-number-input')?.value?.trim() || null;
+      document.getElementById('mark-invoiced-modal')?.remove();
+      await markOrderInvoiced(orderId, invoiceNumber);
+    }
+
     function renderBillingPage(c) {
       const unpaidOrders = getUnpaidBillOrders();
       const paidOrders = getPaidBillOrders();
@@ -23937,7 +24271,7 @@ ${rateText}`
       } else if (billingTab === 'brokers') {
         html += renderBillingBrokersTab(brokerStats);
       } else {
-        html += renderBillingInvoicesTab(unpaidOrders);
+        html += renderBillingInvoicesTab(unpaidOrders, paidOrders);
       }
 
       c.innerHTML = html;
@@ -23947,11 +24281,27 @@ ${rateText}`
     function renderBillingOverviewTab(unpaidOrders, paidOrders, brokerStats, m) {
       let html = '';
 
-      // Summary Cards (6 cards)
+      // Needs Invoice Alert - prominent notification for delivered orders not yet invoiced
+      const needsInvoiceOrders = getOrdersNeedingInvoice();
+      if (needsInvoiceOrders.length > 0) {
+        const needsInvoiceTotal = needsInvoiceOrders.reduce((sum, o) => sum + o.billAmount, 0);
+        html += '<div onclick="billingFilter=\'needs_invoice\';billingTab=\'invoices\';renderBillingPage(document.getElementById(\'main-content\'))" style="background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:12px;padding:16px 20px;margin-bottom:20px;cursor:pointer;border:1px solid #f59e0b;transition:all 0.2s" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 4px 12px rgba(245,158,11,0.3)\'" onmouseout="this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">';
+        html += '<div style="display:flex;align-items:center;justify-content:space-between">';
+        html += '<div style="display:flex;align-items:center;gap:12px">';
+        html += '<div style="width:40px;height:40px;background:#f59e0b;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px">📋</div>';
+        html += '<div>';
+        html += '<div style="font-weight:600;color:#92400e;font-size:15px">Needs Invoice</div>';
+        html += '<div style="color:#a16207;font-size:13px">' + needsInvoiceOrders.length + ' delivered order' + (needsInvoiceOrders.length === 1 ? '' : 's') + ' ready to invoice • ' + formatMoney(needsInvoiceTotal) + '</div>';
+        html += '</div></div>';
+        html += '<div style="display:flex;align-items:center;gap:8px;color:#92400e;font-size:13px;font-weight:500">View <span style="font-size:16px">→</span></div>';
+        html += '</div></div>';
+      }
+
+      // Summary Cards (6 cards) - clickable cards
       html += '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-bottom:24px">';
 
-      // Total Invoiced
-      html += '<div style="background:var(--bg-card);border-radius:12px;padding:20px;border:1px solid var(--border)">';
+      // Total Invoiced - clickable
+      html += '<div onclick="billingFilter=\'all\';billingTab=\'invoices\';renderBillingPage(document.getElementById(\'main-content\'))" style="background:var(--bg-card);border-radius:12px;padding:20px;border:1px solid var(--border);cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor=\'#8b5cf6\';this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.transform=\'translateY(0)\'">';
       html += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
       html += '<div><div style="color:#64748b;font-size:12px;margin-bottom:8px">Total Invoiced</div>';
       html += '<div style="font-size:24px;font-weight:700;color:#8b5cf6">' + formatMoney(m.totalInvoiced) + '</div>';
@@ -23959,8 +24309,8 @@ ${rateText}`
       html += '<div style="width:32px;height:32px;background:#8b5cf620;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px">📋</div>';
       html += '</div></div>';
 
-      // Total Paid
-      html += '<div style="background:var(--bg-card);border-radius:12px;padding:20px;border:1px solid var(--border)">';
+      // Total Paid - clickable
+      html += '<div onclick="billingFilter=\'paid\';billingTab=\'invoices\';renderBillingPage(document.getElementById(\'main-content\'))" style="background:var(--bg-card);border-radius:12px;padding:20px;border:1px solid var(--border);cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor=\'#22c55e\';this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.transform=\'translateY(0)\'">';
       html += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
       html += '<div><div style="color:#64748b;font-size:12px;margin-bottom:8px">Total Paid</div>';
       html += '<div style="font-size:24px;font-weight:700;color:#22c55e">' + formatMoney(m.collected) + '</div>';
@@ -23968,8 +24318,8 @@ ${rateText}`
       html += '<div style="width:32px;height:32px;background:#22c55e20;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px">✓</div>';
       html += '</div></div>';
 
-      // Outstanding
-      html += '<div style="background:var(--bg-card);border-radius:12px;padding:20px;border:1px solid var(--border)">';
+      // Outstanding - clickable
+      html += '<div onclick="billingFilter=\'outstanding\';billingTab=\'invoices\';renderBillingPage(document.getElementById(\'main-content\'))" style="background:var(--bg-card);border-radius:12px;padding:20px;border:1px solid var(--border);cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor=\'#3b82f6\';this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.transform=\'translateY(0)\'">';
       html += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
       html += '<div><div style="color:#64748b;font-size:12px;margin-bottom:8px">Outstanding</div>';
       html += '<div style="font-size:24px;font-weight:700;color:#3b82f6">' + formatMoney(m.totalReceivables) + '</div>';
@@ -23977,8 +24327,8 @@ ${rateText}`
       html += '<div style="width:32px;height:32px;background:#3b82f620;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px">💰</div>';
       html += '</div></div>';
 
-      // Overdue
-      html += '<div style="background:var(--bg-card);border-radius:12px;padding:20px;border:1px solid var(--border)">';
+      // Overdue - clickable
+      html += '<div onclick="billingFilter=\'overdue\';billingTab=\'invoices\';renderBillingPage(document.getElementById(\'main-content\'))" style="background:var(--bg-card);border-radius:12px;padding:20px;border:1px solid var(--border);cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor=\'#ef4444\';this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.transform=\'translateY(0)\'">';
       html += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
       html += '<div><div style="color:#64748b;font-size:12px;margin-bottom:8px">Overdue</div>';
       html += '<div style="font-size:24px;font-weight:700;color:#ef4444">' + formatMoney(m.overdueAmount) + '</div>';
@@ -23986,7 +24336,7 @@ ${rateText}`
       html += '<div style="width:32px;height:32px;background:#ef444420;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px">⚠️</div>';
       html += '</div></div>';
 
-      // Avg Days to Pay
+      // Avg Days to Pay (not clickable - informational)
       html += '<div style="background:var(--bg-card);border-radius:12px;padding:20px;border:1px solid var(--border)">';
       html += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
       html += '<div><div style="color:#64748b;font-size:12px;margin-bottom:8px">Avg Days to Pay</div>';
@@ -23995,7 +24345,7 @@ ${rateText}`
       html += '<div style="width:32px;height:32px;background:#f59e0b20;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px">📅</div>';
       html += '</div></div>';
 
-      // Collection Rate
+      // Collection Rate (not clickable - informational)
       html += '<div style="background:var(--bg-card);border-radius:12px;padding:20px;border:1px solid var(--border)">';
       html += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
       html += '<div><div style="color:#64748b;font-size:12px;margin-bottom:8px">Collection Rate</div>';
@@ -24135,25 +24485,58 @@ ${rateText}`
       return html;
     }
 
-    // Invoices Tab - Original invoice table
-    function renderBillingInvoicesTab(unpaidOrders) {
+    // Invoices Tab - with filter support
+    function renderBillingInvoicesTab(unpaidOrders, paidOrders) {
       let html = '';
 
+      // Determine which orders to show based on filter
+      let baseOrders = [];
+      let filterLabel = 'All Invoices';
+      const overdueOrders = unpaidOrders.filter(o => o.daysOverdue > 0);
+      const needsInvoiceOrders = getOrdersNeedingInvoice();
+
+      if (billingFilter === 'paid') {
+        baseOrders = paidOrders.map(o => ({ ...o, ...calculateOrderAging(o) }));
+        filterLabel = 'Paid Invoices';
+      } else if (billingFilter === 'outstanding') {
+        baseOrders = unpaidOrders;
+        filterLabel = 'Outstanding Invoices';
+      } else if (billingFilter === 'overdue') {
+        baseOrders = overdueOrders;
+        filterLabel = 'Overdue Invoices';
+      } else if (billingFilter === 'needs_invoice') {
+        baseOrders = needsInvoiceOrders;
+        filterLabel = 'Needs Invoice';
+      } else {
+        // 'all' - combine both
+        baseOrders = [...unpaidOrders, ...paidOrders.map(o => ({ ...o, ...calculateOrderAging(o) }))];
+        filterLabel = 'All Invoices';
+      }
+
+      // Filter tabs
+      html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">';
+      html += '<div style="display:flex;gap:4px;flex-wrap:wrap">';
+      html += '<button class="btn btn-sm ' + (billingFilter === 'all' ? 'btn-primary' : 'btn-secondary') + '" onclick="billingFilter=\'all\';renderBillingPage(document.getElementById(\'main-content\'))">All (' + (unpaidOrders.length + paidOrders.length) + ')</button>';
+      html += '<button class="btn btn-sm ' + (billingFilter === 'needs_invoice' ? 'btn-primary' : 'btn-secondary') + '" style="' + (billingFilter === 'needs_invoice' ? '' : (needsInvoiceOrders.length > 0 ? 'color:#f59e0b;border-color:#f59e0b' : '')) + '" onclick="billingFilter=\'needs_invoice\';renderBillingPage(document.getElementById(\'main-content\'))">Needs Invoice (' + needsInvoiceOrders.length + ')</button>';
+      html += '<button class="btn btn-sm ' + (billingFilter === 'outstanding' ? 'btn-primary' : 'btn-secondary') + '" onclick="billingFilter=\'outstanding\';renderBillingPage(document.getElementById(\'main-content\'))">Outstanding (' + unpaidOrders.length + ')</button>';
+      html += '<button class="btn btn-sm ' + (billingFilter === 'paid' ? 'btn-primary' : 'btn-secondary') + '" onclick="billingFilter=\'paid\';renderBillingPage(document.getElementById(\'main-content\'))">Paid (' + paidOrders.length + ')</button>';
+      html += '<button class="btn btn-sm ' + (billingFilter === 'overdue' ? 'btn-primary' : 'btn-secondary') + '" style="' + (billingFilter === 'overdue' ? '' : 'color:#ef4444;border-color:#ef4444') + '" onclick="billingFilter=\'overdue\';renderBillingPage(document.getElementById(\'main-content\'))">Overdue (' + overdueOrders.length + ')</button>';
+      html += '</div>';
+
       // Search bar
-      html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">';
-      html += '<div style="position:relative;flex:1;max-width:400px">';
-      html += '<input type="text" id="billing-search" placeholder="Search by invoice, order, or broker..." ';
+      html += '<div style="position:relative;flex:1;max-width:300px">';
+      html += '<input type="text" id="billing-search" placeholder="Search invoices..." ';
       html += 'value="' + billingSearchTerm + '" ';
       html += 'oninput="billingSearchTerm=this.value;renderBillingPage(document.getElementById(\'main-content\'))" ';
-      html += 'style="width:100%;padding:10px 12px 10px 36px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text-primary)">';
-      html += '<span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8">🔍</span>';
+      html += 'style="width:100%;padding:8px 12px 8px 32px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text-primary);font-size:13px">';
+      html += '<span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:12px">🔍</span>';
       html += '</div></div>';
 
       // Apply search filter
-      let filteredOrders = unpaidOrders;
+      let filteredOrders = baseOrders;
       if (billingSearchTerm.trim()) {
         const term = billingSearchTerm.toLowerCase().trim();
-        filteredOrders = unpaidOrders.filter(o => {
+        filteredOrders = baseOrders.filter(o => {
           const invoiceNum = getInvoiceNumber(o).toLowerCase();
           const orderNum = (o.order_number || 'ORD-' + o.id).toLowerCase();
           const brokerName = (o.broker_name || '').toLowerCase();
@@ -24178,19 +24561,37 @@ ${rateText}`
       if (filteredOrders.length === 0) {
         html += '<tr><td colspan="9" style="text-align:center;padding:60px;color:#64748b">';
         html += '<div style="font-size:48px;margin-bottom:16px">' + (billingSearchTerm ? '🔍' : '🎉') + '</div>';
-        html += '<div style="font-size:18px;font-weight:600;margin-bottom:8px">' + (billingSearchTerm ? 'No matches found' : 'All caught up!') + '</div>';
-        html += '<div>' + (billingSearchTerm ? 'Try a different search term' : 'No outstanding invoices to display') + '</div>';
+        html += '<div style="font-size:18px;font-weight:600;margin-bottom:8px">' + (billingSearchTerm ? 'No matches found' : 'No invoices to display') + '</div>';
+        html += '<div>' + (billingSearchTerm ? 'Try a different search term' : filterLabel === 'Overdue Invoices' ? 'Great! No overdue invoices' : 'No invoices match this filter') + '</div>';
         html += '</td></tr>';
       } else {
         filteredOrders.forEach(o => {
           const invoiceNum = getInvoiceNumber(o);
-          const statusInfo = getPaymentStatusInfo(o);
+          const isPaid = o.payment_status === 'paid';
+          const needsInvoice = !o.invoiced_at && !isPaid;
+          const isInvoiced = o.invoiced_at && !isPaid;
+
+          // Determine status info based on invoice state
+          let statusInfo;
+          if (isPaid) {
+            statusInfo = { text: 'Paid', color: '#22c55e', bg: '#dcfce7' };
+          } else if (needsInvoice) {
+            statusInfo = { text: 'Needs Invoice', color: '#f59e0b', bg: '#fef3c7' };
+          } else {
+            statusInfo = getPaymentStatusInfo(o);
+          }
+
           const typeBadge = getTypeBadge(o);
-          const ageText = o.daysOverdue <= 0 ? Math.abs(o.daysOverdue) + 'd left' : o.daysOverdue + 'd over';
-          const ageColor = o.daysOverdue <= 0 ? '#22c55e' : '#ef4444';
+          const ageText = isPaid ? (o.payment_date ? 'Paid ' + formatDueDateShort(new Date(o.payment_date)) : 'Paid') :
+                         (o.daysOverdue <= 0 ? Math.abs(o.daysOverdue) + 'd left' : o.daysOverdue + 'd over');
+          const ageColor = isPaid ? '#22c55e' : (o.daysOverdue <= 0 ? '#22c55e' : '#ef4444');
 
           html += '<tr style="cursor:pointer" onclick="openOrderDetailPage(' + o.id + ')">';
-          html += '<td><strong style="color:var(--text-primary)">' + invoiceNum + '</strong></td>';
+          html += '<td><strong style="color:var(--text-primary)">' + invoiceNum + '</strong>';
+          if (o.invoice_number) {
+            html += '<div style="font-size:11px;color:#64748b">' + escapeHtml(o.invoice_number) + '</div>';
+          }
+          html += '</td>';
           html += '<td><div style="font-weight:500">' + (o.broker_name || 'Unknown') + '</div>';
           html += '<div style="font-size:12px;color:#64748b">broker</div></td>';
           html += '<td><div style="font-weight:500">' + (o.order_number || 'ORD-' + o.id) + '</div>';
@@ -24200,16 +24601,19 @@ ${rateText}`
           html += '<td><span style="color:' + ageColor + ';font-weight:600">' + ageText + '</span></td>';
           html += '<td><span style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;background:' + statusInfo.bg + ';color:' + statusInfo.color + '">' + statusInfo.text + '</span></td>';
           html += '<td><span style="display:inline-block;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:600;border:1px solid ' + typeBadge.border + ';color:' + typeBadge.color + '">' + typeBadge.text + '</span></td>';
-          html += '<td onclick="event.stopPropagation()" style="text-align:center">';
-          html += '<button onclick="markBillingOrderPaid(' + o.id + ')" style="background:none;border:none;cursor:pointer;padding:4px;color:#64748b;font-size:16px" title="Mark as Paid">✓</button>';
-          html += '<button onclick="openOrderDetailPage(' + o.id + ')" style="background:none;border:none;cursor:pointer;padding:4px;color:#64748b;font-size:16px" title="View Details">👁</button>';
+          html += '<td onclick="event.stopPropagation()" style="text-align:center;padding-right:12px">';
+          if (needsInvoice) {
+            html += '<button onclick="openMarkInvoicedModal(' + o.id + ')" style="background:#f59e0b;border:none;cursor:pointer;padding:4px 8px;color:white;font-size:11px;border-radius:4px;font-weight:500" title="Mark as Invoiced">Invoice</button>';
+          } else if (!isPaid) {
+            html += '<button onclick="markBillingOrderPaid(' + o.id + ')" style="background:#22c55e;border:none;cursor:pointer;padding:4px 8px;color:white;font-size:11px;border-radius:4px;font-weight:500" title="Mark as Paid">Paid</button>';
+          }
           html += '</td>';
           html += '</tr>';
         });
       }
 
       html += '</tbody></table></div>';
-      html += '<div style="padding:12px 16px;color:#64748b;font-size:13px;border-top:1px solid var(--border)">Showing ' + filteredOrders.length + (billingSearchTerm ? ' of ' + unpaidOrders.length : '') + ' invoices</div>';
+      html += '<div style="padding:12px 16px;color:#64748b;font-size:13px;border-top:1px solid var(--border)">Showing ' + filteredOrders.length + ' ' + filterLabel.toLowerCase() + '</div>';
       html += '</div>';
 
       return html;
@@ -31554,12 +31958,33 @@ ${rateText}`
 
     async function initTripMapAfterLeaflet() {
       const container = document.getElementById('tripMapContainer');
-      if (!container) return;
+      if (!container || !window.L) return;
 
-      // Small delay to ensure container is rendered
+      // Clean up any existing map instance first
+      if (tripMapInstance) {
+        try {
+          tripMapInstance.remove();
+        } catch (e) {
+          // Ignore removal errors
+        }
+        tripMapInstance = null;
+      }
+
+      // Ensure container has dimensions before initializing
+      if (container.offsetWidth === 0 || container.offsetHeight === 0) {
+        setTimeout(initTripMapAfterLeaflet, 100);
+        return;
+      }
+
+      // Small delay to ensure container is fully rendered
       await new Promise(r => setTimeout(r, 100));
 
-      tripMapInstance = L.map(container).setView([39.8283, -98.5795], 4);
+      try {
+        tripMapInstance = L.map(container).setView([39.8283, -98.5795], 4);
+      } catch (e) {
+        console.warn('Trip map init error:', e);
+        return;
+      }
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap'
@@ -32384,23 +32809,23 @@ function jsonResponse(data, status = 200) {
 
       // Initialize map centered on US
       try {
-        liveMapInstance = L.map('liveMapContainer').setView([39.8283, -98.5795], 4);
+        liveMapInstance = L.map('liveMapContainer', { zoomAnimation: false }).setView([39.8283, -98.5795], 4);
       } catch (e) {
         console.warn('Leaflet map init error:', e);
         return;
       }
-      
+
       // Add tile layer (OpenStreetMap)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
       }).addTo(liveMapInstance);
-      
-      // Load truck locations
-      refreshLiveMap();
+
+      // Wait for map to be fully ready before loading data
+      setTimeout(() => refreshLiveMap(), 200);
     }
     
     async function refreshLiveMap() {
-      if (!liveMapInstance) return;
+      if (!liveMapInstance || !liveMapInstance._container) return;
       
       const locations = await fetchSamsaraLocations();
       const links = getTruckSamsaraLinks();
@@ -32476,8 +32901,12 @@ function jsonResponse(data, status = 200) {
         });
         
         // Fit map to show all trucks
-        if (bounds.length > 0) {
-          liveMapInstance.fitBounds(bounds, { padding: [50, 50] });
+        if (bounds.length > 0 && liveMapInstance) {
+          try {
+            liveMapInstance.fitBounds(bounds, { padding: [50, 50], animate: false });
+          } catch (e) {
+            console.warn('fitBounds error:', e);
+          }
         }
       }
       
