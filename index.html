@@ -8781,43 +8781,96 @@
       overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
     }
 
-    // Show dealer portal information modal
+    // Show dealer portal login modal
     function showDealerLoginInfo() {
       const m = document.createElement('div');
       m.className = 'modal-overlay';
       m.onclick = e => { if (e.target === m) m.remove(); };
       m.innerHTML = `
-        <div class="modal" style="max-width:500px">
+        <div class="modal" style="max-width:450px">
           <div class="modal-header">
-            <h3>Dealer Portal</h3>
+            <h3>Dealer Portal Login</h3>
             <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
           </div>
-          <div class="modal-body" style="text-align:center;padding:30px">
-            <div style="font-size:64px;margin-bottom:20px">🏪</div>
-            <h3 style="margin-bottom:12px;color:var(--text-primary)">Welcome, Dealers!</h3>
-            <p style="color:var(--text-secondary);margin-bottom:24px;line-height:1.6">
-              The Dealer Portal allows you to submit vehicles for transport, track shipments, and view your spending history.
-            </p>
-            <div style="background:var(--bg-darker);border-radius:12px;padding:20px;text-align:left;margin-bottom:24px">
-              <p style="font-weight:600;margin-bottom:12px;color:var(--text-primary)">Portal Features:</p>
-              <ul style="color:var(--text-secondary);margin:0;padding-left:20px;line-height:1.8">
-                <li>Submit vehicles for transport</li>
-                <li>Track order status in real-time</li>
-                <li>View spending and financial history</li>
-                <li>Manage your vehicle shipments</li>
-              </ul>
+          <div class="modal-body" style="padding:24px">
+            <div style="text-align:center;margin-bottom:20px">
+              <div style="font-size:48px;margin-bottom:8px">🏪</div>
+              <p style="color:var(--text-secondary);font-size:14px">Submit vehicles, track shipments, view spending</p>
             </div>
-            <p style="color:var(--text-muted);font-size:13px">
-              If you have dealer credentials, use them to log in above.<br>
-              Need an account? Contact us at <strong style="color:#22c55e">info@horizonstarllc.com</strong>
+            <form onsubmit="handleDealerLogin(event)" id="dealer-login-form">
+              <div class="form-group" style="margin-bottom:16px">
+                <label style="display:block;margin-bottom:6px;font-weight:500;color:var(--text-primary)">Email</label>
+                <input type="email" id="dealer-login-email" required placeholder="dealer@company.com"
+                  style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text)">
+              </div>
+              <div class="form-group" style="margin-bottom:20px">
+                <label style="display:block;margin-bottom:6px;font-weight:500;color:var(--text-primary)">Password</label>
+                <input type="password" id="dealer-login-password" required placeholder="Your password"
+                  style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text)">
+              </div>
+              <div id="dealer-login-error" style="color:#ef4444;font-size:13px;margin-bottom:12px;display:none"></div>
+              <button type="submit" class="btn btn-primary" id="dealer-login-btn" style="width:100%;padding:12px;font-size:15px">
+                Sign In to Dealer Portal
+              </button>
+            </form>
+            <p style="text-align:center;margin-top:16px;color:var(--text-muted);font-size:12px">
+              Need an account? Contact <strong style="color:#22c55e">info@horizonstarllc.com</strong>
             </p>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove()">Got it</button>
           </div>
         </div>
       `;
       document.body.appendChild(m);
+      document.getElementById('dealer-login-email').focus();
+    }
+
+    // Handle dealer login
+    async function handleDealerLogin(event) {
+      event.preventDefault();
+      const email = document.getElementById('dealer-login-email').value.trim();
+      const password = document.getElementById('dealer-login-password').value;
+      const btn = document.getElementById('dealer-login-btn');
+      const errorEl = document.getElementById('dealer-login-error');
+
+      btn.disabled = true;
+      btn.textContent = 'Signing in...';
+      errorEl.style.display = 'none';
+
+      try {
+        // Authenticate with Supabase
+        const { data: authData, error: authError } = await sb.auth.signInWithPassword({ email, password });
+        if (authError) throw new Error(authError.message);
+
+        // Get user from users table
+        const { data: users, error: userError } = await sb.from('users').select('*').eq('email', email).limit(1);
+        if (userError) throw new Error(userError.message);
+        if (!users || users.length === 0) throw new Error('User not found');
+
+        const user = users[0];
+
+        // Check if user is a dealer
+        if (user.role !== 'DEALER') {
+          await sb.auth.signOut();
+          throw new Error('This login is for dealers only. Please use the main login.');
+        }
+
+        // Set current user and session
+        currentUser = user;
+        authSession = authData.session;
+        localStorage.setItem('horizonstar_user', JSON.stringify(user));
+        localStorage.setItem('last_activity', Date.now().toString());
+
+        // Close modal and render dealer dashboard
+        document.querySelector('.modal-overlay')?.remove();
+        showToast('Welcome back, ' + (user.name || user.email) + '!', 'success');
+        await renderApp();
+        navigate('dealer_dashboard');
+
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Sign In to Dealer Portal';
+      }
     }
 
     // ============ DATABASE FUNCTIONS ============
