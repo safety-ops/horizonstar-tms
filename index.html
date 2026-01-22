@@ -21582,16 +21582,42 @@ ${rateText}`
     }
     
     // ========== COMPLIANCE DASHBOARD ==========
-    function renderComplianceDashboard(c) {
+    async function renderComplianceDashboard(c) {
       const today = new Date();
       const todayStr = today.toISOString().split('T')[0];
       const next7Days = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       const next30Days = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      
-      const tickets = appData.tickets || [];
-      const claims = appData.claims || [];
-      const accidents = appData.accidents || [];
-      const compTasks = appData.compliance_tasks || [];
+
+      // Ensure secondary data is loaded (may not be ready on first render)
+      let tickets = appData.tickets || [];
+      let claims = appData.claims || [];
+      let accidents = appData.accidents || [];
+      let compTasks = appData.compliance_tasks || [];
+      let driverFiles = appData.driver_files || [];
+      let truckFiles = appData.truck_files || [];
+      let companyFiles = appData.company_files || [];
+
+      // Check if secondary data needs loading
+      if (tickets.length === 0 && claims.length === 0 && accidents.length === 0 && compTasks.length === 0 && driverFiles.length === 0 && truckFiles.length === 0 && companyFiles.length === 0) {
+        try {
+          const [t, cl, acc, ct, df, tf, cf] = await Promise.all([
+            dbFetch('tickets', { order: 'ticket_date.desc' }).catch(() => []),
+            dbFetch('claims', { order: 'incident_date.desc' }).catch(() => []),
+            dbFetch('accidents', { order: 'accident_date.desc' }).catch(() => []),
+            dbFetch('compliance_tasks', { order: 'next_due_date.asc' }).catch(() => []),
+            dbFetch('driver_files', { order: 'id.desc' }).catch(() => []),
+            dbFetch('truck_files', { order: 'id.desc' }).catch(() => []),
+            dbFetch('company_files', { order: 'id.desc' }).catch(() => [])
+          ]);
+          tickets = t || []; appData.tickets = tickets;
+          claims = cl || []; appData.claims = claims;
+          accidents = acc || []; appData.accidents = accidents;
+          compTasks = ct || []; appData.compliance_tasks = compTasks;
+          driverFiles = df || []; appData.driver_files = driverFiles;
+          truckFiles = tf || []; appData.truck_files = truckFiles;
+          companyFiles = cf || []; appData.company_files = companyFiles;
+        } catch(e) { console.error('Failed to fetch compliance dashboard data:', e); }
+      }
       
       // Stats
       const openTickets = tickets.filter(t => !['RESOLVED', 'DISMISSED'].includes(t.status)).length;
@@ -21604,7 +21630,7 @@ ${rateText}`
       // Upcoming driver tasks (file expirations)
       const driverTasks = [];
       appData.drivers.forEach(d => {
-        const files = (appData.driver_files || []).filter(f => f.driver_id === d.id && f.expiration_date);
+        const files = driverFiles.filter(f => f.driver_id === d.id && f.expiration_date);
         files.forEach(f => {
           const expDate = new Date(f.expiration_date);
           if (expDate >= today && expDate <= new Date(next7Days)) {
@@ -21629,7 +21655,7 @@ ${rateText}`
       // Vehicle tasks (truck file expirations)
       const vehicleTasks = [];
       appData.trucks.forEach(t => {
-        const files = (appData.truck_files || []).filter(f => f.truck_id === t.id && f.expiration_date);
+        const files = truckFiles.filter(f => f.truck_id === t.id && f.expiration_date);
         files.forEach(f => {
           const expDate = new Date(f.expiration_date);
           if (expDate >= today && expDate <= new Date(next7Days)) {
@@ -21679,20 +21705,19 @@ ${rateText}`
 
         // Company Files Tasks
         (function() {
-          const companyFiles = appData.company_files || [];
-          const companyTasks = [];
+          const companyFileTasks = [];
           companyFiles.forEach(f => {
             if (f.expiration_date && f.category !== 'CUSTOM') {
               const expDate = new Date(f.expiration_date);
               const daysUntil = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
               if (daysUntil <= 7) {
-                companyTasks.push({ doc: f.file_type.replace(/_/g, ' '), due: f.expiration_date, days: daysUntil });
+                companyFileTasks.push({ doc: f.file_type.replace(/_/g, ' '), due: f.expiration_date, days: daysUntil });
               }
             }
           });
           return '<div class="card"><div class="card-header"><h4 style="margin:0">🏢 Company Files (Next 7 Days)</h4></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
-            (companyTasks.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px">No files expiring</div>' :
-            companyTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + t.doc + '</strong></div><div style="font-size:12px;color:' + (t.days < 0 ? '#dc2626' : '#059669') + '">' + (t.days < 0 ? 'EXPIRED' : formatDate(t.due)) + '</div></div>').join('')) +
+            (companyFileTasks.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px">No files expiring</div>' :
+            companyFileTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + t.doc + '</strong></div><div style="font-size:12px;color:' + (t.days < 0 ? '#dc2626' : '#059669') + '">' + (t.days < 0 ? 'EXPIRED' : formatDate(t.due)) + '</div></div>').join('')) +
             '</div></div>';
         })() +
 
@@ -21712,9 +21737,17 @@ ${rateText}`
     }
     
     // ========== COMPLIANCE TASKS ==========
-    function renderComplianceTasks(c) {
-      const tasks = appData.compliance_tasks || [];
+    async function renderComplianceTasks(c) {
+      let tasks = appData.compliance_tasks || [];
       const today = new Date().toISOString().split('T')[0];
+
+      // Ensure compliance_tasks is loaded
+      if (tasks.length === 0) {
+        try {
+          tasks = await dbFetch('compliance_tasks', { order: 'next_due_date.asc' }) || [];
+          appData.compliance_tasks = tasks;
+        } catch(e) { console.error('Failed to fetch compliance_tasks:', e); }
+      }
       
       // Default compliance tasks
       const defaultTasks = [
@@ -21856,13 +21889,22 @@ ${rateText}`
     }
     
     // ========== DRIVER FILES TAB ==========
-    function renderComplianceDriverFiles(c) {
+    async function renderComplianceDriverFiles(c) {
       const today = new Date();
-      
+
+      // Ensure driver_files is loaded
+      let driverFilesData = appData.driver_files || [];
+      if (driverFilesData.length === 0) {
+        try {
+          driverFilesData = await dbFetch('driver_files', { order: 'id.desc' }) || [];
+          appData.driver_files = driverFilesData;
+        } catch(e) { console.error('Failed to fetch driver_files:', e); }
+      }
+
       // Alerts
       const alerts = [];
       appData.drivers.forEach(d => {
-        const driverFiles = (appData.driver_files || []).filter(f => f.driver_id === d.id && f.expiration_date);
+        const driverFiles = driverFilesData.filter(f => f.driver_id === d.id && f.expiration_date);
         driverFiles.forEach(f => {
           const expDate = new Date(f.expiration_date);
           const daysUntil = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
@@ -21878,7 +21920,7 @@ ${rateText}`
         '<div class="card"><div class="table-wrapper"><table><thead><tr><th>Driver</th><th>CDL</th><th>Medical Card</th><th>MVR</th><th>PSP Report</th><th>Other</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
         (appData.drivers.length === 0 ? '<tr><td colspan="7" style="text-align:center;padding:40px">No drivers</td></tr>' :
         appData.drivers.map(d => {
-          const files = (appData.driver_files || []).filter(f => f.driver_id === d.id);
+          const files = driverFilesData.filter(f => f.driver_id === d.id);
           const getStatus = (type) => {
             const file = files.find(f => f.file_type === type);
             if (!file) return '<span class="badge badge-gray">Missing</span>';
@@ -21894,15 +21936,24 @@ ${rateText}`
         }).join('')) +
         '</tbody></table></div></div>';
     }
-    
+
     // ========== TRUCK FILES TAB ==========
-    function renderComplianceTruckFiles(c) {
+    async function renderComplianceTruckFiles(c) {
       const today = new Date();
+
+      // Ensure truck_files is loaded
+      let truckFilesData = appData.truck_files || [];
+      if (truckFilesData.length === 0) {
+        try {
+          truckFilesData = await dbFetch('truck_files', { order: 'id.desc' }) || [];
+          appData.truck_files = truckFilesData;
+        } catch(e) { console.error('Failed to fetch truck_files:', e); }
+      }
       
       c.innerHTML = '<div class="card"><div class="table-wrapper"><table><thead><tr><th>Truck</th><th>Registration</th><th>Annual Insp</th><th>PA Insp</th><th>IRP</th><th>Insurance</th><th>Actions</th></tr></thead><tbody>' +
         (appData.trucks.length === 0 ? '<tr><td colspan="7" style="text-align:center;padding:40px">No trucks</td></tr>' :
         appData.trucks.map(t => {
-          const files = (appData.truck_files || []).filter(f => f.truck_id === t.id);
+          const files = truckFilesData.filter(f => f.truck_id === t.id);
           const getStatus = (type) => {
             const file = files.find(f => f.file_type === type);
             if (!file) return '<span class="badge badge-gray">-</span>';
@@ -22167,12 +22218,29 @@ ${rateText}`
     }
 
     // ========== DRIVER COMPLIANCE (TICKETS/VIOLATIONS/CLAIMS) ==========
-    function renderComplianceDriverSection(c) {
+    async function renderComplianceDriverSection(c) {
       // Render the driver compliance content here (reuse from driver_compliance page)
       dcTab = dcTab || 'tickets';
-      const tickets = appData.tickets || [];
-      const violations = appData.violations || [];
-      const claims = (appData.claims || []).filter(cl => cl.driver_id);
+      let tickets = appData.tickets || [];
+      let violations = appData.violations || [];
+      let claims = (appData.claims || []).filter(cl => cl.driver_id);
+
+      // Ensure secondary data is loaded (may not be ready on first render)
+      if (tickets.length === 0 && violations.length === 0 && claims.length === 0) {
+        try {
+          const [t, v, cl] = await Promise.all([
+            dbFetch('tickets', { order: 'ticket_date.desc' }),
+            dbFetch('violations', { order: 'violation_date.desc' }),
+            dbFetch('claims', { order: 'incident_date.desc' })
+          ]);
+          tickets = t || [];
+          violations = v || [];
+          claims = (cl || []).filter(c => c.driver_id);
+          appData.tickets = tickets;
+          appData.violations = violations;
+          appData.claims = cl || [];
+        } catch(e) { console.error('Failed to fetch driver compliance data:', e); }
+      }
       
       c.innerHTML = '<div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">' +
         '<button class="btn ' + (dcTab === 'tickets' ? 'btn-primary' : 'btn-secondary') + '" onclick="dcTab=\'tickets\';renderCompliance(document.getElementById(\'main-content\'))">🎫 Tickets (' + tickets.length + ')</button>' +
@@ -22192,9 +22260,17 @@ ${rateText}`
     }
     
     // ========== ACCIDENT REGISTRY ==========
-    function renderAccidentRegistry(c) {
-      const accidents = appData.accidents || [];
-      
+    async function renderAccidentRegistry(c) {
+      let accidents = appData.accidents || [];
+
+      // Ensure accidents data is loaded
+      if (accidents.length === 0) {
+        try {
+          accidents = await dbFetch('accidents', { order: 'accident_date.desc' }) || [];
+          appData.accidents = accidents;
+        } catch(e) { console.error('Failed to fetch accidents:', e); }
+      }
+
       c.innerHTML = '<div class="card"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3>🚨 Accident Registry</h3><button class="btn btn-primary" onclick="openAccidentModal()">+ Log Accident</button></div>' +
         '<div class="table-wrapper"><table><thead><tr><th>Date/Time</th><th>Driver</th><th>Type</th><th>Location</th><th>Deaths</th><th>Injuries</th><th>HAZMAT</th><th>Drug Test</th><th>Report</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
         (accidents.length === 0 ? '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted)">No accidents recorded ✓</td></tr>' :

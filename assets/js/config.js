@@ -59,7 +59,8 @@ let appData = {
   claim_files: [],
   compliance_tasks: [],
   accidents: [],
-  company_files: []
+  company_files: [],
+  tasks: []
 };
 
 // ============ SESSION CONFIGURATION ============
