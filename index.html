@@ -21931,10 +21931,17 @@ ${rateText}`
       { key: 'IRP_CREDENTIALS', label: 'IRP Credentials', hasExpiry: true }
     ];
 
-    function renderComplianceCompanyFiles(c) {
+    async function renderComplianceCompanyFiles(c) {
       const today = new Date();
-      const files = appData.company_files || [];
-      console.log('Company files loaded:', files.length, files);
+      let files = appData.company_files || [];
+
+      // If no files loaded yet, try fetching directly
+      if (files.length === 0) {
+        try {
+          files = await dbFetch('company_files', { order: 'id.desc' }) || [];
+          appData.company_files = files;
+        } catch(e) { console.error('Failed to fetch company_files:', e); }
+      }
 
       // Calculate alerts for expiring files
       const alerts = [];
