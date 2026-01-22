@@ -373,7 +373,7 @@ async function loadSecondaryData() {
 
     // Try to load company files
     let company_files = [];
-    try { company_files = await dbFetch('company_files', { order: 'id.desc' }) || []; } catch(e) { company_files = []; }
+    try { company_files = await dbFetch('company_files', { order: 'id.desc' }) || []; } catch(e) { console.error('Failed to load company_files:', e); company_files = []; }
 
     // Update appData with secondary data
     Object.assign(appData, {
