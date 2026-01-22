@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Route Sheet PDF - Mockup</title>
+  <style>
+    :root {
+      --bg-primary: #ffffff;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --accent: #3b82f6;
+      --success: #22c55e;
+      --warning: #f59e0b;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #64748b;
+      padding: 40px;
+      min-height: 100vh;
+    }
+
+    .mockup-badge {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #ef4444;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 9999;
+    }
+
+    .pdf-page {
+      background: white;
+      max-width: 8.5in;
+      min-height: 11in;
+      margin: 0 auto;
+      padding: 0.5in;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 3px solid var(--accent);
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+    }
+
+    .company-info h1 {
+      font-size: 24px;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .company-info p {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .trip-info {
+      text-align: right;
+    }
+
+    .trip-number {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .trip-date {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .section {
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 10px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .info-item {
+      background: #f8fafc;
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    .info-label {
+      font-size: 10px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .info-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .stops-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    .stops-table th {
+      background: var(--accent);
+      color: white;
+      padding: 8px 6px;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    .stops-table td {
+      padding: 8px 6px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    .stops-table tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    .stop-number {
+      background: var(--accent);
+      color: white;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 11px;
+    }
+
+    .stop-type {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 600;
+    }
+
+    .stop-type.pickup {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .stop-type.delivery {
+      background: #ffedd5;
+      color: #9a3412;
+    }
+
+    .vehicle-info {
+      font-weight: 600;
+    }
+
+    .address {
+      color: var(--text-secondary);
+      font-size: 10px;
+    }
+
+    .notes-section {
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 16px;
+    }
+
+    .notes-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #92400e;
+      margin-bottom: 6px;
+    }
+
+    .notes-content {
+      font-size: 11px;
+      color: #78350f;
+    }
+
+    .footer {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+
+    .qr-code {
+      width: 60px;
+      height: 60px;
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8px;
+      color: var(--text-secondary);
+    }
+
+    .signature-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin-top: 30px;
+    }
+
+    .signature-box {
+      border-top: 1px solid var(--text-primary);
+      padding-top: 6px;
+    }
+
+    .signature-label {
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+
+    .print-btn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .print-btn:hover {
+      background: #2563eb;
+    }
+
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      .pdf-page {
+        box-shadow: none;
+      }
+      .mockup-badge, .print-btn {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="mockup-badge">MOCKUP - Route Sheet PDF</div>
+
+  <div class="pdf-page">
+    <div class="header">
+      <div class="company-info">
+        <h1>HORIZON STAR LLC</h1>
+        <p>Auto Transport Services</p>
+        <p>Phone: (555) 123-4567 | dispatch@horizonstar.com</p>
+      </div>
+      <div class="trip-info">
+        <div class="trip-number">T-2026-001</div>
+        <div class="trip-date">Generated: Jan 8, 2026</div>
+        <div class="qr-code">QR CODE<br>Scan for<br>Live Track</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">TRIP DETAILS</div>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-label">Driver</div>
+          <div class="info-value">John Doe</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Truck #</div>
+          <div class="info-value">101</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Trip Date</div>
+          <div class="info-value">Jan 6, 2026</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Total Vehicles</div>
+          <div class="info-value">8 Cars</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">OPTIMIZED ROUTE SEQUENCE (13 Stops)</div>
+      <table class="stops-table">
+        <thead>
+          <tr>
+            <th style="width:40px">#</th>
+            <th style="width:60px">Type</th>
+            <th>Vehicle</th>
+            <th>Location</th>
+            <th style="width:100px">Contact</th>
+            <th style="width:80px">Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><div class="stop-number">1</div></td>
+            <td><span class="stop-type pickup">PICKUP</span></td>
+            <td class="vehicle-info">2012 Ford Focus<br><span style="font-weight:400;color:#64748b">VIN: ...4521</span></td>
+            <td>
+              <strong>Cherry Hill, NJ</strong>
+              <div class="address">123 Main St, Cherry Hill, NJ 08002</div>
+            </td>
+            <td>John Smith<br>(555) 111-2222</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td><div class="stop-number">2</div></td>
+            <td><span class="stop-type pickup">PICKUP</span></td>
+            <td class="vehicle-info">2018 MBZ GLC<br><span style="font-weight:400;color:#64748b">VIN: ...8834</span></td>
+            <td>
+              <strong>Westlake, MD</strong>
+              <div class="address">456 Oak Ave, Westlake, MD 21045</div>
+            </td>
+            <td>Mike Jones<br>(555) 333-4444</td>
+            <td>Gate code: 1234</td>
+          </tr>
+          <tr>
+            <td><div class="stop-number">3</div></td>
+            <td><span class="stop-type delivery">DELIVERY</span></td>
+            <td class="vehicle-info">2009 Toyota Venza<br><span style="font-weight:400;color:#64748b">VIN: ...2219</span></td>
+            <td>
+              <strong>Edmond, OK</strong>
+              <div class="address">789 Elm Dr, Edmond, OK 73034</div>
+            </td>
+            <td>Sarah Wilson<br>(555) 555-6666</td>
+            <td>Call 30 min before</td>
+          </tr>
+          <tr>
+            <td><div class="stop-number">4</div></td>
+            <td><span class="stop-type delivery">DELIVERY</span></td>
+            <td class="vehicle-info">2015 Ford Mustang<br><span style="font-weight:400;color:#64748b">VIN: ...7762</span></td>
+            <td>
+              <strong>Sapulpa, OK</strong>
+              <div class="address">321 Pine St, Sapulpa, OK 74066</div>
+            </td>
+            <td>Tom Brown<br>(555) 777-8888</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td><div class="stop-number">5</div></td>
+            <td><span class="stop-type pickup">PICKUP</span></td>
+            <td class="vehicle-info">2024 Nissan Rogue<br><span style="font-weight:400;color:#64748b">VIN: ...1190</span></td>
+            <td>
+              <strong>Tulsa, OK</strong>
+              <div class="address">555 Cedar Blvd, Tulsa, OK 74103</div>
+            </td>
+            <td>ABC Dealer<br>(555) 999-0000</td>
+            <td>Dealer - ask for Bob</td>
+          </tr>
+          <tr>
+            <td><div class="stop-number">6</div></td>
+            <td><span class="stop-type pickup">PICKUP</span></td>
+            <td class="vehicle-info">2026 Chevy Traverse<br><span style="font-weight:400;color:#64748b">VIN: ...3345</span></td>
+            <td>
+              <strong>Tulsa, OK</strong>
+              <div class="address">555 Cedar Blvd, Tulsa, OK 74103</div>
+            </td>
+            <td>ABC Dealer<br>(555) 999-0000</td>
+            <td>Same location as #5</td>
+          </tr>
+          <tr>
+            <td colspan="6" style="text-align:center;color:#64748b;font-style:italic;padding:12px">
+              ... 7 more stops (Henderson NV, Las Vegas NV, Visalia CA, Stockton CA, San Jose CA x2, Vacaville CA)
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="notes-section">
+      <div class="notes-title">⚠️ SPECIAL INSTRUCTIONS</div>
+      <div class="notes-content">
+        • All vehicles must be inspected at pickup and delivery - take photos<br>
+        • Call dispatch if any delays exceed 2 hours<br>
+        • Oklahoma deliveries (#3, #4) are terminal pickups - cars already at location
+      </div>
+    </div>
+
+    <div class="signature-section">
+      <div class="signature-box">
+        <div class="signature-label">Driver Signature / Date</div>
+      </div>
+      <div class="signature-box">
+        <div class="signature-label">Dispatcher Signature / Date</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>
+        <strong>Emergency Contact:</strong> (555) 123-4567<br>
+        <strong>Dispatch Email:</strong> dispatch@horizonstar.com
+      </div>
+      <div style="text-align:right">
+        Page 1 of 1<br>
+        Printed: Jan 8, 2026 10:30 AM
+      </div>
+    </div>
+  </div>
+
+  <button class="print-btn" onclick="window.print()">🖨️ Print Route Sheet</button>
+</body>
+</html>

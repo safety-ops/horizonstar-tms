@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TMS Order Detail Mockup - All Pages</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #22c55e;
+      --primary-hover: #16a34a;
+      --primary-light: rgba(34, 197, 94, 0.12);
+      --secondary: #64748b;
+      --success: #22c55e;
+      --success-light: rgba(34, 197, 94, 0.12);
+      --warning: #f59e0b;
+      --warning-light: rgba(245, 158, 11, 0.12);
+      --danger: #ef4444;
+      --danger-light: rgba(239, 68, 68, 0.12);
+      --info: #3b82f6;
+      --info-light: rgba(59, 130, 246, 0.12);
+
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-hover: #f1f5f9;
+
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+
+      --border: #e2e8f0;
+      --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+
+      --radius: 10px;
+      --radius-lg: 14px;
+
+      --font-display: 'Space Grotesk', -apple-system, sans-serif;
+      --font-body: 'IBM Plex Sans', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 15px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    h1, h2, h3 {
+      font-family: var(--font-display);
+      letter-spacing: -0.03em;
+      font-weight: 700;
+    }
+
+    .money, .mono {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Prototype Badge */
+    .prototype-badge {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 9999;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    }
+
+    /* Top Navigation Tabs */
+    .top-nav {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-tab {
+      padding: 16px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    .nav-tab:hover {
+      color: var(--text-primary);
+      background: var(--bg-tertiary);
+    }
+    .nav-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    /* Main Content */
+    .main-content {
+      padding: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .header h2 {
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: inherit;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+    .btn-secondary {
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      background: var(--bg-tertiary);
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 14px;
+      border: 1px solid var(--border);
+    }
+
+    /* Table */
+    .table-wrapper {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+    }
+    th {
+      text-align: left;
+      padding: 12px 14px;
+      background: var(--bg-tertiary);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text-secondary);
+      background: var(--bg-secondary);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--bg-tertiary); }
+    td strong { color: var(--text-primary); font-weight: 600; }
+    td.money { font-weight: 600; color: var(--success); }
+    td.money.negative { color: var(--danger); }
+
+    .sticky-col {
+      position: sticky;
+      right: 0;
+      background: var(--bg-secondary);
+    }
+    tr:hover .sticky-col { background: var(--bg-tertiary); }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .badge-green { background: #dcfce7; color: #15803d; }
+    .badge-amber { background: transparent; border: 1px solid #f59e0b; color: #f59e0b; }
+    .badge-blue { background: transparent; border: 1px solid #3b82f6; color: #3b82f6; }
+    .badge-red { background: transparent; border: 1px solid #ef4444; color: #ef4444; }
+    .badge-purple { background: #f3e8ff; color: #7c3aed; }
+    .badge-gray { background: transparent; border: 1px solid var(--text-muted); color: var(--text-muted); }
+
+    /* Actions */
+    .actions { display: flex; gap: 6px; }
+    .action-btn {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .action-btn.view { background: var(--success-light); color: var(--success); }
+    .action-btn.view:hover { background: rgba(16, 185, 129, 0.25); }
+    .action-btn.edit { background: var(--info-light); color: var(--info); }
+    .action-btn.edit:hover { background: rgba(59, 130, 246, 0.25); }
+    .action-btn.delete { background: var(--danger-light); color: var(--danger); }
+
+    /* Stat Cards */
+    .stat-cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      min-width: 100px;
+    }
+    .stat-card .label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .stat-card .value {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .stat-card .value.green { color: var(--success); }
+
+    /* Detail Grid */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 1024px) {
+      .detail-grid { grid-template-columns: 1fr; }
+    }
+
+    .detail-section {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .detail-section-header {
+      padding: 12px 16px;
+      background: var(--bg-tertiary);
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .detail-section-body {
+      padding: 16px;
+    }
+
+    /* Route Visual */
+    .route-visual {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius);
+    }
+    .route-point { flex: 1; }
+    .route-point .label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .route-point .city {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .route-point .address {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .route-arrow {
+      font-size: 24px;
+      color: var(--primary);
+    }
+
+    /* Inspection Card */
+    .inspection-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+    }
+    .inspection-header {
+      padding: 10px 14px;
+      background: var(--bg-tertiary);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+    .inspection-header .type { font-weight: 600; }
+    .inspection-body { padding: 14px; }
+    .inspection-photos {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .inspection-photo {
+      width: 70px;
+      height: 50px;
+      border-radius: 6px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: var(--text-muted);
+    }
+    .inspection-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      font-size: 12px;
+    }
+    .inspection-detail-item .label {
+      color: var(--text-muted);
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+    .inspection-detail-item .value {
+      font-weight: 500;
+    }
+
+    /* Timeline */
+    .timeline-item {
+      display: flex;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .timeline-item:last-child { border-bottom: none; }
+    .timeline-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--bg-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    .timeline-icon.green { background: var(--success-light); }
+    .timeline-icon.blue { background: var(--info-light); }
+    .timeline-icon.purple { background: rgba(139, 92, 246, 0.15); }
+    .timeline-title { font-weight: 500; }
+    .timeline-meta { font-size: 11px; color: var(--text-muted); }
+
+    /* Financials */
+    .financials-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .financial-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .financial-item .value { font-weight: 600; font-family: var(--font-mono); }
+    .financial-item .value.green { color: var(--success); }
+    .financial-item .value.red { color: var(--danger); }
+    .financial-item.total {
+      grid-column: 1 / -1;
+      background: var(--success-light);
+      border: 1px solid var(--success);
+    }
+    .financial-item.total .value { color: var(--success); font-size: 16px; }
+
+    /* Notes */
+    .notes-content {
+      padding: 14px;
+      background: var(--warning-light);
+      border-radius: 6px;
+      border-left: 4px solid var(--warning);
+      font-size: 13px;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 60px;
+      color: var(--text-muted);
+    }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+    }
+
+    /* Direction Header (for Trip Detail) */
+    .direction-header {
+      padding: 10px 14px;
+      color: white;
+      font-weight: 600;
+      font-size: 13px;
+      border-radius: var(--radius) var(--radius) 0 0;
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+  <div class="prototype-badge">LIVE MOCKUP - Order Detail View</div>
+
+  <!-- Top Navigation -->
+  <nav class="top-nav">
+    <div class="nav-tab active" onclick="switchPage('orders')">📦 Orders</div>
+    <div class="nav-tab" onclick="switchPage('futureCars')">🚗 Future Cars</div>
+    <div class="nav-tab" onclick="switchPage('tripDetail')">🚛 Trip Detail</div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="main-content" id="main-content">
+    <div class="loading">
+      <div class="loading-spinner"></div>
+      <div>Loading data...</div>
+    </div>
+  </div>
+
+  <script>
+    // Supabase Configuration
+    const SUPABASE_URL = 'https://yrrczhlzulwvdqjwvhtu.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlycmN6aGx6dWx3dmRxand2aHR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1NDYyOTQsImV4cCI6MjA4MTEyMjI5NH0.qVVxDH36OkLXnUe3Sfng1CJY7_Qt_IOGC-1QaDw6WlE';
+
+    // App State
+    let appData = { orders: [], trips: [], drivers: [], inspections: [], photos: [], damages: [] };
+    let currentPage = 'orders';
+    let viewingOrder = null;
+    let selectedTrip = null;
+
+    // Fetch helper
+    async function fetchTable(table, query = '') {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+      });
+      if (!res.ok) throw new Error(`Failed to fetch ${table}`);
+      return res.json();
+    }
+
+    // Load data
+    async function loadData() {
+      try {
+        appData.orders = await fetchTable('orders', 'order=id.desc');
+        appData.trips = await fetchTable('trips', 'order=id.desc');
+        appData.drivers = await fetchTable('drivers');
+        try { appData.inspections = await fetchTable('vehicle_inspections'); } catch(e) { appData.inspections = []; }
+        try { appData.photos = await fetchTable('inspection_photos'); } catch(e) { appData.photos = []; }
+        try { appData.damages = await fetchTable('inspection_damages'); } catch(e) { appData.damages = []; }
+
+        // Set default trip for Trip Detail page
+        if (appData.trips.length > 0) {
+          selectedTrip = appData.trips.find(t => appData.orders.some(o => o.trip_id === t.id)) || appData.trips[0];
+        }
+
+        render();
+      } catch (error) {
+        document.getElementById('main-content').innerHTML = `
+          <div class="empty-state">
+            <div style="font-size:48px;margin-bottom:16px">⚠️</div>
+            <div style="color:#ef4444;font-weight:600">Error loading data</div>
+            <div style="margin-top:8px">${error.message}</div>
+          </div>
+        `;
+      }
+    }
+
+    // Format helpers
+    function formatMoney(amount) {
+      return '$' + (parseFloat(amount) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+    function formatDateTime(dateStr) {
+      if (!dateStr) return '-';
+      return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    }
+    function getBadgeClass(status) {
+      return { 'PENDING': 'badge-amber', 'IN_TRANSIT': 'badge-blue', 'DELIVERED': 'badge-green', 'COMPLETED': 'badge-green' }[status] || 'badge-gray';
+    }
+
+    // Switch page
+    function switchPage(page) {
+      currentPage = page;
+      viewingOrder = null;
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`.nav-tab:nth-child(${page === 'orders' ? 1 : page === 'futureCars' ? 2 : 3})`).classList.add('active');
+      render();
+    }
+
+    // View order detail
+    function viewOrder(orderId, source) {
+      viewingOrder = { id: orderId, source: source };
+      render();
+    }
+
+    // Back to list
+    function backToList() {
+      viewingOrder = null;
+      render();
+    }
+
+    // Main render
+    function render() {
+      const c = document.getElementById('main-content');
+
+      if (viewingOrder) {
+        renderOrderDetail(c);
+      } else if (currentPage === 'orders') {
+        renderOrdersPage(c);
+      } else if (currentPage === 'futureCars') {
+        renderFutureCarsPage(c);
+      } else if (currentPage === 'tripDetail') {
+        renderTripDetailPage(c);
+      }
+    }
+
+    // Orders Page
+    function renderOrdersPage(c) {
+      const orders = appData.orders;
+      c.innerHTML = `
+        <div class="header">
+          <h2>📦 Vehicles / Orders</h2>
+          <div style="display:flex;gap:12px">
+            <button class="btn btn-secondary">📥 Export</button>
+            <button class="btn btn-primary">+ New Order</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order</th>
+                  <th>Trip</th>
+                  <th>Driver</th>
+                  <th>Broker</th>
+                  <th>Vehicle</th>
+                  <th>Origin</th>
+                  <th>Destination</th>
+                  <th>Revenue</th>
+                  <th>Status</th>
+                  <th class="sticky-col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${orders.slice(0, 20).map(o => {
+                  const trip = appData.trips.find(t => t.id === o.trip_id);
+                  const driver = trip ? appData.drivers.find(d => d.id === trip.driver_id) : null;
+                  return `
+                    <tr>
+                      <td><strong>${o.order_number || '-'}</strong></td>
+                      <td>${trip ? `<span class="badge badge-purple">${trip.trip_number}</span>` : '<span style="color:#94a3b8">-</span>'}</td>
+                      <td>${driver ? `<span class="badge badge-green">${driver.first_name?.charAt(0)}. ${driver.last_name}</span>` : '-'}</td>
+                      <td>${o.broker_name || '-'}</td>
+                      <td>${o.vehicle_year || ''} ${o.vehicle_make || ''} ${o.vehicle_model || ''}</td>
+                      <td>${(o.origin || '-').substring(0, 15)}${(o.origin || '').length > 15 ? '...' : ''}</td>
+                      <td>${(o.destination || '-').substring(0, 15)}${(o.destination || '').length > 15 ? '...' : ''}</td>
+                      <td class="money">${formatMoney(o.revenue)}</td>
+                      <td><span class="badge ${getBadgeClass(o.status)}">${o.status || 'PENDING'}</span></td>
+                      <td class="sticky-col">
+                        <div class="actions">
+                          <button class="action-btn view" onclick="viewOrder(${o.id}, 'orders')">View</button>
+                          <button class="action-btn edit">Edit</button>
+                        </div>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // Future Cars Page
+    function renderFutureCarsPage(c) {
+      const futureCars = appData.orders.filter(o => !o.trip_id);
+      c.innerHTML = `
+        <div class="header">
+          <h2>🚗 Future Cars (Unassigned)</h2>
+          <div style="display:flex;gap:12px">
+            <button class="btn btn-primary">+ Add Order</button>
+          </div>
+        </div>
+        <div style="margin-bottom:16px;padding:12px 16px;background:var(--warning-light);border-radius:8px;color:#92400e;font-size:13px">
+          <strong>${futureCars.length}</strong> vehicles waiting to be assigned to trips
+        </div>
+        <div class="card">
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order</th>
+                  <th>Broker</th>
+                  <th>Vehicle</th>
+                  <th>Origin</th>
+                  <th>Destination</th>
+                  <th>Pick-Up</th>
+                  <th>Revenue</th>
+                  <th class="sticky-col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${futureCars.length === 0 ? '<tr><td colspan="8" class="empty-state">No unassigned vehicles</td></tr>' :
+                  futureCars.slice(0, 15).map(o => `
+                    <tr>
+                      <td><strong>${o.order_number || '-'}</strong></td>
+                      <td>${o.broker_name || '-'}</td>
+                      <td>${o.vehicle_year || ''} ${o.vehicle_make || ''} ${o.vehicle_model || ''}</td>
+                      <td>${(o.origin || '-').substring(0, 15)}</td>
+                      <td>${(o.destination || '-').substring(0, 15)}</td>
+                      <td>${formatDate(o.pickup_date)}</td>
+                      <td class="money">${formatMoney(o.revenue)}</td>
+                      <td class="sticky-col">
+                        <div class="actions">
+                          <button class="action-btn view" onclick="viewOrder(${o.id}, 'futureCars')">View</button>
+                          <button class="action-btn" style="background:#dbeafe;color:#1d4ed8">Assign</button>
+                          <button class="action-btn edit">Edit</button>
+                        </div>
+                      </td>
+                    </tr>
+                  `).join('')
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // Trip Detail Page
+    function renderTripDetailPage(c) {
+      if (!selectedTrip) {
+        c.innerHTML = '<div class="empty-state"><div style="font-size:48px">🚛</div><div>No trips available</div></div>';
+        return;
+      }
+
+      const trip = selectedTrip;
+      const tripOrders = appData.orders.filter(o => o.trip_id === trip.id);
+      const driver = appData.drivers.find(d => d.id === trip.driver_id);
+      const totalRevenue = tripOrders.reduce((s, o) => s + (parseFloat(o.revenue) || 0), 0);
+
+      // Group by direction
+      const directions = [
+        { id: 'HOME_TO_CA', label: 'Home to CA', color: '#3b82f6' },
+        { id: 'CA_TO_FL', label: 'CA to FL', color: '#22c55e' },
+        { id: 'FL_TO_HOME', label: 'FL to Home', color: '#f59e0b' }
+      ];
+
+      let directionSections = '';
+      directions.forEach(dir => {
+        const dirOrders = tripOrders.filter(o => o.vehicle_direction === dir.id);
+        if (dirOrders.length === 0) return;
+
+        const dirRevenue = dirOrders.reduce((s, o) => s + (parseFloat(o.revenue) || 0), 0);
+        directionSections += `
+          <div class="direction-header" style="background:${dir.color}">${dir.label} (${dirOrders.length} cars) <span>${formatMoney(dirRevenue)}</span></div>
+          <div class="card" style="border-radius:0 0 var(--radius-lg) var(--radius-lg);margin-bottom:16px">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Order</th>
+                    <th>Broker</th>
+                    <th>Vehicle</th>
+                    <th>Origin</th>
+                    <th>Destination</th>
+                    <th>Revenue</th>
+                    <th class="sticky-col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${dirOrders.map(o => `
+                    <tr>
+                      <td><strong>${o.order_number || '-'}</strong></td>
+                      <td>${o.broker_name || '-'}</td>
+                      <td>${o.vehicle_year || ''} ${o.vehicle_make || ''} ${o.vehicle_model || ''}</td>
+                      <td>${(o.origin || '-').substring(0, 12)}</td>
+                      <td>${(o.destination || '-').substring(0, 12)}</td>
+                      <td class="money">${formatMoney(o.revenue)}</td>
+                      <td class="sticky-col">
+                        <div class="actions">
+                          <button class="action-btn view" onclick="viewOrder(${o.id}, 'tripDetail')">View</button>
+                          <button class="action-btn edit">Edit</button>
+                        </div>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      });
+
+      // Unassigned direction
+      const unassigned = tripOrders.filter(o => !o.vehicle_direction);
+      if (unassigned.length > 0) {
+        directionSections += `
+          <div class="direction-header" style="background:#6b7280">Unassigned Direction (${unassigned.length} cars)</div>
+          <div class="card" style="border-radius:0 0 var(--radius-lg) var(--radius-lg);margin-bottom:16px">
+            <div class="table-wrapper">
+              <table>
+                <thead><tr><th>Order</th><th>Broker</th><th>Vehicle</th><th>Origin</th><th>Destination</th><th>Revenue</th><th class="sticky-col">Actions</th></tr></thead>
+                <tbody>
+                  ${unassigned.map(o => `
+                    <tr>
+                      <td><strong>${o.order_number || '-'}</strong></td>
+                      <td>${o.broker_name || '-'}</td>
+                      <td>${o.vehicle_year || ''} ${o.vehicle_make || ''} ${o.vehicle_model || ''}</td>
+                      <td>${(o.origin || '-').substring(0, 12)}</td>
+                      <td>${(o.destination || '-').substring(0, 12)}</td>
+                      <td class="money">${formatMoney(o.revenue)}</td>
+                      <td class="sticky-col">
+                        <div class="actions">
+                          <button class="action-btn view" onclick="viewOrder(${o.id}, 'tripDetail')">View</button>
+                          <button class="action-btn edit">Edit</button>
+                        </div>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }
+
+      c.innerHTML = `
+        <div class="header">
+          <div style="display:flex;align-items:center;gap:16px">
+            <h2>🚛 ${trip.trip_number}</h2>
+            <span class="badge ${getBadgeClass(trip.status)}">${trip.status}</span>
+          </div>
+          <div style="display:flex;gap:12px">
+            <button class="btn btn-primary">+ Add Vehicle</button>
+          </div>
+        </div>
+
+        <div class="stat-cards">
+          <div class="stat-card">
+            <div class="label">Date</div>
+            <div class="value">${formatDate(trip.trip_date)}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Driver</div>
+            <div class="value">${driver ? driver.first_name + ' ' + driver.last_name : 'Not Assigned'}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Vehicles</div>
+            <div class="value">${tripOrders.length}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Revenue</div>
+            <div class="value green">${formatMoney(totalRevenue)}</div>
+          </div>
+        </div>
+
+        ${directionSections || '<div class="empty-state">No vehicles in this trip</div>'}
+      `;
+    }
+
+    // Order Detail View
+    function renderOrderDetail(c) {
+      const order = appData.orders.find(o => o.id === viewingOrder.id);
+      if (!order) { backToList(); return; }
+
+      const trip = appData.trips.find(t => t.id === order.trip_id);
+      const driver = trip ? appData.drivers.find(d => d.id === trip.driver_id) : null;
+      const pickupInsp = appData.inspections.find(i => i.order_id === order.id && i.inspection_type === 'pickup');
+      const deliveryInsp = appData.inspections.find(i => i.order_id === order.id && i.inspection_type === 'delivery');
+
+      const backLabel = viewingOrder.source === 'orders' ? 'Orders' : viewingOrder.source === 'futureCars' ? 'Future Cars' : 'Trip Detail';
+
+      c.innerHTML = `
+        <div class="header">
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <button class="btn btn-secondary" onclick="backToList()">← Back to ${backLabel}</button>
+            <h2>${order.order_number || 'Order'}</h2>
+            <span class="badge ${getBadgeClass(order.status)}">${order.status || 'PENDING'}</span>
+          </div>
+          <button class="btn btn-secondary">✏️ Edit</button>
+        </div>
+
+        <div class="stat-cards">
+          <div class="stat-card">
+            <div class="label">Broker</div>
+            <div class="value">${order.broker_name || '-'}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Vehicle</div>
+            <div class="value">${order.vehicle_year || ''} ${order.vehicle_make || ''} ${order.vehicle_model || ''}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Route</div>
+            <div class="value">${order.origin || '-'} → ${order.destination || '-'}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Revenue</div>
+            <div class="value green">${formatMoney(order.revenue)}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Payment</div>
+            <div class="value">${order.payment_type || '-'}</div>
+          </div>
+          ${trip ? `<div class="stat-card" style="background:#f3e8ff"><div class="label">Trip</div><div class="value" style="color:#7c3aed">${trip.trip_number}</div></div>` : ''}
+          ${driver ? `<div class="stat-card" style="background:#dcfce7"><div class="label">Driver</div><div class="value" style="color:#15803d">${driver.first_name} ${driver.last_name}</div></div>` : ''}
+        </div>
+
+        <div class="detail-grid">
+          <div>
+            <!-- Route -->
+            <div class="detail-section">
+              <div class="detail-section-header">📍 Route Information</div>
+              <div class="detail-section-body">
+                <div class="route-visual">
+                  <div class="route-point">
+                    <div class="label">Pickup</div>
+                    <div class="city">${order.origin || '-'}</div>
+                    <div class="address">${order.pickup_full_address || ''}</div>
+                    ${order.pickup_date ? `<div style="margin-top:6px;font-size:11px;color:var(--text-muted)">📅 ${formatDate(order.pickup_date)}</div>` : ''}
+                  </div>
+                  <div class="route-arrow">→</div>
+                  <div class="route-point">
+                    <div class="label">Delivery</div>
+                    <div class="city">${order.destination || '-'}</div>
+                    <div class="address">${order.delivery_full_address || ''}</div>
+                    ${order.dropoff_date ? `<div style="margin-top:6px;font-size:11px;color:var(--text-muted)">📅 ${formatDate(order.dropoff_date)}</div>` : ''}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pickup Inspection -->
+            ${renderInspectionCard(pickupInsp, 'Pickup Inspection', '📥')}
+
+            <!-- Delivery Inspection -->
+            ${renderInspectionCard(deliveryInsp, 'Delivery Inspection', '📤')}
+          </div>
+
+          <div>
+            <!-- Assignment -->
+            <div class="detail-section">
+              <div class="detail-section-header">🚛 Assignment</div>
+              <div class="detail-section-body">
+                ${trip ? `
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <div class="stat-card"><div class="label">Trip</div><div class="value">${trip.trip_number}</div></div>
+                    <div class="stat-card"><div class="label">Trip Date</div><div class="value">${formatDate(trip.trip_date)}</div></div>
+                    <div class="stat-card"><div class="label">Driver</div><div class="value">${driver ? driver.first_name + ' ' + driver.last_name : '-'}</div></div>
+                    <div class="stat-card"><div class="label">Status</div><div class="value"><span class="badge ${getBadgeClass(trip.status)}">${trip.status}</span></div></div>
+                  </div>
+                ` : `
+                  <div class="empty-state" style="padding:20px">
+                    <div style="font-size:28px">🚛</div>
+                    <div style="margin:8px 0">Not assigned to a trip</div>
+                    <button class="btn btn-primary">+ Assign to Trip</button>
+                  </div>
+                `}
+              </div>
+            </div>
+
+            <!-- Financials -->
+            <div class="detail-section">
+              <div class="detail-section-header">💰 Financials</div>
+              <div class="detail-section-body">
+                <div class="financials-grid">
+                  <div class="financial-item"><span>Revenue</span><span class="value green">${formatMoney(order.revenue)}</span></div>
+                  <div class="financial-item"><span>Broker Fee</span><span class="value red">-${formatMoney(order.broker_fee || 0)}</span></div>
+                  <div class="financial-item"><span>Local Fee</span><span class="value red">-${formatMoney(order.local_fee || 0)}</span></div>
+                  <div class="financial-item"><span>Payment</span><span class="value">${order.payment_type || '-'}</span></div>
+                  <div class="financial-item total"><span>Net Revenue</span><span class="value">${formatMoney((order.revenue || 0) - (order.broker_fee || 0) - (order.local_fee || 0))}</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="detail-section">
+              <div class="detail-section-header">📋 Activity Timeline</div>
+              <div class="detail-section-body">
+                ${order.created_at ? `<div class="timeline-item"><div class="timeline-icon purple">📦</div><div><div class="timeline-title">Order Created</div><div class="timeline-meta">${formatDateTime(order.created_at)}</div></div></div>` : ''}
+                ${trip ? `<div class="timeline-item"><div class="timeline-icon blue">🚛</div><div><div class="timeline-title">Assigned to ${trip.trip_number}</div><div class="timeline-meta">${driver ? 'Driver: ' + driver.first_name : ''}</div></div></div>` : ''}
+                ${pickupInsp ? `<div class="timeline-item"><div class="timeline-icon green">📥</div><div><div class="timeline-title">Pickup Inspection</div><div class="timeline-meta">${formatDateTime(pickupInsp.inspection_date)}</div></div></div>` : ''}
+                ${deliveryInsp ? `<div class="timeline-item"><div class="timeline-icon green">📤</div><div><div class="timeline-title">Delivery Inspection</div><div class="timeline-meta">${formatDateTime(deliveryInsp.inspection_date)}</div></div></div>` : ''}
+                ${order.status === 'DELIVERED' ? `<div class="timeline-item"><div class="timeline-icon green">✓</div><div><div class="timeline-title">Delivered</div></div></div>` : ''}
+              </div>
+            </div>
+
+            <!-- Notes -->
+            ${order.dispatcher_notes ? `
+            <div class="detail-section">
+              <div class="detail-section-header">📝 Notes</div>
+              <div class="detail-section-body">
+                <div class="notes-content">${order.dispatcher_notes}</div>
+              </div>
+            </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    // Inspection card helper
+    function renderInspectionCard(inspection, title, icon) {
+      if (!inspection) {
+        return `
+          <div class="inspection-card">
+            <div class="inspection-header">
+              <span class="type">${icon} ${title}</span>
+              <span class="badge badge-gray">Not Completed</span>
+            </div>
+            <div class="inspection-body">
+              <div class="empty-state" style="padding:16px">Awaiting inspection from driver app</div>
+            </div>
+          </div>
+        `;
+      }
+
+      const photos = appData.photos.filter(p => p.inspection_id === inspection.id);
+      const damages = appData.damages.filter(d => d.inspection_id === inspection.id);
+
+      return `
+        <div class="inspection-card">
+          <div class="inspection-header">
+            <span class="type">${icon} ${title}</span>
+            <span class="badge badge-green">Completed</span>
+          </div>
+          <div class="inspection-body">
+            ${photos.length > 0 ? `
+              <div class="inspection-photos">
+                ${photos.slice(0, 4).map(p => `<div class="inspection-photo">📷</div>`).join('')}
+                ${photos.length > 4 ? `<div class="inspection-photo">+${photos.length - 4}</div>` : ''}
+              </div>
+            ` : ''}
+            <div class="inspection-details">
+              <div class="inspection-detail-item"><div class="label">Date</div><div class="value">${formatDateTime(inspection.inspection_date)}</div></div>
+              <div class="inspection-detail-item"><div class="label">Odometer</div><div class="value">${inspection.odometer ? inspection.odometer.toLocaleString() + ' mi' : '-'}</div></div>
+              <div class="inspection-detail-item"><div class="label">Condition</div><div class="value">${inspection.vehicle_condition || '-'}</div></div>
+              <div class="inspection-detail-item"><div class="label">Inspector</div><div class="value">${inspection.driver_name || '-'}</div></div>
+            </div>
+            ${damages.length > 0 ? `
+              <div style="margin-top:12px;padding:10px;background:var(--danger-light);border-radius:6px;font-size:12px">
+                <strong style="color:var(--danger)">⚠️ ${damages.length} damage(s) noted</strong>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    // Initialize
+    loadData();
+  </script>
+</body>
+</html>

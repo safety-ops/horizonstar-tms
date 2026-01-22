@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Broker Tracking Portal - Mockup</title>
+  <style>
+    :root {
+      --bg-primary: #f8fafc;
+      --bg-card: #ffffff;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --accent: #3b82f6;
+      --success: #22c55e;
+      --warning: #f59e0b;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    .mockup-badge {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #ef4444;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 9999;
+    }
+
+    .header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .logo span {
+      color: var(--text-primary);
+    }
+
+    .header-info {
+      text-align: right;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    .tracking-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .tracking-header h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .tracking-id {
+      display: inline-block;
+      background: var(--accent);
+      color: white;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .status-banner {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+      padding: 20px 24px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .status-banner.in-transit {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+    }
+
+    .status-banner.delivered {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+    }
+
+    .status-text {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .status-detail {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .eta-box {
+      text-align: right;
+    }
+
+    .eta-label {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .eta-value {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .vehicle-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      background: var(--bg-primary);
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+
+    .vehicle-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .vehicle-info h3 {
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .vehicle-info p {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .vehicle-status {
+      text-align: right;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .status-badge.picked-up {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .status-badge.in-transit {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .status-badge.delivered {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 30px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 10px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-bottom: 24px;
+    }
+
+    .timeline-item:last-child {
+      padding-bottom: 0;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -24px;
+      top: 4px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--border);
+      border: 3px solid var(--bg-card);
+    }
+
+    .timeline-dot.completed {
+      background: var(--success);
+    }
+
+    .timeline-dot.current {
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+    }
+
+    .timeline-content {
+      background: var(--bg-primary);
+      padding: 12px 16px;
+      border-radius: 8px;
+    }
+
+    .timeline-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .timeline-detail {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .timeline-time {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .map-placeholder {
+      background: #e2e8f0;
+      height: 250px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .contact-item {
+      background: var(--bg-primary);
+      padding: 16px;
+      border-radius: 8px;
+    }
+
+    .contact-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .contact-value {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 24px;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .refresh-note {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #1e40af;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="mockup-badge">MOCKUP - Broker Portal</div>
+
+  <div class="header">
+    <div class="logo">HORIZON<span>STAR</span></div>
+    <div class="header-info">
+      Tracking Portal<br>
+      <strong>Broker: ABC Auto Transport</strong>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="tracking-header">
+      <h1>Vehicle Tracking</h1>
+      <span class="tracking-id">Order #ORD-2026-0892</span>
+    </div>
+
+    <div class="refresh-note">
+      🔄 This page auto-refreshes every 5 minutes. Last updated: Jan 8, 2026 2:45 PM
+    </div>
+
+    <div class="status-banner in-transit">
+      <div>
+        <div class="status-text">🚚 In Transit</div>
+        <div class="status-detail">Currently in Oklahoma City, OK</div>
+      </div>
+      <div class="eta-box">
+        <div class="eta-label">Estimated Delivery</div>
+        <div class="eta-value">Jan 10, 2026</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📍 Live Location</div>
+      <div class="map-placeholder">
+        [ Interactive Map with Vehicle Location ]<br>
+        Powered by Google Maps
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🚗 Vehicles (2)</div>
+      <div class="vehicle-card">
+        <div class="vehicle-info">
+          <h3>2018 Mercedes GLC 300</h3>
+          <p>VIN: WDCGG5HB2JF...8834 • Black</p>
+        </div>
+        <div class="vehicle-status">
+          <span class="status-badge in-transit">In Transit</span>
+          <div style="font-size:12px;color:#64748b;margin-top:4px">Picked up Jan 7</div>
+        </div>
+      </div>
+      <div class="vehicle-card">
+        <div class="vehicle-info">
+          <h3>2024 Nissan Rogue SV</h3>
+          <p>VIN: 5N1BT3BB2RC...1190 • White</p>
+        </div>
+        <div class="vehicle-status">
+          <span class="status-badge in-transit">In Transit</span>
+          <div style="font-size:12px;color:#64748b;margin-top:4px">Picked up Jan 7</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Shipment Timeline</div>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot completed"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Order Confirmed</div>
+            <div class="timeline-detail">Order received and confirmed</div>
+            <div class="timeline-time">Jan 5, 2026 • 9:30 AM</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot completed"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Driver Assigned</div>
+            <div class="timeline-detail">John Doe assigned • Truck #101</div>
+            <div class="timeline-time">Jan 6, 2026 • 8:00 AM</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot completed"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Picked Up</div>
+            <div class="timeline-detail">Both vehicles picked up from Westlake, MD</div>
+            <div class="timeline-time">Jan 7, 2026 • 11:45 AM</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot current"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">In Transit</div>
+            <div class="timeline-detail">Currently near Oklahoma City, OK</div>
+            <div class="timeline-time">Jan 8, 2026 • 2:30 PM</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Out for Delivery</div>
+            <div class="timeline-detail">Pending</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Delivered</div>
+            <div class="timeline-detail">Las Vegas, NV</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📞 Contact Information</div>
+      <div class="contact-grid">
+        <div class="contact-item">
+          <div class="contact-label">Dispatch</div>
+          <div class="contact-value">(555) 123-4567</div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-label">Email</div>
+          <div class="contact-value">dispatch@horizonstar.com</div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-label">Driver</div>
+          <div class="contact-value">John Doe • (555) 987-6543</div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-label">24/7 Emergency</div>
+          <div class="contact-value">(555) 000-0000</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Powered by Horizon Star TMS • Questions? Contact dispatch@horizonstar.com
+  </div>
+</body>
+</html>

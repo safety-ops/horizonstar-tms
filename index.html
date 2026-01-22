@@ -8829,6 +8829,13 @@
       return data || [];
     }
 
+    // Generate a unique dealer code from company name
+    window.generateDealerCode = function(companyName) {
+      const prefix = (companyName || 'DLR').substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'X');
+      const suffix = Math.floor(100 + Math.random() * 900);
+      return prefix + suffix;
+    };
+
     async function dbInsert(table, data) {
       const { data: result, error } = await sb
         .from(table)
@@ -11354,7 +11361,7 @@
       // Hero content (left side) with 5 features
       const heroContent = `
         <div class="login-hero-content">
-          <img src="images/Asset 3@4x.png" alt="Horizon Star LLC" style="max-width: 320px; height: auto; margin-bottom: 16px;">
+          <div style="font-size:42px;font-weight:700;margin-bottom:16px;color:white">🚛 Horizon<span style="color:#22c55e">Star</span></div>
           <p style="font-size: 14px; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">Transportation Management System</p>
           <p class="login-hero-subtitle">Complete fleet operations platform — track, plan, optimize, and grow your transportation business</p>
 
@@ -12974,7 +12981,7 @@
         '<button class="hamburger" id="hamburger" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar">' +
         '<span></span><span></span><span></span>' +
         '</button>' +
-        '<img src="images/Asset 3@4x.png" alt="Horizon Star" class="mobile-logo" style="height:28px;width:auto;">' +
+        '<span class="mobile-logo" style="font-size:18px;font-weight:700;color:white">🚛 Horizon<span style="color:#22c55e">Star</span></span>' +
         '<div class="user-avatar" style="width:36px;height:36px;font-size:12px;font-weight:700;background:white;color:var(--primary);border-radius:10px" aria-label="User profile">' + userInitials + '</div>' +
         '</div>';
       
@@ -12982,7 +12989,7 @@
         '<div class="mobile-overlay" id="mobileOverlay" onclick="if(event.target===this)toggleMobileMenu()"></div>' +
         '<aside class="sidebar' + (isSidebarCollapsed ? ' collapsed' : '') + '" id="sidebar" role="navigation" aria-label="Main navigation" onclick="event.stopPropagation()" ontouchstart="event.stopPropagation()">' +
         '<button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar" aria-label="Collapse sidebar" aria-expanded="' + (!isSidebarCollapsed) + '">◀</button>' +
-        '<div class="logo"><img src="images/Asset 3@4x.png" alt="Horizon Star LLC" style="max-width:170px;height:auto;"></div>' +
+        '<div class="logo"><span style="font-size:1.3rem;font-weight:700;color:var(--text);">HORIZON STAR</span></div>' +
         '<nav id="nav" role="menubar" aria-label="Application navigation"></nav>' +
         '</aside>' +
         '<main class="main' + (isSidebarCollapsed ? ' sidebar-collapsed' : '') + '" role="main" aria-label="Main content">' + topBar + '<div id="main-content"><div class="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div> ' + t('loading') + '</div></div></main>' +
@@ -25203,24 +25210,14 @@ ${rateText}`
       const fmtDate = (d) => d ? new Date(d).toLocaleDateString() : 'N/A';
 
       // === HEADER ===
-      try {
-        const logoImg = new Image();
-        logoImg.crossOrigin = 'anonymous';
-        await new Promise((resolve, reject) => {
-          logoImg.onload = resolve;
-          logoImg.onerror = reject;
-          logoImg.src = 'images/Asset 3@4x.png';
-        });
-        doc.addImage(logoImg, 'PNG', margin, y, 55, 14);
-      } catch (e) {
-        doc.setFillColor(...darkGray);
-        doc.rect(margin, y, 18, 14, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text('HORIZON', margin + 2, y + 6);
-        doc.text('STAR', margin + 2, y + 11);
-      }
+      // Text-based logo (image removed)
+      doc.setFillColor(...darkGray);
+      doc.rect(margin, y, 18, 14, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text('HORIZON', margin + 2, y + 6);
+      doc.text('STAR', margin + 2, y + 11);
 
       // Title
       doc.setFontSize(18);
@@ -25485,26 +25482,15 @@ ${rateText}`
       const fmtDate = (d) => d ? new Date(d).toLocaleDateString() : 'N/A';
 
       // === HEADER WITH LOGO ===
-      // Load and add company logo
-      try {
-        const logoImg = new Image();
-        logoImg.crossOrigin = 'anonymous';
-        await new Promise((resolve, reject) => {
-          logoImg.onload = resolve;
-          logoImg.onerror = reject;
-          logoImg.src = 'images/Asset 3@4x.png';
-        });
-        // Logo aspect ratio is ~3.9:1, so at height 12mm, width ~47mm
-        doc.addImage(logoImg, 'PNG', margin, y, 55, 14);
-      } catch (e) {
-        // Fallback to text if image fails
-        doc.setFillColor(17, 24, 39);
-        doc.rect(margin, y, 18, 14, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('HS', margin + 9, y + 9, { align: 'center' });
-        doc.setTextColor(...darkGray);
+      // Text-based logo (image removed)
+      doc.setFillColor(17, 24, 39);
+      doc.rect(margin, y, 18, 14, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('HS', margin + 9, y + 9, { align: 'center' });
+      doc.setTextColor(...darkGray);
+      {
         doc.setFontSize(14);
         doc.text('HORIZON STAR', margin + 22, y + 8);
         doc.setFontSize(8);
@@ -26571,25 +26557,14 @@ ${rateText}`
 
       // === PAGE 1: BOL HEADER AND DETAILS ===
 
-      // Logo
-      try {
-        const logoImg = new Image();
-        logoImg.crossOrigin = 'anonymous';
-        await new Promise((resolve, reject) => {
-          logoImg.onload = resolve;
-          logoImg.onerror = reject;
-          logoImg.src = 'images/Asset 3@4x.png';
-        });
-        doc.addImage(logoImg, 'PNG', margin, y, 55, 14);
-      } catch (e) {
-        doc.setFillColor(...darkGray);
-        doc.rect(margin, y, 18, 14, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text('HORIZON', margin + 2, y + 6);
-        doc.text('STAR', margin + 2, y + 11);
-      }
+      // Text-based logo (image removed)
+      doc.setFillColor(...darkGray);
+      doc.rect(margin, y, 18, 14, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text('HORIZON', margin + 2, y + 6);
+      doc.text('STAR', margin + 2, y + 11);
 
       // Title
       doc.setFontSize(20);
@@ -26902,24 +26877,14 @@ ${rateText}`
       const netAmount = revenue - brokerFee - localFee;
 
       // === HEADER ===
-      try {
-        const logoImg = new Image();
-        logoImg.crossOrigin = 'anonymous';
-        await new Promise((resolve, reject) => {
-          logoImg.onload = resolve;
-          logoImg.onerror = reject;
-          logoImg.src = 'images/Asset 3@4x.png';
-        });
-        doc.addImage(logoImg, 'PNG', margin, y, 55, 14);
-      } catch (e) {
-        doc.setFillColor(...darkGray);
-        doc.rect(margin, y, 18, 14, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text('HORIZON', margin + 2, y + 6);
-        doc.text('STAR', margin + 2, y + 11);
-      }
+      // Text-based logo (image removed)
+      doc.setFillColor(...darkGray);
+      doc.rect(margin, y, 18, 14, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text('HORIZON', margin + 2, y + 6);
+      doc.text('STAR', margin + 2, y + 11);
 
       // Title
       doc.setFontSize(24);
@@ -27389,24 +27354,13 @@ ${rateText}`
       const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
 
       // === HEADER ===
-      // Logo
-      try {
-        const logoImg = new Image();
-        logoImg.crossOrigin = 'anonymous';
-        await new Promise((resolve, reject) => {
-          logoImg.onload = resolve;
-          logoImg.onerror = reject;
-          logoImg.src = 'images/Asset 3@4x.png';
-        });
-        doc.addImage(logoImg, 'PNG', margin, y, 50, 13);
-      } catch (e) {
-        doc.setFillColor(...blue);
-        doc.rect(margin, y, 16, 13, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text('HS', margin + 8, y + 8, { align: 'center' });
-      }
+      // Text-based logo (image removed)
+      doc.setFillColor(...blue);
+      doc.rect(margin, y, 16, 13, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text('HS', margin + 8, y + 8, { align: 'center' });
 
       // Title and Trip Info (right side)
       doc.setFontSize(22);

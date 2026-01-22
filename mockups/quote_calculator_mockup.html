@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quote Calculator - Mockup</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #1e293b;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --border: #334155;
+      --accent: #3b82f6;
+      --success: #22c55e;
+      --warning: #f59e0b;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .mockup-badge {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #ef4444;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 9999;
+    }
+
+    .header {
+      margin-bottom: 24px;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .calculator-container {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 24px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .vehicle-type-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .vehicle-type-btn {
+      background: var(--bg-secondary);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .vehicle-type-btn:hover {
+      border-color: var(--accent);
+    }
+
+    .vehicle-type-btn.selected {
+      border-color: var(--accent);
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .vehicle-type-btn .icon {
+      font-size: 24px;
+      margin-bottom: 6px;
+    }
+
+    .vehicle-type-btn .name {
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .condition-options {
+      display: flex;
+      gap: 10px;
+    }
+
+    .condition-btn {
+      flex: 1;
+      background: var(--bg-secondary);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      text-align: center;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .condition-btn.selected {
+      border-color: var(--success);
+      background: rgba(34, 197, 94, 0.1);
+      color: var(--success);
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      width: 100%;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+
+    .quote-result {
+      text-align: center;
+      padding: 24px;
+    }
+
+    .quote-price {
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--success);
+      margin-bottom: 8px;
+    }
+
+    .quote-range {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+    }
+
+    .quote-breakdown {
+      background: var(--bg-secondary);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: left;
+    }
+
+    .breakdown-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text-secondary);
+    }
+
+    .breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    .breakdown-row:last-child {
+      border-bottom: none;
+    }
+
+    .breakdown-row.total {
+      font-weight: 700;
+      font-size: 15px;
+      padding-top: 16px;
+      margin-top: 8px;
+      border-top: 2px solid var(--border);
+    }
+
+    .route-summary {
+      background: var(--bg-secondary);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .route-point {
+      text-align: center;
+    }
+
+    .route-point .city {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .route-point .state {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .route-arrow {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+    }
+
+    .route-arrow .distance {
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    .historical-rates {
+      margin-top: 20px;
+    }
+
+    .historical-title {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .rate-history-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .rate-history-item .date {
+      color: var(--text-secondary);
+    }
+
+    .rate-history-item .rate {
+      font-weight: 600;
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .quick-actions .btn {
+      flex: 1;
+      padding: 10px;
+      font-size: 13px;
+    }
+
+    .btn-secondary {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+  <div class="mockup-badge">MOCKUP - Quote Calculator</div>
+
+  <div class="header">
+    <h1>Quote Calculator</h1>
+    <p>Calculate shipping rates based on route, vehicle type, and market data</p>
+  </div>
+
+  <div class="calculator-container">
+    <div class="card">
+      <div class="card-title">📍 Route & Vehicle Details</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Pickup Location</label>
+          <input type="text" class="form-input" value="Cherry Hill, NJ" placeholder="City, State">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Delivery Location</label>
+          <input type="text" class="form-input" value="Los Angeles, CA" placeholder="City, State">
+        </div>
+      </div>
+
+      <div class="route-summary">
+        <div class="route-point">
+          <div class="city">Cherry Hill</div>
+          <div class="state">New Jersey</div>
+        </div>
+        <div class="route-arrow">
+          <div style="text-align:center">
+            <div>━━━━━━━━━━━━━━→</div>
+            <div class="distance">2,789 miles</div>
+          </div>
+        </div>
+        <div class="route-point">
+          <div class="city">Los Angeles</div>
+          <div class="state">California</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Vehicle Type</label>
+        <div class="vehicle-type-grid">
+          <div class="vehicle-type-btn selected">
+            <div class="icon">🚗</div>
+            <div class="name">Sedan</div>
+          </div>
+          <div class="vehicle-type-btn">
+            <div class="icon">🚙</div>
+            <div class="name">SUV</div>
+          </div>
+          <div class="vehicle-type-btn">
+            <div class="icon">🛻</div>
+            <div class="name">Pickup Truck</div>
+          </div>
+          <div class="vehicle-type-btn">
+            <div class="icon">🚐</div>
+            <div class="name">Van</div>
+          </div>
+          <div class="vehicle-type-btn">
+            <div class="icon">🏎️</div>
+            <div class="name">Sports Car</div>
+          </div>
+          <div class="vehicle-type-btn">
+            <div class="icon">🚌</div>
+            <div class="name">Oversized</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Vehicle Year</label>
+          <input type="text" class="form-input" value="2024" placeholder="Year">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Vehicle Make/Model</label>
+          <input type="text" class="form-input" value="BMW X5" placeholder="Make Model">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Vehicle Condition</label>
+        <div class="condition-options">
+          <div class="condition-btn selected">✓ Running</div>
+          <div class="condition-btn">⚠️ Non-Running</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Transport Type</label>
+        <div class="condition-options">
+          <div class="condition-btn selected">Open Transport</div>
+          <div class="condition-btn">Enclosed Transport</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary">Calculate Quote</button>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-title">💰 Estimated Quote</div>
+
+        <div class="quote-result">
+          <div class="quote-price">$1,450</div>
+          <div class="quote-range">Range: $1,350 - $1,550</div>
+        </div>
+
+        <div class="quote-breakdown">
+          <div class="breakdown-title">PRICE BREAKDOWN</div>
+          <div class="breakdown-row">
+            <span>Base Rate (2,789 mi × $0.45/mi)</span>
+            <span>$1,255</span>
+          </div>
+          <div class="breakdown-row">
+            <span>Vehicle Type (SUV)</span>
+            <span>+$100</span>
+          </div>
+          <div class="breakdown-row">
+            <span>Fuel Surcharge</span>
+            <span>+$75</span>
+          </div>
+          <div class="breakdown-row">
+            <span>Insurance</span>
+            <span>+$20</span>
+          </div>
+          <div class="breakdown-row total">
+            <span>Total</span>
+            <span style="color:var(--success)">$1,450</span>
+          </div>
+        </div>
+
+        <div class="quick-actions">
+          <button class="btn btn-secondary">📋 Copy Quote</button>
+          <button class="btn btn-primary">+ Create Order</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:20px">
+        <div class="card-title">📊 Lane History</div>
+        <div class="historical-title">Recent rates for NJ → CA</div>
+
+        <div class="rate-history-item">
+          <span class="date">Jan 5, 2026</span>
+          <span>2023 Tesla Model Y</span>
+          <span class="rate">$1,380</span>
+        </div>
+        <div class="rate-history-item">
+          <span class="date">Jan 2, 2026</span>
+          <span>2024 Honda Accord</span>
+          <span class="rate">$1,420</span>
+        </div>
+        <div class="rate-history-item">
+          <span class="date">Dec 28, 2025</span>
+          <span>2022 Ford F-150</span>
+          <span class="rate">$1,550</span>
+        </div>
+        <div class="rate-history-item">
+          <span class="date">Dec 20, 2025</span>
+          <span>2024 BMW X3</span>
+          <span class="rate">$1,475</span>
+        </div>
+
+        <div style="margin-top:16px;padding:12px;background:var(--bg-secondary);border-radius:8px;font-size:12px;color:var(--text-secondary)">
+          <strong style="color:var(--warning)">📈 Market Insight:</strong> Rates on this lane have increased 5% in the last 30 days due to high demand.
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

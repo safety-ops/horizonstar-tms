@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Detail Page - Mockup</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #1e293b;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --border: #334155;
+      --accent: #3b82f6;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --purple: #8b5cf6;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .mockup-badge {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #ef4444;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 9999;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    .back-link:hover {
+      color: var(--accent);
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+    }
+
+    .vehicle-title {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .vehicle-title h1 {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .status-badge {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .status-badge.in-transit {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+    }
+
+    .status-badge.delivered {
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+    }
+
+    .status-badge.pending {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 24px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title .icon {
+      font-size: 18px;
+    }
+
+    /* Order Info Grid */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .info-item {
+      background: var(--bg-primary);
+      padding: 14px;
+      border-radius: 8px;
+    }
+
+    .info-item.full-width {
+      grid-column: span 2;
+    }
+
+    .info-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .info-value {
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .info-value.large {
+      font-size: 20px;
+      color: var(--success);
+    }
+
+    /* Route Display */
+    .route-display {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: var(--bg-primary);
+      border-radius: 10px;
+    }
+
+    .route-point {
+      flex: 1;
+    }
+
+    .route-point .city {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .route-point .details {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .route-arrow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: var(--text-secondary);
+      padding: 0 16px;
+    }
+
+    .route-arrow .line {
+      width: 60px;
+      height: 2px;
+      background: var(--border);
+      position: relative;
+    }
+
+    .route-arrow .line::after {
+      content: '→';
+      position: absolute;
+      right: -8px;
+      top: -10px;
+      font-size: 16px;
+    }
+
+    .route-arrow .distance {
+      font-size: 11px;
+      margin-top: 4px;
+      color: var(--accent);
+    }
+
+    /* Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 24px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-bottom: 20px;
+    }
+
+    .timeline-item:last-child {
+      padding-bottom: 0;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -20px;
+      top: 4px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--border);
+      border: 2px solid var(--bg-card);
+    }
+
+    .timeline-dot.completed {
+      background: var(--success);
+    }
+
+    .timeline-dot.current {
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+    }
+
+    .timeline-dot.pending {
+      background: var(--bg-secondary);
+      border: 2px solid var(--border);
+    }
+
+    .timeline-content {
+      background: var(--bg-primary);
+      padding: 12px 14px;
+      border-radius: 8px;
+    }
+
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 4px;
+    }
+
+    .timeline-title {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .timeline-time {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .timeline-detail {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .timeline-user {
+      font-size: 11px;
+      color: var(--purple);
+      margin-top: 4px;
+    }
+
+    /* Inspection Cards */
+    .inspection-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .inspection-card {
+      background: var(--bg-primary);
+      border-radius: 10px;
+      padding: 16px;
+      border: 1px solid var(--border);
+    }
+
+    .inspection-card.completed {
+      border-color: var(--success);
+    }
+
+    .inspection-card.pending {
+      border-color: var(--border);
+      opacity: 0.7;
+    }
+
+    .inspection-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .inspection-type {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .inspection-status {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    .inspection-status.completed {
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+    }
+
+    .inspection-status.pending {
+      background: rgba(148, 163, 184, 0.2);
+      color: var(--text-secondary);
+    }
+
+    .inspection-photos {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .inspection-photo {
+      width: 48px;
+      height: 48px;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+
+    .inspection-photo.has-image {
+      background: linear-gradient(135deg, #374151, #1f2937);
+    }
+
+    .inspection-meta {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .inspection-meta span {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .damages-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      margin-top: 8px;
+    }
+
+    .view-inspection-btn {
+      margin-top: 12px;
+      width: 100%;
+      padding: 8px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .view-inspection-btn:hover {
+      border-color: var(--accent);
+    }
+
+    /* Documents */
+    .document-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .document-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: var(--bg-primary);
+      border-radius: 8px;
+    }
+
+    .document-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .document-icon {
+      width: 40px;
+      height: 40px;
+      background: rgba(239, 68, 68, 0.1);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .document-icon.pdf { background: rgba(239, 68, 68, 0.1); }
+    .document-icon.email { background: rgba(59, 130, 246, 0.1); }
+
+    .document-name {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .document-meta {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .document-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .document-actions button {
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+
+    .document-actions button:hover {
+      border-color: var(--accent);
+    }
+
+    /* Assignment Info */
+    .assignment-card {
+      background: var(--bg-primary);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .assignment-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .assignment-row:last-child {
+      border-bottom: none;
+    }
+
+    .assignment-label {
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .assignment-value {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .assignment-value a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    /* Payment Info */
+    .payment-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .payment-item {
+      background: var(--bg-primary);
+      padding: 14px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .payment-amount {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .payment-amount.revenue {
+      color: var(--success);
+    }
+
+    .payment-amount.expense {
+      color: var(--warning);
+    }
+
+    .payment-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .payment-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    .payment-status.paid {
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+    }
+
+    .payment-status.pending {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+    }
+
+    /* Broker Info */
+    .broker-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px;
+      background: var(--bg-primary);
+      border-radius: 10px;
+    }
+
+    .broker-avatar {
+      width: 48px;
+      height: 48px;
+      background: var(--purple);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .broker-name {
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .broker-detail {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Quick Actions Sidebar */
+    .quick-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .quick-action-btn {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s;
+    }
+
+    .quick-action-btn:hover {
+      border-color: var(--accent);
+      background: rgba(59, 130, 246, 0.05);
+    }
+
+    .quick-action-btn .icon {
+      font-size: 16px;
+    }
+
+    /* Signature Display */
+    .signature-display {
+      background: white;
+      border-radius: 8px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 8px;
+    }
+
+    .signature-display img {
+      max-height: 50px;
+      filter: invert(0);
+    }
+
+    .signature-placeholder {
+      color: #999;
+      font-size: 12px;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="mockup-badge">MOCKUP - Order Detail Page</div>
+
+  <a href="#" class="back-link">← Back to Orders</a>
+
+  <div class="page-header">
+    <div class="vehicle-title">
+      <h1>2024 BMW X5</h1>
+      <span class="status-badge in-transit">In Transit</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary">📋 Copy Link</button>
+      <button class="btn btn-secondary">📧 Email Customer</button>
+      <button class="btn btn-primary">✏️ Edit Order</button>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <!-- Left Column - Main Content -->
+    <div class="left-column">
+
+      <!-- Order Info Card -->
+      <div class="card">
+        <div class="card-title"><span class="icon">📦</span> Order Information</div>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Order Number</div>
+            <div class="info-value">ORD-2026-0892</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">VIN</div>
+            <div class="info-value">WBAPH5C55BA...4521</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Vehicle</div>
+            <div class="info-value">2024 BMW X5 xDrive40i</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Color</div>
+            <div class="info-value">Black Sapphire Metallic</div>
+          </div>
+          <div class="info-item full-width">
+            <div class="info-label">Route</div>
+            <div class="route-display">
+              <div class="route-point">
+                <div class="city">Cherry Hill, NJ</div>
+                <div class="details">123 Main Street, 08002</div>
+                <div class="details">Contact: John Smith • (555) 123-4567</div>
+              </div>
+              <div class="route-arrow">
+                <div class="line"></div>
+                <div class="distance">2,789 miles</div>
+              </div>
+              <div class="route-point">
+                <div class="city">Los Angeles, CA</div>
+                <div class="details">456 Oak Avenue, 90001</div>
+                <div class="details">Contact: Jane Doe • (555) 987-6543</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inspections Card -->
+      <div class="card">
+        <div class="card-title"><span class="icon">🔍</span> Vehicle Inspections</div>
+        <div class="inspection-grid">
+
+          <!-- Pickup Inspection -->
+          <div class="inspection-card completed">
+            <div class="inspection-header">
+              <span class="inspection-type">📥 Pickup Inspection</span>
+              <span class="inspection-status completed">✓ Completed</span>
+            </div>
+            <div class="inspection-photos">
+              <div class="inspection-photo has-image">Front</div>
+              <div class="inspection-photo has-image">Left</div>
+              <div class="inspection-photo has-image">Right</div>
+              <div class="inspection-photo has-image">Rear</div>
+              <div class="inspection-photo has-image">+3</div>
+            </div>
+            <div class="inspection-meta">
+              <span>📅 Jan 7, 2026 at 11:45 AM</span>
+              <span>📍 Cherry Hill, NJ</span>
+              <span>🔢 Odometer: 12,450 mi</span>
+            </div>
+            <div class="damages-badge">
+              ⚠️ 2 Pre-existing Damages
+            </div>
+            <button class="view-inspection-btn">View Full Inspection →</button>
+          </div>
+
+          <!-- Delivery Inspection -->
+          <div class="inspection-card pending">
+            <div class="inspection-header">
+              <span class="inspection-type">📤 Delivery Inspection</span>
+              <span class="inspection-status pending">Pending</span>
+            </div>
+            <div class="inspection-photos">
+              <div class="inspection-photo">—</div>
+              <div class="inspection-photo">—</div>
+              <div class="inspection-photo">—</div>
+              <div class="inspection-photo">—</div>
+              <div class="inspection-photo">—</div>
+            </div>
+            <div class="inspection-meta">
+              <span>📅 Expected: Jan 10, 2026</span>
+              <span>📍 Los Angeles, CA</span>
+              <span>🔢 Odometer: —</span>
+            </div>
+            <button class="view-inspection-btn" disabled style="opacity:0.5">Awaiting Delivery</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Documents Card -->
+      <div class="card">
+        <div class="card-title"><span class="icon">📄</span> Documents</div>
+        <div class="document-list">
+          <div class="document-item">
+            <div class="document-info">
+              <div class="document-icon pdf">📄</div>
+              <div>
+                <div class="document-name">BOL - Pickup Inspection</div>
+                <div class="document-meta">Generated Jan 7, 2026 • 2 pages • Signed by John Smith</div>
+              </div>
+            </div>
+            <div class="document-actions">
+              <button>View</button>
+              <button>Download</button>
+            </div>
+          </div>
+          <div class="document-item">
+            <div class="document-info">
+              <div class="document-icon email">📧</div>
+              <div>
+                <div class="document-name">Pickup Confirmation Email</div>
+                <div class="document-meta">Sent to customer@email.com • Jan 7, 2026 11:50 AM</div>
+              </div>
+            </div>
+            <div class="document-actions">
+              <button>View</button>
+              <button>Resend</button>
+            </div>
+          </div>
+          <div class="document-item" style="opacity:0.5">
+            <div class="document-info">
+              <div class="document-icon pdf">📄</div>
+              <div>
+                <div class="document-name">BOL - Delivery Inspection</div>
+                <div class="document-meta">Pending delivery completion</div>
+              </div>
+            </div>
+            <div class="document-actions">
+              <button disabled>—</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity Log Card -->
+      <div class="card">
+        <div class="card-title"><span class="icon">📜</span> Activity Log</div>
+        <div class="timeline">
+
+          <div class="timeline-item">
+            <div class="timeline-dot current"></div>
+            <div class="timeline-content">
+              <div class="timeline-header">
+                <span class="timeline-title">🚚 In Transit</span>
+                <span class="timeline-time">Jan 8, 2026 2:30 PM</span>
+              </div>
+              <div class="timeline-detail">Vehicle currently near Oklahoma City, OK</div>
+              <div class="timeline-user">GPS Update • Samsara</div>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-dot completed"></div>
+            <div class="timeline-content">
+              <div class="timeline-header">
+                <span class="timeline-title">📧 BOL Emailed to Customer</span>
+                <span class="timeline-time">Jan 7, 2026 11:50 AM</span>
+              </div>
+              <div class="timeline-detail">Sent to johnsmith@email.com with 7 photos attached</div>
+              <div class="timeline-user">System • Automatic</div>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-dot completed"></div>
+            <div class="timeline-content">
+              <div class="timeline-header">
+                <span class="timeline-title">✅ Pickup Inspection Completed</span>
+                <span class="timeline-time">Jan 7, 2026 11:45 AM</span>
+              </div>
+              <div class="timeline-detail">7 photos, 1 video, 2 damages noted • Signed by John Smith</div>
+              <div class="timeline-user">Driver • Mike Johnson</div>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-dot completed"></div>
+            <div class="timeline-content">
+              <div class="timeline-header">
+                <span class="timeline-title">📥 Vehicle Picked Up</span>
+                <span class="timeline-time">Jan 7, 2026 11:40 AM</span>
+              </div>
+              <div class="timeline-detail">Picked up from Cherry Hill, NJ</div>
+              <div class="timeline-user">Driver • Mike Johnson</div>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-dot completed"></div>
+            <div class="timeline-content">
+              <div class="timeline-header">
+                <span class="timeline-title">🚛 Assigned to Trip</span>
+                <span class="timeline-time">Jan 6, 2026 8:00 AM</span>
+              </div>
+              <div class="timeline-detail">Assigned to Trip #1042 • Driver: Mike Johnson • Truck: #101</div>
+              <div class="timeline-user">Dispatcher • Sarah Admin</div>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-dot completed"></div>
+            <div class="timeline-content">
+              <div class="timeline-header">
+                <span class="timeline-title">📋 Imported from Central Dispatch</span>
+                <span class="timeline-time">Jan 5, 2026 3:15 PM</span>
+              </div>
+              <div class="timeline-detail">Load ID: CD-78234 • Broker: ABC Auto Transport</div>
+              <div class="timeline-user">Admin • John Owner</div>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-dot completed"></div>
+            <div class="timeline-content">
+              <div class="timeline-header">
+                <span class="timeline-title">📝 Order Created</span>
+                <span class="timeline-time">Jan 5, 2026 3:15 PM</span>
+              </div>
+              <div class="timeline-detail">Order ORD-2026-0892 created</div>
+              <div class="timeline-user">System • CD Importer</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column - Sidebar -->
+    <div class="right-column">
+
+      <!-- Assignment Card -->
+      <div class="card">
+        <div class="card-title"><span class="icon">🚛</span> Assignment</div>
+        <div class="assignment-card">
+          <div class="assignment-row">
+            <span class="assignment-label">Trip</span>
+            <span class="assignment-value"><a href="#">Trip #1042</a></span>
+          </div>
+          <div class="assignment-row">
+            <span class="assignment-label">Driver</span>
+            <span class="assignment-value">Mike Johnson</span>
+          </div>
+          <div class="assignment-row">
+            <span class="assignment-label">Truck</span>
+            <span class="assignment-value">#101 - Peterbilt 389</span>
+          </div>
+          <div class="assignment-row">
+            <span class="assignment-label">Direction</span>
+            <span class="assignment-value">Home → CA</span>
+          </div>
+          <div class="assignment-row">
+            <span class="assignment-label">Pickup Sequence</span>
+            <span class="assignment-value">#3 of 8</span>
+          </div>
+          <div class="assignment-row">
+            <span class="assignment-label">Delivery Sequence</span>
+            <span class="assignment-value">#5 of 8</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financials Card -->
+      <div class="card">
+        <div class="card-title"><span class="icon">💰</span> Financials</div>
+        <div class="payment-grid">
+          <div class="payment-item">
+            <div class="payment-amount revenue">$1,450</div>
+            <div class="payment-label">Carrier Pay</div>
+            <div class="payment-status pending">⏳ COD - Pending</div>
+          </div>
+          <div class="payment-item">
+            <div class="payment-amount expense">$100</div>
+            <div class="payment-label">Broker Fee</div>
+            <div class="payment-status paid">✓ Deducted</div>
+          </div>
+          <div class="payment-item">
+            <div class="payment-amount revenue">$1,350</div>
+            <div class="payment-label">Net Revenue</div>
+          </div>
+          <div class="payment-item">
+            <div class="payment-amount" style="color: var(--purple)">$472.50</div>
+            <div class="payment-label">Driver Pay (35%)</div>
+            <div class="payment-status pending">⏳ Unpaid</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Broker Card -->
+      <div class="card">
+        <div class="card-title"><span class="icon">🤝</span> Broker</div>
+        <div class="broker-card">
+          <div class="broker-avatar">A</div>
+          <div>
+            <div class="broker-name">ABC Auto Transport</div>
+            <div class="broker-detail">MC# 123456 • (555) 111-2222</div>
+            <div class="broker-detail">billing@abcauto.com</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Signatures Card -->
+      <div class="card">
+        <div class="card-title"><span class="icon">✍️</span> Signatures</div>
+
+        <div style="margin-bottom: 16px;">
+          <div class="info-label">Pickup - Customer Signature</div>
+          <div class="signature-display">
+            <span style="font-family: 'Brush Script MT', cursive; font-size: 28px; color: #333;">John Smith</span>
+          </div>
+          <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">
+            Signed Jan 7, 2026 11:45 AM
+          </div>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <div class="info-label">Pickup - Driver Signature</div>
+          <div class="signature-display">
+            <span style="font-family: 'Brush Script MT', cursive; font-size: 28px; color: #333;">Mike Johnson</span>
+          </div>
+          <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">
+            Signed Jan 7, 2026 11:45 AM
+          </div>
+        </div>
+
+        <div>
+          <div class="info-label">Delivery - Signatures</div>
+          <div class="signature-display" style="background: var(--bg-primary);">
+            <span class="signature-placeholder">Awaiting delivery</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="card">
+        <div class="card-title"><span class="icon">⚡</span> Quick Actions</div>
+        <div class="quick-actions">
+          <button class="quick-action-btn">
+            <span class="icon">📄</span> Generate Route Sheet
+          </button>
+          <button class="quick-action-btn">
+            <span class="icon">📧</span> Send Tracking Link to Broker
+          </button>
+          <button class="quick-action-btn">
+            <span class="icon">💵</span> Mark Payment Collected
+          </button>
+          <button class="quick-action-btn">
+            <span class="icon">🔄</span> Change Assignment
+          </button>
+          <button class="quick-action-btn" style="border-color: var(--danger); color: var(--danger);">
+            <span class="icon">🗑️</span> Remove from Trip
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>

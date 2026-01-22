@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Detail Prototype v2 - TMS Pattern</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+
+  <style>
+    :root {
+      --primary: #22c55e;
+      --primary-hover: #16a34a;
+      --primary-light: rgba(34, 197, 94, 0.12);
+      --secondary: #64748b;
+      --success: #22c55e;
+      --success-light: rgba(34, 197, 94, 0.12);
+      --warning: #f59e0b;
+      --warning-light: rgba(245, 158, 11, 0.12);
+      --danger: #ef4444;
+      --danger-light: rgba(239, 68, 68, 0.12);
+      --info: #3b82f6;
+      --info-light: rgba(59, 130, 246, 0.12);
+
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-hover: #f1f5f9;
+
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+
+      --border: #e2e8f0;
+      --border-light: #f1f5f9;
+
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+
+      --radius-sm: 6px;
+      --radius: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 20px;
+
+      --font-display: 'Space Grotesk', -apple-system, sans-serif;
+      --font-body: 'IBM Plex Sans', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+      --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 15px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      padding: 24px;
+      min-height: 100vh;
+    }
+
+    h1, h2, h3 {
+      font-family: var(--font-display);
+      letter-spacing: -0.03em;
+      font-weight: 700;
+    }
+
+    .money, .mono {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Prototype Badge */
+    .prototype-badge {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 9999;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .header h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: inherit;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+    }
+    .btn-secondary {
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      background: var(--bg-tertiary);
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 14px;
+      border: 1px solid var(--border);
+    }
+    .card-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-header h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Table */
+    .table-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 900px;
+    }
+    th {
+      text-align: left;
+      padding: 14px 16px;
+      background: var(--bg-tertiary);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+      color: var(--text-secondary);
+      vertical-align: middle;
+      background: var(--bg-secondary);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--bg-tertiary); }
+    td strong { color: var(--text-primary); font-weight: 600; }
+    td.money { font-weight: 600; color: var(--success); }
+    td.money.negative { color: var(--danger); }
+
+    .sticky-col {
+      position: sticky;
+      right: 0;
+      background: var(--bg-secondary);
+      z-index: 1;
+    }
+    tr:hover .sticky-col { background: var(--bg-tertiary); }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .badge-green { background: #dcfce7; color: #15803d; }
+    .badge-amber { background: transparent; border: 1px solid #f59e0b; color: #f59e0b; }
+    .badge-blue { background: transparent; border: 1px solid #3b82f6; color: #3b82f6; }
+    .badge-red { background: transparent; border: 1px solid #ef4444; color: #ef4444; }
+    .badge-purple { background: #f3e8ff; color: #7c3aed; }
+    .badge-gray { background: transparent; border: 1px solid var(--text-muted); color: var(--text-muted); }
+
+    /* Actions */
+    .actions { display: flex; gap: 8px; }
+    .action-btn {
+      padding: 8px 12px;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .action-btn.view { background: var(--success-light); color: var(--success); }
+    .action-btn.view:hover { background: rgba(16, 185, 129, 0.25); }
+    .action-btn.edit { background: var(--info-light); color: var(--info); }
+    .action-btn.edit:hover { background: rgba(59, 130, 246, 0.25); }
+    .action-btn.delete { background: var(--danger-light); color: var(--danger); }
+    .action-btn.delete:hover { background: rgba(239, 68, 68, 0.25); }
+
+    /* Search/Filters Bar */
+    .filters-bar {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      align-items: center;
+      background: var(--bg-tertiary);
+      padding: 16px;
+      border-radius: 8px;
+    }
+    .filters-bar input, .filters-bar select {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+    }
+    .filters-bar input { flex: 1; min-width: 200px; }
+
+    /* Stat Cards for Detail View */
+    .stat-cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      min-width: 100px;
+      flex: 0 0 auto;
+    }
+    .stat-card .label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .stat-card .value {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .stat-card .value.green { color: var(--success); }
+    .stat-card .value.red { color: var(--danger); }
+
+    /* Detail View Grid */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 1024px) {
+      .detail-grid { grid-template-columns: 1fr; }
+    }
+
+    .detail-section {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .detail-section-header {
+      padding: 14px 18px;
+      background: var(--bg-tertiary);
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .detail-section-body {
+      padding: 16px 18px;
+    }
+
+    /* Route Visual */
+    .route-visual {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+    }
+    .route-point {
+      flex: 1;
+    }
+    .route-point .label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .route-point .city {
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--text-primary);
+    }
+    .route-point .address {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+    .route-arrow {
+      font-size: 24px;
+      color: var(--primary);
+    }
+
+    /* Inspection Card */
+    .inspection-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+    }
+    .inspection-header {
+      padding: 12px 16px;
+      background: var(--bg-tertiary);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .inspection-header .type {
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .inspection-body {
+      padding: 16px;
+    }
+    .inspection-photos {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .inspection-photo {
+      width: 80px;
+      height: 60px;
+      border-radius: 6px;
+      object-fit: cover;
+      cursor: pointer;
+      border: 2px solid var(--border);
+      transition: var(--transition);
+    }
+    .inspection-photo:hover {
+      border-color: var(--primary);
+      transform: scale(1.05);
+    }
+    .inspection-details {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .inspection-detail-item .label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .inspection-detail-item .value {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    /* Damages List */
+    .damages-list {
+      margin-top: 12px;
+    }
+    .damage-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      background: var(--danger-light);
+      border-radius: 6px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .damage-item .icon { font-size: 16px; }
+    .damage-item .location { font-weight: 600; color: var(--danger); }
+    .damage-item .description { color: var(--text-secondary); }
+
+    /* Signature Display */
+    .signature-display {
+      margin-top: 12px;
+      padding: 12px;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      text-align: center;
+    }
+    .signature-display img {
+      max-width: 200px;
+      max-height: 80px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: white;
+    }
+    .signature-display .signer {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    /* Timeline */
+    .timeline {
+      padding: 0;
+    }
+    .timeline-item {
+      display: flex;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .timeline-item:last-child { border-bottom: none; }
+    .timeline-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--bg-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .timeline-icon.green { background: var(--success-light); }
+    .timeline-icon.blue { background: var(--info-light); }
+    .timeline-icon.purple { background: rgba(139, 92, 246, 0.15); }
+    .timeline-content {
+      flex: 1;
+    }
+    .timeline-title {
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+    .timeline-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Financials Grid */
+    .financials-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .financial-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+    }
+    .financial-item .label {
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+    .financial-item .value {
+      font-weight: 600;
+      font-family: var(--font-mono);
+    }
+    .financial-item .value.green { color: var(--success); }
+    .financial-item .value.red { color: var(--danger); }
+    .financial-item.total {
+      grid-column: 1 / -1;
+      background: var(--success-light);
+      border: 1px solid var(--success);
+    }
+    .financial-item.total .value { color: var(--success); font-size: 18px; }
+
+    /* Notes Section */
+    .notes-content {
+      padding: 16px;
+      background: var(--warning-light);
+      border-radius: 6px;
+      border-left: 4px solid var(--warning);
+    }
+    .notes-content .note-icon {
+      font-size: 16px;
+      margin-right: 8px;
+    }
+
+    /* Photo Modal */
+    .photo-modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      padding: 20px;
+    }
+    .photo-modal img {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 8px;
+    }
+    .photo-modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    /* Loading State */
+    .loading {
+      text-align: center;
+      padding: 60px;
+      color: var(--text-muted);
+    }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px;
+      color: var(--text-muted);
+    }
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="prototype-badge">PROTOTYPE v2 - TMS Pattern</div>
+
+  <div id="main-content">
+    <div class="loading">
+      <div class="loading-spinner"></div>
+      <div>Loading orders...</div>
+    </div>
+  </div>
+
+  <script>
+    // Supabase Configuration (using fetch API directly)
+    const SUPABASE_URL = 'https://yrrczhlzulwvdqjwvhtu.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlycmN6aGx6dWx3dmRxand2aHR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1NDYyOTQsImV4cCI6MjA4MTEyMjI5NH0.qVVxDH36OkLXnUe3Sfng1CJY7_Qt_IOGC-1QaDw6WlE';
+
+    // Simple fetch wrapper for Supabase REST API
+    async function fetchTable(table, options = '') {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${options}`, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+      });
+      if (!res.ok) throw new Error(`Failed to fetch ${table}: ${res.status}`);
+      return res.json();
+    }
+
+    // App State
+    let appData = {
+      orders: [],
+      trips: [],
+      drivers: [],
+      inspections: [],
+      inspectionPhotos: [],
+      inspectionDamages: []
+    };
+
+    // Track current view state (following TMS pattern)
+    let currentDetailView = null;
+
+    // Load all data from Supabase using fetch API
+    async function loadAllData() {
+      console.log('Starting data load...');
+      document.getElementById('main-content').innerHTML = `
+        <div class="loading">
+          <div class="loading-spinner"></div>
+          <div>Loading orders...</div>
+        </div>
+      `;
+
+      try {
+        // Load core tables
+        console.log('Fetching orders...');
+        appData.orders = await fetchTable('orders', 'order=id.desc');
+        console.log('Orders loaded:', appData.orders.length);
+
+        console.log('Fetching trips...');
+        appData.trips = await fetchTable('trips', 'select=*');
+        console.log('Trips loaded:', appData.trips.length);
+
+        console.log('Fetching drivers...');
+        appData.drivers = await fetchTable('drivers', 'select=*');
+        console.log('Drivers loaded:', appData.drivers.length);
+
+        // Load inspection tables (may not exist)
+        try {
+          appData.inspections = await fetchTable('vehicle_inspections', 'select=*');
+        } catch (e) { appData.inspections = []; }
+
+        try {
+          appData.inspectionPhotos = await fetchTable('inspection_photos', 'select=*');
+        } catch (e) { appData.inspectionPhotos = []; }
+
+        try {
+          appData.inspectionDamages = await fetchTable('inspection_damages', 'select=*');
+        } catch (e) { appData.inspectionDamages = []; }
+
+        console.log('All data loaded:', appData);
+        renderOrders();
+      } catch (error) {
+        console.error('Error loading data:', error);
+        document.getElementById('main-content').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">⚠️</div>
+            <div style="color:#ef4444;font-weight:600">Error loading data</div>
+            <div style="margin-top:8px">${error.message}</div>
+            <div style="margin-top:12px;font-size:12px;color:#94a3b8">Check browser console (Cmd+Option+I)</div>
+          </div>
+        `;
+      }
+    }
+
+    // Format helpers
+    function formatMoney(amount) {
+      return '$' + (parseFloat(amount) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function formatDateTime(dateStr) {
+      if (!dateStr) return '-';
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+    }
+
+    function getBadgeClass(status) {
+      const map = {
+        'PENDING': 'badge-amber',
+        'IN_TRANSIT': 'badge-blue',
+        'DELIVERED': 'badge-green',
+        'COMPLETED': 'badge-green'
+      };
+      return map[status] || 'badge-gray';
+    }
+
+    // Render Orders List (following TMS renderOrders pattern)
+    function renderOrders() {
+      currentDetailView = null;
+      const c = document.getElementById('main-content');
+
+      const orders = appData.orders;
+
+      c.innerHTML = `
+        <div class="header">
+          <h2>Vehicles / Orders</h2>
+          <div style="display:flex;gap:12px">
+            <button class="btn btn-secondary">📥 Export</button>
+            <button class="btn btn-primary">+ New Order</button>
+          </div>
+        </div>
+
+        <div class="filters-bar">
+          <input type="text" id="orderSearch" placeholder="🔍 Search by Order ID, Broker, or Vehicle..." onkeyup="filterOrders()">
+          <select id="statusFilter" onchange="filterOrders()">
+            <option value="all">All Status</option>
+            <option value="PENDING">Pending</option>
+            <option value="IN_TRANSIT">In Transit</option>
+            <option value="DELIVERED">Delivered</option>
+          </select>
+          <span style="color:#64748b;font-size:13px">Showing ${orders.length} orders</span>
+        </div>
+
+        <div class="card">
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order</th>
+                  <th>Trip</th>
+                  <th>Driver</th>
+                  <th>Broker</th>
+                  <th>Vehicle</th>
+                  <th>Origin</th>
+                  <th>Destination</th>
+                  <th>Revenue</th>
+                  <th>Status</th>
+                  <th class="sticky-col">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="ordersTableBody">
+                ${orders.length === 0 ? '<tr><td colspan="10" style="text-align:center;padding:40px">No orders found</td></tr>' :
+                  orders.map(o => {
+                    const trip = appData.trips.find(t => t.id === o.trip_id);
+                    const driver = trip ? appData.drivers.find(d => d.id === trip.driver_id) : null;
+                    const driverName = driver ? driver.first_name.charAt(0) + '. ' + driver.last_name : '-';
+
+                    return `
+                      <tr data-order-id="${o.id}" data-status="${o.status}" data-search="${(o.order_number + ' ' + o.broker_name + ' ' + o.vehicle_make + ' ' + o.vehicle_model).toLowerCase()}">
+                        <td><strong>${o.order_number || '-'}</strong></td>
+                        <td>${trip ? '<span class="badge badge-purple">' + trip.trip_number + '</span>' : '<span style="color:#94a3b8">Unassigned</span>'}</td>
+                        <td>${driver ? '<span class="badge badge-green">' + driverName + '</span>' : '<span style="color:#94a3b8">-</span>'}</td>
+                        <td>${o.broker_name || '-'}</td>
+                        <td>${o.vehicle_year || ''} ${o.vehicle_make || ''} ${o.vehicle_model || ''}</td>
+                        <td title="${o.pickup_full_address || o.origin || ''}">${(o.origin || '-').substring(0, 20)}${(o.origin || '').length > 20 ? '...' : ''}</td>
+                        <td title="${o.delivery_full_address || o.destination || ''}">${(o.destination || '-').substring(0, 20)}${(o.destination || '').length > 20 ? '...' : ''}</td>
+                        <td class="money">${formatMoney(o.revenue)}</td>
+                        <td><span class="badge ${getBadgeClass(o.status)}">${o.status || 'PENDING'}</span></td>
+                        <td class="sticky-col">
+                          <div class="actions">
+                            <button class="action-btn view" onclick="viewOrder(${o.id})">View</button>
+                            <button class="action-btn edit">Edit</button>
+                          </div>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // Filter orders in table
+    function filterOrders() {
+      const search = document.getElementById('orderSearch').value.toLowerCase();
+      const status = document.getElementById('statusFilter').value;
+      const rows = document.querySelectorAll('#ordersTableBody tr[data-order-id]');
+
+      rows.forEach(row => {
+        const rowSearch = row.dataset.search;
+        const rowStatus = row.dataset.status;
+        const matchesSearch = !search || rowSearch.includes(search);
+        const matchesStatus = status === 'all' || rowStatus === status;
+        row.style.display = matchesSearch && matchesStatus ? '' : 'none';
+      });
+    }
+
+    // View Order Detail (following TMS viewTrip pattern)
+    function viewOrder(id) {
+      currentDetailView = { type: 'order', id: id };
+
+      const order = appData.orders.find(o => o.id === id);
+      if (!order) {
+        currentDetailView = null;
+        renderOrders();
+        return;
+      }
+
+      const trip = appData.trips.find(t => t.id === order.trip_id);
+      const driver = trip ? appData.drivers.find(d => d.id === trip.driver_id) : null;
+
+      // Get inspections for this order
+      const pickupInspection = appData.inspections.find(i => i.order_id === id && i.inspection_type === 'pickup');
+      const deliveryInspection = appData.inspections.find(i => i.order_id === id && i.inspection_type === 'delivery');
+
+      const c = document.getElementById('main-content');
+
+      c.innerHTML = `
+        <div class="header">
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <button class="btn btn-secondary" onclick="renderOrders()">← Back to Orders</button>
+            <h2>${order.order_number || 'Order'}</h2>
+            <span class="badge ${getBadgeClass(order.status)}">${order.status || 'PENDING'}</span>
+          </div>
+          <div style="display:flex;gap:12px">
+            <button class="btn btn-secondary">✏️ Edit Order</button>
+          </div>
+        </div>
+
+        <div class="stat-cards">
+          <div class="stat-card">
+            <div class="label">Broker</div>
+            <div class="value">${order.broker_name || '-'}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Vehicle</div>
+            <div class="value">${order.vehicle_year || ''} ${order.vehicle_make || ''} ${order.vehicle_model || ''}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Route</div>
+            <div class="value">${order.origin || '-'} → ${order.destination || '-'}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Revenue</div>
+            <div class="value green">${formatMoney(order.revenue)}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Payment</div>
+            <div class="value">${order.payment_type || '-'}</div>
+          </div>
+          ${trip ? `
+          <div class="stat-card" style="background:#f3e8ff">
+            <div class="label">Trip</div>
+            <div class="value" style="color:#7c3aed">${trip.trip_number}</div>
+          </div>
+          ` : ''}
+          ${driver ? `
+          <div class="stat-card" style="background:#dcfce7">
+            <div class="label">Driver</div>
+            <div class="value" style="color:#15803d">${driver.first_name} ${driver.last_name}</div>
+          </div>
+          ` : ''}
+        </div>
+
+        <div class="detail-grid">
+          <div>
+            <!-- Route Card -->
+            <div class="detail-section" style="margin-bottom:20px">
+              <div class="detail-section-header">📍 Route Information</div>
+              <div class="detail-section-body">
+                <div class="route-visual">
+                  <div class="route-point">
+                    <div class="label">Pickup</div>
+                    <div class="city">${order.origin || '-'}</div>
+                    <div class="address">${order.pickup_full_address || ''}</div>
+                    ${order.pickup_date ? `<div style="margin-top:8px;font-size:12px;color:var(--text-muted)">📅 ${formatDate(order.pickup_date)}</div>` : ''}
+                    ${order.pickup_phone ? `<div style="font-size:12px;color:var(--info)">📞 ${order.pickup_phone}</div>` : ''}
+                  </div>
+                  <div class="route-arrow">→</div>
+                  <div class="route-point">
+                    <div class="label">Delivery</div>
+                    <div class="city">${order.destination || '-'}</div>
+                    <div class="address">${order.delivery_full_address || ''}</div>
+                    ${order.dropoff_date ? `<div style="margin-top:8px;font-size:12px;color:var(--text-muted)">📅 ${formatDate(order.dropoff_date)}</div>` : ''}
+                    ${order.delivery_phone ? `<div style="font-size:12px;color:var(--info)">📞 ${order.delivery_phone}</div>` : ''}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pickup Inspection -->
+            ${renderInspectionCard(pickupInspection, 'Pickup Inspection', '📥')}
+
+            <!-- Delivery Inspection -->
+            ${renderInspectionCard(deliveryInspection, 'Delivery Inspection', '📤')}
+          </div>
+
+          <div>
+            <!-- Assignment Card -->
+            <div class="detail-section" style="margin-bottom:20px">
+              <div class="detail-section-header">🚛 Assignment</div>
+              <div class="detail-section-body">
+                ${trip ? `
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div class="stat-card">
+                      <div class="label">Trip Number</div>
+                      <div class="value">${trip.trip_number}</div>
+                    </div>
+                    <div class="stat-card">
+                      <div class="label">Trip Date</div>
+                      <div class="value">${formatDate(trip.trip_date)}</div>
+                    </div>
+                    <div class="stat-card">
+                      <div class="label">Driver</div>
+                      <div class="value">${driver ? driver.first_name + ' ' + driver.last_name : 'Not Assigned'}</div>
+                    </div>
+                    <div class="stat-card">
+                      <div class="label">Trip Status</div>
+                      <div class="value"><span class="badge ${getBadgeClass(trip.status)}">${trip.status}</span></div>
+                    </div>
+                  </div>
+                ` : `
+                  <div class="empty-state" style="padding:30px">
+                    <div style="font-size:32px;margin-bottom:12px">🚛</div>
+                    <div style="color:var(--text-secondary);margin-bottom:12px">Not assigned to a trip</div>
+                    <button class="btn btn-primary">+ Assign to Trip</button>
+                  </div>
+                `}
+              </div>
+            </div>
+
+            <!-- Financials Card -->
+            <div class="detail-section" style="margin-bottom:20px">
+              <div class="detail-section-header">💰 Financials</div>
+              <div class="detail-section-body">
+                <div class="financials-grid">
+                  <div class="financial-item">
+                    <span class="label">Revenue</span>
+                    <span class="value green">${formatMoney(order.revenue)}</span>
+                  </div>
+                  <div class="financial-item">
+                    <span class="label">Broker Fee</span>
+                    <span class="value red">-${formatMoney(order.broker_fee || 0)}</span>
+                  </div>
+                  <div class="financial-item">
+                    <span class="label">Local Fee</span>
+                    <span class="value red">-${formatMoney(order.local_fee || 0)}</span>
+                  </div>
+                  <div class="financial-item">
+                    <span class="label">Payment Type</span>
+                    <span class="value">${order.payment_type || '-'}</span>
+                  </div>
+                  <div class="financial-item total">
+                    <span class="label">Net Revenue</span>
+                    <span class="value">${formatMoney((order.revenue || 0) - (order.broker_fee || 0) - (order.local_fee || 0))}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Activity Timeline -->
+            <div class="detail-section" style="margin-bottom:20px">
+              <div class="detail-section-header">📋 Activity Timeline</div>
+              <div class="detail-section-body">
+                <div class="timeline">
+                  ${order.created_at ? `
+                  <div class="timeline-item">
+                    <div class="timeline-icon purple">📦</div>
+                    <div class="timeline-content">
+                      <div class="timeline-title">Order Created</div>
+                      <div class="timeline-meta">${formatDateTime(order.created_at)}</div>
+                    </div>
+                  </div>
+                  ` : ''}
+                  ${trip ? `
+                  <div class="timeline-item">
+                    <div class="timeline-icon blue">🚛</div>
+                    <div class="timeline-content">
+                      <div class="timeline-title">Assigned to ${trip.trip_number}</div>
+                      <div class="timeline-meta">${driver ? 'Driver: ' + driver.first_name + ' ' + driver.last_name : ''}</div>
+                    </div>
+                  </div>
+                  ` : ''}
+                  ${pickupInspection ? `
+                  <div class="timeline-item">
+                    <div class="timeline-icon green">📥</div>
+                    <div class="timeline-content">
+                      <div class="timeline-title">Pickup Inspection Completed</div>
+                      <div class="timeline-meta">${formatDateTime(pickupInspection.inspection_date)} • ${pickupInspection.driver_name || 'Driver'}</div>
+                    </div>
+                  </div>
+                  ` : ''}
+                  ${deliveryInspection ? `
+                  <div class="timeline-item">
+                    <div class="timeline-icon green">📤</div>
+                    <div class="timeline-content">
+                      <div class="timeline-title">Delivery Inspection Completed</div>
+                      <div class="timeline-meta">${formatDateTime(deliveryInspection.inspection_date)} • ${deliveryInspection.driver_name || 'Driver'}</div>
+                    </div>
+                  </div>
+                  ` : ''}
+                  ${order.status === 'DELIVERED' ? `
+                  <div class="timeline-item">
+                    <div class="timeline-icon green">✓</div>
+                    <div class="timeline-content">
+                      <div class="timeline-title">Order Delivered</div>
+                      <div class="timeline-meta">${order.delivery_date ? formatDateTime(order.delivery_date) : ''}</div>
+                    </div>
+                  </div>
+                  ` : ''}
+                </div>
+              </div>
+            </div>
+
+            <!-- Notes Card -->
+            ${order.dispatcher_notes ? `
+            <div class="detail-section">
+              <div class="detail-section-header">📝 Dispatcher Notes</div>
+              <div class="detail-section-body">
+                <div class="notes-content">
+                  <span class="note-icon">📝</span>
+                  ${order.dispatcher_notes}
+                </div>
+              </div>
+            </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    // Render inspection card helper
+    function renderInspectionCard(inspection, title, icon) {
+      if (!inspection) {
+        return `
+          <div class="inspection-card" style="margin-bottom:16px">
+            <div class="inspection-header">
+              <span class="type">${icon} ${title}</span>
+              <span class="badge badge-gray">Not Completed</span>
+            </div>
+            <div class="inspection-body">
+              <div class="empty-state" style="padding:20px">
+                <div>Awaiting inspection from driver app</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      const photos = appData.inspectionPhotos.filter(p => p.inspection_id === inspection.id);
+      const damages = appData.inspectionDamages.filter(d => d.inspection_id === inspection.id);
+
+      return `
+        <div class="inspection-card" style="margin-bottom:16px">
+          <div class="inspection-header">
+            <span class="type">${icon} ${title}</span>
+            <span class="badge badge-green">Completed</span>
+          </div>
+          <div class="inspection-body">
+            ${photos.length > 0 ? `
+            <div class="inspection-photos">
+              ${photos.map(p => `
+                <img src="${p.photo_url}" alt="Inspection photo" class="inspection-photo" onclick="openPhotoModal('${p.photo_url}')">
+              `).join('')}
+            </div>
+            ` : ''}
+
+            <div class="inspection-details">
+              <div class="inspection-detail-item">
+                <div class="label">Date</div>
+                <div class="value">${formatDateTime(inspection.inspection_date)}</div>
+              </div>
+              <div class="inspection-detail-item">
+                <div class="label">Odometer</div>
+                <div class="value">${inspection.odometer ? inspection.odometer.toLocaleString() + ' mi' : '-'}</div>
+              </div>
+              <div class="inspection-detail-item">
+                <div class="label">Condition</div>
+                <div class="value">${inspection.vehicle_condition || '-'}</div>
+              </div>
+              <div class="inspection-detail-item">
+                <div class="label">Inspector</div>
+                <div class="value">${inspection.driver_name || '-'}</div>
+              </div>
+            </div>
+
+            ${damages.length > 0 ? `
+            <div class="damages-list">
+              <div style="font-size:12px;font-weight:600;color:var(--danger);margin-bottom:8px;text-transform:uppercase">⚠️ Damages Noted (${damages.length})</div>
+              ${damages.map(d => `
+                <div class="damage-item">
+                  <span class="icon">⚠️</span>
+                  <span class="location">${d.location || 'Unknown'}</span>
+                  <span class="description">${d.description || ''}</span>
+                </div>
+              `).join('')}
+            </div>
+            ` : ''}
+
+            ${inspection.driver_signature || inspection.customer_signature ? `
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
+              ${inspection.driver_signature ? `
+              <div class="signature-display">
+                <img src="${inspection.driver_signature}" alt="Driver Signature">
+                <div class="signer">Driver: ${inspection.driver_name || '-'}</div>
+              </div>
+              ` : ''}
+              ${inspection.customer_signature ? `
+              <div class="signature-display">
+                <img src="${inspection.customer_signature}" alt="Customer Signature">
+                <div class="signer">Customer: ${inspection.customer_name || '-'}</div>
+              </div>
+              ` : ''}
+            </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    // Photo Modal
+    function openPhotoModal(url) {
+      const modal = document.createElement('div');
+      modal.className = 'photo-modal';
+      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+      modal.innerHTML = `
+        <button class="photo-modal-close" onclick="this.parentElement.remove()">×</button>
+        <img src="${url}" alt="Full size photo">
+      `;
+      document.body.appendChild(modal);
+    }
+
+    // Initialize
+    loadAllData();
+  </script>
+</body>
+</html>

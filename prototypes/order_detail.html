@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Detail - Prototype</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #1e293b;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --border: #334155;
+      --accent: #3b82f6;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --purple: #8b5cf6;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .prototype-badge {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--purple);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 9999;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 400px;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .error-message {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--danger);
+      color: var(--danger);
+      padding: 16px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+
+    /* Order Selector */
+    .order-selector {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .order-selector h2 {
+      font-size: 18px;
+      margin-bottom: 16px;
+    }
+
+    .order-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .order-card {
+      background: var(--bg-primary);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .order-card:hover {
+      border-color: var(--accent);
+    }
+
+    .order-card.selected {
+      border-color: var(--success);
+      background: rgba(34, 197, 94, 0.05);
+    }
+
+    .order-card .vehicle {
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+
+    .order-card .route {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .order-card .meta {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+      font-size: 11px;
+    }
+
+    .order-card .meta span {
+      background: var(--bg-secondary);
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .order-card .has-inspection {
+      color: var(--success);
+    }
+
+    /* Back link and header */
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      margin-bottom: 16px;
+      cursor: pointer;
+    }
+
+    .back-link:hover {
+      color: var(--accent);
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .vehicle-title {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .vehicle-title h1 {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .status-badge {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .status-badge.in-transit, .status-badge.picked_up {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+    }
+
+    .status-badge.delivered {
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+    }
+
+    .status-badge.pending {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 24px;
+    }
+
+    @media (max-width: 1024px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title .icon {
+      font-size: 18px;
+    }
+
+    /* Info Grid */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 600px) {
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .info-item {
+      background: var(--bg-primary);
+      padding: 14px;
+      border-radius: 8px;
+    }
+
+    .info-item.full-width {
+      grid-column: span 2;
+    }
+
+    @media (max-width: 600px) {
+      .info-item.full-width {
+        grid-column: span 1;
+      }
+    }
+
+    .info-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .info-value {
+      font-size: 15px;
+      font-weight: 500;
+      word-break: break-word;
+    }
+
+    /* Route Display */
+    .route-display {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: var(--bg-primary);
+      border-radius: 10px;
+      flex-wrap: wrap;
+    }
+
+    .route-point {
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .route-point .city {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .route-point .details {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .route-arrow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: var(--text-secondary);
+      padding: 0 16px;
+    }
+
+    .route-arrow .arrow {
+      font-size: 24px;
+      color: var(--accent);
+    }
+
+    .route-arrow .distance {
+      font-size: 11px;
+      margin-top: 4px;
+      color: var(--accent);
+    }
+
+    /* Inspection Cards */
+    .inspection-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 800px) {
+      .inspection-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .inspection-card {
+      background: var(--bg-primary);
+      border-radius: 10px;
+      padding: 16px;
+      border: 1px solid var(--border);
+    }
+
+    .inspection-card.completed {
+      border-color: var(--success);
+    }
+
+    .inspection-card.pending {
+      border-color: var(--border);
+      opacity: 0.7;
+    }
+
+    .inspection-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .inspection-type {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .inspection-status {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    .inspection-status.completed {
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+    }
+
+    .inspection-status.in_progress {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+    }
+
+    .inspection-status.pending {
+      background: rgba(148, 163, 184, 0.2);
+      color: var(--text-secondary);
+    }
+
+    .inspection-photos {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .inspection-photo {
+      width: 48px;
+      height: 48px;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: var(--text-secondary);
+      overflow: hidden;
+    }
+
+    .inspection-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .inspection-meta {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .inspection-meta span {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .damages-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      margin-top: 8px;
+    }
+
+    .no-damages-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      margin-top: 8px;
+    }
+
+    .view-inspection-btn {
+      margin-top: 12px;
+      width: 100%;
+      padding: 8px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .view-inspection-btn:hover {
+      border-color: var(--accent);
+    }
+
+    .view-inspection-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 24px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-bottom: 20px;
+    }
+
+    .timeline-item:last-child {
+      padding-bottom: 0;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -20px;
+      top: 4px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--border);
+      border: 2px solid var(--bg-card);
+    }
+
+    .timeline-dot.completed {
+      background: var(--success);
+    }
+
+    .timeline-dot.current {
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+    }
+
+    .timeline-content {
+      background: var(--bg-primary);
+      padding: 12px 14px;
+      border-radius: 8px;
+    }
+
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .timeline-title {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .timeline-time {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .timeline-detail {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* Assignment Card */
+    .assignment-card {
+      background: var(--bg-primary);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .assignment-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .assignment-row:last-child {
+      border-bottom: none;
+    }
+
+    .assignment-label {
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .assignment-value {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .assignment-value a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    /* Payment Grid */
+    .payment-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .payment-item {
+      background: var(--bg-primary);
+      padding: 14px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .payment-amount {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .payment-amount.revenue {
+      color: var(--success);
+    }
+
+    .payment-amount.expense {
+      color: var(--warning);
+    }
+
+    .payment-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .payment-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    .payment-status.paid {
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+    }
+
+    .payment-status.pending {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+    }
+
+    /* Signature Display */
+    .signature-section {
+      margin-bottom: 16px;
+    }
+
+    .signature-display {
+      background: white;
+      border-radius: 8px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .signature-display img {
+      max-height: 70px;
+      max-width: 100%;
+    }
+
+    .signature-placeholder {
+      color: #999;
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    .signature-meta {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* Photo Modal */
+    .photo-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.9);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .photo-modal.active {
+      display: flex;
+    }
+
+    .photo-modal img {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 8px;
+    }
+
+    .photo-modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: var(--bg-secondary);
+      border: none;
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-secondary);
+    }
+
+    .empty-state .icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="prototype-badge">PROTOTYPE - Live Data</div>
+
+  <div id="app">
+    <div class="loading">
+      <div class="spinner"></div>
+      <div>Loading orders...</div>
+    </div>
+  </div>
+
+  <!-- Photo Modal -->
+  <div id="photoModal" class="photo-modal" onclick="closePhotoModal()">
+    <button class="photo-modal-close" onclick="closePhotoModal()">×</button>
+    <img id="photoModalImg" src="" alt="Inspection Photo">
+  </div>
+
+  <script>
+    // Supabase Configuration
+    const SUPABASE_URL = 'https://yrrczhlzulwvdqjwvhtu.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlycmN6aGx6dWx3dmRxand2aHR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1NDYyOTQsImV4cCI6MjA4MTEyMjI5NH0.qVVxDH36OkLXnUe3Sfng1CJY7_Qt_IOGC-1QaDw6WlE';
+
+    // State
+    let orders = [];
+    let selectedOrder = null;
+    let inspections = [];
+    let photos = [];
+    let damages = [];
+    let trip = null;
+    let driver = null;
+
+    // API Helper
+    async function supabaseGet(endpoint) {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+      });
+      if (!response.ok) throw new Error(`API Error: ${response.status}`);
+      return response.json();
+    }
+
+    // Load orders with inspections
+    async function loadOrders() {
+      try {
+        // Get orders that have trip_id (assigned to trips)
+        orders = await supabaseGet('orders?select=*&order=id.desc&limit=50');
+
+        // Get all inspections
+        const allInspections = await supabaseGet('vehicle_inspections?select=*');
+
+        // Mark orders that have inspections
+        orders = orders.map(order => ({
+          ...order,
+          hasInspection: allInspections.some(i => i.order_id === order.id)
+        }));
+
+        renderOrderSelector();
+      } catch (error) {
+        console.error('Error loading orders:', error);
+        document.getElementById('app').innerHTML = `
+          <div class="error-message">Failed to load orders: ${error.message}</div>
+        `;
+      }
+    }
+
+    // Render order selector
+    function renderOrderSelector() {
+      const app = document.getElementById('app');
+
+      if (orders.length === 0) {
+        app.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">📦</div>
+            <h2>No Orders Found</h2>
+            <p>No orders in the database yet.</p>
+          </div>
+        `;
+        return;
+      }
+
+      app.innerHTML = `
+        <div class="order-selector">
+          <h2>📦 Select an Order to View Details</h2>
+          <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 14px;">
+            Orders with inspections are marked with ✓
+          </p>
+          <div class="order-grid">
+            ${orders.map(order => `
+              <div class="order-card ${order.hasInspection ? 'has-inspection' : ''}" onclick="selectOrder(${order.id})">
+                <div class="vehicle">${order.vehicle_year || ''} ${order.vehicle_make || ''} ${order.vehicle_model || ''}</div>
+                <div class="route">${order.origin || 'Unknown'} → ${order.destination || 'Unknown'}</div>
+                <div class="meta">
+                  <span>${order.order_number || 'No Order #'}</span>
+                  ${order.hasInspection ? '<span class="has-inspection">✓ Has Inspection</span>' : ''}
+                  ${order.delivery_status ? `<span>${order.delivery_status}</span>` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // Select and load order details
+    async function selectOrder(orderId) {
+      selectedOrder = orders.find(o => o.id === orderId);
+      if (!selectedOrder) return;
+
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <div class="loading">
+          <div class="spinner"></div>
+          <div>Loading order details...</div>
+        </div>
+      `;
+
+      try {
+        // Load inspections for this order
+        inspections = await supabaseGet(`vehicle_inspections?order_id=eq.${orderId}&select=*`);
+
+        // Load photos and damages for each inspection
+        photos = [];
+        damages = [];
+        for (const inspection of inspections) {
+          const inspPhotos = await supabaseGet(`inspection_photos?inspection_id=eq.${inspection.id}&select=*`);
+          const inspDamages = await supabaseGet(`inspection_damages?inspection_id=eq.${inspection.id}&select=*`);
+          photos.push(...inspPhotos.map(p => ({ ...p, inspection_type: inspection.inspection_type })));
+          damages.push(...inspDamages.map(d => ({ ...d, inspection_type: inspection.inspection_type })));
+        }
+
+        // Load trip and driver if assigned
+        if (selectedOrder.trip_id) {
+          const trips = await supabaseGet(`trips?id=eq.${selectedOrder.trip_id}&select=*`);
+          trip = trips[0] || null;
+
+          if (trip && trip.driver_id) {
+            const drivers = await supabaseGet(`drivers?id=eq.${trip.driver_id}&select=*`);
+            driver = drivers[0] || null;
+          }
+        }
+
+        renderOrderDetail();
+      } catch (error) {
+        console.error('Error loading order details:', error);
+        app.innerHTML = `
+          <div class="error-message">Failed to load order details: ${error.message}</div>
+          <button class="btn btn-secondary" onclick="loadOrders()">← Back to Orders</button>
+        `;
+      }
+    }
+
+    // Format date
+    function formatDate(dateStr) {
+      if (!dateStr) return 'N/A';
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+    }
+
+    // Format currency
+    function formatCurrency(amount) {
+      if (!amount) return '$0';
+      return '$' + Number(amount).toLocaleString('en-US', { minimumFractionDigits: 0 });
+    }
+
+    // Get inspection by type
+    function getInspection(type) {
+      return inspections.find(i => i.inspection_type === type);
+    }
+
+    // Get photos for inspection type
+    function getPhotosForType(type) {
+      return photos.filter(p => p.inspection_type === type);
+    }
+
+    // Get damages for inspection type
+    function getDamagesForType(type) {
+      return damages.filter(d => d.inspection_type === type);
+    }
+
+    // Render inspection card
+    function renderInspectionCard(type, label, icon) {
+      const inspection = getInspection(type);
+      const typePhotos = getPhotosForType(type);
+      const typeDamages = getDamagesForType(type);
+
+      if (!inspection) {
+        return `
+          <div class="inspection-card pending">
+            <div class="inspection-header">
+              <span class="inspection-type">${icon} ${label}</span>
+              <span class="inspection-status pending">Pending</span>
+            </div>
+            <div class="inspection-photos">
+              ${[1,2,3,4,5].map(() => '<div class="inspection-photo">—</div>').join('')}
+            </div>
+            <div class="inspection-meta">
+              <span>📅 Not yet completed</span>
+            </div>
+            <button class="view-inspection-btn" disabled>Awaiting ${label}</button>
+          </div>
+        `;
+      }
+
+      const isCompleted = inspection.status === 'completed';
+
+      return `
+        <div class="inspection-card ${isCompleted ? 'completed' : 'in_progress'}">
+          <div class="inspection-header">
+            <span class="inspection-type">${icon} ${label}</span>
+            <span class="inspection-status ${inspection.status}">${isCompleted ? '✓ Completed' : 'In Progress'}</span>
+          </div>
+          <div class="inspection-photos">
+            ${typePhotos.slice(0, 5).map(photo => `
+              <div class="inspection-photo" onclick="openPhotoModal('${photo.photo_url}')">
+                <img src="${photo.photo_url}" alt="${photo.photo_type}" onerror="this.parentElement.innerHTML='${photo.photo_type}'">
+              </div>
+            `).join('')}
+            ${typePhotos.length > 5 ? `<div class="inspection-photo">+${typePhotos.length - 5}</div>` : ''}
+            ${typePhotos.length === 0 ? '<div class="inspection-photo">No photos</div>' : ''}
+          </div>
+          <div class="inspection-meta">
+            <span>📅 ${formatDate(inspection.completed_at || inspection.started_at)}</span>
+            <span>🔢 Odometer: ${inspection.odometer ? inspection.odometer.toLocaleString() + ' mi' : 'N/A'}</span>
+            ${inspection.customer_name ? `<span>✍️ Signed by: ${inspection.customer_name}</span>` : ''}
+          </div>
+          ${typeDamages.length > 0
+            ? `<div class="damages-badge">⚠️ ${typeDamages.length} Damage${typeDamages.length > 1 ? 's' : ''} Noted</div>`
+            : `<div class="no-damages-badge">✓ No Damages</div>`
+          }
+          <button class="view-inspection-btn" onclick="viewInspectionDetail('${type}')">View Full Inspection →</button>
+        </div>
+      `;
+    }
+
+    // Render signature
+    function renderSignature(inspection, type, label) {
+      if (!inspection) {
+        return `
+          <div class="signature-section">
+            <div class="info-label">${label}</div>
+            <div class="signature-display" style="background: var(--bg-primary);">
+              <span class="signature-placeholder">Awaiting ${type}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      const signature = type === 'customer' ? inspection.customer_signature : inspection.driver_signature;
+      const signedAt = type === 'customer' ? inspection.customer_signed_at : inspection.driver_signed_at;
+      const name = type === 'customer' ? inspection.customer_name : (driver ? driver.first_name + ' ' + driver.last_name : 'Driver');
+
+      if (!signature) {
+        return `
+          <div class="signature-section">
+            <div class="info-label">${label}</div>
+            <div class="signature-display" style="background: var(--bg-primary);">
+              <span class="signature-placeholder">Not signed</span>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="signature-section">
+          <div class="info-label">${label}</div>
+          <div class="signature-display">
+            <img src="${signature}" alt="${name}'s signature">
+          </div>
+          <div class="signature-meta">
+            ${name} • ${formatDate(signedAt)}
+          </div>
+        </div>
+      `;
+    }
+
+    // Build activity log
+    function buildActivityLog() {
+      const events = [];
+
+      // Order created
+      events.push({
+        title: '📝 Order Created',
+        detail: `Order ${selectedOrder.order_number || '#' + selectedOrder.id} created`,
+        time: selectedOrder.created_at,
+        status: 'completed'
+      });
+
+      // Trip assigned
+      if (trip) {
+        events.push({
+          title: '🚛 Assigned to Trip',
+          detail: `Trip #${trip.trip_number}${driver ? ' • Driver: ' + driver.first_name + ' ' + driver.last_name : ''}`,
+          time: trip.created_at,
+          status: 'completed'
+        });
+      }
+
+      // Pickup inspection
+      const pickupInsp = getInspection('pickup');
+      if (pickupInsp) {
+        if (pickupInsp.started_at) {
+          events.push({
+            title: '📥 Pickup Inspection Started',
+            detail: `${getPhotosForType('pickup').length} photos captured`,
+            time: pickupInsp.started_at,
+            status: 'completed'
+          });
+        }
+        if (pickupInsp.status === 'completed') {
+          events.push({
+            title: '✅ Pickup Inspection Completed',
+            detail: `Signed by ${pickupInsp.customer_name || 'customer'}`,
+            time: pickupInsp.completed_at,
+            status: 'completed'
+          });
+        }
+      }
+
+      // Delivery status
+      if (selectedOrder.delivery_status === 'picked_up') {
+        events.push({
+          title: '🚚 In Transit',
+          detail: 'Vehicle picked up and in transit',
+          time: pickupInsp?.completed_at || new Date().toISOString(),
+          status: 'current'
+        });
+      }
+
+      // Delivery inspection
+      const deliveryInsp = getInspection('delivery');
+      if (deliveryInsp) {
+        if (deliveryInsp.started_at) {
+          events.push({
+            title: '📤 Delivery Inspection Started',
+            detail: `${getPhotosForType('delivery').length} photos captured`,
+            time: deliveryInsp.started_at,
+            status: 'completed'
+          });
+        }
+        if (deliveryInsp.status === 'completed') {
+          events.push({
+            title: '✅ Delivery Completed',
+            detail: `Signed by ${deliveryInsp.customer_name || 'customer'}`,
+            time: deliveryInsp.completed_at,
+            status: 'completed'
+          });
+        }
+      }
+
+      // Sort by time descending
+      events.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+      return events;
+    }
+
+    // Render order detail
+    function renderOrderDetail() {
+      const app = document.getElementById('app');
+      const pickupInsp = getInspection('pickup');
+      const deliveryInsp = getInspection('delivery');
+      const activityLog = buildActivityLog();
+
+      const vehicleDesc = `${selectedOrder.vehicle_year || ''} ${selectedOrder.vehicle_make || ''} ${selectedOrder.vehicle_model || ''}`.trim() || 'Unknown Vehicle';
+      const statusLabel = selectedOrder.delivery_status || 'pending';
+
+      app.innerHTML = `
+        <div class="back-link" onclick="loadOrders()">← Back to Orders</div>
+
+        <div class="page-header">
+          <div class="vehicle-title">
+            <h1>${vehicleDesc}</h1>
+            <span class="status-badge ${statusLabel}">${statusLabel.replace('_', ' ')}</span>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-secondary" onclick="window.print()">🖨️ Print</button>
+            <button class="btn btn-primary" onclick="loadOrders()">📋 All Orders</button>
+          </div>
+        </div>
+
+        <div class="main-grid">
+          <!-- Left Column -->
+          <div class="left-column">
+
+            <!-- Order Info -->
+            <div class="card">
+              <div class="card-title"><span class="icon">📦</span> Order Information</div>
+              <div class="info-grid">
+                <div class="info-item">
+                  <div class="info-label">Order Number</div>
+                  <div class="info-value">${selectedOrder.order_number || 'N/A'}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">VIN</div>
+                  <div class="info-value">${selectedOrder.vehicle_vin || pickupInsp?.vehicle_vin || 'N/A'}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Vehicle</div>
+                  <div class="info-value">${vehicleDesc}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Color</div>
+                  <div class="info-value">${pickupInsp?.vehicle_color || 'N/A'}</div>
+                </div>
+                <div class="info-item full-width">
+                  <div class="info-label">Route</div>
+                  <div class="route-display">
+                    <div class="route-point">
+                      <div class="city">${selectedOrder.origin || 'Unknown Origin'}</div>
+                      <div class="details">${selectedOrder.pickup_full_address || ''}</div>
+                    </div>
+                    <div class="route-arrow">
+                      <div class="arrow">→</div>
+                    </div>
+                    <div class="route-point">
+                      <div class="city">${selectedOrder.destination || 'Unknown Destination'}</div>
+                      <div class="details">${selectedOrder.delivery_full_address || ''}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Inspections -->
+            <div class="card">
+              <div class="card-title"><span class="icon">🔍</span> Vehicle Inspections</div>
+              <div class="inspection-grid">
+                ${renderInspectionCard('pickup', 'Pickup Inspection', '📥')}
+                ${renderInspectionCard('delivery', 'Delivery Inspection', '📤')}
+              </div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="card">
+              <div class="card-title"><span class="icon">📜</span> Activity Log</div>
+              ${activityLog.length > 0 ? `
+                <div class="timeline">
+                  ${activityLog.map((event, index) => `
+                    <div class="timeline-item">
+                      <div class="timeline-dot ${event.status}"></div>
+                      <div class="timeline-content">
+                        <div class="timeline-header">
+                          <span class="timeline-title">${event.title}</span>
+                          <span class="timeline-time">${formatDate(event.time)}</span>
+                        </div>
+                        <div class="timeline-detail">${event.detail}</div>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : '<div class="empty-state">No activity yet</div>'}
+            </div>
+          </div>
+
+          <!-- Right Column -->
+          <div class="right-column">
+
+            <!-- Assignment -->
+            <div class="card">
+              <div class="card-title"><span class="icon">🚛</span> Assignment</div>
+              <div class="assignment-card">
+                <div class="assignment-row">
+                  <span class="assignment-label">Trip</span>
+                  <span class="assignment-value">${trip ? '#' + trip.trip_number : 'Not Assigned'}</span>
+                </div>
+                <div class="assignment-row">
+                  <span class="assignment-label">Driver</span>
+                  <span class="assignment-value">${driver ? driver.first_name + ' ' + driver.last_name : 'Not Assigned'}</span>
+                </div>
+                <div class="assignment-row">
+                  <span class="assignment-label">Pickup Sequence</span>
+                  <span class="assignment-value">${selectedOrder.pickup_sequence || 'N/A'}</span>
+                </div>
+                <div class="assignment-row">
+                  <span class="assignment-label">Delivery Sequence</span>
+                  <span class="assignment-value">${selectedOrder.delivery_sequence || 'N/A'}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Financials -->
+            <div class="card">
+              <div class="card-title"><span class="icon">💰</span> Financials</div>
+              <div class="payment-grid">
+                <div class="payment-item">
+                  <div class="payment-amount revenue">${formatCurrency(selectedOrder.revenue)}</div>
+                  <div class="payment-label">Revenue</div>
+                  <div class="payment-status ${selectedOrder.payment_status === 'paid' ? 'paid' : 'pending'}">
+                    ${selectedOrder.payment_status === 'paid' ? '✓ Paid' : '⏳ ' + (selectedOrder.payment_type || 'Pending')}
+                  </div>
+                </div>
+                <div class="payment-item">
+                  <div class="payment-amount expense">${formatCurrency(selectedOrder.broker_fee || 0)}</div>
+                  <div class="payment-label">Broker Fee</div>
+                </div>
+                <div class="payment-item">
+                  <div class="payment-amount revenue">${formatCurrency((selectedOrder.revenue || 0) - (selectedOrder.broker_fee || 0))}</div>
+                  <div class="payment-label">Net Revenue</div>
+                </div>
+                <div class="payment-item">
+                  <div class="payment-amount" style="color: var(--purple)">${formatCurrency(selectedOrder.driver_paid_amount || 0)}</div>
+                  <div class="payment-label">Driver Pay</div>
+                  <div class="payment-status ${selectedOrder.driver_paid_status === 'paid' ? 'paid' : 'pending'}">
+                    ${selectedOrder.driver_paid_status === 'paid' ? '✓ Paid' : '⏳ Unpaid'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Signatures -->
+            <div class="card">
+              <div class="card-title"><span class="icon">✍️</span> Signatures</div>
+              ${renderSignature(pickupInsp, 'customer', 'Pickup - Customer')}
+              ${renderSignature(pickupInsp, 'driver', 'Pickup - Driver')}
+              ${renderSignature(deliveryInsp, 'customer', 'Delivery - Customer')}
+              ${renderSignature(deliveryInsp, 'driver', 'Delivery - Driver')}
+            </div>
+
+            <!-- Notes -->
+            ${selectedOrder.notes || selectedOrder.dispatcher_notes ? `
+              <div class="card">
+                <div class="card-title"><span class="icon">📝</span> Notes</div>
+                <div style="background: var(--bg-primary); padding: 12px; border-radius: 8px; font-size: 14px;">
+                  ${selectedOrder.notes || selectedOrder.dispatcher_notes || 'No notes'}
+                </div>
+              </div>
+            ` : ''}
+
+          </div>
+        </div>
+      `;
+    }
+
+    // View inspection detail (could expand later)
+    function viewInspectionDetail(type) {
+      const inspection = getInspection(type);
+      const typePhotos = getPhotosForType(type);
+      const typeDamages = getDamagesForType(type);
+
+      alert(`Inspection Details:\n\nType: ${type}\nStatus: ${inspection.status}\nPhotos: ${typePhotos.length}\nDamages: ${typeDamages.length}\nOdometer: ${inspection.odometer || 'N/A'}\nSigned by: ${inspection.customer_name || 'N/A'}`);
+    }
+
+    // Photo modal
+    function openPhotoModal(url) {
+      document.getElementById('photoModalImg').src = url;
+      document.getElementById('photoModal').classList.add('active');
+    }
+
+    function closePhotoModal() {
+      document.getElementById('photoModal').classList.remove('active');
+    }
+
+    // Close modal on escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closePhotoModal();
+    });
+
+    // Initialize
+    loadOrders();
+  </script>
+</body>
+</html>

@@ -26,12 +26,12 @@ serve(async (req) => {
       )
     }
 
-    const { to, subject, html, text, from_name, attachment } = await req.json()
+    const { to, cc, bcc, subject, html, text, from_name, attachment, attachments } = await req.json()
 
     // Validate required fields - need either html or text body, OR an attachment
-    if (!to || !subject || (!html && !text && !attachment)) {
+    if (!to || !subject || (!html && !text && !attachment && !attachments)) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: to, subject, and either html, text, or attachment' }),
+        JSON.stringify({ error: 'Missing required fields: to, subject, and either html, text, attachment, or attachments' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -41,6 +41,16 @@ serve(async (req) => {
       from: from_name ? `${from_name} <noreply@luckycabbagetms.com>` : 'Horizon Star TMS <noreply@luckycabbagetms.com>',
       to: Array.isArray(to) ? to : [to],
       subject: subject,
+    }
+
+    // Add CC if provided
+    if (cc) {
+      emailPayload.cc = Array.isArray(cc) ? cc : [cc]
+    }
+
+    // Add BCC if provided
+    if (bcc) {
+      emailPayload.bcc = Array.isArray(bcc) ? bcc : [bcc]
     }
 
     // Add html body if provided
@@ -53,8 +63,14 @@ serve(async (req) => {
       emailPayload.text = text
     }
 
-    // Add attachment if provided (for PDF earnings statements)
-    if (attachment && attachment.filename && attachment.content) {
+    // Add attachments - support both single attachment and array
+    if (attachments && Array.isArray(attachments) && attachments.length > 0) {
+      // Multiple attachments array - strip out any extra fields, keep only filename and content
+      emailPayload.attachments = attachments
+        .filter(att => att.filename && att.content)
+        .map(att => ({ filename: att.filename, content: att.content }))
+    } else if (attachment && attachment.filename && attachment.content) {
+      // Single attachment object (legacy support)
       emailPayload.attachments = [{
         filename: attachment.filename,
         content: attachment.content  // base64 encoded content

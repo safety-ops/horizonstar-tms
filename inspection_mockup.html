@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LuckyCabbage Driver - Vehicle Inspection</title>
+    <style>
+        :root {
+            /* LuckyCabbage Driver App Color Palette */
+            --bg-deep: #111827;
+            --bg-primary: #111827;
+            --bg-secondary: #1a1a2e;
+            --bg-card: #1f2937;
+            --bg-elevated: #1f2937;
+            --bg-badge: #374151;
+            --accent: #22c55e;
+            --accent-glow: rgba(34, 197, 94, 0.3);
+            --accent-soft: rgba(34, 197, 94, 0.15);
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 16px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Mobile Frame */
+        .phone-frame {
+            max-width: 430px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: var(--bg-primary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--bg-secondary);
+            padding: 16px 20px 20px;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .back-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+        }
+
+        .header-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .header-badge {
+            background: var(--accent);
+            color: var(--bg-deep);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Progress Arc */
+        .progress-container {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 0 4px;
+        }
+
+        .progress-ring {
+            position: relative;
+            width: 56px;
+            height: 56px;
+            flex-shrink: 0;
+        }
+
+        .progress-ring svg {
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring-bg {
+            fill: none;
+            stroke: var(--bg-elevated);
+            stroke-width: 4;
+        }
+
+        .progress-ring-fill {
+            fill: none;
+            stroke: var(--accent);
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-dasharray: 157;
+            stroke-dashoffset: 47;
+            filter: drop-shadow(0 0 6px var(--accent-glow));
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .progress-ring-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .progress-info {
+            flex: 1;
+        }
+
+        .progress-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .progress-steps {
+            display: flex;
+            gap: 6px;
+        }
+
+        .step-dot {
+            width: 32px;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--bg-elevated);
+            transition: all 0.3s ease;
+        }
+
+        .step-dot.completed {
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        .step-dot.active {
+            background: linear-gradient(90deg, var(--accent), var(--bg-elevated));
+            animation: pulse-step 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-step {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Main Content */
+        .content {
+            padding: 0 20px 100px;
+        }
+
+        /* Vehicle Card */
+        .vehicle-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .vehicle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .vehicle-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+
+        .vehicle-vin {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .vehicle-status {
+            padding: 5px 10px;
+            background: var(--accent);
+            border-radius: 8px;
+            font-size: 0.75rem;
+            color: white;
+            font-weight: 600;
+        }
+
+        .vehicle-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .detail-item {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .detail-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 28px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .section-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            background: var(--accent-soft);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+        }
+
+        .section-count {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            background: var(--bg-badge);
+            padding: 4px 10px;
+            border-radius: 10px;
+        }
+
+        /* Photo Grid - Hexagonal inspired */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .photo-slot {
+            aspect-ratio: 1;
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 2px dashed var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .photo-slot:hover {
+            border-color: var(--accent);
+            background: var(--bg-elevated);
+        }
+
+        .photo-slot.required {
+            animation: pulse-border 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-border {
+            0%, 100% { border-color: var(--border); }
+            50% { border-color: rgba(34, 197, 94, 0.5); }
+        }
+
+        .photo-slot.captured {
+            border: 2px solid var(--accent);
+            animation: none;
+        }
+
+        .photo-slot.captured::after {
+            content: '✓';
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 20px;
+            height: 20px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            color: var(--bg-deep);
+            font-weight: bold;
+        }
+
+        .photo-slot img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 14px;
+        }
+
+        .photo-slot-icon {
+            font-size: 1.5rem;
+            margin-bottom: 4px;
+            opacity: 0.6;
+        }
+
+        .photo-slot-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 0 4px;
+        }
+
+        /* Video Capture */
+        .video-capture {
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .video-capture:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .video-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            position: relative;
+        }
+
+        .video-icon::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 2px solid rgba(239, 68, 68, 0.3);
+            animation: video-pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes video-pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.5; }
+        }
+
+        .video-info {
+            flex: 1;
+        }
+
+        .video-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .video-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .video-timer {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        /* Damage Marking */
+        .damage-section {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .damage-types {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .damage-type {
+            flex-shrink: 0;
+            padding: 10px 16px;
+            border-radius: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .damage-type:hover {
+            border-color: var(--warning);
+        }
+
+        .damage-type.active {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: var(--warning);
+        }
+
+        .damage-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .damage-dot.scratch { background: #f59e0b; }
+        .damage-dot.dent { background: #ef4444; }
+        .damage-dot.chip { background: #3b82f6; }
+        .damage-dot.broken { background: #8b5cf6; }
+        .damage-dot.missing { background: #ec4899; }
+
+        .damage-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .vehicle-diagram {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+            min-height: 240px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .vehicle-svg {
+            width: 100%;
+            max-width: 320px;
+            opacity: 0.95;
+        }
+
+        .vehicle-svg-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .vehicle-view {
+            display: none;
+        }
+
+        .vehicle-view.active {
+            display: block;
+        }
+
+        .damage-marker {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--warning);
+            border: 2px solid var(--bg-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: var(--bg-deep);
+            cursor: pointer;
+            animation: marker-pop 0.3s ease;
+        }
+
+        @keyframes marker-pop {
+            0% { transform: scale(0); }
+            70% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .diagram-views {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .diagram-view {
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .diagram-view.active {
+            background: var(--accent-soft);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Signature Section */
+        .signature-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .signature-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .signature-title {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .signature-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .sig-action {
+            padding: 6px 12px;
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            border: none;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .sig-action:hover {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+        }
+
+        .signature-pad {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            height: 140px;
+            border: 2px dashed var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .signature-pad.signed {
+            border: 2px solid var(--accent);
+        }
+
+        .signature-pad.signed::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 60'%3E%3Cpath d='M10 45 Q30 20 50 40 T90 35 T130 45 T170 30 T190 40' stroke='%2322c55e' stroke-width='2' fill='none'/%3E%3C/svg%3E") center/contain no-repeat;
+            opacity: 0.9;
+        }
+
+        .signature-placeholder {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .signature-placeholder svg {
+            opacity: 0.4;
+        }
+
+        .signature-timestamp {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        /* Notes */
+        .notes-field {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid var(--border);
+            min-height: 100px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.9rem;
+            resize: none;
+            width: 100%;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .notes-field:focus {
+            border-color: var(--accent);
+        }
+
+        .notes-field::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* Bottom CTA */
+        .bottom-cta {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 430px;
+            padding: 20px;
+            background: linear-gradient(180deg, transparent 0%, var(--bg-primary) 30%);
+            z-index: 100;
+        }
+
+        .cta-button {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            background: var(--accent);
+            border: none;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .cta-button:hover {
+            opacity: 0.9;
+        }
+
+        .cta-button:disabled {
+            background: var(--bg-badge);
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        /* Timestamp Banner */
+        .timestamp-banner {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .timestamp-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .timestamp-value {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 20px 0;
+        }
+
+        /* Screen Separator */
+        .screen-separator {
+            background: var(--bg-deep);
+            padding: 40px 20px;
+            margin: 40px -20px;
+            text-align: center;
+        }
+
+        .screen-separator h2 {
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .screen-separator p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            opacity: 0.6;
+        }
+
+        /* Comparison View (Delivery) */
+        .comparison-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .comparison-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .comparison-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .comparison-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .comparison-item {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .comparison-label {
+            padding: 8px 12px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            background: var(--bg-secondary);
+        }
+
+        .comparison-image {
+            aspect-ratio: 4/3;
+            background: var(--bg-elevated);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .comparison-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px;
+            background: rgba(34, 197, 94, 0.1);
+            border-radius: 12px;
+            margin-top: 16px;
+        }
+
+        .status-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+
+        .status-text {
+            font-size: 0.9rem;
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        /* Animation Classes */
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stagger-1 { animation-delay: 0.1s; }
+        .stagger-2 { animation-delay: 0.2s; }
+        .stagger-3 { animation-delay: 0.3s; }
+        .stagger-4 { animation-delay: 0.4s; }
+
+        /* Photo captured state simulation */
+        .photo-slot.demo-captured {
+            border: 2px solid var(--accent);
+            animation: none;
+            background: var(--bg-elevated);
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-frame">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-top">
+                <button class="back-btn">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M15 18l-6-6 6-6"/>
+                    </svg>
+                </button>
+                <span class="header-title">Vehicle Inspection</span>
+                <span class="header-badge">Pickup</span>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-ring">
+                    <svg width="56" height="56">
+                        <circle class="progress-ring-bg" cx="28" cy="28" r="25"/>
+                        <circle class="progress-ring-fill" cx="28" cy="28" r="25"/>
+                    </svg>
+                    <span class="progress-ring-text">70%</span>
+                </div>
+                <div class="progress-info">
+                    <div class="progress-label">Inspection Progress</div>
+                    <div class="progress-steps">
+                        <div class="step-dot completed"></div>
+                        <div class="step-dot completed"></div>
+                        <div class="step-dot active"></div>
+                        <div class="step-dot"></div>
+                        <div class="step-dot"></div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="content">
+            <!-- Vehicle Card -->
+            <div class="vehicle-card fade-in">
+                <div class="vehicle-header">
+                    <div>
+                        <h2 class="vehicle-title">2024 Mazda Mazda6</h2>
+                        <p class="vehicle-vin">VIN: JM1GL1VM5R1100123</p>
+                    </div>
+                    <div class="vehicle-status">Inspecting</div>
+                </div>
+                <div class="vehicle-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Year</div>
+                        <div class="detail-value">2024</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Color</div>
+                        <div class="detail-value">Soul Red</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Odometer</div>
+                        <div class="detail-value">8,234</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timestamp -->
+            <div class="timestamp-banner fade-in stagger-1">
+                <span class="timestamp-label">Inspection Started</span>
+                <span class="timestamp-value">Jan 3, 2026 • 2:34 PM</span>
+            </div>
+
+            <!-- Photo Section -->
+            <section class="section fade-in stagger-2">
+                <div class="section-header">
+                    <h3 class="section-title">
+                        <span class="section-icon">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </span>
+                        Required Photos
+                    </h3>
+                    <span class="section-count">5 of 8</span>
+                </div>
+
+                <div class="photo-grid">
+                    <div class="photo-slot demo-captured captured">
+                        <div class="photo-slot-icon">📷</div>
+                        <span class="photo-slot-label">Front</span>
+                    </div>
+                    <div class="photo-slot demo-captured captured">
+                        <div class="photo-slot-icon">📷</div>
+                        <span class="photo-slot-label">Rear</span>
+                    </div>
+                    <div class="photo-slot demo-captured captured">
+                        <div class="photo-slot-icon">📷</div>
+                        <span class="photo-slot-label">Left</span>
+                    </div>
+                    <div class="photo-slot demo-captured captured">
+                        <div class="photo-slot-icon">📷</div>
+                        <span class="photo-slot-label">Right</span>
+                    </div>
+                    <div class="photo-slot demo-captured captured">
+                        <div class="photo-slot-icon">📷</div>
+                        <span class="photo-slot-label">Roof</span>
+                    </div>
+                    <div class="photo-slot required">
+                        <div class="photo-slot-icon">📷</div>
+                        <span class="photo-slot-label">Interior</span>
+                    </div>
+                    <div class="photo-slot required">
+                        <div class="photo-slot-icon">📷</div>
+                        <span class="photo-slot-label">VIN Tag</span>
+                    </div>
+                    <div class="photo-slot">
+                        <div class="photo-slot-icon">➕</div>
+                        <span class="photo-slot-label">Extra</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Video Capture -->
+            <section class="section fade-in stagger-3">
+                <div class="section-header">
+                    <h3 class="section-title">
+                        <span class="section-icon">
+                            <svg width="16" height="16" fill="currentColor">
+                                <path d="M4 4h8a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z"/>
+                                <path d="M16 7l4-2v10l-4-2V7z"/>
+                            </svg>
+                        </span>
+                        Walk-Around Video
+                    </h3>
+                    <span class="section-count">Optional</span>
+                </div>
+
+                <div class="video-capture">
+                    <div class="video-icon">🎬</div>
+                    <div class="video-info">
+                        <div class="video-title">Record Video</div>
+                        <div class="video-subtitle">Max 30 seconds • Tap to start</div>
+                    </div>
+                    <div class="video-timer">0:00</div>
+                </div>
+            </section>
+
+            <!-- Damage Marking -->
+            <section class="section fade-in stagger-4">
+                <div class="section-header">
+                    <h3 class="section-title">
+                        <span class="section-icon">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 8v4M12 16h.01"/>
+                            </svg>
+                        </span>
+                        Damage Report
+                    </h3>
+                    <span class="section-count">2 marks</span>
+                </div>
+
+                <div class="damage-section">
+                    <div class="damage-types">
+                        <div class="damage-type active">
+                            <span class="damage-dot scratch"></span>
+                            <span class="damage-label">Scratch</span>
+                        </div>
+                        <div class="damage-type">
+                            <span class="damage-dot dent"></span>
+                            <span class="damage-label">Dent</span>
+                        </div>
+                        <div class="damage-type">
+                            <span class="damage-dot chip"></span>
+                            <span class="damage-label">Chip</span>
+                        </div>
+                        <div class="damage-type">
+                            <span class="damage-dot broken"></span>
+                            <span class="damage-label">Broken</span>
+                        </div>
+                        <div class="damage-type">
+                            <span class="damage-dot missing"></span>
+                            <span class="damage-label">Missing</span>
+                        </div>
+                    </div>
+
+                    <div class="vehicle-diagram">
+                        <div class="vehicle-svg-container">
+                            <!-- SIDE VIEW - 2024 Mazda 6 (Line Art Style) -->
+                            <div class="vehicle-view active" id="view-side">
+                                <svg class="vehicle-svg" viewBox="0 0 400 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <!-- Main body outline -->
+                                    <path d="M20 95 L20 82 L28 82 L35 70 L52 52 L75 40 L95 35 L120 32 L165 30 L210 30 L260 32 L300 35 L325 42 L350 55 L365 72 L372 82 L380 82 L380 95"
+                                          stroke="#c8d0d8" stroke-width="1.8" fill="none"/>
+
+                                    <!-- Roof line -->
+                                    <path d="M95 35 Q150 28 210 28 Q270 28 325 42" stroke="#c8d0d8" stroke-width="1.5" fill="none"/>
+
+                                    <!-- Windshield -->
+                                    <path d="M75 40 L95 52 L95 62" stroke="#c8d0d8" stroke-width="1.5" fill="none"/>
+                                    <path d="M95 35 L95 62 L165 62 L165 30" stroke="#c8d0d8" stroke-width="1.5" fill="none"/>
+
+                                    <!-- Front window -->
+                                    <path d="M98 36 L98 60 L160 60 L160 32" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+
+                                    <!-- B-pillar -->
+                                    <line x1="165" y1="30" x2="165" y2="62" stroke="#c8d0d8" stroke-width="1.5"/>
+                                    <line x1="175" y1="30" x2="175" y2="62" stroke="#c8d0d8" stroke-width="1.5"/>
+
+                                    <!-- Rear window -->
+                                    <path d="M178 32 L178 60 L280 60 L295 42" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+
+                                    <!-- C-pillar / rear windshield -->
+                                    <path d="M295 42 L310 60 L350 60 L365 72" stroke="#c8d0d8" stroke-width="1.5" fill="none"/>
+
+                                    <!-- Door line -->
+                                    <line x1="165" y1="62" x2="165" y2="92" stroke="#c8d0d8" stroke-width="1.2"/>
+
+                                    <!-- Lower body line -->
+                                    <path d="M20 95 L50 95 L50 100 L130 100 L130 95 L270 95 L270 100 L350 100 L350 95 L380 95" stroke="#c8d0d8" stroke-width="1.5" fill="none"/>
+
+                                    <!-- Wheel arches -->
+                                    <path d="M50 100 Q50 70 90 70 Q130 70 130 100" stroke="#c8d0d8" stroke-width="1.8" fill="none"/>
+                                    <path d="M270 100 Q270 70 310 70 Q350 70 350 100" stroke="#c8d0d8" stroke-width="1.8" fill="none"/>
+
+                                    <!-- Character line -->
+                                    <path d="M35 75 Q100 68 200 66 Q300 68 365 75" stroke="#c8d0d8" stroke-width="1" fill="none"/>
+
+                                    <!-- Door handles -->
+                                    <path d="M140 68 L155 68" stroke="#c8d0d8" stroke-width="1.5"/>
+                                    <path d="M220 68 L235 68" stroke="#c8d0d8" stroke-width="1.5"/>
+
+                                    <!-- Side mirror -->
+                                    <ellipse cx="88" cy="55" rx="8" ry="5" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                    <path d="M88 60 L95 62" stroke="#c8d0d8" stroke-width="1"/>
+
+                                    <!-- Headlight -->
+                                    <path d="M28 82 L35 70 L52 72 L52 82" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                    <circle cx="42" cy="76" r="4" stroke="#c8d0d8" stroke-width="1" fill="none"/>
+
+                                    <!-- Taillight -->
+                                    <path d="M365 72 L372 82 L372 92 L355 88" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+
+                                    <!-- Front bumper details -->
+                                    <path d="M20 88 L28 85 L45 88" stroke="#c8d0d8" stroke-width="1" fill="none"/>
+
+                                    <!-- Rear bumper details -->
+                                    <path d="M355 88 L372 92 L380 88" stroke="#c8d0d8" stroke-width="1" fill="none"/>
+
+                                    <!-- Front wheel -->
+                                    <circle cx="90" cy="100" r="24" stroke="#c8d0d8" stroke-width="1.8" fill="none"/>
+                                    <circle cx="90" cy="100" r="18" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                    <circle cx="90" cy="100" r="6" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                    <!-- Front wheel spokes -->
+                                    <g stroke="#c8d0d8" stroke-width="1">
+                                        <line x1="90" y1="82" x2="90" y2="88"/>
+                                        <line x1="90" y1="112" x2="90" y2="118"/>
+                                        <line x1="72" y1="100" x2="78" y2="100"/>
+                                        <line x1="102" y1="100" x2="108" y2="100"/>
+                                        <line x1="77" y1="87" x2="81" y2="91"/>
+                                        <line x1="99" y1="109" x2="103" y2="113"/>
+                                        <line x1="77" y1="113" x2="81" y2="109"/>
+                                        <line x1="99" y1="91" x2="103" y2="87"/>
+                                        <line x1="83" y1="83" x2="86" y2="88"/>
+                                        <line x1="94" y1="112" x2="97" y2="117"/>
+                                        <line x1="74" y1="94" x2="79" y2="96"/>
+                                        <line x1="101" y1="104" x2="106" y2="106"/>
+                                    </g>
+
+                                    <!-- Rear wheel -->
+                                    <circle cx="310" cy="100" r="24" stroke="#c8d0d8" stroke-width="1.8" fill="none"/>
+                                    <circle cx="310" cy="100" r="18" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                    <circle cx="310" cy="100" r="6" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                    <!-- Rear wheel spokes -->
+                                    <g stroke="#c8d0d8" stroke-width="1">
+                                        <line x1="310" y1="82" x2="310" y2="88"/>
+                                        <line x1="310" y1="112" x2="310" y2="118"/>
+                                        <line x1="292" y1="100" x2="298" y2="100"/>
+                                        <line x1="322" y1="100" x2="328" y2="100"/>
+                                        <line x1="297" y1="87" x2="301" y2="91"/>
+                                        <line x1="319" y1="109" x2="323" y2="113"/>
+                                        <line x1="297" y1="113" x2="301" y2="109"/>
+                                        <line x1="319" y1="91" x2="323" y2="87"/>
+                                        <line x1="303" y1="83" x2="306" y2="88"/>
+                                        <line x1="314" y1="112" x2="317" y2="117"/>
+                                        <line x1="294" y1="94" x2="299" y2="96"/>
+                                        <line x1="321" y1="104" x2="326" y2="106"/>
+                                    </g>
+                                </svg>
+                            </div>
+
+                            <!-- FRONT VIEW - 2024 Mazda 6 (Line Art Style) -->
+                            <div class="vehicle-view" id="view-front">
+                                <svg class="vehicle-svg" viewBox="0 0 300 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <!-- Main body outline -->
+                                    <path d="M35 120 L35 85 L45 65 L70 48 L100 38 L150 35 L200 38 L230 48 L255 65 L265 85 L265 120"
+                                          stroke="#c8d0d8" stroke-width="1.8" fill="none"/>
+
+                                    <!-- Roof -->
+                                    <path d="M70 48 L100 38 L150 35 L200 38 L230 48" stroke="#c8d0d8" stroke-width="1.5" fill="none"/>
+
+                                    <!-- Windshield outer -->
+                                    <path d="M55 70 L75 50 L150 45 L225 50 L245 70" stroke="#c8d0d8" stroke-width="1.5" fill="none"/>
+
+                                    <!-- Windshield inner -->
+                                    <path d="M62 68 L80 52 L150 48 L220 52 L238 68" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+
+                                    <!-- Hood -->
+                                    <path d="M55 75 L60 70 L240 70 L245 75" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                    <line x1="150" y1="70" x2="150" y2="85" stroke="#c8d0d8" stroke-width="0.8"/>
+
+                                    <!-- Grille - Mazda smile shape -->
+                                    <path d="M55 95 Q80 85 150 82 Q220 85 245 95" stroke="#c8d0d8" stroke-width="1.5" fill="none"/>
+                                    <path d="M60 100 Q90 92 150 90 Q210 92 240 100" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+
+                                    <!-- Grille mesh lines -->
+                                    <line x1="70" y1="92" x2="230" y2="92" stroke="#c8d0d8" stroke-width="0.8"/>
+                                    <line x1="65" y1="96" x2="235" y2="96" stroke="#c8d0d8" stroke-width="0.8"/>
+
+                                    <!-- Headlights - Left -->
+                                    <path d="M38 90 L48 75 L68 78 L65 95 L58 105 L42 102" stroke="#c8d0d8" stroke-width="1.3" fill="none"/>
+                                    <circle cx="52" cy="88" r="6" stroke="#c8d0d8" stroke-width="1" fill="none"/>
+                                    <circle cx="58" cy="95" r="4" stroke="#c8d0d8" stroke-width="0.8" fill="none"/>
+
+                                    <!-- Headlights - Right -->
+                                    <path d="M262 90 L252 75 L232 78 L235 95 L242 105 L258 102" stroke="#c8d0d8" stroke-width="1.3" fill="none"/>
+                                    <circle cx="248" cy="88" r="6" stroke="#c8d0d8" stroke-width="1" fill="none"/>
+                                    <circle cx="242" cy="95" r="4" stroke="#c8d0d8" stroke-width="0.8" fill="none"/>
+
+                                    <!-- Lower bumper -->
+                                    <path d="M40 115 L45 105 L255 105 L260 115" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                    <path d="M75 118 L85 108 L215 108 L225 118" stroke="#c8d0d8" stroke-width="1" fill="none"/>
+
+                                    <!-- Fog lights -->
+                                    <ellipse cx="55" cy="112" rx="8" ry="4" stroke="#c8d0d8" stroke-width="1" fill="none"/>
+                                    <ellipse cx="245" cy="112" rx="8" ry="4" stroke="#c8d0d8" stroke-width="1" fill="none"/>
+
+                                    <!-- License plate area -->
+                                    <rect x="120" y="112" width="60" height="10" rx="2" stroke="#c8d0d8" stroke-width="1" fill="none"/>
+
+                                    <!-- Side mirrors -->
+                                    <ellipse cx="28" cy="68" rx="6" ry="10" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                    <ellipse cx="272" cy="68" rx="6" ry="10" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+
+                                    <!-- Wheels (front view) -->
+                                    <ellipse cx="48" cy="138" rx="18" ry="6" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                    <ellipse cx="252" cy="138" rx="18" ry="6" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                </svg>
+                            </div>
+
+                            <!-- REAR VIEW - 2024 Mazda 6 (Line Art Style) -->
+                            <div class="vehicle-view" id="view-rear">
+                                <svg class="vehicle-svg" viewBox="0 0 300 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <!-- Main body outline -->
+                                    <path d="M40 120 L40 78 L52 55 L85 42 L150 38 L215 42 L248 55 L260 78 L260 120"
+                                          stroke="#c8d0d8" stroke-width="1.8" fill="none"/>
+
+                                    <!-- Roof line -->
+                                    <path d="M85 42 L150 38 L215 42" stroke="#c8d0d8" stroke-width="1.5" fill="none"/>
+
+                                    <!-- Rear windshield outer -->
+                                    <path d="M65 62 L90 48 L150 44 L210 48 L235 62" stroke="#c8d0d8" stroke-width="1.5" fill="none"/>
+
+                                    <!-- Rear windshield inner -->
+                                    <path d="M72 60 L95 50 L150 47 L205 50 L228 60" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+
+                                    <!-- Trunk lid -->
+                                    <path d="M60 68 L65 62 L235 62 L240 68 L235 78 L65 78 Z" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                    <line x1="150" y1="62" x2="150" y2="78" stroke="#c8d0d8" stroke-width="0.8"/>
+
+                                    <!-- Taillights - Left -->
+                                    <path d="M42 82 L52 68 L72 70 L75 85 L72 100 L48 98" stroke="#c8d0d8" stroke-width="1.3" fill="none"/>
+                                    <line x1="50" y1="78" x2="68" y2="80" stroke="#c8d0d8" stroke-width="1"/>
+                                    <line x1="48" y1="85" x2="70" y2="86" stroke="#c8d0d8" stroke-width="1"/>
+                                    <line x1="48" y1="92" x2="70" y2="93" stroke="#c8d0d8" stroke-width="1"/>
+
+                                    <!-- Taillights - Right -->
+                                    <path d="M258 82 L248 68 L228 70 L225 85 L228 100 L252 98" stroke="#c8d0d8" stroke-width="1.3" fill="none"/>
+                                    <line x1="250" y1="78" x2="232" y2="80" stroke="#c8d0d8" stroke-width="1"/>
+                                    <line x1="252" y1="85" x2="230" y2="86" stroke="#c8d0d8" stroke-width="1"/>
+                                    <line x1="252" y1="92" x2="230" y2="93" stroke="#c8d0d8" stroke-width="1"/>
+
+                                    <!-- Trunk/bumper line -->
+                                    <line x1="48" y1="100" x2="252" y2="100" stroke="#c8d0d8" stroke-width="1.2"/>
+
+                                    <!-- Rear bumper -->
+                                    <path d="M45 102 L255 102 L260 115 L250 125 L50 125 L40 115 Z" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+
+                                    <!-- Exhaust tips -->
+                                    <ellipse cx="80" cy="122" rx="10" ry="4" stroke="#c8d0d8" stroke-width="1" fill="none"/>
+                                    <ellipse cx="220" cy="122" rx="10" ry="4" stroke="#c8d0d8" stroke-width="1" fill="none"/>
+
+                                    <!-- License plate -->
+                                    <rect x="115" y="106" width="70" height="12" rx="2" stroke="#c8d0d8" stroke-width="1" fill="none"/>
+
+                                    <!-- Side mirrors -->
+                                    <ellipse cx="32" cy="60" rx="6" ry="10" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                    <ellipse cx="268" cy="60" rx="6" ry="10" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+
+                                    <!-- Wheels (rear view) -->
+                                    <ellipse cx="50" cy="142" rx="18" ry="6" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                    <ellipse cx="250" cy="142" rx="18" ry="6" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                </svg>
+                            </div>
+
+                            <!-- TOP VIEW - 2024 Mazda 6 (Line Art Style) -->
+                            <div class="vehicle-view" id="view-top">
+                                <svg class="vehicle-svg" viewBox="0 0 140 340" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <!-- Main body outline -->
+                                    <path d="M25 55 Q25 25 45 15 L70 10 L95 15 Q115 25 115 55
+                                             L118 90 L120 140 L120 200 L118 250 L115 285
+                                             Q115 315 95 325 L70 330 L45 325 Q25 315 25 285
+                                             L22 250 L20 200 L20 140 L22 90 Z"
+                                          stroke="#c8d0d8" stroke-width="1.8" fill="none"/>
+
+                                    <!-- Hood -->
+                                    <path d="M28 55 L28 88 L112 88 L112 55 Q112 35 95 22 L70 16 L45 22 Q28 35 28 55"
+                                          stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                    <line x1="70" y1="18" x2="70" y2="85" stroke="#c8d0d8" stroke-width="0.8"/>
+
+                                    <!-- Front windshield -->
+                                    <path d="M32 92 L32 118 L108 118 L108 92" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+
+                                    <!-- A-pillars -->
+                                    <line x1="32" y1="92" x2="35" y2="122" stroke="#c8d0d8" stroke-width="1.5"/>
+                                    <line x1="108" y1="92" x2="105" y2="122" stroke="#c8d0d8" stroke-width="1.5"/>
+
+                                    <!-- Roof -->
+                                    <path d="M35 122 L35 215 L105 215 L105 122" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+
+                                    <!-- Sunroof -->
+                                    <rect x="45" y="140" width="50" height="60" rx="4" stroke="#c8d0d8" stroke-width="1" fill="none"/>
+
+                                    <!-- C-pillars -->
+                                    <line x1="35" y1="215" x2="38" y2="225" stroke="#c8d0d8" stroke-width="1.5"/>
+                                    <line x1="105" y1="215" x2="102" y2="225" stroke="#c8d0d8" stroke-width="1.5"/>
+
+                                    <!-- Rear windshield -->
+                                    <path d="M38 225 L38 252 L102 252 L102 225" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+
+                                    <!-- Trunk -->
+                                    <path d="M30 255 L30 285 Q30 310 48 320 L70 324 L92 320 Q110 310 110 285 L110 255"
+                                          stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                    <line x1="70" y1="255" x2="70" y2="318" stroke="#c8d0d8" stroke-width="0.8"/>
+
+                                    <!-- Side mirrors -->
+                                    <ellipse cx="15" cy="105" rx="7" ry="12" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                    <ellipse cx="125" cy="105" rx="7" ry="12" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+
+                                    <!-- Headlights (top view) -->
+                                    <path d="M32 30 Q32 22 45 20 L45 40 Q32 38 32 30" stroke="#c8d0d8" stroke-width="1" fill="none"/>
+                                    <path d="M108 30 Q108 22 95 20 L95 40 Q108 38 108 30" stroke="#c8d0d8" stroke-width="1" fill="none"/>
+
+                                    <!-- Taillights (top view) -->
+                                    <path d="M30 305 Q30 315 45 318 L45 298 Q30 300 30 305" stroke="#c8d0d8" stroke-width="1" fill="none"/>
+                                    <path d="M110 305 Q110 315 95 318 L95 298 Q110 300 110 305" stroke="#c8d0d8" stroke-width="1" fill="none"/>
+
+                                    <!-- Wheels -->
+                                    <rect x="8" y="62" width="12" height="38" rx="3" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                    <rect x="120" y="62" width="12" height="38" rx="3" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                    <rect x="8" y="240" width="12" height="38" rx="3" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                    <rect x="120" y="240" width="12" height="38" rx="3" stroke="#c8d0d8" stroke-width="1.2" fill="none"/>
+                                </svg>
+                            </div>
+
+                            <!-- Damage markers -->
+                            <div class="damage-marker" style="top: 35%; left: 25%;">S</div>
+                            <div class="damage-marker" style="top: 55%; right: 30%; background: #ef4444;">D</div>
+                        </div>
+                    </div>
+
+                    <div class="diagram-views">
+                        <button class="diagram-view active">Side</button>
+                        <button class="diagram-view">Front</button>
+                        <button class="diagram-view">Rear</button>
+                        <button class="diagram-view">Top</button>
+                    </div>
+                </div>
+            </section>
+
+            <div class="divider"></div>
+
+            <!-- Customer Signature -->
+            <section class="section">
+                <div class="section-header">
+                    <h3 class="section-title">
+                        <span class="section-icon">✍️</span>
+                        Customer Signature
+                    </h3>
+                </div>
+
+                <div class="signature-card">
+                    <div class="signature-header">
+                        <span class="signature-title">Sign to confirm pickup condition</span>
+                        <div class="signature-actions">
+                            <button class="sig-action">Clear</button>
+                            <button class="sig-action">Undo</button>
+                        </div>
+                    </div>
+                    <div class="signature-pad signed">
+                        <div class="signature-placeholder" style="display: none;">
+                            <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M8 20 Q16 8 24 20"/>
+                            </svg>
+                            Tap to sign
+                        </div>
+                    </div>
+                    <div class="signature-timestamp">Signed: Jan 3, 2026 at 2:41 PM</div>
+                </div>
+            </section>
+
+            <!-- Driver Signature -->
+            <section class="section">
+                <div class="section-header">
+                    <h3 class="section-title">
+                        <span class="section-icon">🚛</span>
+                        Driver Signature
+                    </h3>
+                </div>
+
+                <div class="signature-card">
+                    <div class="signature-header">
+                        <span class="signature-title">Confirm inspection accuracy</span>
+                        <div class="signature-actions">
+                            <button class="sig-action">Clear</button>
+                        </div>
+                    </div>
+                    <div class="signature-pad">
+                        <div class="signature-placeholder">
+                            <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M8 20 Q16 8 24 20"/>
+                            </svg>
+                            Tap to sign
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Notes -->
+            <section class="section">
+                <div class="section-header">
+                    <h3 class="section-title">
+                        <span class="section-icon">📝</span>
+                        Additional Notes
+                    </h3>
+                </div>
+                <textarea class="notes-field" placeholder="Add any additional observations or notes about the vehicle condition..."></textarea>
+            </section>
+
+            <!-- DELIVERY INSPECTION PREVIEW -->
+            <div class="screen-separator">
+                <h2>— Delivery Inspection —</h2>
+                <p>Scroll to preview delivery flow</p>
+            </div>
+
+            <!-- Comparison Section (Delivery) -->
+            <section class="section">
+                <div class="comparison-card">
+                    <div class="comparison-header">
+                        <h3 class="comparison-title">Condition Comparison</h3>
+                        <p class="comparison-subtitle">Pickup vs Delivery</p>
+                    </div>
+
+                    <div class="comparison-grid">
+                        <div class="comparison-item">
+                            <div class="comparison-label">Pickup - Front</div>
+                            <div class="comparison-image">📷 Photo</div>
+                        </div>
+                        <div class="comparison-item">
+                            <div class="comparison-label">Delivery - Front</div>
+                            <div class="comparison-image" style="background: var(--bg-card);">Tap to capture</div>
+                        </div>
+                        <div class="comparison-item">
+                            <div class="comparison-label">Pickup - Left</div>
+                            <div class="comparison-image">📷 Photo</div>
+                        </div>
+                        <div class="comparison-item">
+                            <div class="comparison-label">Delivery - Left</div>
+                            <div class="comparison-image" style="background: var(--bg-card);">Tap to capture</div>
+                        </div>
+                    </div>
+
+                    <div class="comparison-status">
+                        <span class="status-icon">✓</span>
+                        <span class="status-text">No new damage detected</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Delivery Signatures -->
+            <section class="section">
+                <div class="section-header">
+                    <h3 class="section-title">
+                        <span class="section-icon">✍️</span>
+                        Customer Delivery Signature
+                    </h3>
+                </div>
+
+                <div class="signature-card">
+                    <div class="signature-header">
+                        <span class="signature-title">Sign to confirm delivery condition</span>
+                        <div class="signature-actions">
+                            <button class="sig-action">Clear</button>
+                        </div>
+                    </div>
+                    <div class="signature-pad">
+                        <div class="signature-placeholder">
+                            <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M8 20 Q16 8 24 20"/>
+                            </svg>
+                            Tap to sign
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Bottom CTA -->
+        <div class="bottom-cta">
+            <button class="cta-button">
+                Complete Pickup Inspection
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Simple interactivity demo
+        document.querySelectorAll('.photo-slot:not(.captured)').forEach(slot => {
+            slot.addEventListener('click', function() {
+                if (!this.classList.contains('captured')) {
+                    this.classList.add('captured', 'demo-captured');
+                    this.classList.remove('required');
+                    updateProgress();
+                }
+            });
+        });
+
+        document.querySelectorAll('.damage-type').forEach(type => {
+            type.addEventListener('click', function() {
+                document.querySelectorAll('.damage-type').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        document.querySelectorAll('.diagram-view').forEach((view, index) => {
+            view.addEventListener('click', function() {
+                document.querySelectorAll('.diagram-view').forEach(v => v.classList.remove('active'));
+                this.classList.add('active');
+
+                // Hide all vehicle views
+                document.querySelectorAll('.vehicle-view').forEach(v => v.classList.remove('active'));
+
+                // Show the selected view
+                const views = ['view-side', 'view-front', 'view-rear', 'view-top'];
+                const selectedView = document.getElementById(views[index]);
+                if (selectedView) {
+                    selectedView.classList.add('active');
+                }
+            });
+        });
+
+        document.querySelectorAll('.signature-pad:not(.signed)').forEach(pad => {
+            pad.addEventListener('click', function() {
+                this.classList.add('signed');
+                const placeholder = this.querySelector('.signature-placeholder');
+                if (placeholder) placeholder.style.display = 'none';
+            });
+        });
+
+        function updateProgress() {
+            const total = document.querySelectorAll('.photo-slot').length - 1;
+            const captured = document.querySelectorAll('.photo-slot.captured').length;
+            const percent = Math.round((captured / total) * 100);
+            document.querySelector('.progress-ring-text').textContent = percent + '%';
+
+            const circle = document.querySelector('.progress-ring-fill');
+            const offset = 157 - (157 * percent / 100);
+            circle.style.strokeDashoffset = offset;
+        }
+    </script>
+</body>
+</html>
