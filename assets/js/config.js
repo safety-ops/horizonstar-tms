@@ -60,8 +60,12 @@ let appData = {
   compliance_tasks: [],
   accidents: [],
   company_files: [],
-  tasks: []
+  tasks: [],
+  dealers: []
 };
+
+// Current dealer profile (for dealer portal)
+let currentDealerProfile = null;
 
 // ============ SESSION CONFIGURATION ============
 const LOGIN_ATTEMPT_LIMIT = 5;

@@ -404,6 +404,21 @@ async function loadSecondaryData() {
       await loadSamsaraSettings();
     }
 
+    // Try to load dealers
+    let dealers = [];
+    try { dealers = await dbFetch('dealers', { order: 'company_name' }) || []; } catch(e) { dealers = []; }
+
+    // Update appData with dealers
+    appData.dealers = dealers;
+
+    // Update cache
+    dataCache.set('appData', appData);
+
+    // Load Samsara settings from database (shared across all users)
+    if (typeof loadSamsaraSettings === 'function') {
+      await loadSamsaraSettings();
+    }
+
     // Only re-render if we're NOT viewing a detail page (trip/driver/truck detail)
     // This prevents getting kicked out of detail views when secondary data loads
     if (!currentDetailView && typeof renderPage === 'function') {
@@ -412,4 +427,167 @@ async function loadSecondaryData() {
   } catch (e) {
     console.error('Failed to load secondary data:', e);
   }
+}
+
+// ============ DEALER PORTAL FUNCTIONS ============
+
+/**
+ * Load dealer profile for current user
+ * @returns {Promise<Object|null>} Dealer profile or null
+ */
+async function loadDealerProfile() {
+  if (!currentUser || currentUser.role !== 'DEALER') return null;
+
+  try {
+    const dealers = await dbFetch('dealers', {
+      filter: { user_id: 'eq.' + currentUser.id }
+    });
+    currentDealerProfile = dealers[0] || null;
+    return currentDealerProfile;
+  } catch (e) {
+    console.error('Failed to load dealer profile:', e);
+    return null;
+  }
+}
+
+/**
+ * Load orders for a specific dealer
+ * @param {number} dealerId - Dealer ID
+ * @param {Object} filters - Optional filters (status, dateRange)
+ * @returns {Promise<Array>} Dealer's orders
+ */
+async function loadDealerOrders(dealerId, filters = {}) {
+  try {
+    let filterObj = { dealer_id: 'eq.' + dealerId };
+
+    if (filters.status && filters.status !== 'all') {
+      filterObj.delivery_status = 'eq.' + filters.status;
+    }
+
+    const orders = await dbFetch('orders', {
+      filter: filterObj,
+      order: 'created_at.desc'
+    });
+
+    return orders || [];
+  } catch (e) {
+    console.error('Failed to load dealer orders:', e);
+    return [];
+  }
+}
+
+/**
+ * Calculate dealer spending/financial summary
+ * @param {number} dealerId - Dealer ID
+ * @param {Object} dateRange - Optional date range { start, end }
+ * @returns {Promise<Object>} Spending summary
+ */
+async function getDealerSpending(dealerId, dateRange = {}) {
+  try {
+    const orders = await loadDealerOrders(dealerId);
+
+    // Filter by date range if provided
+    let filteredOrders = orders;
+    if (dateRange.start) {
+      filteredOrders = filteredOrders.filter(o =>
+        new Date(o.created_at) >= new Date(dateRange.start)
+      );
+    }
+    if (dateRange.end) {
+      filteredOrders = filteredOrders.filter(o =>
+        new Date(o.created_at) <= new Date(dateRange.end)
+      );
+    }
+
+    // Calculate totals
+    const totalSpent = filteredOrders.reduce((sum, o) => sum + (parseFloat(o.revenue) || 0), 0);
+    const totalVehicles = filteredOrders.length;
+    const avgCostPerVehicle = totalVehicles > 0 ? totalSpent / totalVehicles : 0;
+
+    // Count by status
+    const pending = filteredOrders.filter(o => o.delivery_status === 'pending').length;
+    const pickedUp = filteredOrders.filter(o => o.delivery_status === 'picked_up').length;
+    const inTransit = filteredOrders.filter(o => o.delivery_status === 'in_transit').length;
+    const delivered = filteredOrders.filter(o => o.delivery_status === 'delivered').length;
+
+    return {
+      totalSpent,
+      totalVehicles,
+      avgCostPerVehicle,
+      pending,
+      pickedUp,
+      inTransit,
+      delivered,
+      orders: filteredOrders
+    };
+  } catch (e) {
+    console.error('Failed to get dealer spending:', e);
+    return {
+      totalSpent: 0,
+      totalVehicles: 0,
+      avgCostPerVehicle: 0,
+      pending: 0,
+      pickedUp: 0,
+      inTransit: 0,
+      delivered: 0,
+      orders: []
+    };
+  }
+}
+
+/**
+ * Submit a vehicle order from dealer portal
+ * @param {Object} orderData - Vehicle/order data
+ * @returns {Promise<Object>} Created order
+ */
+async function submitDealerOrder(orderData) {
+  if (!currentDealerProfile) {
+    await loadDealerProfile();
+  }
+
+  if (!currentDealerProfile) {
+    throw new Error('Dealer profile not found. Please contact support.');
+  }
+
+  // Generate order number with dealer prefix
+  const orderNumber = 'DLR-' + currentDealerProfile.dealer_code + '-' + Date.now().toString().slice(-6);
+
+  const order = await dbInsert('orders', {
+    order_number: orderNumber,
+    dealer_id: currentDealerProfile.id,
+    vehicle_year: orderData.vehicle_year,
+    vehicle_make: orderData.vehicle_make,
+    vehicle_model: orderData.vehicle_model,
+    vehicle_vin: orderData.vehicle_vin,
+    vehicle_color: orderData.vehicle_color,
+    origin: orderData.pickup_location,
+    destination: orderData.delivery_location,
+    pickup_date: orderData.pickup_date,
+    dropoff_date: orderData.delivery_date,
+    delivery_status: 'pending',
+    status: 'PENDING',
+    dispatcher_notes: orderData.notes || ''
+  });
+
+  // Log activity
+  await logActivity('DEALER_ORDER_SUBMITTED', {
+    dealer_id: currentDealerProfile.id,
+    dealer_name: currentDealerProfile.company_name,
+    order_id: order.id,
+    order_number: orderNumber
+  });
+
+  return order;
+}
+
+/**
+ * Generate a unique dealer code
+ * @param {string} companyName - Company name to base code on
+ * @returns {string} Unique dealer code
+ */
+function generateDealerCode(companyName) {
+  // Take first 3 letters of company name + random 3 digits
+  const prefix = (companyName || 'DLR').substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'X');
+  const suffix = Math.floor(100 + Math.random() * 900);
+  return prefix + suffix;
 }

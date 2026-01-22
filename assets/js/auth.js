@@ -239,6 +239,11 @@ function renderLogin() {
         </div>
         <button type="submit" class="btn-submit" id="login-btn">${typeof t === 'function' ? t('sign_in') : 'Sign In'}</button>
       </form>
+      <div style="text-align:center;margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
+        <p style="color:var(--text-secondary);font-size:13px;margin:0">
+          🚗 Are you a dealer? <a href="#" onclick="showDealerLoginInfo();return false;" style="color:#22c55e;text-decoration:none;font-weight:500">Dealer Portal</a>
+        </p>
+      </div>
     </div>
   `;
 
@@ -322,6 +327,12 @@ async function handleLogin(e) {
       localStorage.setItem('horizonstar_user', JSON.stringify(currentUser));
       startSessionMonitor();
       await logActivity('LOGIN_SUCCESS', { email, method: 'supabase_auth' });
+
+      // Redirect dealers to dealer dashboard
+      if (currentUser.role === 'DEALER') {
+        currentPage = 'dealer_dashboard';
+      }
+
       renderApp();
       return;
     }
@@ -426,6 +437,12 @@ async function handleLogin(e) {
     localStorage.setItem('horizonstar_user', JSON.stringify(currentUser));
     startSessionMonitor();
     await logActivity('LOGIN_SUCCESS', { email, method: 'legacy_migrated' });
+
+    // Redirect dealers to dealer dashboard
+    if (currentUser.role === 'DEALER') {
+      currentPage = 'dealer_dashboard';
+    }
+
     renderApp();
 
   } catch (err) {
@@ -632,4 +649,47 @@ async function handleForgotStep2() {
     btn.disabled = false;
     btn.textContent = 'Reset Password';
   }
+}
+
+// ============ DEALER PORTAL INFO ============
+
+/**
+ * Show dealer portal information modal
+ */
+function showDealerLoginInfo() {
+  const m = document.createElement('div');
+  m.className = 'modal-overlay';
+  m.onclick = e => { if (e.target === m) m.remove(); };
+  m.innerHTML = `
+    <div class="modal" style="max-width:500px">
+      <div class="modal-header">
+        <h3>🚗 Dealer Portal</h3>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+      </div>
+      <div class="modal-body" style="text-align:center;padding:30px">
+        <div style="font-size:64px;margin-bottom:20px">🏪</div>
+        <h3 style="margin-bottom:12px;color:var(--text-primary)">Welcome, Dealers!</h3>
+        <p style="color:var(--text-secondary);margin-bottom:24px;line-height:1.6">
+          The Dealer Portal allows you to submit vehicles for transport, track shipments, and view your spending history.
+        </p>
+        <div style="background:var(--bg-darker);border-radius:12px;padding:20px;text-align:left;margin-bottom:24px">
+          <p style="font-weight:600;margin-bottom:12px;color:var(--text-primary)">✨ Portal Features:</p>
+          <ul style="color:var(--text-secondary);margin:0;padding-left:20px;line-height:1.8">
+            <li>Submit vehicles for transport</li>
+            <li>Track order status in real-time</li>
+            <li>View spending and financial history</li>
+            <li>Manage your vehicle shipments</li>
+          </ul>
+        </div>
+        <p style="color:var(--text-muted);font-size:13px">
+          If you have dealer credentials, use them to log in above.<br>
+          Need an account? Contact us at <strong style="color:#22c55e">info@horizonstarllc.com</strong>
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove()">Got it</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(m);
 }

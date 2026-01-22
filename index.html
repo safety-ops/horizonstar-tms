@@ -13109,6 +13109,7 @@
       
       // PARTNERS section
       { id: 'brokers', labelKey: 'brokers', icon: 'brokers', section: 'PARTNERS' },
+      { id: 'dealers', labelKey: 'dealers', icon: 'brokers', admin: true, section: 'PARTNERS' },
       { id: 'dispatchers', labelKey: 'dispatchers', icon: 'dispatchers', section: 'PARTNERS' },
       { id: 'dispatcher_ranking', labelKey: 'dispatcher_ranking', icon: 'dispatcher_ranking', section: 'PARTNERS' },
       
@@ -13145,6 +13146,12 @@
     }
     
     function renderNav() {
+      // Dealers get a simplified navigation
+      if (currentUser && currentUser.role === 'DEALER') {
+        renderDealerNav();
+        return;
+      }
+
       const sections = {
         'MAIN': 'MAIN',
         'FLEET': 'FLEET',
@@ -13153,7 +13160,7 @@
         'OPERATIONS': 'OPERATIONS',
         'SETTINGS': ''
       };
-      
+
       let html = '';
       const isAdminOrManager = currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER';
       const filteredItems = navItems.filter(i => {
@@ -14237,12 +14244,29 @@
     function renderPage() {
       // Clear detail view flag when rendering a page (navigating away from detail)
       currentDetailView = null;
-      
+
       const m = document.getElementById('main-content');
-      
+
       // Remove FAB from previous page
       removeFloatingActionButton();
-      
+
+      // Handle dealer portal pages - dealers get their own restricted views
+      if (currentUser && currentUser.role === 'DEALER') {
+        if (currentPage === 'dealer_dashboard' || currentPage === 'dashboard') {
+          renderDealerDashboard(m);
+        } else if (currentPage === 'dealer_submit') {
+          renderDealerSubmitVehicle(m);
+        } else if (currentPage === 'dealer_orders') {
+          renderDealerOrders(m);
+        } else if (currentPage === 'dealer_spending') {
+          renderDealerSpending(m);
+        } else {
+          // Default to dealer dashboard for any other page
+          renderDealerDashboard(m);
+        }
+        return;
+      }
+
       // Handle mini chat visibility
       if (currentPage === 'team_chat') {
         document.body.classList.add('on-team-chat');
@@ -14258,7 +14282,7 @@
         document.body.classList.remove('on-team-chat');
         initMiniChat();
       }
-      
+
       if (currentPage === 'dashboard') renderDashboard(m);
       else if (currentPage === 'loadboard') renderLoadBoard(m);
       else if (currentPage === 'trips') renderTrips(m);
@@ -14295,6 +14319,7 @@
       else if (currentPage === 'team_chat') renderTeamChat(m);
       else if (currentPage === 'applications') renderApplications(m);
       else if (currentPage === 'tracking') renderTrackingPortal(m);
+      else if (currentPage === 'dealers') renderDealersAdmin(m);
       
       // Add FAB for pages that support adding new items (mobile only)
       if (window.innerWidth <= 768) {
@@ -37505,6 +37530,620 @@ function jsonResponse(data, status = 200) {
         showToast('Application rejected', 'info');
         document.querySelector('.modal-overlay')?.remove();
         loadApplications();
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    // ============================================================
+    // DEALER PORTAL
+    // ============================================================
+
+    /**
+     * Render dealer-specific navigation
+     */
+    function renderDealerNav() {
+      const dealerNavItems = [
+        { id: 'dealer_dashboard', label: 'Dashboard', icon: '📊' },
+        { id: 'dealer_submit', label: 'Submit Vehicle', icon: '🚗' },
+        { id: 'dealer_orders', label: 'My Orders', icon: '📋' },
+        { id: 'dealer_spending', label: 'Spending', icon: '💰' }
+      ];
+
+      let html = '<div class="nav-section">';
+      html += '<div class="nav-section-title">DEALER PORTAL</div>';
+
+      dealerNavItems.forEach(item => {
+        html += '<button class="nav-item ' + (currentPage === item.id ? 'active' : '') + '" onclick="navigate(\'' + item.id + '\')" role="menuitem">' +
+          '<span class="icon">' + item.icon + '</span> <span class="nav-item-text">' + item.label + '</span></button>';
+      });
+
+      html += '</div>';
+      document.getElementById('nav').innerHTML = html;
+    }
+
+    /**
+     * Render dealer dashboard
+     */
+    async function renderDealerDashboard(m) {
+      // Load dealer profile if not loaded
+      if (!currentDealerProfile) {
+        await loadDealerProfile();
+      }
+
+      if (!currentDealerProfile) {
+        m.innerHTML = '<div class="card" style="text-align:center;padding:60px">' +
+          '<div style="font-size:64px;margin-bottom:20px">⚠️</div>' +
+          '<h2>Dealer Profile Not Found</h2>' +
+          '<p style="color:var(--text-secondary)">Your dealer account is not fully set up. Please contact support.</p>' +
+          '</div>';
+        return;
+      }
+
+      // Get dealer stats
+      const stats = await getDealerSpending(currentDealerProfile.id);
+      const recentOrders = stats.orders.slice(0, 10);
+
+      m.innerHTML = '<div class="page-header">' +
+        '<h1>Welcome, ' + (currentDealerProfile.company_name || 'Dealer') + '</h1>' +
+        '<p style="color:var(--text-secondary);margin-top:4px">Dealer Code: <strong>' + currentDealerProfile.dealer_code + '</strong></p>' +
+        '</div>' +
+
+        // Stats cards
+        '<div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:24px">' +
+        '<div class="stat-card" style="background:var(--bg-card);padding:20px;border-radius:12px;text-align:center">' +
+        '<div style="font-size:32px;font-weight:700;color:var(--accent-primary)">' + stats.totalVehicles + '</div>' +
+        '<div style="color:var(--text-secondary);font-size:13px">Total Orders</div></div>' +
+        '<div class="stat-card" style="background:var(--bg-card);padding:20px;border-radius:12px;text-align:center">' +
+        '<div style="font-size:32px;font-weight:700;color:#f59e0b">' + stats.pending + '</div>' +
+        '<div style="color:var(--text-secondary);font-size:13px">Pending</div></div>' +
+        '<div class="stat-card" style="background:var(--bg-card);padding:20px;border-radius:12px;text-align:center">' +
+        '<div style="font-size:32px;font-weight:700;color:#3b82f6">' + (stats.pickedUp + stats.inTransit) + '</div>' +
+        '<div style="color:var(--text-secondary);font-size:13px">In Transit</div></div>' +
+        '<div class="stat-card" style="background:var(--bg-card);padding:20px;border-radius:12px;text-align:center">' +
+        '<div style="font-size:32px;font-weight:700;color:#22c55e">' + stats.delivered + '</div>' +
+        '<div style="color:var(--text-secondary);font-size:13px">Delivered</div></div>' +
+        '<div class="stat-card" style="background:var(--bg-card);padding:20px;border-radius:12px;text-align:center">' +
+        '<div style="font-size:32px;font-weight:700;color:#8b5cf6">$' + formatNumber(stats.totalSpent) + '</div>' +
+        '<div style="color:var(--text-secondary);font-size:13px">Total Spent</div></div>' +
+        '</div>' +
+
+        // Quick action + Recent orders
+        '<div class="card">' +
+        '<div class="card-header" style="display:flex;justify-content:space-between;align-items:center">' +
+        '<h3>Recent Orders</h3>' +
+        '<button class="btn btn-primary" onclick="navigate(\'dealer_submit\')">+ Submit New Vehicle</button>' +
+        '</div>' +
+        '<div class="table-wrapper"><table><thead><tr><th>Order #</th><th>Vehicle</th><th>Route</th><th>Status</th><th>Date</th></tr></thead><tbody>' +
+        (recentOrders.length === 0 ? '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted)">No orders yet. Submit your first vehicle!</td></tr>' :
+        recentOrders.map(o => {
+          const statusColors = { pending: '#f59e0b', picked_up: '#3b82f6', in_transit: '#3b82f6', delivered: '#22c55e' };
+          const statusLabels = { pending: 'Pending', picked_up: 'Picked Up', in_transit: 'In Transit', delivered: 'Delivered' };
+          return '<tr>' +
+            '<td><strong>' + (o.order_number || '-') + '</strong></td>' +
+            '<td>' + [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).join(' ') + '</td>' +
+            '<td>' + (o.origin || '-') + ' → ' + (o.destination || '-') + '</td>' +
+            '<td><span class="badge" style="background:' + (statusColors[o.delivery_status] || '#6b7280') + '">' + (statusLabels[o.delivery_status] || o.delivery_status || 'Unknown') + '</span></td>' +
+            '<td>' + formatDate(o.created_at) + '</td></tr>';
+        }).join('')) +
+        '</tbody></table></div></div>';
+    }
+
+    /**
+     * Render dealer submit vehicle form
+     */
+    function renderDealerSubmitVehicle(m) {
+      m.innerHTML = '<div class="page-header">' +
+        '<h1>Submit Vehicle for Transport</h1>' +
+        '<p style="color:var(--text-secondary);margin-top:4px">Fill out the form below to request vehicle transport</p>' +
+        '</div>' +
+
+        '<div class="card" style="max-width:800px">' +
+        '<form onsubmit="handleDealerSubmitVehicle(event)">' +
+
+        // Vehicle Information
+        '<div style="margin-bottom:24px">' +
+        '<h4 style="margin-bottom:16px;color:var(--text-primary)">🚗 Vehicle Information</h4>' +
+        '<div class="form-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px">' +
+        '<div class="form-group"><label>Year *</label><input type="number" id="dealer-vehicle-year" required min="1900" max="2030" placeholder="2024"></div>' +
+        '<div class="form-group"><label>Make *</label><input type="text" id="dealer-vehicle-make" required placeholder="Toyota"></div>' +
+        '<div class="form-group"><label>Model *</label><input type="text" id="dealer-vehicle-model" required placeholder="Camry"></div>' +
+        '</div>' +
+        '<div class="form-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px">' +
+        '<div class="form-group"><label>VIN</label><input type="text" id="dealer-vehicle-vin" maxlength="17" placeholder="17-character VIN"></div>' +
+        '<div class="form-group"><label>Color</label><input type="text" id="dealer-vehicle-color" placeholder="White"></div>' +
+        '</div>' +
+        '</div>' +
+
+        // Pickup Information
+        '<div style="margin-bottom:24px">' +
+        '<h4 style="margin-bottom:16px;color:var(--text-primary)">📍 Pickup Information</h4>' +
+        '<div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
+        '<div class="form-group"><label>Pickup Location *</label><input type="text" id="dealer-pickup-location" required placeholder="City, State (e.g., Los Angeles, CA)"></div>' +
+        '<div class="form-group"><label>Pickup Date *</label><input type="date" id="dealer-pickup-date" required></div>' +
+        '</div>' +
+        '</div>' +
+
+        // Delivery Information
+        '<div style="margin-bottom:24px">' +
+        '<h4 style="margin-bottom:16px;color:var(--text-primary)">🏁 Delivery Information</h4>' +
+        '<div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
+        '<div class="form-group"><label>Delivery Location *</label><input type="text" id="dealer-delivery-location" required placeholder="City, State (e.g., Miami, FL)"></div>' +
+        '<div class="form-group"><label>Requested Delivery Date</label><input type="date" id="dealer-delivery-date"></div>' +
+        '</div>' +
+        '</div>' +
+
+        // Notes
+        '<div style="margin-bottom:24px">' +
+        '<div class="form-group"><label>Additional Notes</label><textarea id="dealer-notes" rows="3" placeholder="Any special instructions or notes..."></textarea></div>' +
+        '</div>' +
+
+        // Submit buttons
+        '<div style="display:flex;gap:12px;justify-content:flex-end">' +
+        '<button type="button" class="btn btn-secondary" onclick="navigate(\'dealer_dashboard\')">Cancel</button>' +
+        '<button type="submit" class="btn btn-primary" id="dealer-submit-btn">Submit Vehicle</button>' +
+        '</div>' +
+        '</form></div>';
+
+      // Set default pickup date to today
+      document.getElementById('dealer-pickup-date').value = new Date().toISOString().split('T')[0];
+    }
+
+    /**
+     * Handle dealer vehicle submission
+     */
+    async function handleDealerSubmitVehicle(e) {
+      e.preventDefault();
+      const btn = document.getElementById('dealer-submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+
+      try {
+        const orderData = {
+          vehicle_year: document.getElementById('dealer-vehicle-year').value,
+          vehicle_make: document.getElementById('dealer-vehicle-make').value,
+          vehicle_model: document.getElementById('dealer-vehicle-model').value,
+          vehicle_vin: document.getElementById('dealer-vehicle-vin').value,
+          vehicle_color: document.getElementById('dealer-vehicle-color').value,
+          pickup_location: document.getElementById('dealer-pickup-location').value,
+          pickup_date: document.getElementById('dealer-pickup-date').value,
+          delivery_location: document.getElementById('dealer-delivery-location').value,
+          delivery_date: document.getElementById('dealer-delivery-date').value,
+          notes: document.getElementById('dealer-notes').value
+        };
+
+        await submitDealerOrder(orderData);
+        showToast('Vehicle submitted successfully!', 'success');
+        navigate('dealer_orders');
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Submit Vehicle';
+      }
+    }
+
+    /**
+     * Render dealer orders list
+     */
+    async function renderDealerOrders(m) {
+      if (!currentDealerProfile) {
+        await loadDealerProfile();
+      }
+
+      if (!currentDealerProfile) {
+        m.innerHTML = '<div class="card" style="text-align:center;padding:60px"><h2>Dealer profile not found</h2></div>';
+        return;
+      }
+
+      // Get filter from URL or default
+      const statusFilter = window.dealerOrdersFilter || 'all';
+      const orders = await loadDealerOrders(currentDealerProfile.id, { status: statusFilter === 'all' ? null : statusFilter });
+
+      const statusColors = { pending: '#f59e0b', picked_up: '#3b82f6', in_transit: '#3b82f6', delivered: '#22c55e' };
+      const statusLabels = { pending: 'Pending', picked_up: 'Picked Up', in_transit: 'In Transit', delivered: 'Delivered' };
+
+      m.innerHTML = '<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">' +
+        '<h1>My Orders</h1>' +
+        '<button class="btn btn-primary" onclick="navigate(\'dealer_submit\')">+ Submit New Vehicle</button>' +
+        '</div>' +
+
+        // Status filter tabs
+        '<div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">' +
+        ['all', 'pending', 'picked_up', 'in_transit', 'delivered'].map(s => {
+          const label = s === 'all' ? 'All' : statusLabels[s];
+          const isActive = statusFilter === s;
+          return '<button class="btn btn-sm ' + (isActive ? 'btn-primary' : 'btn-secondary') + '" onclick="filterDealerOrders(\'' + s + '\')">' + label + '</button>';
+        }).join('') +
+        '</div>' +
+
+        '<div class="card">' +
+        '<div class="table-wrapper"><table><thead><tr><th>Order #</th><th>Vehicle</th><th>VIN</th><th>Pickup</th><th>Delivery</th><th>Status</th><th>Submitted</th></tr></thead><tbody>' +
+        (orders.length === 0 ? '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted)">No orders found</td></tr>' :
+        orders.map(o => {
+          return '<tr onclick="viewDealerOrderDetail(' + o.id + ')" style="cursor:pointer">' +
+            '<td><strong>' + (o.order_number || '-') + '</strong></td>' +
+            '<td>' + [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).join(' ') + '</td>' +
+            '<td style="font-family:monospace;font-size:12px">' + (o.vehicle_vin || '-') + '</td>' +
+            '<td>' + (o.origin || '-') + '<br><small style="color:var(--text-muted)">' + formatDate(o.pickup_date) + '</small></td>' +
+            '<td>' + (o.destination || '-') + '<br><small style="color:var(--text-muted)">' + formatDate(o.dropoff_date) + '</small></td>' +
+            '<td><span class="badge" style="background:' + (statusColors[o.delivery_status] || '#6b7280') + '">' + (statusLabels[o.delivery_status] || o.delivery_status || 'Unknown') + '</span></td>' +
+            '<td>' + formatDate(o.created_at) + '</td></tr>';
+        }).join('')) +
+        '</tbody></table></div></div>';
+    }
+
+    function filterDealerOrders(status) {
+      window.dealerOrdersFilter = status;
+      renderDealerOrders(document.getElementById('main-content'));
+    }
+
+    function viewDealerOrderDetail(orderId) {
+      // Simple modal to view order details
+      const order = appData.orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      const statusColors = { pending: '#f59e0b', picked_up: '#3b82f6', in_transit: '#3b82f6', delivered: '#22c55e' };
+      const statusLabels = { pending: 'Pending', picked_up: 'Picked Up', in_transit: 'In Transit', delivered: 'Delivered' };
+
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.onclick = e => { if (e.target === modal) modal.remove(); };
+      modal.innerHTML = `
+        <div class="modal" style="max-width:500px">
+          <div class="modal-header">
+            <h3>Order Details</h3>
+            <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+          </div>
+          <div class="modal-body">
+            <div style="text-align:center;margin-bottom:20px">
+              <div style="font-size:24px;font-weight:700;color:var(--accent-primary)">${order.order_number || 'N/A'}</div>
+              <span class="badge" style="background:${statusColors[order.delivery_status] || '#6b7280'};margin-top:8px">${statusLabels[order.delivery_status] || 'Unknown'}</span>
+            </div>
+            <div style="background:var(--bg-darker);padding:16px;border-radius:8px;margin-bottom:16px">
+              <div style="font-weight:600;margin-bottom:8px">🚗 Vehicle</div>
+              <div>${[order.vehicle_year, order.vehicle_make, order.vehicle_model].filter(Boolean).join(' ') || '-'}</div>
+              <div style="color:var(--text-muted);font-size:13px">VIN: ${order.vehicle_vin || 'N/A'}</div>
+              <div style="color:var(--text-muted);font-size:13px">Color: ${order.vehicle_color || 'N/A'}</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <div style="background:var(--bg-darker);padding:16px;border-radius:8px">
+                <div style="font-weight:600;margin-bottom:8px">📍 Pickup</div>
+                <div>${order.origin || '-'}</div>
+                <div style="color:var(--text-muted);font-size:13px">${formatDate(order.pickup_date)}</div>
+              </div>
+              <div style="background:var(--bg-darker);padding:16px;border-radius:8px">
+                <div style="font-weight:600;margin-bottom:8px">🏁 Delivery</div>
+                <div>${order.destination || '-'}</div>
+                <div style="color:var(--text-muted);font-size:13px">${formatDate(order.dropoff_date)}</div>
+              </div>
+            </div>
+            ${order.dispatcher_notes ? '<div style="margin-top:16px;background:var(--bg-darker);padding:16px;border-radius:8px"><div style="font-weight:600;margin-bottom:8px">📝 Notes</div><div style="color:var(--text-secondary)">' + order.dispatcher_notes + '</div></div>' : ''}
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove()">Close</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    /**
+     * Render dealer spending/financial page
+     */
+    async function renderDealerSpending(m) {
+      if (!currentDealerProfile) {
+        await loadDealerProfile();
+      }
+
+      if (!currentDealerProfile) {
+        m.innerHTML = '<div class="card" style="text-align:center;padding:60px"><h2>Dealer profile not found</h2></div>';
+        return;
+      }
+
+      const stats = await getDealerSpending(currentDealerProfile.id);
+
+      m.innerHTML = '<div class="page-header">' +
+        '<h1>Spending History</h1>' +
+        '<p style="color:var(--text-secondary);margin-top:4px">Track your vehicle transport spending</p>' +
+        '</div>' +
+
+        // Stats cards
+        '<div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px">' +
+        '<div class="card" style="padding:24px;text-align:center">' +
+        '<div style="font-size:36px;font-weight:700;color:#8b5cf6">$' + formatNumber(stats.totalSpent) + '</div>' +
+        '<div style="color:var(--text-secondary);margin-top:4px">Total Spent</div></div>' +
+        '<div class="card" style="padding:24px;text-align:center">' +
+        '<div style="font-size:36px;font-weight:700;color:var(--accent-primary)">' + stats.totalVehicles + '</div>' +
+        '<div style="color:var(--text-secondary);margin-top:4px">Total Vehicles</div></div>' +
+        '<div class="card" style="padding:24px;text-align:center">' +
+        '<div style="font-size:36px;font-weight:700;color:#22c55e">$' + formatNumber(stats.avgCostPerVehicle) + '</div>' +
+        '<div style="color:var(--text-secondary);margin-top:4px">Avg Cost/Vehicle</div></div>' +
+        '</div>' +
+
+        // Transaction history
+        '<div class="card">' +
+        '<div class="card-header"><h3>Transaction History</h3></div>' +
+        '<div class="table-wrapper"><table><thead><tr><th>Order #</th><th>Vehicle</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>' +
+        (stats.orders.length === 0 ? '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted)">No transactions yet</td></tr>' :
+        stats.orders.map(o => {
+          const statusColors = { pending: '#f59e0b', picked_up: '#3b82f6', in_transit: '#3b82f6', delivered: '#22c55e' };
+          return '<tr>' +
+            '<td><strong>' + (o.order_number || '-') + '</strong></td>' +
+            '<td>' + [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).join(' ') + '</td>' +
+            '<td>' + formatDate(o.created_at) + '</td>' +
+            '<td style="font-weight:600">$' + formatNumber(o.revenue || 0) + '</td>' +
+            '<td><span class="badge" style="background:' + (statusColors[o.delivery_status] || '#6b7280') + '">' + (o.delivery_status || '-') + '</span></td></tr>';
+        }).join('')) +
+        '</tbody></table></div></div>';
+    }
+
+    // ============================================================
+    // ADMIN DEALER MANAGEMENT
+    // ============================================================
+
+    /**
+     * Render dealers admin page
+     */
+    async function renderDealersAdmin(m) {
+      // Ensure dealers are loaded
+      let dealers = appData.dealers || [];
+      if (dealers.length === 0) {
+        try {
+          dealers = await dbFetch('dealers', { order: 'company_name' }) || [];
+          appData.dealers = dealers;
+        } catch(e) { console.error('Failed to load dealers:', e); }
+      }
+
+      // Calculate stats for each dealer
+      const dealerStats = dealers.map(d => {
+        const orders = appData.orders.filter(o => o.dealer_id === d.id);
+        const totalRevenue = orders.reduce((sum, o) => sum + (parseFloat(o.revenue) || 0), 0);
+        const pending = orders.filter(o => o.delivery_status === 'pending').length;
+        const delivered = orders.filter(o => o.delivery_status === 'delivered').length;
+        return { ...d, orderCount: orders.length, totalRevenue, pending, delivered };
+      });
+
+      m.innerHTML = '<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">' +
+        '<h1>🏪 Dealer Management</h1>' +
+        '<button class="btn btn-primary" onclick="openDealerModal()">+ Add Dealer</button>' +
+        '</div>' +
+
+        '<div class="card">' +
+        '<div class="table-wrapper"><table><thead><tr><th>Company</th><th>Code</th><th>Contact</th><th>Orders</th><th>Revenue</th><th>Status</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
+        (dealerStats.length === 0 ? '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted)">No dealers yet. Click "Add Dealer" to create one.</td></tr>' :
+        dealerStats.map(d => {
+          return '<tr>' +
+            '<td><strong>' + (d.company_name || '-') + '</strong></td>' +
+            '<td><code style="background:var(--bg-darker);padding:2px 6px;border-radius:4px">' + (d.dealer_code || '-') + '</code></td>' +
+            '<td>' + (d.contact_name || '-') + '<br><small style="color:var(--text-muted)">' + (d.contact_phone || '') + '</small></td>' +
+            '<td style="text-align:center">' + d.orderCount + ' <small style="color:var(--text-muted)">(' + d.pending + ' pending)</small></td>' +
+            '<td style="font-weight:600">$' + formatNumber(d.totalRevenue) + '</td>' +
+            '<td><span class="badge ' + (d.is_active ? 'badge-green' : 'badge-gray') + '">' + (d.is_active ? 'Active' : 'Inactive') + '</span></td>' +
+            '<td class="sticky-col"><div class="actions">' +
+            '<button class="action-btn edit" onclick="openDealerModal(' + d.id + ')">Edit</button>' +
+            '<button class="action-btn delete" onclick="deleteDealer(' + d.id + ')">Del</button>' +
+            '</div></td></tr>';
+        }).join('')) +
+        '</tbody></table></div></div>';
+    }
+
+    /**
+     * Open dealer modal for create/edit
+     */
+    async function openDealerModal(dealerId) {
+      const isEdit = !!dealerId;
+      let dealer = null;
+
+      if (isEdit) {
+        dealer = appData.dealers.find(d => d.id === dealerId);
+        if (!dealer) {
+          showToast('Dealer not found', 'error');
+          return;
+        }
+      }
+
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.onclick = e => { if (e.target === modal) modal.remove(); };
+      modal.innerHTML = `
+        <div class="modal" style="max-width:600px">
+          <div class="modal-header">
+            <h3>${isEdit ? 'Edit Dealer' : 'Add New Dealer'}</h3>
+            <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+          </div>
+          <div class="modal-body">
+            <form id="dealer-form" onsubmit="saveDealer(event, ${dealerId || 'null'})">
+              <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                <div class="form-group">
+                  <label>Company Name *</label>
+                  <input type="text" id="dealer-company-name" required value="${dealer?.company_name || ''}" placeholder="ABC Auto Dealership">
+                </div>
+                <div class="form-group">
+                  <label>Dealer Code *</label>
+                  <input type="text" id="dealer-code" required value="${dealer?.dealer_code || generateDealerCode('')}" placeholder="ABC123" maxlength="10" ${isEdit ? 'readonly style="background:var(--bg-darker)"' : ''}>
+                </div>
+              </div>
+              <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                <div class="form-group">
+                  <label>Contact Name</label>
+                  <input type="text" id="dealer-contact-name" value="${dealer?.contact_name || ''}" placeholder="John Smith">
+                </div>
+                <div class="form-group">
+                  <label>Contact Phone</label>
+                  <input type="tel" id="dealer-contact-phone" value="${dealer?.contact_phone || ''}" placeholder="(555) 123-4567">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Company Address</label>
+                <input type="text" id="dealer-address" value="${dealer?.company_address || ''}" placeholder="123 Main St, City, State">
+              </div>
+              <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                <div class="form-group">
+                  <label>Payment Terms</label>
+                  <select id="dealer-payment-terms">
+                    <option value="NET30" ${dealer?.payment_terms === 'NET30' ? 'selected' : ''}>NET 30</option>
+                    <option value="NET15" ${dealer?.payment_terms === 'NET15' ? 'selected' : ''}>NET 15</option>
+                    <option value="COD" ${dealer?.payment_terms === 'COD' ? 'selected' : ''}>COD</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Status</label>
+                  <select id="dealer-status">
+                    <option value="true" ${dealer?.is_active !== false ? 'selected' : ''}>Active</option>
+                    <option value="false" ${dealer?.is_active === false ? 'selected' : ''}>Inactive</option>
+                  </select>
+                </div>
+              </div>
+              ${!isEdit ? `
+              <hr style="margin:20px 0;border:none;border-top:1px solid var(--border)">
+              <h4 style="margin-bottom:16px">🔐 Login Credentials</h4>
+              <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                <div class="form-group">
+                  <label>Login Email *</label>
+                  <input type="email" id="dealer-email" required placeholder="dealer@company.com">
+                </div>
+                <div class="form-group">
+                  <label>Password *</label>
+                  <input type="password" id="dealer-password" required minlength="6" placeholder="Min 6 characters">
+                </div>
+              </div>
+              ` : ''}
+              <div class="form-group">
+                <label>Notes</label>
+                <textarea id="dealer-notes" rows="2" placeholder="Internal notes about this dealer...">${dealer?.notes || ''}</textarea>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+            <button class="btn btn-primary" onclick="document.getElementById('dealer-form').requestSubmit()">${isEdit ? 'Save Changes' : 'Create Dealer'}</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      // Auto-generate dealer code from company name
+      if (!isEdit) {
+        document.getElementById('dealer-company-name').addEventListener('input', (e) => {
+          document.getElementById('dealer-code').value = generateDealerCode(e.target.value);
+        });
+      }
+    }
+
+    /**
+     * Save dealer (create or update)
+     */
+    async function saveDealer(e, dealerId) {
+      e.preventDefault();
+
+      const companyName = document.getElementById('dealer-company-name').value.trim();
+      const dealerCode = document.getElementById('dealer-code').value.trim().toUpperCase();
+      const contactName = document.getElementById('dealer-contact-name').value.trim();
+      const contactPhone = document.getElementById('dealer-contact-phone').value.trim();
+      const address = document.getElementById('dealer-address').value.trim();
+      const paymentTerms = document.getElementById('dealer-payment-terms').value;
+      const isActive = document.getElementById('dealer-status').value === 'true';
+      const notes = document.getElementById('dealer-notes').value.trim();
+
+      try {
+        if (dealerId) {
+          // Update existing dealer
+          await dbUpdate('dealers', dealerId, {
+            company_name: companyName,
+            contact_name: contactName,
+            contact_phone: contactPhone,
+            company_address: address,
+            payment_terms: paymentTerms,
+            is_active: isActive,
+            notes: notes,
+            updated_at: new Date().toISOString()
+          });
+          showToast('Dealer updated', 'success');
+        } else {
+          // Create new dealer with user account
+          const email = document.getElementById('dealer-email').value.trim().toLowerCase();
+          const password = document.getElementById('dealer-password').value;
+
+          // First create user with DEALER role
+          const hashedPassword = await hashPassword(password);
+
+          // Try to create Supabase Auth user first
+          let authId = null;
+          try {
+            const { data: authData, error: authError } = await sb.auth.signUp({
+              email: email,
+              password: password,
+              options: { data: { first_name: contactName || companyName, last_name: '' } }
+            });
+            if (!authError && authData.user) {
+              authId = authData.user.id;
+            }
+          } catch (authErr) {
+            console.warn('Supabase Auth signup failed, using legacy auth:', authErr);
+          }
+
+          // Create user record
+          const newUser = await dbInsert('users', {
+            auth_id: authId,
+            email: email,
+            first_name: contactName || companyName,
+            last_name: '',
+            password: hashedPassword,
+            role: 'DEALER',
+            is_active: isActive
+          });
+
+          // Create dealer profile
+          await dbInsert('dealers', {
+            user_id: newUser.id,
+            company_name: companyName,
+            dealer_code: dealerCode,
+            contact_name: contactName,
+            contact_phone: contactPhone,
+            company_address: address,
+            payment_terms: paymentTerms,
+            is_active: isActive,
+            notes: notes
+          });
+
+          await logActivity('DEALER_CREATED', { company_name: companyName, dealer_code: dealerCode, email: email });
+          showToast('Dealer created successfully', 'success');
+        }
+
+        document.querySelector('.modal-overlay')?.remove();
+        await loadAllData(true);
+        renderDealersAdmin(document.getElementById('main-content'));
+
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    /**
+     * Delete a dealer
+     */
+    async function deleteDealer(dealerId) {
+      const dealer = appData.dealers.find(d => d.id === dealerId);
+      if (!dealer) return;
+
+      const orders = appData.orders.filter(o => o.dealer_id === dealerId);
+      if (orders.length > 0) {
+        if (!confirm('This dealer has ' + orders.length + ' orders. Deleting will unlink these orders from the dealer. Continue?')) {
+          return;
+        }
+      } else {
+        if (!confirm('Delete dealer "' + dealer.company_name + '"?')) {
+          return;
+        }
+      }
+
+      try {
+        // Delete dealer profile (user account remains but can be deactivated separately)
+        await dbDelete('dealers', dealerId);
+        await logActivity('DEALER_DELETED', { company_name: dealer.company_name, dealer_code: dealer.dealer_code });
+        showToast('Dealer deleted', 'success');
+        await loadAllData(true);
+        renderDealersAdmin(document.getElementById('main-content'));
       } catch (err) {
         showToast('Error: ' + err.message, 'error');
       }
