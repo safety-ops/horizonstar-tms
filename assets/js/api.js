@@ -312,7 +312,8 @@ async function loadAllData(forceReload = false) {
       local_drivers: [], expenses: [], fixed_costs: [], variable_costs: [],
       driver_files: [], truck_files: [], fuel_transactions: [],
       maintenance_records: [], claims: [], tickets: [], violations: [],
-      ticket_files: [], violation_files: [], claim_files: [], compliance_tasks: [], accidents: []
+      ticket_files: [], violation_files: [], claim_files: [], compliance_tasks: [], accidents: [],
+      company_files: []
     };
 
     // Load secondary data in background (non-blocking)
