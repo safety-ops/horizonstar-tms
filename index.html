@@ -9840,8 +9840,8 @@
       // Keep these for backward compatibility
       const truckGross = cleanGross - driverCut - dispatchFee;
       
-      // Cash collected = COD, COP, and LOCAL_COD payments, but for split payments use cod_amount instead of full revenue
-      const cashCollected = orders.filter(o => o.payment_type === 'COD' || o.payment_type === 'COP' || o.payment_type === 'LOCAL_COD').reduce((s, o) => {
+      // Cash collected = COD and COP payments only (LOCAL_COD is paid to local drivers, not trip driver)
+      const cashCollected = orders.filter(o => o.payment_type === 'COD' || o.payment_type === 'COP').reduce((s, o) => {
         // If bill_amount > 0, this is a split payment - only count cod_amount as cash
         if (parseFloat(o.bill_amount || 0) > 0) {
           return s + parseFloat(o.cod_amount || 0);
@@ -24961,8 +24961,9 @@ ${rateText}`
           
           const tripOrders = appData.orders.filter(o => o.trip_id === trip.id);
           // For split payments, only count cod_amount as cash collected, not full revenue
+          // LOCAL_COD is paid to local drivers, not the trip driver
           cashCollected += tripOrders
-            .filter(o => o.payment_type === 'COD' || o.payment_type === 'COP' || o.payment_type === 'LOCAL_COD')
+            .filter(o => o.payment_type === 'COD' || o.payment_type === 'COP')
             .reduce((sum, o) => {
               if (parseFloat(o.bill_amount || 0) > 0) {
                 return sum + parseFloat(o.cod_amount || 0);
@@ -25033,7 +25034,7 @@ ${rateText}`
 
       orders.forEach((o, idx) => {
         const revenue = parseFloat(o.revenue || 0);
-        const isCash = o.payment_type === 'COD' || o.payment_type === 'COP' || o.payment_type === 'LOCAL_COD';
+        const isCash = o.payment_type === 'COD' || o.payment_type === 'COP'; // LOCAL_COD goes to local driver, not trip driver
         const hasBillPortion = parseFloat(o.bill_amount || 0) > 0;
         const cashAmount = isCash ? (hasBillPortion ? parseFloat(o.cod_amount || 0) : revenue) : 0;
         tripCashTotal += cashAmount;
@@ -25208,7 +25209,7 @@ ${rateText}`
           const localFee = parseFloat(o.local_fee || 0);
           const cleanGross = revenue - brokerFee - localFee;
           const orderDispatchFee = cleanGross * (dispatchFeePercent / 100);
-          const isCash = o.payment_type === 'COD' || o.payment_type === 'COP' || o.payment_type === 'LOCAL_COD';
+          const isCash = o.payment_type === 'COD' || o.payment_type === 'COP'; // LOCAL_COD goes to local driver
           const hasBillPortion = parseFloat(o.bill_amount || 0) > 0;
           const cashCollected = isCash ? (hasBillPortion ? parseFloat(o.cod_amount || 0) : revenue) : 0;
           const settlement = cleanGross - orderDispatchFee - cashCollected;
@@ -25968,7 +25969,7 @@ ${rateText}`
           const localFee = parseFloat(o.local_fee || 0);
           const cleanGross = revenue - brokerFee - localFee;
           const driverCut = cleanGross * (cutPercent / 100);
-          const isCash = o.payment_type === 'COD' || o.payment_type === 'COP' || o.payment_type === 'LOCAL_COD';
+          const isCash = o.payment_type === 'COD' || o.payment_type === 'COP'; // LOCAL_COD goes to local driver
           // For split payments, only count cod_amount as cash on hand
           const hasBillPortion = parseFloat(o.bill_amount || 0) > 0;
           const cashOnHand = isCash ? (hasBillPortion ? parseFloat(o.cod_amount || 0) : revenue) : 0;
@@ -30984,8 +30985,8 @@ ${rateText}`
       // Trip Net Profit = Revenue - All Trip Costs
       const tripNetProfit = loadRevenue - directTripExpenses;
       
-      // Cash collected (COD + COP + LOCAL_COD) - handle split payments
-      const cashCollected = orders.filter(o => o.payment_type === 'COD' || o.payment_type === 'COP' || o.payment_type === 'LOCAL_COD').reduce((s, o) => {
+      // Cash collected (COD + COP only) - LOCAL_COD goes to local driver, not trip driver
+      const cashCollected = orders.filter(o => o.payment_type === 'COD' || o.payment_type === 'COP').reduce((s, o) => {
         // If bill_amount > 0, this is a split payment - use cod_amount instead of revenue
         if (parseFloat(o.bill_amount || 0) > 0) {
           return s + parseFloat(o.cod_amount || 0);
@@ -36338,7 +36339,8 @@ function jsonResponse(data, status = 200) {
         }, 0);
         
         // Cash collected - handle split payments (bill_amount > 0 means use cod_amount)
-        const cashCollected = driverOrders.filter(o => o.payment_type === 'COD' || o.payment_type === 'COP' || o.payment_type === 'LOCAL_COD').reduce((s, o) => {
+        // LOCAL_COD goes to local driver, not trip driver
+        const cashCollected = driverOrders.filter(o => o.payment_type === 'COD' || o.payment_type === 'COP').reduce((s, o) => {
           if (parseFloat(o.bill_amount || 0) > 0) {
             return s + parseFloat(o.cod_amount || 0);
           }
