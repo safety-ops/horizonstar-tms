@@ -21934,6 +21934,7 @@ ${rateText}`
     function renderComplianceCompanyFiles(c) {
       const today = new Date();
       const files = appData.company_files || [];
+      console.log('Company files loaded:', files.length, files);
 
       // Calculate alerts for expiring files
       const alerts = [];
