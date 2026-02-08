@@ -18788,10 +18788,10 @@ ${rateText}`
         return true;
       });
 
-      // Get completed and at-terminal trip IDs (for current year)
+      // Get completed trip IDs (year-filtered for stats) and terminal/completed IDs (all years for pending deliveries)
       const yearFilteredTrips = appData.trips.filter(t => t.trip_date >= yearStart && t.trip_date <= yearEnd);
       const completedTripIds = yearFilteredTrips.filter(t => t.status === 'COMPLETED').map(t => t.id);
-      const terminalOrCompletedTripIds = yearFilteredTrips.filter(t => t.status === 'COMPLETED' || t.status === 'AT_TERMINAL').map(t => t.id);
+      const terminalOrCompletedTripIds = appData.trips.filter(t => t.status === 'COMPLETED' || t.status === 'AT_TERMINAL').map(t => t.id);
 
       // Pending local delivery: trip is COMPLETED or AT_TERMINAL, destination is NY/NJ/PA, has local_fee > 0, not assigned, not marked as "not for local"
       // Sorted by earliest delivery date first
