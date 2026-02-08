@@ -15727,12 +15727,14 @@ ${rateText}`
         if (!direction) { showToast('Please select a vehicle direction', 'error'); return; }
         
         try {
-          await dbUpdate('orders', orderId, { 
-            trip_id: tripId, 
+          const selectedTrip = appData.trips.find(t => t.id === tripId);
+          await dbUpdate('orders', orderId, {
+            trip_id: tripId,
+            driver_id: selectedTrip?.driver_id || null,
             vehicle_direction: direction,
-            load_category: null, 
-            load_subcategory: null, 
-            local_driver_id: null 
+            load_category: null,
+            load_subcategory: null,
+            local_driver_id: null
           });
           document.querySelector('.modal-overlay').remove();
           showToast('Vehicle assigned to trip!');
@@ -15756,6 +15758,7 @@ ${rateText}`
       try {
         await dbUpdate('orders', orderId, {
           trip_id: null,
+          driver_id: null,
           vehicle_direction: null,
           pickup_sequence: null,
           delivery_sequence: null
@@ -15968,7 +15971,7 @@ ${rateText}`
         if (!confirm('This trip has ' + attachedOrders.length + ' order(s) attached. They will be unassigned. Continue?')) return;
         // Unassign orders from trip before deleting
         for (const order of attachedOrders) {
-          await dbUpdate('orders', order.id, { trip_id: null, vehicle_direction: null, pickup_sequence: null, delivery_sequence: null });
+          await dbUpdate('orders', order.id, { trip_id: null, driver_id: null, vehicle_direction: null, pickup_sequence: null, delivery_sequence: null });
         }
       }
       try {
@@ -16926,7 +16929,13 @@ ${rateText}`
 
     async function assignDriver(tripId) {
       try {
-        await dbUpdate('trips', tripId, { driver_id: parseInt(document.getElementById('assignDriver').value) || null, driver_cut_percent: parseFloat(document.getElementById('assignCut').value) || 32 });
+        const driverId = parseInt(document.getElementById('assignDriver').value) || null;
+        await dbUpdate('trips', tripId, { driver_id: driverId, driver_cut_percent: parseFloat(document.getElementById('assignCut').value) || 32 });
+        // Sync driver_id to all orders on this trip
+        const tripOrders = appData.orders.filter(o => o.trip_id === tripId);
+        for (const order of tripOrders) {
+          await dbUpdate('orders', order.id, { driver_id: driverId });
+        }
         document.querySelector('.modal-overlay').remove(); showToast('Driver assigned'); await loadAllData(true); viewTrip(tripId);
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
@@ -17631,6 +17640,7 @@ ${rateText}`
       try {
         await dbUpdate('orders', orderId, {
           trip_id: null,
+          driver_id: null,
           vehicle_direction: null,
           pickup_sequence: null,
           delivery_sequence: null
