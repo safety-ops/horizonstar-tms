@@ -100,6 +100,7 @@ async function handleImportLoad(loadData) {
     broker_name: loadData.broker_name || null,
     revenue: loadData.revenue || null,
     payment_type: loadData.payment_type || null,
+    payment_terms: loadData.payment_terms || null,
     vehicle_year: loadData.vehicle_year || null,
     vehicle_make: loadData.vehicle_make || null,
     vehicle_model: loadData.vehicle_model || null,

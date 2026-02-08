@@ -232,6 +232,22 @@
       log('Found Payment Type:', data.payment_type);
     }
 
+    // PAYMENT TERMS (Net XX, Quick Pay detection)
+    const quickPayMatch = cardText.match(/Quick\s*Pay/i);
+    const netTermsMatch = cardText.match(/(?:Net|NET)\s*(\d+)/i);
+    if (quickPayMatch) {
+      data.payment_terms = 'QUICK_PAY';
+      log('Found Payment Terms: QUICK_PAY');
+    } else if (netTermsMatch) {
+      const days = parseInt(netTermsMatch[1]);
+      const termsMapping = { 7: 'NET7', 10: 'NET10', 15: 'NET15', 30: 'NET30', 45: 'NET45', 60: 'NET60' };
+      data.payment_terms = termsMapping[days] || 'NET30';
+      log('Found Payment Terms:', data.payment_terms);
+    } else if (data.payment_type === 'BILL') {
+      data.payment_terms = 'NET30';
+      log('Defaulting Payment Terms to NET30 for BILL type');
+    }
+
     // VEHICLE
     const vehicleMatch = cardText.match(/Vehicle\s*Year\/Make\/Model\s*\n\s*(\d{4})\s+([A-Za-z]+)\s+(.+?)(?:\n|$)/i);
     if (vehicleMatch) {
@@ -551,6 +567,27 @@
                       ${PAYMENT_TYPES.map(p => `<option value="${p}" ${loadData.payment_type === p ? 'selected' : ''}>${p}</option>`).join('')}
                     </select>
                   </div>
+                  <div id="tms-payment-terms-group" style="display: ${loadData.payment_type === 'BILL' || loadData.payment_type === 'CHECK' ? 'block' : 'none'};">
+                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Payment Terms</label>
+                    <select id="tms-payment-terms" style="
+                      width: 100%;
+                      padding: 8px 12px;
+                      background: #0f172a;
+                      border: 1px solid #334155;
+                      border-radius: 6px;
+                      color: #e2e8f0;
+                      font-size: 14px;
+                      box-sizing: border-box;
+                    ">
+                      <option value="QUICK_PAY" ${loadData.payment_terms === 'QUICK_PAY' ? 'selected' : ''}>Quick Pay (3 days)</option>
+                      <option value="NET7" ${loadData.payment_terms === 'NET7' ? 'selected' : ''}>Net 7</option>
+                      <option value="NET10" ${loadData.payment_terms === 'NET10' ? 'selected' : ''}>Net 10</option>
+                      <option value="NET15" ${loadData.payment_terms === 'NET15' ? 'selected' : ''}>Net 15</option>
+                      <option value="NET30" ${loadData.payment_terms === 'NET30' || !loadData.payment_terms ? 'selected' : ''}>Net 30</option>
+                      <option value="NET45" ${loadData.payment_terms === 'NET45' ? 'selected' : ''}>Net 45</option>
+                      <option value="NET60" ${loadData.payment_terms === 'NET60' ? 'selected' : ''}>Net 60</option>
+                    </select>
+                  </div>
                 </div>
 
                 <!-- Broker/Pickup Row -->
@@ -786,6 +823,16 @@
     futureCarRadio.addEventListener('change', updateOptionVisibility);
     tripRadio.addEventListener('change', updateOptionVisibility);
 
+    // Toggle payment terms visibility based on payment type
+    const paymentTypeSelect = document.getElementById('tms-payment-type');
+    const paymentTermsGroup = document.getElementById('tms-payment-terms-group');
+    if (paymentTypeSelect && paymentTermsGroup) {
+      paymentTypeSelect.addEventListener('change', () => {
+        const val = paymentTypeSelect.value;
+        paymentTermsGroup.style.display = (val === 'BILL' || val === 'CHECK') ? 'block' : 'none';
+      });
+    }
+
     // Handle category change to show/hide subcategories
     categorySelect.addEventListener('change', () => {
       const selectedCategory = LOAD_CATEGORIES.find(c => c.id === categorySelect.value);
@@ -836,6 +883,7 @@
         destination: document.getElementById('tms-destination').value.trim(),
         revenue: parseFloat(document.getElementById('tms-revenue').value) || 0,
         payment_type: document.getElementById('tms-payment-type').value,
+        payment_terms: document.getElementById('tms-payment-terms')?.value || null,
         broker_name: document.getElementById('tms-broker').value.trim(),
         pickup_date: document.getElementById('tms-pickup-date').value,
         delivery_date: loadData.delivery_date || null,

@@ -17054,7 +17054,7 @@ ${rateText}`
         '<div class="form-group" style="margin-bottom:0"><label>Payment Type</label><select id="orderPay" onchange="toggleSplitPayment();togglePaymentTerms()"><option value="BILL">BILL (Invoice)</option><option value="COD">COD (Cash on Delivery)</option><option value="COP">COP (Cash on Pickup)</option><option value="LOCAL_COD">LOCAL_COD (Local Driver)</option><option value="CHECK">CHECK</option><option value="SPLIT">SPLIT (Multiple)</option></select></div></div>' +
         '<div id="paymentTermsSection" style="margin-top:12px;padding-top:12px;border-top:1px dashed #f59e0b">' +
         '<div class="form-row" style="grid-template-columns:1fr 1fr 1fr;gap:12px">' +
-        '<div class="form-group" style="margin-bottom:0"><label>Payment Terms</label><select id="orderPaymentTerms" onchange="updateOrderDueDate()"><option value="NET7">NET 7</option><option value="NET15">NET 15</option><option value="NET30" selected>NET 30</option><option value="NET45">NET 45</option><option value="NET60">NET 60</option><option value="CUSTOM">Custom</option></select></div>' +
+        '<div class="form-group" style="margin-bottom:0"><label>Payment Terms</label><select id="orderPaymentTerms" onchange="updateOrderDueDate()"><option value="QUICK_PAY">Quick Pay (3 days)</option><option value="NET7">NET 7</option><option value="NET10">NET 10</option><option value="NET15">NET 15</option><option value="NET30" selected>NET 30</option><option value="NET45">NET 45</option><option value="NET60">NET 60</option><option value="CUSTOM">Custom</option></select></div>' +
         '<div class="form-group" style="margin-bottom:0" id="customTermsGroup" style="display:none"><label>Custom Days</label><input type="number" id="orderCustomDays" min="1" max="365" placeholder="Days" onchange="updateOrderDueDate()"></div>' +
         '<div class="form-group" style="margin-bottom:0"><label>Due Date</label><input type="date" id="orderDueDate" readonly style="background:#f1f5f9"></div></div></div>' +
         '<div id="splitPaymentSection" style="display:none;margin-top:12px;padding-top:12px;border-top:1px dashed #f59e0b">' +
@@ -17168,6 +17168,13 @@ ${rateText}`
       document.getElementById('orderBrokerId').value = brokerId;
       document.getElementById(inputId + '-dropdown').style.display = 'none';
       document.getElementById('newBrokerSection').style.display = 'none';
+      // Auto-fill payment terms from broker default
+      const broker = appData.brokers.find(b => b.id === brokerId);
+      const termsSelect = document.getElementById('orderPaymentTerms');
+      if (broker && broker.payment_terms && termsSelect) {
+        termsSelect.value = broker.payment_terms;
+        updateOrderDueDate();
+      }
     }
     
     function showNewBrokerField() {
@@ -17451,7 +17458,9 @@ ${rateText}`
       // Calculate due date
       let days = 30; // default
       switch (terms) {
+        case 'QUICK_PAY': days = 3; break;
         case 'NET7': days = 7; break;
+        case 'NET10': days = 10; break;
         case 'NET15': days = 15; break;
         case 'NET30': days = 30; break;
         case 'NET45': days = 45; break;
@@ -19483,8 +19492,10 @@ ${rateText}`
     function openBrokerModal(id = null) {
       const b = id ? appData.brokers.find(x => x.id === id) : null;
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
+      const currentTerms = b?.payment_terms || 'NET30';
       m.innerHTML = '<div class="modal" style="max-width:400px"><div class="modal-header"><h3>' + (b ? 'Edit' : 'New') + ' Broker</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body">' +
         '<div class="form-group"><label>Broker Name</label><input id="brokerName" value="' + (b?.name || '') + '" placeholder="e.g., Central Dispatch"></div>' +
+        '<div class="form-group"><label>Default Payment Terms</label><select id="brokerPaymentTerms"><option value="QUICK_PAY"' + (currentTerms === 'QUICK_PAY' ? ' selected' : '') + '>Quick Pay (3 days)</option><option value="NET7"' + (currentTerms === 'NET7' ? ' selected' : '') + '>Net 7</option><option value="NET10"' + (currentTerms === 'NET10' ? ' selected' : '') + '>Net 10</option><option value="NET15"' + (currentTerms === 'NET15' ? ' selected' : '') + '>Net 15</option><option value="NET30"' + (currentTerms === 'NET30' ? ' selected' : '') + '>Net 30</option><option value="NET45"' + (currentTerms === 'NET45' ? ' selected' : '') + '>Net 45</option><option value="NET60"' + (currentTerms === 'NET60' ? ' selected' : '') + '>Net 60</option></select></div>' +
         '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveBroker(' + id + ')">Save</button></div></div>';
       document.body.appendChild(m);
     }
@@ -19492,8 +19503,8 @@ ${rateText}`
     async function saveBroker(id) {
       const name = document.getElementById('brokerName').value;
       if (!name) { showToast('Broker name is required', 'error'); return; }
-      
-      const data = { name: name };
+
+      const data = { name: name, payment_terms: document.getElementById('brokerPaymentTerms').value };
       
       try {
         if (id) {
