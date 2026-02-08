@@ -89,17 +89,6 @@
   --duration-fast: 150ms;
   --duration-normal: 250ms;
   --duration-slow: 400ms;
-
-  /* Typography Scale */
-  --text-xs: 11px;
-  --text-sm: 12px;
-  --text-base: 14px;
-  --text-md: 15px;
-  --text-lg: 16px;
-  --text-xl: 18px;
-  --text-2xl: 22px;
-  --text-3xl: 28px;
-  --text-4xl: 36px;
 }
 
 /* ============================================================
@@ -128,7 +117,11 @@ body.dark-theme {
   --shadow-md: 0 4px 8px rgba(0,0,0,0.4);
   --shadow-lg: 0 8px 16px rgba(0,0,0,0.4);
   --shadow-xl: 0 16px 32px rgba(0,0,0,0.5);
-  --glass-bg: rgba(15, 23, 42, 0.92);
+  --glass-bg: rgba(30, 41, 59, 0.9);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.3), 0 4px 20px rgba(0,0,0,0.2);
+  --shadow-card-hover: 0 8px 30px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2);
+  --gradient-card: linear-gradient(180deg, var(--bg-card) 0%, rgba(30, 41, 59, 0.5) 100%);
 }
 
 /* Dark theme background gradient effect */

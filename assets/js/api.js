@@ -102,7 +102,7 @@ function clearEditing(table, id) {
  */
 async function dbUpdate(table, id, data, skipConflictCheck = false) {
   // Check for conflicts on important tables
-  if (!skipConflictCheck && ['trips', 'orders', 'drivers', 'trucks'].includes(table)) {
+  if (!skipConflictCheck && ['trips', 'orders', 'drivers', 'trucks', 'expenses', 'brokers', 'maintenance_records', 'fuel_transactions'].includes(table)) {
     const originalTimestamp = getEditingTimestamp(table, id);
     if (originalTimestamp) {
       // Fetch current record to check if it was modified
@@ -227,7 +227,7 @@ function handleRealtimeChange(payload) {
 
 function handleChatRealtimeChange(payload) {
   // For chat, just trigger a re-render of chat if we're on that page
-  if (payload.eventType === 'INSERT' && currentPage === 'team_chat') {
+  if (['INSERT', 'UPDATE', 'DELETE'].includes(payload.eventType) && currentPage === 'team_chat') {
     const timeSinceLastSave = Date.now() - (window.lastSaveTimestamp || 0);
     if (timeSinceLastSave < 2000) return;
 
@@ -413,11 +413,6 @@ async function loadSecondaryData() {
 
     // Update cache
     dataCache.set('appData', appData);
-
-    // Load Samsara settings from database (shared across all users)
-    if (typeof loadSamsaraSettings === 'function') {
-      await loadSamsaraSettings();
-    }
 
     // Only re-render if we're NOT viewing a detail page (trip/driver/truck detail)
     // This prevents getting kicked out of detail views when secondary data loads

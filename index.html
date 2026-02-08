@@ -33,94 +33,7 @@
 
   <style>
     :root {
-      /* Light Theme (Default) - Horizon Star Green */
-      --primary: #22c55e;
-      --primary-hover: #16a34a;
-      --primary-light: rgba(34, 197, 94, 0.12);
-      --primary-dark: #15803d;
-      --secondary: #64748b;
-      --success: #22c55e;
-      --success-light: rgba(34, 197, 94, 0.12);
-      --warning: #f59e0b;
-      --warning-light: rgba(245, 158, 11, 0.12);
-      --danger: #ef4444;
-      --danger-light: rgba(239, 68, 68, 0.12);
-      --info: #3b82f6;
-      --info-light: rgba(59, 130, 246, 0.12);
-      
-      /* Light backgrounds */
-      --bg-primary: #f8fafc;
-      --bg-secondary: #ffffff;
-      --bg-tertiary: #f1f5f9;
-      --bg-card: #ffffff;
-      --bg-hover: #f1f5f9;
-      
-      /* Text colors */
-      --text-primary: #0f172a;
-      --text-secondary: #475569;
-      --text-muted: #94a3b8;
-      
-      /* Borders */
-      --border: #e2e8f0;
-      --border-light: #f1f5f9;
-      
-      /* Shadows for light mode */
-      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-      --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
-      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
-      --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
-      
-      /* Accent gradient - Green for Horizon Star */
-      --accent-gradient: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
-      --glass-bg: rgba(255, 255, 255, 0.9);
-      
-      --radius-sm: 6px;
-      --radius: 10px;
-      --radius-lg: 14px;
-      --radius-xl: 20px;
-      --sidebar-width: 240px;
-      --sidebar-collapsed-width: 72px;
-      --header-height: 64px;
-      --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      
-      /* 🎨 MODERN UI ENHANCEMENTS v3.0 */
-      /* Gradient System */
-      --gradient-primary: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-      --gradient-primary-hover: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-      --gradient-secondary: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-      --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-      --gradient-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-      --gradient-purple: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-      --gradient-sidebar: linear-gradient(180deg, #1a2f2a 0%, #0f1f1a 100%);
-      --gradient-card: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(248,250,252,0.5) 100%);
-      
-      /* Enhanced Shadows */
-      --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
-      --shadow-card: 0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.03);
-      --shadow-card-hover: 0 8px 30px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
-      --shadow-float: 0 20px 50px rgba(0,0,0,0.12);
-      --shadow-glow-green: 0 4px 20px rgba(34, 197, 94, 0.25);
-      --shadow-glow-blue: 0 4px 20px rgba(59, 130, 246, 0.25);
-      --shadow-inset: inset 0 2px 4px rgba(0,0,0,0.04);
-      --shadow-inner-glow: inset 0 1px 0 rgba(255,255,255,0.1);
-      
-      /* Animation System */
-      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-      --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-      --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
-      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-      --duration-instant: 100ms;
-      --duration-fast: 150ms;
-      --duration-normal: 250ms;
-      --duration-slow: 400ms;
-      
-      /* Glass Effect */
-      --glass-bg: rgba(255, 255, 255, 0.92);
-      --glass-border: rgba(255, 255, 255, 0.2);
-      --glass-blur: blur(16px);
-      
-      /* Text Sizes - More dramatic hierarchy */
+      /* Text Sizes - Override variables.css with rem-based dramatic hierarchy */
       --text-xs: 0.6875rem;    /* 11px - labels */
       --text-sm: 0.8125rem;    /* 13px - secondary */
       --text-base: 0.9375rem;  /* 15px - body */
@@ -4383,28 +4296,6 @@
     }
     
     /* ============ DARK THEME - Lovable Style ============ */
-    body.dark-theme { 
-      --bg-primary: #0c1520;
-      --bg-secondary: #111c2a;
-      --bg-tertiary: #1a2735;
-      --bg-card: #151f2c;
-      --bg-hover: #1e2d3d;
-      --text-primary: #f1f5f9;
-      --text-secondary: #cbd5e1;
-      --text-muted: #94a3b8;
-      --border: #1e3a4a;
-      --border-light: #1a2f3d;
-      --primary-light: rgba(16, 185, 129, 0.15);
-      --success-light: rgba(16, 185, 129, 0.15);
-      --warning-light: rgba(245, 158, 11, 0.15);
-      --danger-light: rgba(239, 68, 68, 0.15);
-      --info-light: rgba(59, 130, 246, 0.15);
-      --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
-      --shadow: 0 2px 4px rgba(0,0,0,0.3);
-      --shadow-md: 0 4px 8px rgba(0,0,0,0.4);
-      --shadow-lg: 0 8px 16px rgba(0,0,0,0.4);
-      --shadow-xl: 0 16px 32px rgba(0,0,0,0.5);
-    }
     body.dark-theme .sidebar { 
       background: var(--bg-secondary);
       border-right-color: var(--border);
@@ -7574,14 +7465,6 @@
     }
     
     /* ============ DARK THEME ENHANCEMENTS ============ */
-    body.dark-theme {
-      --glass-bg: rgba(30, 41, 59, 0.9);
-      --glass-border: rgba(255, 255, 255, 0.08);
-      --shadow-card: 0 1px 3px rgba(0,0,0,0.3), 0 4px 20px rgba(0,0,0,0.2);
-      --shadow-card-hover: 0 8px 30px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2);
-      --gradient-card: linear-gradient(180deg, var(--bg-card) 0%, rgba(30, 41, 59, 0.5) 100%);
-    }
-    
     body.dark-theme .card::before,
     body.dark-theme .stat-card::after,
     body.dark-theme .driver-card::before {
@@ -13419,6 +13302,8 @@
         }
       }
       currentPage = page;
+      // Reset pagination to page 1 when navigating to a new page
+      Object.keys(pagination).forEach(key => { pagination[key].page = 1; });
       // Save current page to localStorage for persistence across refresh
       localStorage.setItem('tms_current_page', page);
       
@@ -13596,12 +13481,13 @@
                       <span class="route-date-value">${order.pickup_date ? formatDate(order.pickup_date) : 'Not scheduled'}</span>
                     </div>
                     ${pickupInspection ? '<div class="route-date-row"><span class="route-date-label">Picked up:</span><span class="route-date-value success">' + formatDate(pickupInspection.completed_at || pickupInspection.started_at || pickupInspection.created_at) + '</span></div>' : ''}
+                    ${order.pickup_eta ? '<div class="route-date-row"><span class="route-date-label" style="color:var(--info)">ETA:</span><span class="route-date-value">' + formatDate(order.pickup_eta) + '</span></div>' : ''}
                   </div>
                   <div class="route-contact">
                     <div class="route-contact-title">Contact</div>
                     <div class="route-contact-row">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                      <span>${order.pickup_contact || 'No contact name'}</span>
+                      <span>${order.pickup_contact_name || 'No contact name'}</span>
                     </div>
                     <div class="route-contact-row">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
@@ -13631,12 +13517,13 @@
                       <span class="route-date-value">${order.dropoff_date ? formatDate(order.dropoff_date) : 'Not scheduled'}</span>
                     </div>
                     ${deliveryInspection ? '<div class="route-date-row"><span class="route-date-label">Delivered:</span><span class="route-date-value success">' + formatDate(deliveryInspection.completed_at || deliveryInspection.started_at || deliveryInspection.created_at) + '</span></div>' : ''}
+                    ${order.delivery_eta ? '<div class="route-date-row"><span class="route-date-label" style="color:var(--info)">ETA:</span><span class="route-date-value">' + formatDate(order.delivery_eta) + '</span></div>' : ''}
                   </div>
                   <div class="route-contact">
                     <div class="route-contact-title">Contact</div>
                     <div class="route-contact-row">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                      <span>${order.delivery_contact || 'No contact name'}</span>
+                      <span>${order.delivery_contact_name || 'No contact name'}</span>
                     </div>
                     <div class="route-contact-row">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
@@ -17741,6 +17628,8 @@ ${rateText}`
         '<div class="form-row" style="gap:12px">' +
         '<div class="form-group" style="margin-bottom:0;flex:1;position:relative"><label>City/State</label><input type="text" id="editOrderOrigin" value="' + (o.origin || '') + '" placeholder="City, State" autocomplete="off"></div>' +
         '<div class="form-group" style="margin-bottom:0;flex:0 0 140px"><label>📞 Phone</label><input type="tel" id="editPickupPhone" value="' + (o.pickup_phone || '') + '" placeholder="(555) 123-4567"></div></div>' +
+        '<div class="form-row" style="gap:12px;margin-top:8px"><div class="form-group" style="margin-bottom:0;flex:1"><label>👤 Contact Name</label><input id="editPickupContactName" value="' + (o.pickup_contact_name || '') + '" placeholder="Pickup contact name"></div><div class="form-group" style="margin-bottom:0;flex:1"><label>📞 Contact Phone</label><input type="tel" id="editPickupContactPhone" value="' + (o.pickup_contact_phone || '') + '" placeholder="Contact phone"></div></div>' +
+        '<div class="form-group" style="margin-bottom:0;margin-top:8px"><label>🕐 Pickup ETA</label><input type="datetime-local" id="editPickupEta" value="' + (o.pickup_eta ? new Date(o.pickup_eta).toISOString().slice(0,16) : '') + '"></div>' +
         '<div class="form-group" style="margin-bottom:0;margin-top:8px;position:relative"><label>Full Address</label><input type="text" id="editPickupFullAddress" value="' + (o.pickup_full_address || '') + '" placeholder="Full street address" autocomplete="off"></div></div>' +
         
         // Delivery Section
@@ -17749,6 +17638,8 @@ ${rateText}`
         '<div class="form-row" style="gap:12px">' +
         '<div class="form-group" style="margin-bottom:0;flex:1;position:relative"><label>City/State</label><input type="text" id="editOrderDest" value="' + (o.destination || '') + '" placeholder="City, State" autocomplete="off"></div>' +
         '<div class="form-group" style="margin-bottom:0;flex:0 0 140px"><label>📞 Phone</label><input type="tel" id="editDeliveryPhone" value="' + (o.delivery_phone || '') + '" placeholder="(555) 123-4567"></div></div>' +
+        '<div class="form-row" style="gap:12px;margin-top:8px"><div class="form-group" style="margin-bottom:0;flex:1"><label>👤 Contact Name</label><input id="editDeliveryContactName" value="' + (o.delivery_contact_name || '') + '" placeholder="Delivery contact name"></div><div class="form-group" style="margin-bottom:0;flex:1"><label>📞 Contact Phone</label><input type="tel" id="editDeliveryContactPhone" value="' + (o.delivery_contact_phone || '') + '" placeholder="Contact phone"></div></div>' +
+        '<div class="form-group" style="margin-bottom:0;margin-top:8px"><label>🕐 Delivery ETA</label><input type="datetime-local" id="editDeliveryEta" value="' + (o.delivery_eta ? new Date(o.delivery_eta).toISOString().slice(0,16) : '') + '"></div>' +
         '<div class="form-group" style="margin-bottom:0;margin-top:8px;position:relative"><label>Full Address</label><input type="text" id="editDeliveryFullAddress" value="' + (o.delivery_full_address || '') + '" placeholder="Full street address" autocomplete="off"></div></div>' +
         
         '<div class="form-row"><div class="form-group"><label>Pick-Up Date</label><input type="date" id="editOrderPickup" value="' + (o.pickup_date || '') + '"></div><div class="form-group"><label>Drop-Off Date</label><input type="date" id="editOrderDropoff" value="' + (o.dropoff_date || '') + '"></div></div>' +
@@ -17827,8 +17718,14 @@ ${rateText}`
         payment_type: document.getElementById('editOrderPay').value, 
         status: document.getElementById('editOrderStatus').value, 
         dispatcher_id: parseInt(document.getElementById('editOrderDispatcher').value) || null, 
-        vehicle_direction: document.getElementById('editOrderDirection').value, 
-        dispatcher_notes: document.getElementById('editOrderNotes').value || null 
+        vehicle_direction: document.getElementById('editOrderDirection').value,
+        dispatcher_notes: document.getElementById('editOrderNotes').value || null,
+        pickup_contact_name: document.getElementById('editPickupContactName')?.value || null,
+        pickup_contact_phone: document.getElementById('editPickupContactPhone')?.value || null,
+        delivery_contact_name: document.getElementById('editDeliveryContactName')?.value || null,
+        delivery_contact_phone: document.getElementById('editDeliveryContactPhone')?.value || null,
+        pickup_eta: document.getElementById('editPickupEta')?.value ? new Date(document.getElementById('editPickupEta').value).toISOString() : null,
+        delivery_eta: document.getElementById('editDeliveryEta')?.value ? new Date(document.getElementById('editDeliveryEta').value).toISOString() : null
       };
       try { 
         await dbUpdate('orders', orderId, data); 
@@ -18116,7 +18013,7 @@ ${rateText}`
       // Track editing start time for conflict detection
       if (o) startEditing('orders', id, o.updated_at);
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) { clearEditing('orders', id); m.remove(); } };
-      m.innerHTML = '<div class="modal"><div class="modal-header"><h3>' + (o ? 'Edit' : 'New') + ' Order</h3><button class="modal-close" onclick="clearEditing(\'orders\',' + id + ');this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body"><div class="form-row"><div class="form-group"><label>Order #</label><input id="orderNum" value="' + (o?.order_number || 'ORD-' + Date.now().toString().slice(-4)) + '"></div><div class="form-group"><label>Trip</label><select id="orderTrip"><option value="">Unassigned</option>' + appData.trips.map(t => '<option value="' + t.id + '"' + (o?.trip_id === t.id ? ' selected' : '') + '>' + t.trip_number + '</option>').join('') + '</select></div></div><div class="form-group"><label>Broker</label><input id="orderBroker" value="' + (o?.broker_name || '') + '"></div><div class="form-row"><div class="form-group"><label>Year</label><input type="number" id="vehYear" value="' + (o?.vehicle_year || 2024) + '"></div><div class="form-group"><label>Make</label><input id="vehMake" value="' + (o?.vehicle_make || '') + '"></div></div><div class="form-group"><label>Model</label><input id="vehModel" value="' + (o?.vehicle_model || '') + '"></div><div class="form-row"><div class="form-group"><label>Origin</label><input id="orderOrigin" value="' + (o?.origin || '') + '"></div><div class="form-group"><label>Destination</label><input id="orderDest" value="' + (o?.destination || '') + '"></div></div><div class="form-row"><div class="form-group"><label>Revenue $</label><input type="number" id="orderRev" value="' + (o?.revenue || '') + '"></div><div class="form-group"><label>Local Fee $</label><input type="number" id="orderFee" value="' + (o?.local_fee || 0) + '"></div></div><div class="form-row"><div class="form-group"><label>Payment</label><select id="orderPay"><option' + (o?.payment_type === 'BILL' ? ' selected' : '') + '>BILL</option><option' + (o?.payment_type === 'COD' ? ' selected' : '') + '>COD</option><option' + (o?.payment_type === 'COP' ? ' selected' : '') + '>COP</option><option' + (o?.payment_type === 'CHECK' ? ' selected' : '') + '>CHECK</option><option' + (o?.payment_type === 'LOCAL_COD' ? ' selected' : '') + '>LOCAL_COD</option></select></div><div class="form-group"><label>Status</label><select id="orderStatus"><option' + (o?.status === 'PENDING' ? ' selected' : '') + '>PENDING</option><option' + (o?.status === 'IN_TRANSIT' ? ' selected' : '') + '>IN_TRANSIT</option><option' + (o?.status === 'DELIVERED' ? ' selected' : '') + '>DELIVERED</option></select></div></div><div class="form-group"><label>📝 Notes for Dispatchers</label><textarea id="orderNotes" rows="2" placeholder="Add notes visible to all dispatchers..." style="resize:vertical">' + (o?.dispatcher_notes || '') + '</textarea></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="clearEditing(\'orders\',' + id + ');this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveOrder(' + id + ')">Save</button></div></div>';
+      m.innerHTML = '<div class="modal"><div class="modal-header"><h3>' + (o ? 'Edit' : 'New') + ' Order</h3><button class="modal-close" onclick="clearEditing(\'orders\',' + id + ');this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body"><div class="form-row"><div class="form-group"><label>Order #</label><input id="orderNum" value="' + (o?.order_number || 'ORD-' + Date.now().toString().slice(-4)) + '"></div><div class="form-group"><label>Trip</label><select id="orderTrip"><option value="">Unassigned</option>' + appData.trips.map(t => '<option value="' + t.id + '"' + (o?.trip_id === t.id ? ' selected' : '') + '>' + t.trip_number + '</option>').join('') + '</select></div></div><div class="form-group"><label>Broker</label><input id="orderBroker" value="' + (o?.broker_name || '') + '"></div><div class="form-row"><div class="form-group"><label>Year</label><input type="number" id="vehYear" value="' + (o?.vehicle_year || 2024) + '"></div><div class="form-group"><label>Make</label><input id="vehMake" value="' + (o?.vehicle_make || '') + '"></div></div><div class="form-row"><div class="form-group"><label>Model</label><input id="vehModel" value="' + (o?.vehicle_model || '') + '"></div><div class="form-group"><label>Color</label><input id="vehColor" value="' + (o?.vehicle_color || '') + '"></div><div class="form-group"><label>Body Type</label><input id="vehBodyType" value="' + (o?.vehicle_body_type || '') + '" placeholder="e.g. Sedan, SUV, Truck"></div></div><div class="form-row"><div class="form-group"><label>Origin</label><input id="orderOrigin" value="' + (o?.origin || '') + '"></div><div class="form-group"><label>Destination</label><input id="orderDest" value="' + (o?.destination || '') + '"></div></div><div class="form-row"><div class="form-group"><label>Revenue $</label><input type="number" id="orderRev" value="' + (o?.revenue || '') + '"></div><div class="form-group"><label>Local Fee $</label><input type="number" id="orderFee" value="' + (o?.local_fee || 0) + '"></div></div><div class="form-row"><div class="form-group"><label>Payment</label><select id="orderPay"><option' + (o?.payment_type === 'BILL' ? ' selected' : '') + '>BILL</option><option' + (o?.payment_type === 'COD' ? ' selected' : '') + '>COD</option><option' + (o?.payment_type === 'COP' ? ' selected' : '') + '>COP</option><option' + (o?.payment_type === 'CHECK' ? ' selected' : '') + '>CHECK</option><option' + (o?.payment_type === 'LOCAL_COD' ? ' selected' : '') + '>LOCAL_COD</option></select></div><div class="form-group"><label>Status</label><select id="orderStatus"><option' + (o?.status === 'PENDING' ? ' selected' : '') + '>PENDING</option><option' + (o?.status === 'IN_TRANSIT' ? ' selected' : '') + '>IN_TRANSIT</option><option' + (o?.status === 'DELIVERED' ? ' selected' : '') + '>DELIVERED</option></select></div></div><div class="form-group"><label>📝 Notes for Dispatchers</label><textarea id="orderNotes" rows="2" placeholder="Add notes visible to all dispatchers..." style="resize:vertical">' + (o?.dispatcher_notes || '') + '</textarea></div><div style="border-top:1px solid var(--border);margin:16px 0 8px;padding-top:12px"><strong style="font-size:13px;color:var(--text-secondary)">📍 Pickup Contact</strong></div><div class="form-row"><div class="form-group"><label>Contact Name</label><input id="pickupContactName" value="' + (o?.pickup_contact_name || '') + '" placeholder="Pickup contact name"></div><div class="form-group"><label>Contact Phone</label><input id="pickupContactPhone" value="' + (o?.pickup_contact_phone || '') + '" placeholder="Phone number"></div></div><div style="border-top:1px solid var(--border);margin:16px 0 8px;padding-top:12px"><strong style="font-size:13px;color:var(--text-secondary)">📍 Delivery Contact</strong></div><div class="form-row"><div class="form-group"><label>Contact Name</label><input id="deliveryContactName" value="' + (o?.delivery_contact_name || '') + '" placeholder="Delivery contact name"></div><div class="form-group"><label>Contact Phone</label><input id="deliveryContactPhone" value="' + (o?.delivery_contact_phone || '') + '" placeholder="Phone number"></div></div><div style="border-top:1px solid var(--border);margin:16px 0 8px;padding-top:12px"><strong style="font-size:13px;color:var(--text-secondary)">🕐 ETA</strong></div><div class="form-row"><div class="form-group"><label>Pickup ETA</label><input type="datetime-local" id="pickupEta" value="' + (o?.pickup_eta ? new Date(o.pickup_eta).toISOString().slice(0,16) : '') + '"></div><div class="form-group"><label>Delivery ETA</label><input type="datetime-local" id="deliveryEta" value="' + (o?.delivery_eta ? new Date(o.delivery_eta).toISOString().slice(0,16) : '') + '"></div></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="clearEditing(\'orders\',' + id + ');this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveOrder(' + id + ')">Save</button></div></div>';
       document.body.appendChild(m);
     }
 
@@ -18134,7 +18031,9 @@ ${rateText}`
         showToast('Order number already exists', 'error');
         return;
       }
-      const data = { order_number: orderNumber, trip_id: tripId, broker_name: document.getElementById('orderBroker').value || null, vehicle_year: parseInt(document.getElementById('vehYear').value) || null, vehicle_make: document.getElementById('vehMake').value, vehicle_model: document.getElementById('vehModel').value, origin: document.getElementById('orderOrigin').value, destination: document.getElementById('orderDest').value, revenue: parseFloat(document.getElementById('orderRev').value) || 0, local_fee: parseFloat(document.getElementById('orderFee').value) || 0, payment_type: document.getElementById('orderPay').value, status: document.getElementById('orderStatus').value, dispatcher_notes: document.getElementById('orderNotes').value || null };
+      const pickupEtaVal = document.getElementById('pickupEta').value;
+      const deliveryEtaVal = document.getElementById('deliveryEta').value;
+      const data = { order_number: orderNumber, trip_id: tripId, broker_name: document.getElementById('orderBroker').value || null, vehicle_year: parseInt(document.getElementById('vehYear').value) || null, vehicle_make: document.getElementById('vehMake').value, vehicle_model: document.getElementById('vehModel').value, vehicle_color: document.getElementById('vehColor').value || null, vehicle_body_type: document.getElementById('vehBodyType').value || null, origin: document.getElementById('orderOrigin').value, destination: document.getElementById('orderDest').value, revenue: parseFloat(document.getElementById('orderRev').value) || 0, local_fee: parseFloat(document.getElementById('orderFee').value) || 0, payment_type: document.getElementById('orderPay').value, status: document.getElementById('orderStatus').value, pickup_contact_name: document.getElementById('pickupContactName').value || null, pickup_contact_phone: document.getElementById('pickupContactPhone').value || null, delivery_contact_name: document.getElementById('deliveryContactName').value || null, delivery_contact_phone: document.getElementById('deliveryContactPhone').value || null, pickup_eta: pickupEtaVal ? new Date(pickupEtaVal).toISOString() : null, delivery_eta: deliveryEtaVal ? new Date(deliveryEtaVal).toISOString() : null, dispatcher_notes: document.getElementById('orderNotes').value || null };
       try { 
         if (id) { 
           await dbUpdate('orders', id, data); 
