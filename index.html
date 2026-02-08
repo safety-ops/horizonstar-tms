@@ -13382,7 +13382,9 @@
 
       // Fetch related data
       const trip = order.trip_id ? appData.trips.find(t => t.id === order.trip_id) : null;
-      const driver = trip?.driver_id ? appData.drivers.find(d => d.id === trip.driver_id) : null;
+      const driver = trip?.driver_id
+        ? appData.drivers.find(d => d.id === trip.driver_id)
+        : (order.driver_id ? appData.drivers.find(d => d.id === order.driver_id) : null);
       const truck = trip?.truck_id ? appData.trucks.find(tr => tr.id === trip.truck_id) : null;
       const broker = appData.brokers?.find(b => b.name === order.broker_name);
 
@@ -15728,6 +15730,7 @@ ${rateText}`
         
         try {
           const selectedTrip = appData.trips.find(t => t.id === tripId);
+          const orderData = appData.orders.find(o => o.id === orderId);
           await dbUpdate('orders', orderId, {
             trip_id: tripId,
             driver_id: selectedTrip?.driver_id || null,
@@ -15736,6 +15739,22 @@ ${rateText}`
             load_subcategory: null,
             local_driver_id: null
           });
+
+          // Notify driver about new vehicle assignment
+          if (selectedTrip?.driver_id && orderData) {
+            try {
+              await dbInsert('driver_notifications', {
+                driver_id: selectedTrip.driver_id,
+                type: 'trip_assigned',
+                title: 'New Vehicle Assigned',
+                body: `${orderData.vehicle_year || ''} ${orderData.vehicle_make || ''} ${orderData.vehicle_model || ''} assigned to trip ${selectedTrip.trip_number}`.trim(),
+                order_id: orderId,
+                trip_id: tripId,
+                is_read: false
+              });
+            } catch (e) { /* silent */ }
+          }
+
           document.querySelector('.modal-overlay').remove();
           showToast('Vehicle assigned to trip!');
           await loadAllData(true);
@@ -16930,12 +16949,31 @@ ${rateText}`
     async function assignDriver(tripId) {
       try {
         const driverId = parseInt(document.getElementById('assignDriver').value) || null;
+        const tripData = appData.trips.find(t => t.id === tripId);
         await dbUpdate('trips', tripId, { driver_id: driverId, driver_cut_percent: parseFloat(document.getElementById('assignCut').value) || 32 });
         // Sync driver_id to all orders on this trip
         const tripOrders = appData.orders.filter(o => o.trip_id === tripId);
         for (const order of tripOrders) {
           await dbUpdate('orders', order.id, { driver_id: driverId });
         }
+
+        // Notify the new driver about all orders on this trip
+        if (driverId && tripData) {
+          for (const order of tripOrders) {
+            try {
+              await dbInsert('driver_notifications', {
+                driver_id: driverId,
+                type: 'trip_assigned',
+                title: 'New Vehicle Assigned',
+                body: `${order.vehicle_year || ''} ${order.vehicle_make || ''} ${order.vehicle_model || ''} assigned to trip ${tripData.trip_number}`.trim(),
+                order_id: order.id,
+                trip_id: tripId,
+                is_read: false
+              });
+            } catch (e) { /* silent */ }
+          }
+        }
+
         document.querySelector('.modal-overlay').remove(); showToast('Driver assigned'); await loadAllData(true); viewTrip(tripId);
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
@@ -26576,7 +26614,9 @@ ${rateText}`
 
       // Get trip and driver info
       const trip = order.trip_id ? appData.trips.find(t => t.id === order.trip_id) : null;
-      const driver = trip?.driver_id ? appData.drivers.find(d => d.id === trip.driver_id) : null;
+      const driver = trip?.driver_id
+        ? appData.drivers.find(d => d.id === trip.driver_id)
+        : (order.driver_id ? appData.drivers.find(d => d.id === order.driver_id) : null);
 
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -27714,7 +27754,9 @@ ${rateText}`
 
       // Get trip and driver info
       const trip = order.trip_id ? appData.trips.find(t => t.id === order.trip_id) : null;
-      const driver = trip?.driver_id ? appData.drivers.find(d => d.id === trip.driver_id) : null;
+      const driver = trip?.driver_id
+        ? appData.drivers.find(d => d.id === trip.driver_id)
+        : (order.driver_id ? appData.drivers.find(d => d.id === order.driver_id) : null);
 
       showToast('Sending tracking link...', 'info');
 
@@ -27866,7 +27908,9 @@ ${rateText}`
       );
 
       const trip = order?.trip_id ? appData.trips.find(t => t.id === order.trip_id) : null;
-      const driver = trip?.driver_id ? appData.drivers.find(d => d.id === trip.driver_id) : null;
+      const driver = trip?.driver_id
+        ? appData.drivers.find(d => d.id === trip.driver_id)
+        : (order?.driver_id ? appData.drivers.find(d => d.id === order.driver_id) : null);
 
       // Get inspections from appData if available
       const inspections = (appData.vehicle_inspections || []).filter(i => i.order_id === order?.id);
