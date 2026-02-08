@@ -16552,7 +16552,7 @@ ${rateText}`
       ` : '';
       
       const c = document.getElementById('main-content');
-      c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><button class="btn btn-secondary" onclick="renderTrips(document.getElementById(\'main-content\'))">← Back</button><h2>' + t.trip_number + '</h2><span class="badge ' + getBadge(t.status) + '">' + t.status + '</span>' + (t.status !== 'COMPLETED' ? '<button class="btn btn-primary" style="background:#10b981" onclick="markTripCompleted(' + id + ')">✓ Mark Completed</button>' : '<span style="color:#10b981;font-weight:600">✓ Trip Completed</span>') + '</div><div style="display:flex;gap:12px"><button class="btn btn-primary" onclick="openAddVehicle(' + id + ')">+ Add Vehicle</button><button class="btn btn-secondary" onclick="openAddExpense(' + id + ')">+ Expense</button><button class="btn btn-secondary" onclick="openTripMap(' + id + ')">🗺️ Trip Map</button></div></div>' +
+      c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><button class="btn btn-secondary" onclick="renderTrips(document.getElementById(\'main-content\'))">← Back</button><h2>' + t.trip_number + '</h2><span class="badge ' + getBadge(t.status) + '">' + t.status + '</span>' + (t.status !== 'COMPLETED' ? '<button class="btn btn-primary" style="background:#f59e0b" onclick="markTripAtTerminal(' + id + ')">🏢 Mark At Terminal</button><button class="btn btn-primary" style="background:#10b981" onclick="markTripCompleted(' + id + ')">✓ Mark Completed</button>' : '<span style="color:#10b981;font-weight:600">✓ Trip Completed</span>') + '</div><div style="display:flex;gap:12px"><button class="btn btn-primary" onclick="openAddVehicle(' + id + ')">+ Add Vehicle</button><button class="btn btn-secondary" onclick="openAddExpense(' + id + ')">+ Expense</button><button class="btn btn-secondary" onclick="openTripMap(' + id + ')">🗺️ Trip Map</button></div></div>' +
         
         '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px"><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Date</div><div class="value" style="font-size:16px">' + formatDate(t.trip_date) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:150px;padding:12px 16px;background:#f3e8ff;cursor:pointer" onclick="openTripModal(' + id + ')"><div class="label">📅 Pay Period ✏️</div><div class="value" style="font-size:12px;color:#7c3aed">' + payPeriodText + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px;cursor:pointer" onclick="openAssignDriver(' + id + ')"><div class="label">Driver ✏️</div><div class="value" style="font-size:14px">' + (d ? d.first_name + ' ' + d.last_name : 'Not Assigned') + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:80px;padding:12px 16px;cursor:pointer" onclick="openAssignTruck(' + id + ')"><div class="label">Truck ✏️</div><div class="value" style="font-size:16px">' + (tr ? '#' + tr.truck_number : '-') + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:70px;padding:12px 16px"><div class="label">Cars</div><div class="value" style="font-size:16px">' + orders.length + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Broker Fees</div><div class="value" style="font-size:14px;color:#ef4444">' + formatMoney(f.brokerFee) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Local Fees</div><div class="value" style="font-size:14px;color:#ef4444">' + formatMoney(f.localFees) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Revenue</div><div class="value" style="font-size:14px">' + formatMoney(f.loadRevenue) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;background:#dbeafe"><div class="label">Clean Revenue</div><div class="value" style="font-size:14px;color:#1d4ed8">' + formatMoney(cleanRevenue) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;background:#fef3c7;border:2px solid #f59e0b"><div class="label">Driver Cut (' + (t.driver_cut_percent || 32) + '%)</div><div class="value" style="font-size:14px;color:#b45309">' + formatMoney(f.driverCut) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px;background:' + (f.netProfit >= 0 ? '#d1fae5' : '#fee2e2') + '"><div class="label">Net Profit</div><div class="value" style="font-size:14px">' + formatMoney(f.netProfit) + '</div></div></div>' +
         
@@ -16847,7 +16847,7 @@ ${rateText}`
     }
 
     async function markTripCompleted(tripId, fromList = false) {
-      if (!confirm('Mark this trip as completed?')) return;
+      if (!confirm('Mark this trip as completed? Orders will NOT go to pending local deliveries.')) return;
       try {
         const trip = appData.trips.find(t => t.id === tripId);
         const today = new Date().toISOString().split('T')[0];
@@ -16857,9 +16857,20 @@ ${rateText}`
           updateData.period_end_date = today;
         }
         await dbUpdate('trips', tripId, updateData);
-        
+
+        // Set not_for_local_delivery on qualifying local delivery orders so they don't appear in Pending Local Deliveries
+        const qualifyingOrders = appData.orders.filter(o =>
+          o.trip_id === tripId &&
+          parseFloat(o.local_fee || 0) > 0 &&
+          isLocalDeliveryState(o.destination) &&
+          !o.local_driver_id
+        );
+        for (const order of qualifyingOrders) {
+          await dbUpdate('orders', order.id, { not_for_local_delivery: true });
+        }
+
         showToast('Trip marked as completed!');
-        
+
         await loadAllData(true);
         // If called from list, refresh list; otherwise show trip detail
         if (fromList || !document.querySelector('.header h2')?.textContent?.includes('TRIP')) {
@@ -16867,6 +16878,24 @@ ${rateText}`
         } else {
           viewTrip(tripId);
         }
+      } catch (e) { showToast('Failed to update', 'error'); }
+    }
+
+    async function markTripAtTerminal(tripId) {
+      if (!confirm('Mark trip at terminal? Local delivery orders will be sent to pending local deliveries.')) return;
+      try {
+        const trip = appData.trips.find(t => t.id === tripId);
+        const today = new Date().toISOString().split('T')[0];
+        const updateData = { status: 'COMPLETED' };
+        if (!trip.period_end_date) {
+          updateData.period_end_date = today;
+        }
+        await dbUpdate('trips', tripId, updateData);
+
+        showToast('Trip marked at terminal!');
+
+        await loadAllData(true);
+        viewTrip(tripId);
       } catch (e) { showToast('Failed to update', 'error'); }
     }
 
