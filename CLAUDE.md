@@ -39,10 +39,15 @@ The web app is a **single ~38,000-line `index.html`** file with all page renderi
 
 **Key conventions**:
 - Theme: CSS variables (`--bg-primary`, `--text-primary`, etc.) with `.dark-theme` class toggle
-- Data: All tables cached in `appData.trips`, `appData.orders`, etc.
+- Data: All tables cached in `appData.trips`, `appData.orders`, etc. with 5-minute TTL via `dataCache`
 - XSS prevention: Use `escapeHtml()` for user-provided text in templates
 - Supabase client: Global `sb` variable initialized in `config.js`
 - Auth: `currentUser` object stored in localStorage (`horizonstar_user`)
+- Modals: `showModal(modalId, title, bodyContent, footerContent, maxWidth='600px')` — close via overlay click or Escape
+- Toasts: `showToast(msg, type)` where type is `'success'` | `'error'` | `'warning'` | `'info'` (auto-dismiss 3s)
+- Realtime sync: Subscribes to key tables with 1s debounce; uses `window.lastSaveTimestamp` (2s window) to ignore own changes
+- Conflict detection: `startEditing()` / `getEditingTimestamp()` checks `updated_at` before saving; tables without `updated_at` skip checks
+- Graceful degradation: Secondary table loads wrapped in try/catch — app works even if migrations aren't applied
 
 ## iOS Driver App Architecture
 
@@ -59,12 +64,20 @@ Swift/SwiftUI app at `Horizon Star LLC Driver App/LuckyCabbage Driver App/`. Key
 - `ThemeManager.swift` — Light/dark mode via `@AppStorage`
 - Color assets in `Assets.xcassets/Colors/` — always use asset colors, never hardcode hex
 
+**View modifiers**: `.cardStyle()` (padding 14, cardBackground, rounded border, shadow), `.heroCardStyle(color:)` (gradient 12% opacity), `.pillTabStyle(isActive:)`
+
+**Typography**: `Font.titleLarge` (28 heavy), `.titleMedium` (20 heavy), `.appBody` (14 regular), `.appCaption` (11 semibold), `.appMono` (14 semibold mono). Currency: `Double.currencyFormatted`, `.currencyFormattedNoDecimals`.
+
+**Model conventions**: All models are `Codable, Identifiable`. V3 fields use `var` with `= nil` defaults for backward compat. Separate "Create" structs (e.g., `ExpenseCreate`) for POST operations. Date fields are ISO 8601 strings.
+
+**SupabaseService**: Singleton (`SupabaseService.shared`) with `@Published` reactive properties. Logging via `os.log` subsystem `"com.LuckyCabbage-Driver-App"`.
+
 **Protected files** (do not modify): `Config.swift`, `CacheManager.swift`, `LocalizationManager.swift`, inspection workflow logic.
 
 ## Supabase
 
 - Project ref in `supabase/.temp/project-ref`
-- Migrations in `supabase/migrations/` (chronological SQL files)
+- Migrations in `supabase/migrations/` (naming: `YYYYMMDD_N_description.sql`, multiple per day allowed)
 - Edge function: `supabase/functions/send-email/index.ts` (Resend email API)
 - Tables: `orders`, `trips`, `drivers`, `trucks`, `expenses`, `inspections`, `brokers`, `fuel_transactions`, `maintenance_records`, `claims`, `tickets`, `violations`, `company_files`, `dealers`, `tasks`, etc.
 
