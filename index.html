@@ -16892,6 +16892,17 @@ ${rateText}`
         }
         await dbUpdate('trips', tripId, updateData);
 
+        // Clear not_for_local_delivery on qualifying orders so they appear in Pending Local Deliveries
+        const qualifyingOrders = appData.orders.filter(o =>
+          o.trip_id === tripId &&
+          parseFloat(o.local_fee || 0) > 0 &&
+          isLocalDeliveryState(o.destination) &&
+          !o.local_driver_id
+        );
+        for (const order of qualifyingOrders) {
+          await dbUpdate('orders', order.id, { not_for_local_delivery: false });
+        }
+
         showToast('Trip marked at terminal!');
 
         await loadAllData(true);
