@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 
 ## Current Position
 
-Phase: 6 (Design System Foundation) of 10 — COMPLETE
-Plan: 2 of 2 — UI Components & Showcase (COMPLETE)
-Status: Phase 6 complete, pending verification
-Last activity: 2026-02-09 — Completed 06-02-PLAN.md (components + showcase, user approved)
+Phase: 7 (Core Dispatch Pages) of 10 — COMPLETE
+Plan: 6 of 6 — Order Detail (COMPLETE)
+Status: Phase 7 complete
+Last activity: 2026-02-09 — Completed all 6 plans (dashboard, load-board, trips, trip-detail, orders, order-detail)
 
-Progress: ██░░░░░░░░░░░░░░░░░░ 2/22 plans (9%)
+Progress: ████████░░░░░░░░░░░░ 8/22 plans (36%)
 
 ## Accumulated Context
 
@@ -29,9 +29,10 @@ Progress: ██░░░░░░░░░░░░░░░░░░ 2/22 plan
 | sidebar-width-tokens | 240px expanded, 72px collapsed, 280px mobile | Balances content visibility with navigation accessibility | 06-01 | 2026-02-09 |
 | mockups-before-code | Mockups before code: review and approve designs before touching production index.html | De-risk changes | — | 2026-02-09 |
 | mockups-directory | Mockups go in `mockups/web-tms-redesign/` directory | Separation from production | — | 2026-02-09 |
+| sidebar-nav-from-production | **When applying design to production, sidebar nav items must match exact order/structure from live index.html** — mockup sidebar may differ from production order | User feedback: mockup sidebar pages are in different locations than live platform | 07 | 2026-02-09 |
 
 ### Known Issues
-- None currently blocking
+- Mockup sidebar nav order differs from production sidebar — cosmetic only, will use production order when applying design
 
 ### Todos
 - (None yet)
@@ -39,5 +40,5 @@ Progress: ██░░░░░░░░░░░░░░░░░░ 2/22 plan
 ## Session Continuity
 
 Last session: 2026-02-09
-Stopped at: Completed 06-02-PLAN.md, phase 6 complete
+Stopped at: Phase 7 complete, all 6 core dispatch page mockups built and approved
 Resume file: None

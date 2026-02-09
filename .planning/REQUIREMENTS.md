@@ -17,12 +17,12 @@
 
 ### Core Dispatch Pages (CORE)
 
-- [ ] **CORE-01**: Dashboard mockup with stat cards, charts, recent activity
-- [ ] **CORE-02**: Load Board mockup with category tabs, order cards, assign modal
-- [ ] **CORE-03**: Trips list mockup with status filters, trip cards/table
-- [ ] **CORE-04**: Trip detail mockup with financials, vehicle list, expenses
-- [ ] **CORE-05**: Orders list mockup with search, filters, order table
-- [ ] **CORE-06**: Order edit modal mockup
+- [x] **CORE-01**: Dashboard mockup with stat cards, charts, recent activity
+- [x] **CORE-02**: Load Board mockup with category tabs, order cards, assign modal
+- [x] **CORE-03**: Trips list mockup with status filters, trip cards/table
+- [x] **CORE-04**: Trip detail mockup with financials, vehicle list, expenses
+- [x] **CORE-05**: Orders list mockup with search, filters, order table
+- [x] **CORE-06**: Order edit modal mockup
 
 ### People & Fleet Pages (PEOPLE)
 
@@ -76,12 +76,12 @@
 | DS-05 | Phase 6 | Complete |
 | DS-06 | Phase 6 | Complete |
 | DS-07 | Phase 6 | Complete |
-| CORE-01 | Phase 7 | Pending |
-| CORE-02 | Phase 7 | Pending |
-| CORE-03 | Phase 7 | Pending |
-| CORE-04 | Phase 7 | Pending |
-| CORE-05 | Phase 7 | Pending |
-| CORE-06 | Phase 7 | Pending |
+| CORE-01 | Phase 7 | Complete |
+| CORE-02 | Phase 7 | Complete |
+| CORE-03 | Phase 7 | Complete |
+| CORE-04 | Phase 7 | Complete |
+| CORE-05 | Phase 7 | Complete |
+| CORE-06 | Phase 7 | Complete |
 | PEOPLE-01 | Phase 8 | Pending |
 | PEOPLE-02 | Phase 8 | Pending |
 | PEOPLE-03 | Phase 8 | Pending |
