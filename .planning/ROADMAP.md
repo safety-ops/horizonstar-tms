@@ -79,20 +79,32 @@ Plans:
 
 **Depends on:** Phase 6 (shared CSS)
 
+**Plans:** 5 plans
+
+Plans:
+- [ ] 08-01-PLAN.md — Drivers list (card grid + doc expiration alerts) + Driver detail (qual files, personal files, custom folders, compliance records)
+- [ ] 08-02-PLAN.md — Local Drivers list (year selector, stats, pending pickup/delivery with 5-state row colors) + Local Driver detail
+- [ ] 08-03-PLAN.md — Trucks (Fleet) table (compliance status, ownership badges, trailer support) + Truck detail (compliance files, maintenance records)
+- [ ] 08-04-PLAN.md — Brokers list (gradient summary cards, ranked broker cards with reliability scores, medals, activity badges)
+- [ ] 08-05-PLAN.md — Dispatchers table (simple Code/Name/Cars/Revenue/Actions)
+
 **Output:**
 - `mockups/web-tms-redesign/drivers.html` (includes driver detail)
-- `mockups/web-tms-redesign/local-drivers.html` (includes driver detail)
-- `mockups/web-tms-redesign/trucks.html`
+- `mockups/web-tms-redesign/local-drivers.html` (includes local driver detail)
+- `mockups/web-tms-redesign/trucks.html` (includes truck detail)
 - `mockups/web-tms-redesign/brokers.html`
-- `mockups/web-tms-redesign/dispatchers.html` (includes ranking)
+- `mockups/web-tms-redesign/dispatchers.html`
 
 **Success Criteria:**
-1. Drivers list shows driver cards with status, earnings, file counts
-2. Driver detail shows trip history, document files, earnings summary
-3. Local Drivers shows pending delivery/pickup sections, driver stats, assigned orders
-4. Local Driver detail shows order table with status, fees, actions
-5. Trucks, Brokers, Dispatchers pages render with appropriate card/table layouts
-6. All pages use shared.css with working light/dark toggle
+1. Drivers list shows driver cards with status, earnings, file counts, doc expiration alerts banner
+2. Driver detail shows stats, qualification files (10 types), personal files (3 types), custom folders, compliance records
+3. Local Drivers shows year selector, stats, pending pickup/delivery tables with 5-state row background colors
+4. Local Driver detail shows stats, driver info, assigned orders table
+5. Trucks table shows compliance status (OK/Issues), ownership badges, trailer support
+6. Truck detail shows compliance files (8 types), custom folders, maintenance records
+7. Brokers shows gradient summary cards, ranked broker cards with reliability scores, medals, activity badges
+8. Dispatchers shows simple table matching production simplicity
+9. All pages use shared.css with working light/dark toggle
 
 ---
 
