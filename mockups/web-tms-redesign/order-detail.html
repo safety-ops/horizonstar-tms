@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon Star TMS — Order Detail</title>
+
+  <!-- FART prevention: set theme before CSS loads -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('tms-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared.css">
+</head>
+<body>
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <i data-lucide="truck"></i>
+        </div>
+        <span class="sidebar-logo-text">Horizon Star</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- MAIN Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Main</div>
+          <a class="nav-item" data-page="dashboard">
+            <i data-lucide="layout-dashboard" class="nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+          </a>
+          <a class="nav-item" data-page="trips">
+            <i data-lucide="map" class="nav-icon"></i>
+            <span class="nav-label">Trips</span>
+          </a>
+          <a class="nav-item" data-page="messages">
+            <i data-lucide="message-square" class="nav-icon"></i>
+            <span class="nav-label">Messages</span>
+          </a>
+          <a class="nav-item" data-page="trailers">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trailers</span>
+          </a>
+          <a class="nav-item" data-page="load-board">
+            <i data-lucide="package" class="nav-icon"></i>
+            <span class="nav-label">Load Board</span>
+          </a>
+          <a class="nav-item" data-page="inspections">
+            <i data-lucide="clipboard-list" class="nav-icon"></i>
+            <span class="nav-label">Inspections</span>
+          </a>
+          <a class="nav-item" data-page="tasks">
+            <i data-lucide="check-square" class="nav-icon"></i>
+            <span class="nav-label">Tasks</span>
+          </a>
+        </div>
+
+        <!-- FLEET Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Fleet</div>
+          <a class="nav-item" data-page="drivers">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Drivers</span>
+          </a>
+          <a class="nav-item" data-page="trucks">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trucks</span>
+          </a>
+          <a class="nav-item" data-page="local-drivers">
+            <i data-lucide="user" class="nav-icon"></i>
+            <span class="nav-label">Local Drivers</span>
+          </a>
+        </div>
+
+        <!-- PARTNERS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Partners</div>
+          <a class="nav-item" data-page="brokers">
+            <i data-lucide="briefcase" class="nav-icon"></i>
+            <span class="nav-label">Brokers</span>
+          </a>
+          <a class="nav-item" data-page="dealers">
+            <i data-lucide="building" class="nav-icon"></i>
+            <span class="nav-label">Dealers</span>
+          </a>
+          <a class="nav-item" data-page="dispatchers">
+            <i data-lucide="phone" class="nav-icon"></i>
+            <span class="nav-label">Dispatchers</span>
+          </a>
+          <a class="nav-item" data-page="dispatcher-ranking">
+            <i data-lucide="star" class="nav-icon"></i>
+            <span class="nav-label">Dispatcher Ranking</span>
+          </a>
+        </div>
+
+        <!-- FINANCIALS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Financials</div>
+          <a class="nav-item" data-page="financials">
+            <i data-lucide="dollar-sign" class="nav-icon"></i>
+            <span class="nav-label">Financials</span>
+          </a>
+          <a class="nav-item" data-page="billing">
+            <i data-lucide="file-text" class="nav-icon"></i>
+            <span class="nav-label">Billing</span>
+          </a>
+          <a class="nav-item" data-page="trip-profitability">
+            <i data-lucide="trending-up" class="nav-icon"></i>
+            <span class="nav-label">Trip Profitability</span>
+          </a>
+          <a class="nav-item" data-page="payroll">
+            <i data-lucide="credit-card" class="nav-icon"></i>
+            <span class="nav-label">Payroll</span>
+          </a>
+          <a class="nav-item" data-page="fuel">
+            <i data-lucide="droplet" class="nav-icon"></i>
+            <span class="nav-label">Fuel</span>
+          </a>
+          <a class="nav-item" data-page="ifta">
+            <i data-lucide="file" class="nav-icon"></i>
+            <span class="nav-label">IFTA</span>
+          </a>
+          <a class="nav-item" data-page="reports">
+            <i data-lucide="bar-chart-2" class="nav-icon"></i>
+            <span class="nav-label">Reports</span>
+          </a>
+          <a class="nav-item" data-page="ai-advisor">
+            <i data-lucide="brain" class="nav-icon"></i>
+            <span class="nav-label">AI Advisor</span>
+          </a>
+        </div>
+
+        <!-- OPERATIONS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Operations</div>
+          <a class="nav-item" data-page="maintenance">
+            <i data-lucide="wrench" class="nav-icon"></i>
+            <span class="nav-label">Maintenance</span>
+          </a>
+          <a class="nav-item" data-page="compliance">
+            <i data-lucide="shield-check" class="nav-icon"></i>
+            <span class="nav-label">Compliance</span>
+          </a>
+          <a class="nav-item" data-page="applications">
+            <i data-lucide="file-plus" class="nav-icon"></i>
+            <span class="nav-label">Applications</span>
+          </a>
+        </div>
+
+        <!-- SETTINGS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Settings</div>
+          <a class="nav-item" data-page="settings">
+            <i data-lucide="settings" class="nav-icon"></i>
+            <span class="nav-label">Settings</span>
+          </a>
+          <a class="nav-item" data-page="users">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Users</span>
+          </a>
+          <a class="nav-item" data-page="activity-log">
+            <i data-lucide="activity" class="nav-icon"></i>
+            <span class="nav-label">Activity Log</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-toggle" id="sidebarToggle">
+        <i data-lucide="panel-left-close" class="nav-icon" id="toggleIcon"></i>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger" style="display:none;">
+            <i data-lucide="menu"></i>
+          </button>
+          <h1 class="header-title">Order Detail</h1>
+        </div>
+
+        <div class="header-search">
+          <i data-lucide="search" class="ico-sm"></i>
+          <input type="text" placeholder="Search orders, trips, drivers...">
+        </div>
+
+        <div class="header-right">
+          <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+            <i data-lucide="moon" class="ico" id="themeIcon"></i>
+          </button>
+          <div class="header-avatar">JD</div>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Section 1: Back Button + Vehicle Title -->
+        <div style="margin-bottom: 24px;">
+          <a href="#" style="display: inline-flex; align-items: center; gap: 8px; color: var(--text-secondary); margin-bottom: 12px; font-size: var(--text-sm); font-weight: var(--weight-medium);">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+            Back to Orders
+          </a>
+          <h1 style="font-size: var(--text-3xl); font-weight: var(--weight-heavy); color: var(--text-primary); margin-bottom: 8px;">
+            2024 Toyota Camry
+          </h1>
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <span style="color: var(--text-secondary); font-size: var(--text-base);">
+              Order <span style="font-family: var(--font-mono); color: var(--text-primary); font-weight: var(--weight-semibold);">ORD-2024-001</span>
+            </span>
+            <span style="color: var(--text-muted);">•</span>
+            <span style="color: var(--text-secondary); font-size: var(--text-base);">Central Dispatch</span>
+            <span class="badge badge-green">DELIVERED</span>
+          </div>
+        </div>
+
+        <!-- Section 2: Order Info Card -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <h3 class="card-title">📋 Order Information</h3>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Order Number</div>
+              <div style="font-family: var(--font-mono); color: var(--text-primary); font-weight: var(--weight-semibold); font-size: var(--text-base);">ORD-2024-001</div>
+            </div>
+            <div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">VIN</div>
+              <div style="font-family: var(--font-mono); color: var(--text-primary); font-weight: var(--weight-semibold); font-size: var(--text-base);">1HGBH41JXMN109186</div>
+            </div>
+            <div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Color</div>
+              <div style="color: var(--text-primary); font-weight: var(--weight-medium); font-size: var(--text-base);">Midnight Black</div>
+            </div>
+            <div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Year / Make / Model</div>
+              <div style="color: var(--text-primary); font-weight: var(--weight-medium); font-size: var(--text-base);">2024 Toyota Camry</div>
+            </div>
+            <div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Broker</div>
+              <div style="color: var(--text-primary); font-weight: var(--weight-medium); font-size: var(--text-base);">Central Dispatch</div>
+            </div>
+            <div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Dispatcher</div>
+              <div style="color: var(--text-primary); font-weight: var(--weight-medium); font-size: var(--text-base);">Sarah Johnson</div>
+            </div>
+            <div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Driver</div>
+              <div style="color: var(--text-primary); font-weight: var(--weight-medium); font-size: var(--text-base);">John Smith</div>
+            </div>
+            <div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Truck</div>
+              <div style="color: var(--text-primary); font-weight: var(--weight-medium); font-size: var(--text-base);">77</div>
+            </div>
+            <div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Trip</div>
+              <div style="font-family: var(--font-mono); color: var(--green); font-weight: var(--weight-semibold); font-size: var(--text-base); cursor: pointer;">TRIP 3 - 77 - 2025</div>
+            </div>
+            <div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Payment Type</div>
+              <div><span class="badge badge-green">COD</span></div>
+            </div>
+            <div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Payment Status</div>
+              <div><span class="badge badge-green">Collected</span></div>
+            </div>
+            <div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Condition</div>
+              <div style="color: var(--text-primary); font-weight: var(--weight-medium); font-size: var(--text-base);">Operable</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Route Card -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <h3 class="card-title">🗺️ Route</h3>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: start;">
+            <!-- Origin -->
+            <div style="background: var(--bg-app); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--green-dim); color: var(--green); display: flex; align-items: center; justify-content: center; font-weight: var(--weight-bold); font-size: var(--text-sm);">A</div>
+                <h4 style="font-size: var(--text-lg); font-weight: var(--weight-bold); color: var(--text-primary); margin: 0;">Origin</h4>
+              </div>
+              <div style="margin-bottom: 8px;">
+                <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Location</div>
+                <div style="font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text-primary);">Miami, FL</div>
+              </div>
+              <div style="margin-bottom: 8px;">
+                <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Contact</div>
+                <div style="font-size: var(--text-sm); color: var(--text-secondary);">Michael Rodriguez</div>
+              </div>
+              <div style="margin-bottom: 8px;">
+                <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Phone</div>
+                <div style="font-size: var(--text-sm); color: var(--blue); font-family: var(--font-mono); cursor: pointer;">+1 (305) 555-0123</div>
+              </div>
+              <div style="margin-bottom: 8px;">
+                <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Address</div>
+                <div style="font-size: var(--text-sm); color: var(--text-secondary);">123 Ocean Drive, Miami, FL 33139</div>
+              </div>
+              <div>
+                <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Pickup Date</div>
+                <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-primary);">Jan 15, 2025</div>
+              </div>
+            </div>
+
+            <!-- Arrow -->
+            <div style="display: flex; align-items: center; justify-content: center; padding-top: 40px;">
+              <i data-lucide="arrow-right" style="width: 24px; height: 24px; color: var(--text-muted);"></i>
+            </div>
+
+            <!-- Destination -->
+            <div style="background: var(--bg-app); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--blue-dim); color: var(--blue); display: flex; align-items: center; justify-content: center; font-weight: var(--weight-bold); font-size: var(--text-sm);">B</div>
+                <h4 style="font-size: var(--text-lg); font-weight: var(--weight-bold); color: var(--text-primary); margin: 0;">Destination</h4>
+              </div>
+              <div style="margin-bottom: 8px;">
+                <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Location</div>
+                <div style="font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text-primary);">New York, NY</div>
+              </div>
+              <div style="margin-bottom: 8px;">
+                <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Contact</div>
+                <div style="font-size: var(--text-sm); color: var(--text-secondary);">Emily Chen</div>
+              </div>
+              <div style="margin-bottom: 8px;">
+                <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Phone</div>
+                <div style="font-size: var(--text-sm); color: var(--blue); font-family: var(--font-mono); cursor: pointer;">+1 (212) 555-0198</div>
+              </div>
+              <div style="margin-bottom: 8px;">
+                <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Address</div>
+                <div style="font-size: var(--text-sm); color: var(--text-secondary);">456 Park Avenue, New York, NY 10022</div>
+              </div>
+              <div>
+                <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Delivery Date</div>
+                <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-primary);">Jan 17, 2025</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Route Stats -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+            <div style="text-align: center;">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Distance</div>
+              <div style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-primary);">1,280 miles</div>
+            </div>
+            <div style="text-align: center;">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Transit Time</div>
+              <div style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-primary);">2 days</div>
+            </div>
+            <div style="text-align: center;">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">ETA Status</div>
+              <div style="display: flex; justify-content: center; align-items: center; margin-top: 4px;">
+                <span class="badge badge-green">On Schedule</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 4: Payment Details Card -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <h3 class="card-title">💰 Payment Details</h3>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px;">
+            <div style="text-align: center; padding: 12px; background: var(--bg-app); border-radius: var(--radius); border: 1px solid var(--border);">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Revenue</div>
+              <div style="font-size: var(--text-2xl); font-weight: var(--weight-heavy); font-family: var(--font-mono); color: var(--green);">$1,150.00</div>
+            </div>
+            <div style="text-align: center; padding: 12px; background: var(--bg-app); border-radius: var(--radius); border: 1px solid var(--border);">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Broker Fee</div>
+              <div style="font-size: var(--text-2xl); font-weight: var(--weight-heavy); font-family: var(--font-mono); color: var(--red);">-$75.00</div>
+            </div>
+            <div style="text-align: center; padding: 12px; background: var(--bg-app); border-radius: var(--radius); border: 1px solid var(--border);">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Local Fee</div>
+              <div style="font-size: var(--text-2xl); font-weight: var(--weight-heavy); font-family: var(--font-mono); color: var(--red);">-$25.00</div>
+            </div>
+            <div style="text-align: center; padding: 12px; background: var(--bg-app); border-radius: var(--radius); border: 1px solid var(--border);">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Clean Revenue</div>
+              <div style="font-size: var(--text-2xl); font-weight: var(--weight-heavy); font-family: var(--font-mono); color: var(--blue);">$1,050.00</div>
+            </div>
+            <div style="text-align: center; padding: 12px; background: var(--bg-app); border-radius: var(--radius); border: 1px solid var(--border);">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Driver Cut (32%)</div>
+              <div style="font-size: var(--text-2xl); font-weight: var(--weight-heavy); font-family: var(--font-mono); color: var(--amber);">-$336.00</div>
+            </div>
+            <div style="text-align: center; padding: 12px; background: var(--bg-app); border-radius: var(--radius); border: 1px solid var(--border);">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Net Profit</div>
+              <div style="font-size: var(--text-2xl); font-weight: var(--weight-heavy); font-family: var(--font-mono); color: var(--green);">$714.00</div>
+            </div>
+          </div>
+
+          <!-- Additional Payment Info -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; padding-top: 20px; border-top: 1px solid var(--border);">
+            <div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Payment Type</div>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: 4px;">
+                <span class="badge badge-green" style="margin-right: 8px;">COD</span> Cash on Delivery
+              </div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px;">Payment collected from customer at delivery</div>
+            </div>
+            <div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Payment Status</div>
+              <div style="font-size: var(--text-sm); color: var(--text-primary); font-weight: var(--weight-medium); margin-bottom: 4px;">
+                <span class="badge badge-green" style="margin-right: 8px;">Collected</span>
+              </div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px;">Payment verified and deposited</div>
+            </div>
+            <div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Collected By</div>
+              <div style="font-size: var(--text-sm); color: var(--text-primary); font-weight: var(--weight-medium);">John Smith (Driver)</div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px;">Collected on Jan 17, 2025 at 3:45 PM</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 5: Inspection Photos -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <h3 class="card-title">📷 Inspection Photos</h3>
+          </div>
+
+          <!-- Pickup Inspection -->
+          <div style="margin-bottom: 24px;">
+            <h4 style="font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+              <span style="display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: var(--green-dim); color: var(--green); font-size: var(--text-xs); font-weight: var(--weight-bold);">A</span>
+              Pickup Inspection
+              <span style="font-size: var(--text-xs); color: var(--text-muted); font-weight: var(--weight-normal);">(Miami, FL - Jan 15, 2025)</span>
+            </h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px;">
+              <div style="background: var(--bg-app); border: 1px dashed var(--border); border-radius: var(--radius); height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all var(--transition-fast);" onmouseover="this.style.borderColor='var(--text-muted)'" onmouseout="this.style.borderColor='var(--border)'">
+                <i data-lucide="camera" style="width: 32px; height: 32px; color: var(--text-muted); margin-bottom: 8px;"></i>
+                <div style="font-size: var(--text-xs); color: var(--text-muted); text-align: center;">Front View</div>
+              </div>
+              <div style="background: var(--bg-app); border: 1px dashed var(--border); border-radius: var(--radius); height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all var(--transition-fast);" onmouseover="this.style.borderColor='var(--text-muted)'" onmouseout="this.style.borderColor='var(--border)'">
+                <i data-lucide="camera" style="width: 32px; height: 32px; color: var(--text-muted); margin-bottom: 8px;"></i>
+                <div style="font-size: var(--text-xs); color: var(--text-muted); text-align: center;">Rear View</div>
+              </div>
+              <div style="background: var(--bg-app); border: 1px dashed var(--border); border-radius: var(--radius); height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all var(--transition-fast);" onmouseover="this.style.borderColor='var(--text-muted)'" onmouseout="this.style.borderColor='var(--border)'">
+                <i data-lucide="camera" style="width: 32px; height: 32px; color: var(--text-muted); margin-bottom: 8px;"></i>
+                <div style="font-size: var(--text-xs); color: var(--text-muted); text-align: center;">Driver Side</div>
+              </div>
+              <div style="background: var(--bg-app); border: 1px dashed var(--border); border-radius: var(--radius); height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all var(--transition-fast);" onmouseover="this.style.borderColor='var(--text-muted)'" onmouseout="this.style.borderColor='var(--border)'">
+                <i data-lucide="camera" style="width: 32px; height: 32px; color: var(--text-muted); margin-bottom: 8px;"></i>
+                <div style="font-size: var(--text-xs); color: var(--text-muted); text-align: center;">Passenger Side</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Delivery Inspection -->
+          <div>
+            <h4 style="font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+              <span style="display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: var(--blue-dim); color: var(--blue); font-size: var(--text-xs); font-weight: var(--weight-bold);">B</span>
+              Delivery Inspection
+              <span style="font-size: var(--text-xs); color: var(--text-muted); font-weight: var(--weight-normal);">(New York, NY - Jan 17, 2025)</span>
+            </h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px;">
+              <div style="background: var(--bg-app); border: 1px dashed var(--border); border-radius: var(--radius); height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all var(--transition-fast);" onmouseover="this.style.borderColor='var(--text-muted)'" onmouseout="this.style.borderColor='var(--border)'">
+                <i data-lucide="camera" style="width: 32px; height: 32px; color: var(--text-muted); margin-bottom: 8px;"></i>
+                <div style="font-size: var(--text-xs); color: var(--text-muted); text-align: center;">Front View</div>
+              </div>
+              <div style="background: var(--bg-app); border: 1px dashed var(--border); border-radius: var(--radius); height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all var(--transition-fast);" onmouseover="this.style.borderColor='var(--text-muted)'" onmouseout="this.style.borderColor='var(--border)'">
+                <i data-lucide="camera" style="width: 32px; height: 32px; color: var(--text-muted); margin-bottom: 8px;"></i>
+                <div style="font-size: var(--text-xs); color: var(--text-muted); text-align: center;">Rear View</div>
+              </div>
+              <div style="background: var(--bg-app); border: 1px dashed var(--border); border-radius: var(--radius); height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all var(--transition-fast);" onmouseover="this.style.borderColor='var(--text-muted)'" onmouseout="this.style.borderColor='var(--border)'">
+                <i data-lucide="camera" style="width: 32px; height: 32px; color: var(--text-muted); margin-bottom: 8px;"></i>
+                <div style="font-size: var(--text-xs); color: var(--text-muted); text-align: center;">Driver Side</div>
+              </div>
+              <div style="background: var(--bg-app); border: 1px dashed var(--border); border-radius: var(--radius); height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all var(--transition-fast);" onmouseover="this.style.borderColor='var(--text-muted)'" onmouseout="this.style.borderColor='var(--border)'">
+                <i data-lucide="camera" style="width: 32px; height: 32px; color: var(--text-muted); margin-bottom: 8px;"></i>
+                <div style="font-size: var(--text-xs); color: var(--text-muted); text-align: center;">Passenger Side</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 6: Order Timeline -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <h3 class="card-title">📍 Order Timeline</h3>
+          </div>
+
+          <!-- Timeline Items -->
+          <div style="position: relative; padding-left: 32px;">
+            <!-- Vertical Line -->
+            <div style="position: absolute; left: 7px; top: 0; bottom: 0; width: 2px; background: var(--border);"></div>
+
+            <!-- Timeline Item 1 -->
+            <div style="position: relative; padding-bottom: 24px;">
+              <div style="position: absolute; left: -32px; width: 16px; height: 16px; border-radius: 50%; background: var(--bg-elevated); border: 3px solid var(--text-muted);"></div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); margin-bottom: 4px;">Jan 12, 2025 - 9:30 AM</div>
+              <div style="font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text-primary); margin-bottom: 2px;">Order Created</div>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary);">Order ORD-2024-001 created by dispatcher Sarah Johnson</div>
+            </div>
+
+            <!-- Timeline Item 2 -->
+            <div style="position: relative; padding-bottom: 24px;">
+              <div style="position: absolute; left: -32px; width: 16px; height: 16px; border-radius: 50%; background: var(--blue-dim); border: 3px solid var(--blue);"></div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); margin-bottom: 4px;">Jan 13, 2025 - 2:15 PM</div>
+              <div style="font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text-primary); margin-bottom: 2px;">Assigned to Trip</div>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary);">Order assigned to TRIP 3 - 77 - 2025, Driver: John Smith, Truck: 77</div>
+            </div>
+
+            <!-- Timeline Item 3 -->
+            <div style="position: relative; padding-bottom: 24px;">
+              <div style="position: absolute; left: -32px; width: 16px; height: 16px; border-radius: 50%; background: var(--amber-dim); border: 3px solid var(--amber);"></div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); margin-bottom: 4px;">Jan 15, 2025 - 10:45 AM</div>
+              <div style="font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text-primary); margin-bottom: 2px;">Pickup Completed</div>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary);">Vehicle picked up at 123 Ocean Drive, Miami, FL. Inspection completed and photos uploaded.</div>
+            </div>
+
+            <!-- Timeline Item 4 -->
+            <div style="position: relative; padding-bottom: 24px;">
+              <div style="position: absolute; left: -32px; width: 16px; height: 16px; border-radius: 50%; background: var(--blue-dim); border: 3px solid var(--blue);"></div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); margin-bottom: 4px;">Jan 15, 2025 - 11:00 AM</div>
+              <div style="font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text-primary); margin-bottom: 2px;">In Transit</div>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary);">Vehicle in transit from Miami, FL to New York, NY. ETA: Jan 17, 2025</div>
+            </div>
+
+            <!-- Timeline Item 5 -->
+            <div style="position: relative;">
+              <div style="position: absolute; left: -32px; width: 16px; height: 16px; border-radius: 50%; background: var(--green-dim); border: 3px solid var(--green);"></div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); margin-bottom: 4px;">Jan 17, 2025 - 3:45 PM</div>
+              <div style="font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text-primary); margin-bottom: 2px;">Delivery Completed</div>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary);">Vehicle delivered to 456 Park Avenue, New York, NY. Payment collected ($1,150.00 COD). Customer signed off.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    themeToggle.addEventListener('click', function() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('tms-theme', next);
+      // Update icon
+      themeIcon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
+      lucide.createIcons();
+    });
+
+    // Sidebar toggle (collapse/expand)
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    sidebarToggle.addEventListener('click', function() {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('sidebar-collapsed');
+      // Update toggle icon
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+      lucide.createIcons();
+    });
+
+    // Mobile hamburger
+    const hamburger = document.getElementById('hamburger');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (hamburger) {
+      hamburger.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('active');
+      });
+    }
+
+    if (sidebarOverlay) {
+      sidebarOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      });
+    }
+
+    // Responsive: show hamburger on mobile
+    function handleResize() {
+      if (window.innerWidth <= 768) {
+        hamburger.style.display = 'flex';
+      } else {
+        hamburger.style.display = 'none';
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+  </script>
+</body>
+</html>
