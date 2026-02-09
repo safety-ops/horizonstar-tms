@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon Star TMS — Local Drivers</title>
+
+  <!-- FART prevention: set theme before CSS loads -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('tms-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared.css">
+  <style>
+    /* Page-specific styles */
+    .status-legend {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+    }
+    .status-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-circle {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+    .status-circle:hover {
+      transform: scale(1.2);
+    }
+    .info-bar {
+      padding: 12px 16px;
+      background: var(--bg-app);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .tel-link {
+      color: var(--blue);
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .tel-link:hover {
+      text-decoration: underline;
+    }
+    .section-divider {
+      margin: 48px 0;
+      border-top: 2px solid var(--border);
+    }
+    .actions-cell {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .action-link {
+      font-size: var(--text-xs);
+      color: var(--blue);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .action-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <i data-lucide="truck"></i>
+        </div>
+        <span class="sidebar-logo-text">Horizon Star</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- MAIN Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Main</div>
+          <a class="nav-item" data-page="dashboard">
+            <i data-lucide="layout-dashboard" class="nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+          </a>
+          <a class="nav-item" data-page="trips">
+            <i data-lucide="map" class="nav-icon"></i>
+            <span class="nav-label">Trips</span>
+          </a>
+          <a class="nav-item" data-page="messages">
+            <i data-lucide="message-square" class="nav-icon"></i>
+            <span class="nav-label">Messages</span>
+          </a>
+          <a class="nav-item" data-page="trailers">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trailers</span>
+          </a>
+          <a class="nav-item" data-page="load-board">
+            <i data-lucide="package" class="nav-icon"></i>
+            <span class="nav-label">Load Board</span>
+          </a>
+          <a class="nav-item" data-page="inspections">
+            <i data-lucide="clipboard-list" class="nav-icon"></i>
+            <span class="nav-label">Inspections</span>
+          </a>
+          <a class="nav-item" data-page="tasks">
+            <i data-lucide="check-square" class="nav-icon"></i>
+            <span class="nav-label">Tasks</span>
+          </a>
+        </div>
+
+        <!-- FLEET Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Fleet</div>
+          <a class="nav-item" data-page="drivers">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Drivers</span>
+          </a>
+          <a class="nav-item" data-page="trucks">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trucks</span>
+          </a>
+          <a class="nav-item active" data-page="local-drivers">
+            <i data-lucide="user" class="nav-icon"></i>
+            <span class="nav-label">Local Drivers</span>
+          </a>
+        </div>
+
+        <!-- PARTNERS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Partners</div>
+          <a class="nav-item" data-page="brokers">
+            <i data-lucide="briefcase" class="nav-icon"></i>
+            <span class="nav-label">Brokers</span>
+          </a>
+          <a class="nav-item" data-page="dealers">
+            <i data-lucide="building" class="nav-icon"></i>
+            <span class="nav-label">Dealers</span>
+          </a>
+          <a class="nav-item" data-page="dispatchers">
+            <i data-lucide="phone" class="nav-icon"></i>
+            <span class="nav-label">Dispatchers</span>
+          </a>
+          <a class="nav-item" data-page="dispatcher-ranking">
+            <i data-lucide="star" class="nav-icon"></i>
+            <span class="nav-label">Dispatcher Ranking</span>
+          </a>
+        </div>
+
+        <!-- FINANCIALS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Financials</div>
+          <a class="nav-item" data-page="financials">
+            <i data-lucide="dollar-sign" class="nav-icon"></i>
+            <span class="nav-label">Financials</span>
+          </a>
+          <a class="nav-item" data-page="billing">
+            <i data-lucide="file-text" class="nav-icon"></i>
+            <span class="nav-label">Billing</span>
+          </a>
+          <a class="nav-item" data-page="trip-profitability">
+            <i data-lucide="trending-up" class="nav-icon"></i>
+            <span class="nav-label">Trip Profitability</span>
+          </a>
+          <a class="nav-item" data-page="payroll">
+            <i data-lucide="credit-card" class="nav-icon"></i>
+            <span class="nav-label">Payroll</span>
+          </a>
+          <a class="nav-item" data-page="fuel">
+            <i data-lucide="droplet" class="nav-icon"></i>
+            <span class="nav-label">Fuel</span>
+          </a>
+          <a class="nav-item" data-page="ifta">
+            <i data-lucide="file" class="nav-icon"></i>
+            <span class="nav-label">IFTA</span>
+          </a>
+          <a class="nav-item" data-page="reports">
+            <i data-lucide="bar-chart-2" class="nav-icon"></i>
+            <span class="nav-label">Reports</span>
+          </a>
+          <a class="nav-item" data-page="ai-advisor">
+            <i data-lucide="brain" class="nav-icon"></i>
+            <span class="nav-label">AI Advisor</span>
+          </a>
+        </div>
+
+        <!-- OPERATIONS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Operations</div>
+          <a class="nav-item" data-page="maintenance">
+            <i data-lucide="wrench" class="nav-icon"></i>
+            <span class="nav-label">Maintenance</span>
+          </a>
+          <a class="nav-item" data-page="compliance">
+            <i data-lucide="shield-check" class="nav-icon"></i>
+            <span class="nav-label">Compliance</span>
+          </a>
+          <a class="nav-item" data-page="applications">
+            <i data-lucide="file-plus" class="nav-icon"></i>
+            <span class="nav-label">Applications</span>
+          </a>
+        </div>
+
+        <!-- SETTINGS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Settings</div>
+          <a class="nav-item" data-page="settings">
+            <i data-lucide="settings" class="nav-icon"></i>
+            <span class="nav-label">Settings</span>
+          </a>
+          <a class="nav-item" data-page="users">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Users</span>
+          </a>
+          <a class="nav-item" data-page="activity-log">
+            <i data-lucide="activity" class="nav-icon"></i>
+            <span class="nav-label">Activity Log</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-toggle" id="sidebarToggle">
+        <i data-lucide="panel-left-close" class="nav-icon" id="toggleIcon"></i>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger" style="display:none;">
+            <i data-lucide="menu"></i>
+          </button>
+          <h1 class="header-title">Local Drivers</h1>
+        </div>
+
+        <div class="header-search">
+          <i data-lucide="search" class="ico-sm"></i>
+          <input type="text" placeholder="Search orders, trips, drivers...">
+        </div>
+
+        <div class="header-right">
+          <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+            <i data-lucide="moon" class="ico" id="themeIcon"></i>
+          </button>
+          <div class="header-avatar">JD</div>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- ========== SECTION A: LOCAL DRIVERS LIST VIEW ========== -->
+
+        <!-- A1. Header Row -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <i data-lucide="car" class="ico-lg"></i>
+            <h2 style="font-size: var(--text-2xl); font-weight: var(--weight-heavy);">Local Drivers</h2>
+          </div>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <select class="input" style="width: 120px;">
+              <option value="2024">2024</option>
+              <option value="2025">2025</option>
+              <option value="2026" selected>2026</option>
+              <option value="2027">2027</option>
+            </select>
+            <button class="btn btn-primary">
+              <i data-lucide="plus" class="ico-sm"></i>
+              Add Local Driver
+            </button>
+          </div>
+        </div>
+
+        <!-- A2. Stats Cards Row (5 cards) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i data-lucide="users" class="ico-lg"></i>
+            </div>
+            <div class="stat-value">8</div>
+            <div class="stat-label">Local Drivers</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon blue">
+              <i data-lucide="arrow-up-circle" class="ico-lg"></i>
+            </div>
+            <div class="stat-value">6</div>
+            <div class="stat-label">Pending Pickup</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon amber">
+              <i data-lucide="arrow-down-circle" class="ico-lg"></i>
+            </div>
+            <div class="stat-value">4</div>
+            <div class="stat-label">Pending Delivery</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon red">
+              <i data-lucide="dollar-sign" class="ico-lg"></i>
+            </div>
+            <div class="stat-value" style="color: var(--red);">$3,240.00</div>
+            <div class="stat-label">Total Pending Fees</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">
+              <i data-lucide="trending-up" class="ico-lg"></i>
+            </div>
+            <div class="stat-value" style="color: var(--green);">$12,480.00</div>
+            <div class="stat-label">Delivery Revenue</div>
+          </div>
+        </div>
+
+        <!-- A3. Local Drivers Table -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <h3 class="card-title">Local Drivers</h3>
+          </div>
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>Area</th>
+                  <th>Total Jobs</th>
+                  <th>Pending</th>
+                  <th class="text-right">Total Earnings</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="font-semibold">Miguel Torres</td>
+                  <td><a href="tel:7865550321" class="tel-link">(786) 555-0321</a></td>
+                  <td>South Florida</td>
+                  <td>24</td>
+                  <td>3</td>
+                  <td class="mono text-right" style="color: var(--green);">$4,560.00</td>
+                  <td>
+                    <div class="actions-cell">
+                      <span class="action-link">View</span>
+                      <span class="action-link">Edit</span>
+                      <span class="action-link" style="color: var(--red);">Del</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-semibold">Tony Russo</td>
+                  <td><a href="tel:2015550187" class="tel-link">(201) 555-0187</a></td>
+                  <td>New Jersey</td>
+                  <td>18</td>
+                  <td>2</td>
+                  <td class="mono text-right" style="color: var(--green);">$3,120.00</td>
+                  <td>
+                    <div class="actions-cell">
+                      <span class="action-link">View</span>
+                      <span class="action-link">Edit</span>
+                      <span class="action-link" style="color: var(--red);">Del</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-semibold">Carlos Mendez</td>
+                  <td><a href="tel:8325550456" class="tel-link">(832) 555-0456</a></td>
+                  <td>Houston TX</td>
+                  <td>12</td>
+                  <td>4</td>
+                  <td class="mono text-right" style="color: var(--green);">$2,340.00</td>
+                  <td>
+                    <div class="actions-cell">
+                      <span class="action-link">View</span>
+                      <span class="action-link">Edit</span>
+                      <span class="action-link" style="color: var(--red);">Del</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-semibold">Dave Patterson</td>
+                  <td><a href="tel:6155550289" class="tel-link">(615) 555-0289</a></td>
+                  <td>Nashville TN</td>
+                  <td>8</td>
+                  <td>1</td>
+                  <td class="mono text-right" style="color: var(--green);">$1,680.00</td>
+                  <td>
+                    <div class="actions-cell">
+                      <span class="action-link">View</span>
+                      <span class="action-link">Edit</span>
+                      <span class="action-link" style="color: var(--red);">Del</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- A4. Pending Local Pickup Section -->
+        <div class="card" style="margin-bottom: 24px; border-left: 4px solid var(--blue);">
+          <div class="card-header">
+            <h3 class="card-title">Pending Local Pickup</h3>
+          </div>
+          <div class="info-bar">
+            <div style="color: var(--text-secondary); font-size: var(--text-sm);">
+              Orders awaiting local pickup assignment
+            </div>
+            <div class="status-legend">
+              <span style="font-weight: var(--weight-semibold); margin-right: 4px;">Status Legend:</span>
+              <div class="status-legend-item">
+                <div class="status-circle" style="background: rgba(59,130,246,1);"></div>
+                <span>Pending</span>
+              </div>
+              <div class="status-legend-item">
+                <div class="status-circle" style="background: rgba(245,158,11,1);"></div>
+                <span>Scheduled</span>
+              </div>
+              <div class="status-legend-item">
+                <div class="status-circle" style="background: rgba(234,179,8,1);"></div>
+                <span>Confirmed</span>
+              </div>
+              <div class="status-legend-item">
+                <div class="status-circle" style="background: rgba(34,197,94,1);"></div>
+                <span>Ready</span>
+              </div>
+              <div class="status-legend-item">
+                <div class="status-circle" style="background: rgba(239,68,68,1);"></div>
+                <span>Issue</span>
+              </div>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Order</th>
+                  <th>Broker</th>
+                  <th>Vehicle</th>
+                  <th>Origin</th>
+                  <th>Phone</th>
+                  <th>Destination</th>
+                  <th>Pick-Up</th>
+                  <th>Delivery</th>
+                  <th>Payment</th>
+                  <th class="text-right">Broker Fee</th>
+                  <th class="text-right">Local Fee</th>
+                  <th class="text-right">Revenue</th>
+                  <th class="sticky-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Row 1: Pending -->
+                <tr style="background: rgba(59,130,246,0.15);">
+                  <td>
+                    <div class="status-circle" style="background: rgba(59,130,246,1);"></div>
+                  </td>
+                  <td class="font-mono font-semibold">ORD-2026-041</td>
+                  <td>Central Dispatch</td>
+                  <td>2024 BMW X5 White</td>
+                  <td>Miami, FL</td>
+                  <td><a href="tel:3055551234" class="tel-link">(305) 555-1234</a></td>
+                  <td>Tampa, FL</td>
+                  <td>Feb 10, 2026</td>
+                  <td>Feb 12, 2026</td>
+                  <td><span class="badge badge-blue">COD</span></td>
+                  <td class="mono text-right">$120.00</td>
+                  <td class="mono text-right">$85.00</td>
+                  <td class="mono text-right" style="color: var(--green);">$450.00</td>
+                  <td class="sticky-actions">
+                    <div class="actions-cell">
+                      <span class="action-link">Note</span>
+                      <span class="action-link">Assign</span>
+                      <span class="action-link">Not Local</span>
+                    </div>
+                  </td>
+                </tr>
+                <!-- Row 2: Scheduled -->
+                <tr style="background: rgba(245,158,11,0.15);">
+                  <td>
+                    <div class="status-circle" style="background: rgba(245,158,11,1);"></div>
+                  </td>
+                  <td class="font-mono font-semibold">ORD-2026-038</td>
+                  <td>Super Dispatch</td>
+                  <td>2023 Tesla Model Y Black</td>
+                  <td>Fort Lauderdale, FL</td>
+                  <td><a href="tel:9545555678" class="tel-link">(954) 555-5678</a></td>
+                  <td>Orlando, FL</td>
+                  <td>Feb 11, 2026</td>
+                  <td>Feb 13, 2026</td>
+                  <td><span class="badge badge-green">COP</span></td>
+                  <td class="mono text-right">$95.00</td>
+                  <td class="mono text-right">$75.00</td>
+                  <td class="mono text-right" style="color: var(--green);">$380.00</td>
+                  <td class="sticky-actions">
+                    <div class="actions-cell">
+                      <span class="action-link">Note</span>
+                      <span class="action-link">Assign</span>
+                      <span class="action-link">Not Local</span>
+                    </div>
+                  </td>
+                </tr>
+                <!-- Row 3: Confirmed -->
+                <tr style="background: rgba(234,179,8,0.15);">
+                  <td>
+                    <div class="status-circle" style="background: rgba(234,179,8,1);"></div>
+                  </td>
+                  <td class="font-mono font-semibold">ORD-2026-035</td>
+                  <td>LoadMax</td>
+                  <td>2025 Ford F-150 Blue</td>
+                  <td>West Palm Beach, FL</td>
+                  <td><a href="tel:5615559012" class="tel-link">(561) 555-9012</a></td>
+                  <td>Jacksonville, FL</td>
+                  <td>Feb 12, 2026</td>
+                  <td>Feb 14, 2026</td>
+                  <td><span class="badge badge-blue">COD</span></td>
+                  <td class="mono text-right">$150.00</td>
+                  <td class="mono text-right">$100.00</td>
+                  <td class="mono text-right" style="color: var(--green);">$520.00</td>
+                  <td class="sticky-actions">
+                    <div class="actions-cell">
+                      <span class="action-link">Note</span>
+                      <span class="action-link">Assign</span>
+                      <span class="action-link">Not Local</span>
+                    </div>
+                  </td>
+                </tr>
+                <!-- Row 4: Ready -->
+                <tr style="background: rgba(34,197,94,0.15);">
+                  <td>
+                    <div class="status-circle" style="background: rgba(34,197,94,1);"></div>
+                  </td>
+                  <td class="font-mono font-semibold">ORD-2026-032</td>
+                  <td>Central Dispatch</td>
+                  <td>2022 Honda Accord Silver</td>
+                  <td>Miami, FL</td>
+                  <td><a href="tel:3055553456" class="tel-link">(305) 555-3456</a></td>
+                  <td>Naples, FL</td>
+                  <td>Feb 8, 2026</td>
+                  <td>Feb 10, 2026</td>
+                  <td><span class="badge badge-amber">Check</span></td>
+                  <td class="mono text-right">$80.00</td>
+                  <td class="mono text-right">$65.00</td>
+                  <td class="mono text-right" style="color: var(--green);">$320.00</td>
+                  <td class="sticky-actions">
+                    <div class="actions-cell">
+                      <span class="action-link">Note</span>
+                      <span class="action-link">Assign</span>
+                      <span class="action-link">Not Local</span>
+                    </div>
+                  </td>
+                </tr>
+                <!-- Row 5: Issue -->
+                <tr style="background: rgba(239,68,68,0.15);">
+                  <td>
+                    <div class="status-circle" style="background: rgba(239,68,68,1);"></div>
+                  </td>
+                  <td class="font-mono font-semibold">ORD-2026-029</td>
+                  <td>Ship.Cars</td>
+                  <td>2024 Chevrolet Tahoe Black</td>
+                  <td>Hialeah, FL</td>
+                  <td><a href="tel:3055557890" class="tel-link">(305) 555-7890</a></td>
+                  <td>Tallahassee, FL</td>
+                  <td>Feb 9, 2026</td>
+                  <td>Feb 11, 2026</td>
+                  <td><span class="badge badge-purple">Bill</span></td>
+                  <td class="mono text-right">$110.00</td>
+                  <td class="mono text-right">$90.00</td>
+                  <td class="mono text-right" style="color: var(--green);">$480.00</td>
+                  <td class="sticky-actions">
+                    <div class="actions-cell">
+                      <span class="action-link">Note</span>
+                      <span class="action-link">Assign</span>
+                      <span class="action-link">Not Local</span>
+                    </div>
+                  </td>
+                </tr>
+                <!-- Row 6: Pending (second one) -->
+                <tr style="background: rgba(59,130,246,0.15);">
+                  <td>
+                    <div class="status-circle" style="background: rgba(59,130,246,1);"></div>
+                  </td>
+                  <td class="font-mono font-semibold">ORD-2026-044</td>
+                  <td>Auto Transport HQ</td>
+                  <td>2023 Toyota Camry Gray</td>
+                  <td>Coral Gables, FL</td>
+                  <td><a href="tel:3055552345" class="tel-link">(305) 555-2345</a></td>
+                  <td>Sarasota, FL</td>
+                  <td>Feb 13, 2026</td>
+                  <td>Feb 15, 2026</td>
+                  <td><span class="badge badge-blue">COD</span></td>
+                  <td class="mono text-right">$100.00</td>
+                  <td class="mono text-right">$70.00</td>
+                  <td class="mono text-right" style="color: var(--green);">$390.00</td>
+                  <td class="sticky-actions">
+                    <div class="actions-cell">
+                      <span class="action-link">Note</span>
+                      <span class="action-link">Assign</span>
+                      <span class="action-link">Not Local</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- A5. Pending Local Delivery Section -->
+        <div class="card" style="margin-bottom: 24px; border-left: 4px solid var(--amber);">
+          <div class="card-header">
+            <h3 class="card-title">Pending Local Delivery</h3>
+          </div>
+          <div class="info-bar">
+            <div style="color: var(--text-secondary); font-size: var(--text-sm);">
+              Orders awaiting local delivery assignment
+            </div>
+            <div class="status-legend">
+              <span style="font-weight: var(--weight-semibold); margin-right: 4px;">Status Legend:</span>
+              <div class="status-legend-item">
+                <div class="status-circle" style="background: rgba(59,130,246,1);"></div>
+                <span>Pending</span>
+              </div>
+              <div class="status-legend-item">
+                <div class="status-circle" style="background: rgba(245,158,11,1);"></div>
+                <span>Scheduled</span>
+              </div>
+              <div class="status-legend-item">
+                <div class="status-circle" style="background: rgba(234,179,8,1);"></div>
+                <span>Confirmed</span>
+              </div>
+              <div class="status-legend-item">
+                <div class="status-circle" style="background: rgba(34,197,94,1);"></div>
+                <span>Ready</span>
+              </div>
+              <div class="status-legend-item">
+                <div class="status-circle" style="background: rgba(239,68,68,1);"></div>
+                <span>Issue</span>
+              </div>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Order</th>
+                  <th>Broker</th>
+                  <th>Vehicle</th>
+                  <th>Origin</th>
+                  <th>Phone</th>
+                  <th>Destination</th>
+                  <th>Trip</th>
+                  <th>Pick-Up</th>
+                  <th>Delivery</th>
+                  <th>Payment</th>
+                  <th class="text-right">Broker Fee</th>
+                  <th class="text-right">Local Fee</th>
+                  <th class="text-right">Revenue</th>
+                  <th class="sticky-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Row 1: Confirmed -->
+                <tr style="background: rgba(234,179,8,0.15);">
+                  <td>
+                    <div class="status-circle" style="background: rgba(234,179,8,1);"></div>
+                  </td>
+                  <td class="font-mono font-semibold">ORD-2026-025</td>
+                  <td>Central Dispatch</td>
+                  <td>2024 Mercedes GLE White</td>
+                  <td>Orlando, FL</td>
+                  <td><a href="tel:4075551111" class="tel-link">(407) 555-1111</a></td>
+                  <td>Miami, FL</td>
+                  <td><span class="badge badge-gray">TRIP 8-77</span></td>
+                  <td>Feb 6, 2026</td>
+                  <td>Feb 9, 2026</td>
+                  <td><span class="badge badge-blue">COD</span></td>
+                  <td class="mono text-right">$130.00</td>
+                  <td class="mono text-right">$95.00</td>
+                  <td class="mono text-right" style="color: var(--green);">$510.00</td>
+                  <td class="sticky-actions">
+                    <div class="actions-cell">
+                      <span class="action-link">Note</span>
+                      <span class="action-link">Assign</span>
+                      <span class="action-link">Not Local</span>
+                    </div>
+                  </td>
+                </tr>
+                <!-- Row 2: Ready -->
+                <tr style="background: rgba(34,197,94,0.15);">
+                  <td>
+                    <div class="status-circle" style="background: rgba(34,197,94,1);"></div>
+                  </td>
+                  <td class="font-mono font-semibold">ORD-2026-022</td>
+                  <td>Super Dispatch</td>
+                  <td>2023 Audi Q7 Gray</td>
+                  <td>Tampa, FL</td>
+                  <td><a href="tel:8135552222" class="tel-link">(813) 555-2222</a></td>
+                  <td>Fort Lauderdale, FL</td>
+                  <td><span class="badge badge-gray">TRIP 8-77</span></td>
+                  <td>Feb 5, 2026</td>
+                  <td>Feb 8, 2026</td>
+                  <td><span class="badge badge-green">COP</span></td>
+                  <td class="mono text-right">$140.00</td>
+                  <td class="mono text-right">$105.00</td>
+                  <td class="mono text-right" style="color: var(--green);">$560.00</td>
+                  <td class="sticky-actions">
+                    <div class="actions-cell">
+                      <span class="action-link">Note</span>
+                      <span class="action-link">Assign</span>
+                      <span class="action-link">Not Local</span>
+                    </div>
+                  </td>
+                </tr>
+                <!-- Row 3: Scheduled -->
+                <tr style="background: rgba(245,158,11,0.15);">
+                  <td>
+                    <div class="status-circle" style="background: rgba(245,158,11,1);"></div>
+                  </td>
+                  <td class="font-mono font-semibold">ORD-2026-019</td>
+                  <td>LoadMax</td>
+                  <td>2025 Lexus RX White</td>
+                  <td>Jacksonville, FL</td>
+                  <td><a href="tel:9045553333" class="tel-link">(904) 555-3333</a></td>
+                  <td>West Palm Beach, FL</td>
+                  <td><span class="badge badge-gray">TRIP 12-88</span></td>
+                  <td>Feb 7, 2026</td>
+                  <td>Feb 10, 2026</td>
+                  <td><span class="badge badge-blue">COD</span></td>
+                  <td class="mono text-right">$160.00</td>
+                  <td class="mono text-right">$110.00</td>
+                  <td class="mono text-right" style="color: var(--green);">$620.00</td>
+                  <td class="sticky-actions">
+                    <div class="actions-cell">
+                      <span class="action-link">Note</span>
+                      <span class="action-link">Assign</span>
+                      <span class="action-link">Not Local</span>
+                    </div>
+                  </td>
+                </tr>
+                <!-- Row 4: Pending -->
+                <tr style="background: rgba(59,130,246,0.15);">
+                  <td>
+                    <div class="status-circle" style="background: rgba(59,130,246,1);"></div>
+                  </td>
+                  <td class="font-mono font-semibold">ORD-2026-016</td>
+                  <td>Ship.Cars</td>
+                  <td>2022 Porsche Cayenne Black</td>
+                  <td>Sarasota, FL</td>
+                  <td><a href="tel:9415554444" class="tel-link">(941) 555-4444</a></td>
+                  <td>Miami, FL</td>
+                  <td><span class="badge badge-gray">TRIP 12-88</span></td>
+                  <td>Feb 8, 2026</td>
+                  <td>Feb 11, 2026</td>
+                  <td><span class="badge badge-amber">Check</span></td>
+                  <td class="mono text-right">$175.00</td>
+                  <td class="mono text-right">$120.00</td>
+                  <td class="mono text-right" style="color: var(--green);">$680.00</td>
+                  <td class="sticky-actions">
+                    <div class="actions-cell">
+                      <span class="action-link">Note</span>
+                      <span class="action-link">Assign</span>
+                      <span class="action-link">Not Local</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section Divider -->
+        <div class="section-divider"></div>
+
+        <!-- ========== SECTION B: LOCAL DRIVER DETAIL VIEW ========== -->
+
+        <!-- B1. Header Row -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <button class="btn btn-ghost">
+              <i data-lucide="arrow-left" class="ico-sm"></i>
+              Back
+            </button>
+            <h2 style="font-size: var(--text-2xl); font-weight: var(--weight-heavy);">Miguel Torres</h2>
+          </div>
+          <button class="btn btn-primary">
+            <i data-lucide="edit" class="ico-sm"></i>
+            Edit
+          </button>
+        </div>
+
+        <!-- B2. Stats Cards Row (6 cards) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i data-lucide="package" class="ico-lg"></i>
+            </div>
+            <div class="stat-value">24</div>
+            <div class="stat-label">Total Deliveries</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">
+              <i data-lucide="check-circle" class="ico-lg"></i>
+            </div>
+            <div class="stat-value" style="color: var(--green);">21</div>
+            <div class="stat-label">Completed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon amber">
+              <i data-lucide="clock" class="ico-lg"></i>
+            </div>
+            <div class="stat-value" style="color: var(--amber);">3</div>
+            <div class="stat-label">Pending</div>
+          </div>
+          <div class="stat-card" style="background: var(--amber-dim);">
+            <div class="stat-icon amber">
+              <i data-lucide="arrow-up-circle" class="ico-lg"></i>
+            </div>
+            <div class="stat-value">14</div>
+            <div class="stat-label">Pickups</div>
+          </div>
+          <div class="stat-card" style="background: var(--bg-hover);">
+            <div class="stat-icon">
+              <i data-lucide="arrow-down-circle" class="ico-lg"></i>
+            </div>
+            <div class="stat-value">10</div>
+            <div class="stat-label">Deliveries</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">
+              <i data-lucide="dollar-sign" class="ico-lg"></i>
+            </div>
+            <div class="stat-value" style="color: var(--green);">$4,560.00</div>
+            <div class="stat-label">Total Earnings</div>
+          </div>
+        </div>
+
+        <!-- B3. Driver Info Card -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <h3 class="card-title">Driver Information</h3>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
+              <span style="color: var(--text-secondary); font-weight: var(--weight-semibold);">Phone</span>
+              <a href="tel:7865550321" class="tel-link font-mono">(786) 555-0321</a>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
+              <span style="color: var(--text-secondary); font-weight: var(--weight-semibold);">Service Area</span>
+              <span class="font-semibold">South Florida</span>
+            </div>
+            <div style="padding: 8px 0;">
+              <div style="color: var(--text-secondary); font-weight: var(--weight-semibold); margin-bottom: 8px;">Notes</div>
+              <div style="color: var(--text-primary);">Reliable driver, prefers morning deliveries. Has own enclosed trailer.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- B4. Assigned Orders Table -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Assigned Orders</h3>
+          </div>
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Order</th>
+                  <th>Type</th>
+                  <th>Vehicle</th>
+                  <th>Origin</th>
+                  <th>Destination</th>
+                  <th>Pickup</th>
+                  <th>Delivery</th>
+                  <th class="text-right">Local Fee</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="font-mono font-semibold">ORD-2026-041</td>
+                  <td><span class="badge badge-amber">Pickup</span></td>
+                  <td>2024 BMW X5 White</td>
+                  <td>Miami, FL</td>
+                  <td>Tampa, FL</td>
+                  <td>Feb 10</td>
+                  <td>Feb 12</td>
+                  <td class="mono text-right">$85.00</td>
+                  <td><span class="badge badge-blue">Pending</span></td>
+                  <td>
+                    <div class="actions-cell">
+                      <span class="action-link">Mark Delivered</span>
+                      <span class="action-link">Edit</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono font-semibold">ORD-2026-038</td>
+                  <td><span class="badge badge-amber">Pickup</span></td>
+                  <td>2023 Tesla Model Y</td>
+                  <td>Fort Lauderdale</td>
+                  <td>Orlando, FL</td>
+                  <td>Feb 11</td>
+                  <td>Feb 13</td>
+                  <td class="mono text-right">$75.00</td>
+                  <td><span class="badge badge-amber">Scheduled</span></td>
+                  <td>
+                    <div class="actions-cell">
+                      <span class="action-link">Mark Delivered</span>
+                      <span class="action-link">Edit</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono font-semibold">ORD-2026-035</td>
+                  <td><span class="badge badge-gray">Delivery</span></td>
+                  <td>2025 Ford F-150 Blue</td>
+                  <td>West Palm Beach</td>
+                  <td>Jacksonville</td>
+                  <td>Feb 12</td>
+                  <td>Feb 14</td>
+                  <td class="mono text-right">$100.00</td>
+                  <td><span class="badge badge-green">Completed</span></td>
+                  <td>
+                    <div class="actions-cell">
+                      <span class="action-link">Edit</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono font-semibold">ORD-2026-025</td>
+                  <td><span class="badge badge-gray">Delivery</span></td>
+                  <td>2024 Mercedes GLE</td>
+                  <td>Orlando, FL</td>
+                  <td>Miami, FL</td>
+                  <td>Feb 6</td>
+                  <td>Feb 9</td>
+                  <td class="mono text-right">$95.00</td>
+                  <td><span class="badge badge-green">Completed</span></td>
+                  <td>
+                    <div class="actions-cell">
+                      <span class="action-link">Edit</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono font-semibold">ORD-2026-032</td>
+                  <td><span class="badge badge-amber">Pickup</span></td>
+                  <td>2022 Honda Accord</td>
+                  <td>Miami, FL</td>
+                  <td>Naples, FL</td>
+                  <td>Feb 8</td>
+                  <td>Feb 10</td>
+                  <td class="mono text-right">$65.00</td>
+                  <td><span class="badge badge-green">Ready</span></td>
+                  <td>
+                    <div class="actions-cell">
+                      <span class="action-link">Mark Delivered</span>
+                      <span class="action-link">Edit</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    themeToggle.addEventListener('click', function() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('tms-theme', next);
+      // Update icon
+      themeIcon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
+      lucide.createIcons();
+    });
+
+    // Sidebar toggle (collapse/expand)
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    sidebarToggle.addEventListener('click', function() {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('sidebar-collapsed');
+      // Update toggle icon
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+      lucide.createIcons();
+    });
+
+    // Mobile hamburger
+    const hamburger = document.getElementById('hamburger');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (hamburger) {
+      hamburger.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('active');
+      });
+    }
+
+    if (sidebarOverlay) {
+      sidebarOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      });
+    }
+
+    // Responsive: show hamburger on mobile
+    function handleResize() {
+      if (window.innerWidth <= 768) {
+        hamburger.style.display = 'flex';
+      } else {
+        hamburger.style.display = 'none';
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+  </script>
+</body>
+</html>
