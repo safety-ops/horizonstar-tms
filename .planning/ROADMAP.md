@@ -118,6 +118,14 @@ Plans:
 
 **Depends on:** Phase 6 (shared CSS)
 
+**Plans:** 4 plans
+
+Plans:
+- [ ] 09-01-PLAN.md — Payroll (settlement table, paystub modal, settlement modal)
+- [ ] 09-02-PLAN.md — Billing/Receivables (3 tabs: Overview, Brokers, Invoices with aging bars)
+- [ ] 09-03-PLAN.md — Consolidated Financials (8 sub-tabs: Executive, Analysis, Overview, Costs, By Trip/Driver/Broker/Lane)
+- [ ] 09-04-PLAN.md — Trip Profitability (filters, performers, sortable table, comparison modal)
+
 **Output:**
 - `mockups/web-tms-redesign/payroll.html`
 - `mockups/web-tms-redesign/billing.html`
