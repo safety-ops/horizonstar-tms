@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon Star TMS — Trip Detail</title>
+
+  <!-- FART prevention: set theme before CSS loads -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('tms-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared.css">
+  <style>
+    /* Page-specific sticky column for actions */
+    .sticky-col {
+      position: sticky;
+      right: 0;
+      background: var(--bg-card);
+      display: flex;
+      gap: 4px;
+      justify-content: flex-end;
+    }
+    .table tbody tr:hover .sticky-col {
+      background: var(--bg-card-hover);
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <i data-lucide="truck"></i>
+        </div>
+        <span class="sidebar-logo-text">Horizon Star</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- MAIN Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Main</div>
+          <a class="nav-item" data-page="dashboard">
+            <i data-lucide="layout-dashboard" class="nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+          </a>
+          <a class="nav-item active" data-page="trips">
+            <i data-lucide="map" class="nav-icon"></i>
+            <span class="nav-label">Trips</span>
+          </a>
+          <a class="nav-item" data-page="messages">
+            <i data-lucide="message-square" class="nav-icon"></i>
+            <span class="nav-label">Messages</span>
+          </a>
+          <a class="nav-item" data-page="trailers">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trailers</span>
+          </a>
+          <a class="nav-item" data-page="load-board">
+            <i data-lucide="package" class="nav-icon"></i>
+            <span class="nav-label">Load Board</span>
+          </a>
+          <a class="nav-item" data-page="inspections">
+            <i data-lucide="clipboard-list" class="nav-icon"></i>
+            <span class="nav-label">Inspections</span>
+          </a>
+          <a class="nav-item" data-page="tasks">
+            <i data-lucide="check-square" class="nav-icon"></i>
+            <span class="nav-label">Tasks</span>
+          </a>
+        </div>
+
+        <!-- FLEET Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Fleet</div>
+          <a class="nav-item" data-page="drivers">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Drivers</span>
+          </a>
+          <a class="nav-item" data-page="trucks">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trucks</span>
+          </a>
+          <a class="nav-item" data-page="local-drivers">
+            <i data-lucide="user" class="nav-icon"></i>
+            <span class="nav-label">Local Drivers</span>
+          </a>
+        </div>
+
+        <!-- PARTNERS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Partners</div>
+          <a class="nav-item" data-page="brokers">
+            <i data-lucide="briefcase" class="nav-icon"></i>
+            <span class="nav-label">Brokers</span>
+          </a>
+          <a class="nav-item" data-page="dealers">
+            <i data-lucide="building" class="nav-icon"></i>
+            <span class="nav-label">Dealers</span>
+          </a>
+          <a class="nav-item" data-page="dispatchers">
+            <i data-lucide="phone" class="nav-icon"></i>
+            <span class="nav-label">Dispatchers</span>
+          </a>
+          <a class="nav-item" data-page="dispatcher-ranking">
+            <i data-lucide="star" class="nav-icon"></i>
+            <span class="nav-label">Dispatcher Ranking</span>
+          </a>
+        </div>
+
+        <!-- FINANCIALS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Financials</div>
+          <a class="nav-item" data-page="financials">
+            <i data-lucide="dollar-sign" class="nav-icon"></i>
+            <span class="nav-label">Financials</span>
+          </a>
+          <a class="nav-item" data-page="billing">
+            <i data-lucide="file-text" class="nav-icon"></i>
+            <span class="nav-label">Billing</span>
+          </a>
+          <a class="nav-item" data-page="trip-profitability">
+            <i data-lucide="trending-up" class="nav-icon"></i>
+            <span class="nav-label">Trip Profitability</span>
+          </a>
+          <a class="nav-item" data-page="payroll">
+            <i data-lucide="credit-card" class="nav-icon"></i>
+            <span class="nav-label">Payroll</span>
+          </a>
+          <a class="nav-item" data-page="fuel">
+            <i data-lucide="droplet" class="nav-icon"></i>
+            <span class="nav-label">Fuel</span>
+          </a>
+          <a class="nav-item" data-page="ifta">
+            <i data-lucide="file" class="nav-icon"></i>
+            <span class="nav-label">IFTA</span>
+          </a>
+          <a class="nav-item" data-page="reports">
+            <i data-lucide="bar-chart-2" class="nav-icon"></i>
+            <span class="nav-label">Reports</span>
+          </a>
+          <a class="nav-item" data-page="ai-advisor">
+            <i data-lucide="brain" class="nav-icon"></i>
+            <span class="nav-label">AI Advisor</span>
+          </a>
+        </div>
+
+        <!-- OPERATIONS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Operations</div>
+          <a class="nav-item" data-page="maintenance">
+            <i data-lucide="wrench" class="nav-icon"></i>
+            <span class="nav-label">Maintenance</span>
+          </a>
+          <a class="nav-item" data-page="compliance">
+            <i data-lucide="shield-check" class="nav-icon"></i>
+            <span class="nav-label">Compliance</span>
+          </a>
+          <a class="nav-item" data-page="applications">
+            <i data-lucide="file-plus" class="nav-icon"></i>
+            <span class="nav-label">Applications</span>
+          </a>
+        </div>
+
+        <!-- SETTINGS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Settings</div>
+          <a class="nav-item" data-page="settings">
+            <i data-lucide="settings" class="nav-icon"></i>
+            <span class="nav-label">Settings</span>
+          </a>
+          <a class="nav-item" data-page="users">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Users</span>
+          </a>
+          <a class="nav-item" data-page="activity-log">
+            <i data-lucide="activity" class="nav-icon"></i>
+            <span class="nav-label">Activity Log</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-toggle" id="sidebarToggle">
+        <i data-lucide="panel-left-close" class="nav-icon" id="toggleIcon"></i>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger" style="display:none;">
+            <i data-lucide="menu"></i>
+          </button>
+          <h1 class="header-title">Trip Detail</h1>
+        </div>
+
+        <div class="header-search">
+          <i data-lucide="search" class="ico-sm"></i>
+          <input type="text" placeholder="Search orders, trips, drivers...">
+        </div>
+
+        <div class="header-right">
+          <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+            <i data-lucide="moon" class="ico" id="themeIcon"></i>
+          </button>
+          <div class="header-avatar">JD</div>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Section 1: Back Button + Trip Title -->
+        <div style="margin-bottom: 24px;">
+          <a href="#" style="display: inline-flex; align-items: center; gap: 8px; color: var(--green); font-size: var(--text-sm); font-weight: var(--weight-semibold); margin-bottom: 16px;">
+            <i data-lucide="arrow-left" class="ico-sm"></i>
+            Back to Trips
+          </a>
+          <h1 style="font-size: var(--text-3xl); font-weight: var(--weight-heavy); color: var(--text-primary); margin-bottom: 8px;">
+            TRIP 3 - 77 - 2025
+          </h1>
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <p style="color: var(--text-secondary); font-size: var(--text-base);">
+              Truck 77 — John Smith — Jan 10 - Jan 15, 2025
+            </p>
+            <span class="badge badge-green">COMPLETED</span>
+          </div>
+        </div>
+
+        <!-- Section 2: Trip Financials Card -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i data-lucide="dollar-sign" class="ico" style="color: var(--green);"></i>
+              Trip Financials
+            </h3>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-bottom: 16px;">
+            <div style="text-align: center; padding: 12px; background: var(--bg-app); border-radius: var(--radius); border: 1px solid var(--border);">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Load Revenue</div>
+              <div style="font-size: var(--text-2xl); font-weight: var(--weight-heavy); color: var(--green); font-family: var(--font-mono);">$8,450.00</div>
+            </div>
+            <div style="text-align: center; padding: 12px; background: var(--bg-app); border-radius: var(--radius); border: 1px solid var(--border);">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Broker Fees</div>
+              <div style="font-size: var(--text-2xl); font-weight: var(--weight-heavy); color: var(--red); font-family: var(--font-mono);">-$475.00</div>
+            </div>
+            <div style="text-align: center; padding: 12px; background: var(--bg-app); border-radius: var(--radius); border: 1px solid var(--border);">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Local Fees</div>
+              <div style="font-size: var(--text-2xl); font-weight: var(--weight-heavy); color: var(--red); font-family: var(--font-mono);">-$175.00</div>
+            </div>
+            <div style="text-align: center; padding: 12px; background: var(--bg-app); border-radius: var(--radius); border: 1px solid var(--border);">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Clean Revenue</div>
+              <div style="font-size: var(--text-2xl); font-weight: var(--weight-heavy); color: var(--blue); font-family: var(--font-mono);">$7,800.00</div>
+            </div>
+            <div style="text-align: center; padding: 12px; background: var(--bg-app); border-radius: var(--radius); border: 1px solid var(--border);">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Driver Cut (32%)</div>
+              <div style="font-size: var(--text-2xl); font-weight: var(--weight-heavy); color: var(--amber); font-family: var(--font-mono);">-$2,496.00</div>
+            </div>
+            <div style="text-align: center; padding: 12px; background: var(--bg-app); border-radius: var(--radius); border: 1px solid var(--border);">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Net Profit</div>
+              <div style="font-size: var(--text-2xl); font-weight: var(--weight-heavy); color: var(--green); font-family: var(--font-mono);">$3,250.00</div>
+            </div>
+            <div style="text-align: center; padding: 12px; background: var(--bg-app); border-radius: var(--radius); border: 1px solid var(--border);">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Margin</div>
+              <div style="font-size: var(--text-2xl); font-weight: var(--weight-heavy); color: var(--green); font-family: var(--font-mono);">38.5%</div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+            <div style="text-align: center; padding: 8px;">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">CPM</div>
+              <div style="font-size: var(--text-lg); font-weight: var(--weight-semibold); color: var(--text-primary); font-family: var(--font-mono);">$1.82</div>
+            </div>
+            <div style="text-align: center; padding: 8px;">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">RPM</div>
+              <div style="font-size: var(--text-lg); font-weight: var(--weight-semibold); color: var(--text-primary); font-family: var(--font-mono);">$3.47</div>
+            </div>
+            <div style="text-align: center; padding: 8px;">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Margin Per Mile</div>
+              <div style="font-size: var(--text-lg); font-weight: var(--weight-semibold); color: var(--text-primary); font-family: var(--font-mono);">$1.65</div>
+            </div>
+            <div style="text-align: center; padding: 8px;">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Total Miles</div>
+              <div style="font-size: var(--text-lg); font-weight: var(--weight-semibold); color: var(--text-primary); font-family: var(--font-mono);">2,435</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Dispatcher Pricing Guidance Widget -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i data-lucide="calculator" class="ico" style="color: var(--blue);"></i>
+              Dispatcher Pricing Guidance
+            </h3>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <!-- Per-Car Pricing -->
+            <div>
+              <h4 style="font-size: var(--text-base); font-weight: var(--weight-bold); color: var(--text-primary); margin-bottom: 12px;">Per-Car Pricing</h4>
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--red-dim); border-radius: var(--radius); border: 1px solid var(--red);">
+                  <span style="color: var(--text-secondary); font-size: var(--text-sm);">Minimum PPC</span>
+                  <span style="color: var(--red); font-weight: var(--weight-bold); font-family: var(--font-mono); font-size: var(--text-lg);">$850</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--blue-dim); border-radius: var(--radius); border: 1px solid var(--blue);">
+                  <span style="color: var(--text-secondary); font-size: var(--text-sm);">Target PPC</span>
+                  <span style="color: var(--blue); font-weight: var(--weight-bold); font-family: var(--font-mono); font-size: var(--text-lg);">$1,050</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--green-dim); border-radius: var(--radius); border: 1px solid var(--green);">
+                  <span style="color: var(--text-secondary); font-size: var(--text-sm);">Premium PPC</span>
+                  <span style="color: var(--green); font-weight: var(--weight-bold); font-family: var(--font-mono); font-size: var(--text-lg);">$1,200+</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Trip Economics -->
+            <div>
+              <h4 style="font-size: var(--text-base); font-weight: var(--weight-bold); color: var(--text-primary); margin-bottom: 12px;">Trip Economics</h4>
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--bg-app); border-radius: var(--radius); border: 1px solid var(--border);">
+                  <span style="color: var(--text-secondary); font-size: var(--text-sm);">Break-Even (12 cars)</span>
+                  <span style="color: var(--text-muted); font-weight: var(--weight-bold); font-family: var(--font-mono); font-size: var(--text-lg);">$10,200</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--bg-app); border-radius: var(--radius); border: 1px solid var(--border);">
+                  <span style="color: var(--text-secondary); font-size: var(--text-sm);">Target Revenue (12 cars)</span>
+                  <span style="color: var(--blue); font-weight: var(--weight-bold); font-family: var(--font-mono); font-size: var(--text-lg);">$12,600</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--green-dim); border-radius: var(--radius); border: 1px solid var(--green);">
+                  <span style="color: var(--text-secondary); font-size: var(--text-sm);">Current Revenue</span>
+                  <span style="color: var(--green); font-weight: var(--weight-bold); font-family: var(--font-mono); font-size: var(--text-lg);">$8,450</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 4: Vehicles by Direction -->
+        <div style="margin-bottom: 24px;">
+          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-heavy); color: var(--text-primary); margin-bottom: 16px;">
+            <i data-lucide="car" class="ico"></i>
+            Vehicles by Direction
+          </h2>
+
+          <!-- HOME TO CA (Green) -->
+          <div style="background: #22c55e; color: white; padding: 12px 16px; font-weight: 700; margin-top: 16px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center;">
+            <span>HOME TO CA (5 cars)</span>
+            <span>Revenue: $6,250 | Clean Revenue: $5,875</span>
+          </div>
+          <div class="table-container" style="border: 2px solid #22c55e; border-top: none; border-radius: 0 0 8px 8px;">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Order #</th>
+                  <th>Vehicle</th>
+                  <th>VIN</th>
+                  <th>Origin</th>
+                  <th>Destination</th>
+                  <th>Payment Type</th>
+                  <th class="text-right">Revenue</th>
+                  <th class="sticky-col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="font-mono">ORD-2025-047</td>
+                  <td>2024 Toyota Camry</td>
+                  <td class="font-mono text-muted" style="font-size: var(--text-xs);">1HGBH41JXMN109186</td>
+                  <td>Dallas, TX</td>
+                  <td>Los Angeles, CA</td>
+                  <td><span class="badge badge-blue">COD</span></td>
+                  <td class="mono text-right">$1,250.00</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono">ORD-2025-048</td>
+                  <td>2023 Honda Civic</td>
+                  <td class="font-mono text-muted" style="font-size: var(--text-xs);">2HGFC2F59MH123456</td>
+                  <td>Dallas, TX</td>
+                  <td>San Francisco, CA</td>
+                  <td><span class="badge badge-amber">COP</span></td>
+                  <td class="mono text-right">$1,300.00</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono">ORD-2025-049</td>
+                  <td>2025 Ford Mustang</td>
+                  <td class="font-mono text-muted" style="font-size: var(--text-xs);">1FA6P8CF3M5123456</td>
+                  <td>Oklahoma City, OK</td>
+                  <td>Los Angeles, CA</td>
+                  <td><span class="badge badge-blue">COD</span></td>
+                  <td class="mono text-right">$1,150.00</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono">ORD-2025-050</td>
+                  <td>2022 Tesla Model 3</td>
+                  <td class="font-mono text-muted" style="font-size: var(--text-xs);">5YJ3E1EA5MF123456</td>
+                  <td>Dallas, TX</td>
+                  <td>San Diego, CA</td>
+                  <td><span class="badge badge-gray">BILL</span></td>
+                  <td class="mono text-right">$1,275.00</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono">ORD-2025-051</td>
+                  <td>2024 Chevrolet Malibu</td>
+                  <td class="font-mono text-muted" style="font-size: var(--text-xs);">1G1ZD5ST5MF123456</td>
+                  <td>Oklahoma City, OK</td>
+                  <td>Los Angeles, CA</td>
+                  <td><span class="badge badge-blue">COD</span></td>
+                  <td class="mono text-right">$1,275.00</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- CA TO HOME (Green) -->
+          <div style="background: #22c55e; color: white; padding: 12px 16px; font-weight: 700; margin-top: 24px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center;">
+            <span>CA TO HOME (4 cars)</span>
+            <span>Revenue: $950 | Clean Revenue: $950</span>
+          </div>
+          <div class="table-container" style="border: 2px solid #22c55e; border-top: none; border-radius: 0 0 8px 8px;">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Order #</th>
+                  <th>Vehicle</th>
+                  <th>VIN</th>
+                  <th>Origin</th>
+                  <th>Destination</th>
+                  <th>Payment Type</th>
+                  <th class="text-right">Revenue</th>
+                  <th class="sticky-col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="font-mono">ORD-2025-052</td>
+                  <td>2023 Nissan Altima</td>
+                  <td class="font-mono text-muted" style="font-size: var(--text-xs);">1N4BL4BV1MN123456</td>
+                  <td>Los Angeles, CA</td>
+                  <td>Dallas, TX</td>
+                  <td><span class="badge badge-red">LOCAL_COD</span></td>
+                  <td class="mono text-right">$225.00</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono">ORD-2025-053</td>
+                  <td>2024 Mazda CX-5</td>
+                  <td class="font-mono text-muted" style="font-size: var(--text-xs);">JM3KFBDM1M1123456</td>
+                  <td>San Francisco, CA</td>
+                  <td>Oklahoma City, OK</td>
+                  <td><span class="badge badge-red">LOCAL_COD</span></td>
+                  <td class="mono text-right">$250.00</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono">ORD-2025-054</td>
+                  <td>2023 Hyundai Sonata</td>
+                  <td class="font-mono text-muted" style="font-size: var(--text-xs);">5NPE34AF8MH123456</td>
+                  <td>Los Angeles, CA</td>
+                  <td>Dallas, TX</td>
+                  <td><span class="badge badge-red">LOCAL_COD</span></td>
+                  <td class="mono text-right">$225.00</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono">ORD-2025-055</td>
+                  <td>2022 Volkswagen Jetta</td>
+                  <td class="font-mono text-muted" style="font-size: var(--text-xs);">3VW2B7AJ1MM123456</td>
+                  <td>San Diego, CA</td>
+                  <td>Dallas, TX</td>
+                  <td><span class="badge badge-red">LOCAL_COD</span></td>
+                  <td class="mono text-right">$250.00</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- FL TO CA (Amber) -->
+          <div style="background: #f59e0b; color: white; padding: 12px 16px; font-weight: 700; margin-top: 24px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center;">
+            <span>FL TO CA (3 cars)</span>
+            <span>Revenue: $1,250 | Clean Revenue: $975</span>
+          </div>
+          <div class="table-container" style="border: 2px solid #f59e0b; border-top: none; border-radius: 0 0 8px 8px;">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Order #</th>
+                  <th>Vehicle</th>
+                  <th>VIN</th>
+                  <th>Origin</th>
+                  <th>Destination</th>
+                  <th>Payment Type</th>
+                  <th class="text-right">Revenue</th>
+                  <th class="sticky-col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="font-mono">ORD-2025-056</td>
+                  <td>2024 Kia Forte</td>
+                  <td class="font-mono text-muted" style="font-size: var(--text-xs);">3KPF24AD3ME123456</td>
+                  <td>Miami, FL</td>
+                  <td>Los Angeles, CA</td>
+                  <td><span class="badge badge-blue">COD</span></td>
+                  <td class="mono text-right">$450.00</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono">ORD-2025-057</td>
+                  <td>2023 Subaru Outback</td>
+                  <td class="font-mono text-muted" style="font-size: var(--text-xs);">4S4BTAFC5M3123456</td>
+                  <td>Tampa, FL</td>
+                  <td>San Francisco, CA</td>
+                  <td><span class="badge badge-blue">COD</span></td>
+                  <td class="mono text-right">$425.00</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono">ORD-2025-058</td>
+                  <td>2025 Audi A4</td>
+                  <td class="font-mono text-muted" style="font-size: var(--text-xs);">WAUZZZ8K5MA123456</td>
+                  <td>Miami, FL</td>
+                  <td>Los Angeles, CA</td>
+                  <td><span class="badge badge-amber">COP</span></td>
+                  <td class="mono text-right">$375.00</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section 5: Trip Expenses Table -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i data-lucide="receipt" class="ico" style="color: var(--red);"></i>
+              Trip Expenses
+            </h3>
+            <button class="btn btn-primary btn-sm">
+              <i data-lucide="plus" class="ico-sm"></i>
+              Add Expense
+            </button>
+          </div>
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Category</th>
+                  <th>Description</th>
+                  <th>Location</th>
+                  <th class="text-right">Amount</th>
+                  <th class="sticky-col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>2025-01-10</td>
+                  <td><span class="badge badge-purple">Fuel</span></td>
+                  <td>Diesel fill-up</td>
+                  <td>Dallas, TX</td>
+                  <td class="mono text-right">$450.00</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="trash" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>2025-01-11</td>
+                  <td><span class="badge badge-blue">Tolls</span></td>
+                  <td>Oklahoma Turnpike</td>
+                  <td>Oklahoma City, OK</td>
+                  <td class="mono text-right">$35.00</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="trash" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>2025-01-12</td>
+                  <td><span class="badge badge-purple">Fuel</span></td>
+                  <td>Diesel fill-up</td>
+                  <td>Albuquerque, NM</td>
+                  <td class="mono text-right">$425.00</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="trash" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>2025-01-13</td>
+                  <td><span class="badge badge-amber">Maintenance</span></td>
+                  <td>Tire repair</td>
+                  <td>Flagstaff, AZ</td>
+                  <td class="mono text-right">$150.00</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="trash" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>2025-01-14</td>
+                  <td><span class="badge badge-gray">Parking</span></td>
+                  <td>Overnight truck parking</td>
+                  <td>Los Angeles, CA</td>
+                  <td class="mono text-right">$45.00</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="trash" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>2025-01-14</td>
+                  <td><span class="badge badge-red">Permits</span></td>
+                  <td>CA oversize permit</td>
+                  <td>Los Angeles, CA</td>
+                  <td class="mono text-right">$75.00</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="trash" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>2025-01-15</td>
+                  <td><span class="badge badge-purple">Fuel</span></td>
+                  <td>Diesel fill-up</td>
+                  <td>Los Angeles, CA</td>
+                  <td class="mono text-right">$380.00</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="trash" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr style="background: var(--bg-elevated); font-weight: var(--weight-bold);">
+                  <td colspan="4" style="text-align: right; padding-right: 16px;">Total Expenses:</td>
+                  <td class="mono text-right" style="color: var(--red);">$1,560.00</td>
+                  <td class="sticky-col"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    themeToggle.addEventListener('click', function() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('tms-theme', next);
+      // Update icon
+      themeIcon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
+      lucide.createIcons();
+    });
+
+    // Sidebar toggle (collapse/expand)
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    sidebarToggle.addEventListener('click', function() {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('sidebar-collapsed');
+      // Update toggle icon
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+      lucide.createIcons();
+    });
+
+    // Mobile hamburger
+    const hamburger = document.getElementById('hamburger');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (hamburger) {
+      hamburger.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('active');
+      });
+    }
+
+    if (sidebarOverlay) {
+      sidebarOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      });
+    }
+
+    // Responsive: show hamburger on mobile
+    function handleResize() {
+      if (window.innerWidth <= 768) {
+        hamburger.style.display = 'flex';
+      } else {
+        hamburger.style.display = 'none';
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+  </script>
+</body>
+</html>
