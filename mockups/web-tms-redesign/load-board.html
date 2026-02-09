@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon Star TMS — Load Board</title>
+
+  <!-- FART prevention: set theme before CSS loads -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('tms-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared.css">
+</head>
+<body>
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <i data-lucide="truck"></i>
+        </div>
+        <span class="sidebar-logo-text">Horizon Star</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- MAIN Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Main</div>
+          <a class="nav-item" data-page="dashboard">
+            <i data-lucide="layout-dashboard" class="nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+          </a>
+          <a class="nav-item" data-page="trips">
+            <i data-lucide="map" class="nav-icon"></i>
+            <span class="nav-label">Trips</span>
+          </a>
+          <a class="nav-item" data-page="messages">
+            <i data-lucide="message-square" class="nav-icon"></i>
+            <span class="nav-label">Messages</span>
+          </a>
+          <a class="nav-item" data-page="trailers">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trailers</span>
+          </a>
+          <a class="nav-item active" data-page="load-board">
+            <i data-lucide="package" class="nav-icon"></i>
+            <span class="nav-label">Load Board</span>
+          </a>
+          <a class="nav-item" data-page="inspections">
+            <i data-lucide="clipboard-list" class="nav-icon"></i>
+            <span class="nav-label">Inspections</span>
+          </a>
+          <a class="nav-item" data-page="tasks">
+            <i data-lucide="check-square" class="nav-icon"></i>
+            <span class="nav-label">Tasks</span>
+          </a>
+        </div>
+
+        <!-- FLEET Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Fleet</div>
+          <a class="nav-item" data-page="drivers">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Drivers</span>
+          </a>
+          <a class="nav-item" data-page="trucks">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trucks</span>
+          </a>
+          <a class="nav-item" data-page="local-drivers">
+            <i data-lucide="user" class="nav-icon"></i>
+            <span class="nav-label">Local Drivers</span>
+          </a>
+        </div>
+
+        <!-- PARTNERS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Partners</div>
+          <a class="nav-item" data-page="brokers">
+            <i data-lucide="briefcase" class="nav-icon"></i>
+            <span class="nav-label">Brokers</span>
+          </a>
+          <a class="nav-item" data-page="dealers">
+            <i data-lucide="building" class="nav-icon"></i>
+            <span class="nav-label">Dealers</span>
+          </a>
+          <a class="nav-item" data-page="dispatchers">
+            <i data-lucide="phone" class="nav-icon"></i>
+            <span class="nav-label">Dispatchers</span>
+          </a>
+          <a class="nav-item" data-page="dispatcher-ranking">
+            <i data-lucide="star" class="nav-icon"></i>
+            <span class="nav-label">Dispatcher Ranking</span>
+          </a>
+        </div>
+
+        <!-- FINANCIALS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Financials</div>
+          <a class="nav-item" data-page="financials">
+            <i data-lucide="dollar-sign" class="nav-icon"></i>
+            <span class="nav-label">Financials</span>
+          </a>
+          <a class="nav-item" data-page="billing">
+            <i data-lucide="file-text" class="nav-icon"></i>
+            <span class="nav-label">Billing</span>
+          </a>
+          <a class="nav-item" data-page="trip-profitability">
+            <i data-lucide="trending-up" class="nav-icon"></i>
+            <span class="nav-label">Trip Profitability</span>
+          </a>
+          <a class="nav-item" data-page="payroll">
+            <i data-lucide="credit-card" class="nav-icon"></i>
+            <span class="nav-label">Payroll</span>
+          </a>
+          <a class="nav-item" data-page="fuel">
+            <i data-lucide="droplet" class="nav-icon"></i>
+            <span class="nav-label">Fuel</span>
+          </a>
+          <a class="nav-item" data-page="ifta">
+            <i data-lucide="file" class="nav-icon"></i>
+            <span class="nav-label">IFTA</span>
+          </a>
+          <a class="nav-item" data-page="reports">
+            <i data-lucide="bar-chart-2" class="nav-icon"></i>
+            <span class="nav-label">Reports</span>
+          </a>
+          <a class="nav-item" data-page="ai-advisor">
+            <i data-lucide="brain" class="nav-icon"></i>
+            <span class="nav-label">AI Advisor</span>
+          </a>
+        </div>
+
+        <!-- OPERATIONS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Operations</div>
+          <a class="nav-item" data-page="maintenance">
+            <i data-lucide="wrench" class="nav-icon"></i>
+            <span class="nav-label">Maintenance</span>
+          </a>
+          <a class="nav-item" data-page="compliance">
+            <i data-lucide="shield-check" class="nav-icon"></i>
+            <span class="nav-label">Compliance</span>
+          </a>
+          <a class="nav-item" data-page="applications">
+            <i data-lucide="file-plus" class="nav-icon"></i>
+            <span class="nav-label">Applications</span>
+          </a>
+        </div>
+
+        <!-- SETTINGS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Settings</div>
+          <a class="nav-item" data-page="settings">
+            <i data-lucide="settings" class="nav-icon"></i>
+            <span class="nav-label">Settings</span>
+          </a>
+          <a class="nav-item" data-page="users">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Users</span>
+          </a>
+          <a class="nav-item" data-page="activity-log">
+            <i data-lucide="activity" class="nav-icon"></i>
+            <span class="nav-label">Activity Log</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-toggle" id="sidebarToggle">
+        <i data-lucide="panel-left-close" class="nav-icon" id="toggleIcon"></i>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger" style="display:none;">
+            <i data-lucide="menu"></i>
+          </button>
+          <h1 class="header-title">Load Board</h1>
+        </div>
+
+        <div class="header-search">
+          <i data-lucide="search" class="ico-sm"></i>
+          <input type="text" placeholder="Search orders, trips, drivers...">
+        </div>
+
+        <div class="header-right">
+          <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+            <i data-lucide="moon" class="ico" id="themeIcon"></i>
+          </button>
+          <div class="header-avatar">JD</div>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Section 1: Category Tabs Row -->
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;">
+          <button class="btn" style="background: #3b82f6; color: white; border: 2px solid #3b82f6;">
+            NY to Home <span class="badge" style="background: rgba(255,255,255,0.2); color: white; margin-left: 6px;">12</span>
+          </button>
+          <button class="btn btn-secondary" style="border: 2px solid #8b5cf6; color: #8b5cf6; background: transparent;">
+            Home to NY <span class="badge" style="background: rgba(139,92,246,0.1); color: #8b5cf6; margin-left: 6px;">8</span>
+          </button>
+          <button class="btn btn-secondary" style="border: 2px solid #06b6d4; color: #06b6d4; background: transparent;">
+            Home to CA <span class="badge" style="background: rgba(6,182,212,0.1); color: #06b6d4; margin-left: 6px;">6</span>
+          </button>
+          <button class="btn btn-secondary" style="border: 2px solid #10b981; color: #10b981; background: transparent;">
+            CA to Home <span class="badge" style="background: rgba(16,185,129,0.1); color: #10b981; margin-left: 6px;">4</span>
+          </button>
+          <button class="btn btn-secondary" style="border: 2px solid #f59e0b; color: #f59e0b; background: transparent;">
+            FL to CA <span class="badge" style="background: rgba(245,158,11,0.1); color: #f59e0b; margin-left: 6px;">3</span>
+          </button>
+          <button class="btn btn-secondary" style="border: 2px solid #ef4444; color: #ef4444; background: transparent;">
+            FL to Home <span class="badge" style="background: rgba(239,68,68,0.1); color: #ef4444; margin-left: 6px;">5</span>
+          </button>
+          <button class="btn btn-secondary" style="border: 2px solid #ec4899; color: #ec4899; background: transparent;">
+            NY to FL <span class="badge" style="background: rgba(236,72,153,0.1); color: #ec4899; margin-left: 6px;">2</span>
+          </button>
+        </div>
+
+        <!-- Section 2: Subcategory Pills (NY to Home only) -->
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px;">
+          <button class="btn" style="background: #3b82f6; color: white; border: 1px solid #3b82f6; padding: 6px 14px; font-size: var(--text-xs);">
+            All <span class="badge" style="background: rgba(255,255,255,0.2); color: white; margin-left: 4px;">12</span>
+          </button>
+          <button class="btn btn-secondary" style="border: 1px solid #3b82f6; color: #3b82f6; background: transparent; padding: 6px 14px; font-size: var(--text-xs);">
+            San Francisco <span class="badge" style="background: rgba(59,130,246,0.1); color: #3b82f6; margin-left: 4px;">3</span>
+          </button>
+          <button class="btn btn-secondary" style="border: 1px solid #3b82f6; color: #3b82f6; background: transparent; padding: 6px 14px; font-size: var(--text-xs);">
+            Los Angeles <span class="badge" style="background: rgba(59,130,246,0.1); color: #3b82f6; margin-left: 4px;">4</span>
+          </button>
+          <button class="btn btn-secondary" style="border: 1px solid #3b82f6; color: #3b82f6; background: transparent; padding: 6px 14px; font-size: var(--text-xs);">
+            Tennessee <span class="badge" style="background: rgba(59,130,246,0.1); color: #3b82f6; margin-left: 4px;">2</span>
+          </button>
+          <button class="btn btn-secondary" style="border: 1px solid #3b82f6; color: #3b82f6; background: transparent; padding: 6px 14px; font-size: var(--text-xs);">
+            Arkansas <span class="badge" style="background: rgba(59,130,246,0.1); color: #3b82f6; margin-left: 4px;">1</span>
+          </button>
+          <button class="btn btn-secondary" style="border: 1px solid #3b82f6; color: #3b82f6; background: transparent; padding: 6px 14px; font-size: var(--text-xs);">
+            Nevada <span class="badge" style="background: rgba(59,130,246,0.1); color: #3b82f6; margin-left: 4px;">1</span>
+          </button>
+          <button class="btn btn-secondary" style="border: 1px solid #3b82f6; color: #3b82f6; background: transparent; padding: 6px 14px; font-size: var(--text-xs);">
+            Oklahoma <span class="badge" style="background: rgba(59,130,246,0.1); color: #3b82f6; margin-left: 4px;">1</span>
+          </button>
+        </div>
+
+        <!-- Section 3: Stats Summary Row -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+            <div style="text-align: center; padding: 12px; border-right: 1px solid var(--border);">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Total Vehicles</div>
+              <div style="font-size: var(--text-2xl); font-weight: var(--weight-heavy); color: var(--text-primary); font-family: var(--font-mono);">12</div>
+            </div>
+            <div style="text-align: center; padding: 12px; border-right: 1px solid var(--border);">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Total Revenue</div>
+              <div style="font-size: var(--text-2xl); font-weight: var(--weight-heavy); color: var(--green); font-family: var(--font-mono);">$14,250.00</div>
+            </div>
+            <div style="text-align: center; padding: 12px; border-right: 1px solid var(--border);">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Avg Price/Vehicle</div>
+              <div style="font-size: var(--text-2xl); font-weight: var(--weight-heavy); color: var(--blue); font-family: var(--font-mono);">$1,187.50</div>
+            </div>
+            <div style="text-align: center; padding: 12px; border-right: 1px solid var(--border);">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">COD Orders</div>
+              <div style="font-size: var(--text-2xl); font-weight: var(--weight-heavy); color: var(--text-primary); font-family: var(--font-mono);">7</div>
+            </div>
+            <div style="text-align: center; padding: 12px; border-right: 1px solid var(--border);">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">COP Orders</div>
+              <div style="font-size: var(--text-2xl); font-weight: var(--weight-heavy); color: var(--text-primary); font-family: var(--font-mono);">3</div>
+            </div>
+            <div style="text-align: center; padding: 12px;">
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Bill Orders</div>
+              <div style="font-size: var(--text-2xl); font-weight: var(--weight-heavy); color: var(--text-primary); font-family: var(--font-mono);">2</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 4: Vehicle Table -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">NY to Home — Vehicles</h3>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary">
+                <i data-lucide="check-square" class="ico-sm"></i>
+                Assign Selected
+              </button>
+              <button class="btn btn-secondary">
+                <i data-lucide="download" class="ico-sm"></i>
+                Export
+              </button>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Order #</th>
+                  <th>Broker</th>
+                  <th>Vehicle</th>
+                  <th>Origin</th>
+                  <th>Ph</th>
+                  <th>Destination</th>
+                  <th>Ph</th>
+                  <th>Pickup Date</th>
+                  <th>Delivery Date</th>
+                  <th>Pay Type</th>
+                  <th class="text-right">Broker Fee</th>
+                  <th class="text-right">Local Fee</th>
+                  <th class="text-right">Price</th>
+                  <th style="position: sticky; right: 0; background: var(--bg-elevated);">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="mono">ORD-2025-047</td>
+                  <td>Central Dispatch</td>
+                  <td>2024 Toyota Camry</td>
+                  <td>New York, NY</td>
+                  <td><a href="tel:+1234567890" style="color: var(--blue);">📞</a></td>
+                  <td>San Francisco, CA</td>
+                  <td><a href="tel:+1987654321" style="color: var(--green);">📞</a></td>
+                  <td>2025-02-15</td>
+                  <td>2025-02-20</td>
+                  <td><span class="badge badge-blue">COD</span></td>
+                  <td class="mono text-right">$75.00</td>
+                  <td class="mono text-right">$35.00</td>
+                  <td class="mono text-right">$1,247.50</td>
+                  <td style="position: sticky; right: 0; background: var(--bg-card); display: flex; gap: 4px; justify-content: flex-end;">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="trash" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="mono">ORD-2025-048</td>
+                  <td>Direct Auto Transport</td>
+                  <td>2023 Honda Civic</td>
+                  <td>Brooklyn, NY</td>
+                  <td><a href="tel:+1234567891" style="color: var(--blue);">📞</a></td>
+                  <td>Los Angeles, CA</td>
+                  <td><a href="tel:+1987654322" style="color: var(--green);">📞</a></td>
+                  <td>2025-02-16</td>
+                  <td>2025-02-21</td>
+                  <td><span class="badge badge-green">COP</span></td>
+                  <td class="mono text-right">$60.00</td>
+                  <td class="mono text-right">$30.00</td>
+                  <td class="mono text-right">$1,150.00</td>
+                  <td style="position: sticky; right: 0; background: var(--bg-card); display: flex; gap: 4px; justify-content: flex-end;">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="trash" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="mono">ORD-2025-049</td>
+                  <td>SuperDispatch</td>
+                  <td>2025 Tesla Model 3</td>
+                  <td>Manhattan, NY</td>
+                  <td><a href="tel:+1234567892" style="color: var(--blue);">📞</a></td>
+                  <td>San Francisco, CA</td>
+                  <td><a href="tel:+1987654323" style="color: var(--green);">📞</a></td>
+                  <td>2025-02-17</td>
+                  <td>2025-02-22</td>
+                  <td><span class="badge badge-blue">COD</span></td>
+                  <td class="mono text-right">$80.00</td>
+                  <td class="mono text-right">$40.00</td>
+                  <td class="mono text-right">$1,325.75</td>
+                  <td style="position: sticky; right: 0; background: var(--bg-card); display: flex; gap: 4px; justify-content: flex-end;">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="trash" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="mono">ORD-2025-050</td>
+                  <td>Central Dispatch</td>
+                  <td>2022 Ford Mustang</td>
+                  <td>Queens, NY</td>
+                  <td><a href="tel:+1234567893" style="color: var(--blue);">📞</a></td>
+                  <td>Tennessee, TN</td>
+                  <td><a href="tel:+1987654324" style="color: var(--green);">📞</a></td>
+                  <td>2025-02-18</td>
+                  <td>2025-02-21</td>
+                  <td><span class="badge badge-amber">BILL</span></td>
+                  <td class="mono text-right">$55.00</td>
+                  <td class="mono text-right">$25.00</td>
+                  <td class="mono text-right">$925.00</td>
+                  <td style="position: sticky; right: 0; background: var(--bg-card); display: flex; gap: 4px; justify-content: flex-end;">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="trash" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="mono">ORD-2025-051</td>
+                  <td>Direct Auto Transport</td>
+                  <td>2024 BMW 3 Series</td>
+                  <td>Bronx, NY</td>
+                  <td><a href="tel:+1234567894" style="color: var(--blue);">📞</a></td>
+                  <td>Los Angeles, CA</td>
+                  <td><a href="tel:+1987654325" style="color: var(--green);">📞</a></td>
+                  <td>2025-02-19</td>
+                  <td>2025-02-24</td>
+                  <td><span class="badge badge-blue">COD</span></td>
+                  <td class="mono text-right">$70.00</td>
+                  <td class="mono text-right">$35.00</td>
+                  <td class="mono text-right">$1,180.25</td>
+                  <td style="position: sticky; right: 0; background: var(--bg-card); display: flex; gap: 4px; justify-content: flex-end;">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="trash" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="mono">ORD-2025-052</td>
+                  <td>SuperDispatch</td>
+                  <td>2023 Audi A4</td>
+                  <td>Albany, NY</td>
+                  <td><a href="tel:+1234567895" style="color: var(--blue);">📞</a></td>
+                  <td>Arkansas, AR</td>
+                  <td><a href="tel:+1987654326" style="color: var(--green);">📞</a></td>
+                  <td>2025-02-20</td>
+                  <td>2025-02-23</td>
+                  <td><span class="badge badge-green">COP</span></td>
+                  <td class="mono text-right">$50.00</td>
+                  <td class="mono text-right">$25.00</td>
+                  <td class="mono text-right">$875.00</td>
+                  <td style="position: sticky; right: 0; background: var(--bg-card); display: flex; gap: 4px; justify-content: flex-end;">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="trash" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="mono">ORD-2025-053</td>
+                  <td>Central Dispatch</td>
+                  <td>2024 Mercedes C300</td>
+                  <td>Rochester, NY</td>
+                  <td><a href="tel:+1234567896" style="color: var(--blue);">📞</a></td>
+                  <td>Nevada, NV</td>
+                  <td><a href="tel:+1987654327" style="color: var(--green);">📞</a></td>
+                  <td>2025-02-21</td>
+                  <td>2025-02-26</td>
+                  <td><span class="badge badge-blue">COD</span></td>
+                  <td class="mono text-right">$85.00</td>
+                  <td class="mono text-right">$40.00</td>
+                  <td class="mono text-right">$1,395.00</td>
+                  <td style="position: sticky; right: 0; background: var(--bg-card); display: flex; gap: 4px; justify-content: flex-end;">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="trash" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="mono">ORD-2025-054</td>
+                  <td>Direct Auto Transport</td>
+                  <td>2025 Chevrolet Silverado</td>
+                  <td>Syracuse, NY</td>
+                  <td><a href="tel:+1234567897" style="color: var(--blue);">📞</a></td>
+                  <td>Oklahoma, OK</td>
+                  <td><a href="tel:+1987654328" style="color: var(--green);">📞</a></td>
+                  <td>2025-02-22</td>
+                  <td>2025-02-25</td>
+                  <td><span class="badge badge-amber">BILL</span></td>
+                  <td class="mono text-right">$65.00</td>
+                  <td class="mono text-right">$30.00</td>
+                  <td class="mono text-right">$1,025.50</td>
+                  <td style="position: sticky; right: 0; background: var(--bg-card); display: flex; gap: 4px; justify-content: flex-end;">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="trash" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    themeToggle.addEventListener('click', function() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('tms-theme', next);
+      // Update icon
+      themeIcon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
+      lucide.createIcons();
+    });
+
+    // Sidebar toggle (collapse/expand)
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    sidebarToggle.addEventListener('click', function() {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('sidebar-collapsed');
+      // Update toggle icon
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+      lucide.createIcons();
+    });
+
+    // Mobile hamburger
+    const hamburger = document.getElementById('hamburger');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (hamburger) {
+      hamburger.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('active');
+      });
+    }
+
+    if (sidebarOverlay) {
+      sidebarOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      });
+    }
+
+    // Responsive: show hamburger on mobile
+    function handleResize() {
+      if (window.innerWidth <= 768) {
+        hamburger.style.display = 'flex';
+      } else {
+        hamburger.style.display = 'none';
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+  </script>
+</body>
+</html>
