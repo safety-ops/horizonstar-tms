@@ -7,13 +7,13 @@
 
 ### Design System (DS)
 
-- [ ] **DS-01**: Shared CSS file with color tokens matching iOS v3 (dark: #09090b bg, light: #f8f9fa bg, brand green #22c55e)
-- [ ] **DS-02**: Light/dark mode toggle in each mockup with smooth transition
-- [ ] **DS-03**: Typography system (heavy titles, clean body text, monospaced numbers)
-- [ ] **DS-04**: Sidebar navigation component matching current page structure
-- [ ] **DS-05**: Header bar with user info, search, and theme toggle
-- [ ] **DS-06**: Reusable card, table, stat-card, badge, and button components
-- [ ] **DS-07**: Form inputs, selects, and modal styling
+- [x] **DS-01**: Shared CSS file with color tokens matching iOS v3 (dark: #09090b bg, light: #f8f9fa bg, brand green #22c55e)
+- [x] **DS-02**: Light/dark mode toggle in each mockup with smooth transition
+- [x] **DS-03**: Typography system (heavy titles, clean body text, monospaced numbers)
+- [x] **DS-04**: Sidebar navigation component matching current page structure
+- [x] **DS-05**: Header bar with user info, search, and theme toggle
+- [x] **DS-06**: Reusable card, table, stat-card, badge, and button components
+- [x] **DS-07**: Form inputs, selects, and modal styling
 
 ### Core Dispatch Pages (CORE)
 
@@ -69,13 +69,13 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DS-01 | Phase 6 | Pending |
-| DS-02 | Phase 6 | Pending |
-| DS-03 | Phase 6 | Pending |
-| DS-04 | Phase 6 | Pending |
-| DS-05 | Phase 6 | Pending |
-| DS-06 | Phase 6 | Pending |
-| DS-07 | Phase 6 | Pending |
+| DS-01 | Phase 6 | Complete |
+| DS-02 | Phase 6 | Complete |
+| DS-03 | Phase 6 | Complete |
+| DS-04 | Phase 6 | Complete |
+| DS-05 | Phase 6 | Complete |
+| DS-06 | Phase 6 | Complete |
+| DS-07 | Phase 6 | Complete |
 | CORE-01 | Phase 7 | Pending |
 | CORE-02 | Phase 7 | Pending |
 | CORE-03 | Phase 7 | Pending |

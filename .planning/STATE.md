@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 
 ## Current Position
 
-Phase: 6 (Design System Foundation) of 10
-Plan: 06-01 of 2 — Shared CSS Base Template (COMPLETE)
-Status: In progress — Phase 6 Plan 1 complete (50%)
-Last activity: 2026-02-09 — Completed 06-01-PLAN.md (shared.css + base-template.html)
+Phase: 6 (Design System Foundation) of 10 — COMPLETE
+Plan: 2 of 2 — UI Components & Showcase (COMPLETE)
+Status: Phase 6 complete, pending verification
+Last activity: 2026-02-09 — Completed 06-02-PLAN.md (components + showcase, user approved)
 
-Progress: ████░░░░░░░░░░░░░░░░ 1/22 plans (5%)
+Progress: ██░░░░░░░░░░░░░░░░░░ 2/22 plans (9%)
 
 ## Accumulated Context
 
@@ -22,16 +22,13 @@ Progress: ████░░░░░░░░░░░░░░░░ 1/22 plan
 
 | ID | Decision | Rationale | Phase | Date |
 |----|----------|-----------|-------|------|
+| ui-only-redesign | **UI-ONLY: No changes to existing layouts, functions, logic, or behavior** | User requirement — redesign is purely visual/CSS, production code stays identical | 06-02 | 2026-02-09 |
 | dark-theme-default | Dark theme as default (matching iOS v3) | Consistency with mobile, reduces eye strain for dispatchers | 06-01 | 2026-02-09 |
 | css-variables-only | Pure CSS variables, no preprocessor | Simple mockups, no build step, easy to tweak | 06-01 | 2026-02-09 |
 | fart-prevention-inline | Inline head script for theme persistence | Prevents Flash of Arbitrary Rendered Theme on page load | 06-01 | 2026-02-09 |
 | sidebar-width-tokens | 240px expanded, 72px collapsed, 280px mobile | Balances content visibility with navigation accessibility | 06-01 | 2026-02-09 |
-| — | Local driver fees preserved through reassignment (fixed 2026-02-09) | — | — | 2026-02-09 |
-| — | iOS v3 redesign spec exists in root PROJECT.md (detailed 1,650-line guide) | — | — | 2026-02-09 |
-| — | Mockups before code: review and approve designs before touching production index.html | — | — | 2026-02-09 |
-| — | Match iOS v3 design system: dark/light theme, brand colors, typography, cards | — | — | 2026-02-09 |
-| — | One HTML file per page with light/dark toggle | — | — | 2026-02-09 |
-| — | Mockups go in `mockups/web-tms-redesign/` directory | — | — | 2026-02-09 |
+| mockups-before-code | Mockups before code: review and approve designs before touching production index.html | De-risk changes | — | 2026-02-09 |
+| mockups-directory | Mockups go in `mockups/web-tms-redesign/` directory | Separation from production | — | 2026-02-09 |
 
 ### Known Issues
 - None currently blocking
@@ -41,6 +38,6 @@ Progress: ████░░░░░░░░░░░░░░░░ 1/22 plan
 
 ## Session Continuity
 
-Last session: 2026-02-09 16:38:02 UTC
-Stopped at: Completed 06-01-PLAN.md
+Last session: 2026-02-09
+Stopped at: Completed 06-02-PLAN.md, phase 6 complete
 Resume file: None
