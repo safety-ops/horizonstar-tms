@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon Star TMS — Trips</title>
+
+  <!-- FART prevention: set theme before CSS loads -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('tms-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared.css">
+  <style>
+    /* Sticky column for Actions */
+    .sticky-col {
+      position: sticky;
+      right: 0;
+      background: var(--bg-card);
+      border-left: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .table tbody tr:hover .sticky-col {
+      background: var(--bg-card-hover);
+    }
+
+    /* Summary row styling */
+    .summary-row {
+      background: var(--bg-elevated);
+      padding: 16px 20px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      align-items: center;
+      font-size: var(--text-sm);
+    }
+
+    .summary-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .summary-label {
+      color: var(--text-secondary);
+      font-weight: var(--weight-medium);
+    }
+
+    .summary-value {
+      color: var(--text-primary);
+      font-weight: var(--weight-bold);
+      font-family: var(--font-mono);
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <i data-lucide="truck"></i>
+        </div>
+        <span class="sidebar-logo-text">Horizon Star</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- MAIN Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Main</div>
+          <a class="nav-item" data-page="dashboard">
+            <i data-lucide="layout-dashboard" class="nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+          </a>
+          <a class="nav-item active" data-page="trips">
+            <i data-lucide="map" class="nav-icon"></i>
+            <span class="nav-label">Trips</span>
+          </a>
+          <a class="nav-item" data-page="messages">
+            <i data-lucide="message-square" class="nav-icon"></i>
+            <span class="nav-label">Messages</span>
+          </a>
+          <a class="nav-item" data-page="trailers">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trailers</span>
+          </a>
+          <a class="nav-item" data-page="load-board">
+            <i data-lucide="package" class="nav-icon"></i>
+            <span class="nav-label">Load Board</span>
+          </a>
+          <a class="nav-item" data-page="inspections">
+            <i data-lucide="clipboard-list" class="nav-icon"></i>
+            <span class="nav-label">Inspections</span>
+          </a>
+          <a class="nav-item" data-page="tasks">
+            <i data-lucide="check-square" class="nav-icon"></i>
+            <span class="nav-label">Tasks</span>
+          </a>
+        </div>
+
+        <!-- FLEET Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Fleet</div>
+          <a class="nav-item" data-page="drivers">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Drivers</span>
+          </a>
+          <a class="nav-item" data-page="trucks">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trucks</span>
+          </a>
+          <a class="nav-item" data-page="local-drivers">
+            <i data-lucide="user" class="nav-icon"></i>
+            <span class="nav-label">Local Drivers</span>
+          </a>
+        </div>
+
+        <!-- PARTNERS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Partners</div>
+          <a class="nav-item" data-page="brokers">
+            <i data-lucide="briefcase" class="nav-icon"></i>
+            <span class="nav-label">Brokers</span>
+          </a>
+          <a class="nav-item" data-page="dealers">
+            <i data-lucide="building" class="nav-icon"></i>
+            <span class="nav-label">Dealers</span>
+          </a>
+          <a class="nav-item" data-page="dispatchers">
+            <i data-lucide="phone" class="nav-icon"></i>
+            <span class="nav-label">Dispatchers</span>
+          </a>
+          <a class="nav-item" data-page="dispatcher-ranking">
+            <i data-lucide="star" class="nav-icon"></i>
+            <span class="nav-label">Dispatcher Ranking</span>
+          </a>
+        </div>
+
+        <!-- FINANCIALS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Financials</div>
+          <a class="nav-item" data-page="financials">
+            <i data-lucide="dollar-sign" class="nav-icon"></i>
+            <span class="nav-label">Financials</span>
+          </a>
+          <a class="nav-item" data-page="billing">
+            <i data-lucide="file-text" class="nav-icon"></i>
+            <span class="nav-label">Billing</span>
+          </a>
+          <a class="nav-item" data-page="trip-profitability">
+            <i data-lucide="trending-up" class="nav-icon"></i>
+            <span class="nav-label">Trip Profitability</span>
+          </a>
+          <a class="nav-item" data-page="payroll">
+            <i data-lucide="credit-card" class="nav-icon"></i>
+            <span class="nav-label">Payroll</span>
+          </a>
+          <a class="nav-item" data-page="fuel">
+            <i data-lucide="droplet" class="nav-icon"></i>
+            <span class="nav-label">Fuel</span>
+          </a>
+          <a class="nav-item" data-page="ifta">
+            <i data-lucide="file" class="nav-icon"></i>
+            <span class="nav-label">IFTA</span>
+          </a>
+          <a class="nav-item" data-page="reports">
+            <i data-lucide="bar-chart-2" class="nav-icon"></i>
+            <span class="nav-label">Reports</span>
+          </a>
+          <a class="nav-item" data-page="ai-advisor">
+            <i data-lucide="brain" class="nav-icon"></i>
+            <span class="nav-label">AI Advisor</span>
+          </a>
+        </div>
+
+        <!-- OPERATIONS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Operations</div>
+          <a class="nav-item" data-page="maintenance">
+            <i data-lucide="wrench" class="nav-icon"></i>
+            <span class="nav-label">Maintenance</span>
+          </a>
+          <a class="nav-item" data-page="compliance">
+            <i data-lucide="shield-check" class="nav-icon"></i>
+            <span class="nav-label">Compliance</span>
+          </a>
+          <a class="nav-item" data-page="applications">
+            <i data-lucide="file-plus" class="nav-icon"></i>
+            <span class="nav-label">Applications</span>
+          </a>
+        </div>
+
+        <!-- SETTINGS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Settings</div>
+          <a class="nav-item" data-page="settings">
+            <i data-lucide="settings" class="nav-icon"></i>
+            <span class="nav-label">Settings</span>
+          </a>
+          <a class="nav-item" data-page="users">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Users</span>
+          </a>
+          <a class="nav-item" data-page="activity-log">
+            <i data-lucide="activity" class="nav-icon"></i>
+            <span class="nav-label">Activity Log</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-toggle" id="sidebarToggle">
+        <i data-lucide="panel-left-close" class="nav-icon" id="toggleIcon"></i>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger" style="display:none;">
+            <i data-lucide="menu"></i>
+          </button>
+          <h1 class="header-title">Trips</h1>
+        </div>
+
+        <div class="header-search">
+          <i data-lucide="search" class="ico-sm"></i>
+          <input type="text" placeholder="Search orders, trips, drivers...">
+        </div>
+
+        <div class="header-right">
+          <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+            <i data-lucide="moon" class="ico" id="themeIcon"></i>
+          </button>
+          <div class="header-avatar">JD</div>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Section 1: Page Header Row -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <div></div>
+          <button class="btn btn-primary">
+            <i data-lucide="plus" class="ico-sm"></i>
+            New Trip
+          </button>
+        </div>
+
+        <!-- Section 2: Status Filter Tabs -->
+        <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+          <button class="btn btn-primary">
+            Active <span class="badge badge-gray" style="background: rgba(255,255,255,0.2); margin-left: 4px;">23</span>
+          </button>
+          <button class="btn btn-secondary">
+            Completed <span class="badge badge-gray" style="background: rgba(0,0,0,0.05); margin-left: 4px;">47</span>
+          </button>
+          <button class="btn btn-secondary">
+            All <span class="badge badge-gray" style="background: rgba(0,0,0,0.05); margin-left: 4px;">70</span>
+          </button>
+        </div>
+
+        <!-- Section 3: Truck Tabs -->
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;">
+          <button class="btn btn-primary">
+            Truck 77 <span class="badge badge-gray" style="background: rgba(255,255,255,0.2); margin-left: 4px;">12</span>
+          </button>
+          <button class="btn btn-secondary">
+            Truck 88 <span class="badge badge-gray" style="background: rgba(0,0,0,0.05); margin-left: 4px;">9</span>
+          </button>
+          <button class="btn btn-secondary">
+            Truck 55 <span class="badge badge-gray" style="background: rgba(0,0,0,0.05); margin-left: 4px;">8</span>
+          </button>
+          <button class="btn btn-secondary">
+            Truck 42 <span class="badge badge-gray" style="background: rgba(0,0,0,0.05); margin-left: 4px;">5</span>
+          </button>
+          <button class="btn btn-secondary">
+            Truck 63 <span class="badge badge-gray" style="background: rgba(0,0,0,0.05); margin-left: 4px;">3</span>
+          </button>
+        </div>
+
+        <!-- Section 4: Trip Table (Truck 77 - Active Trips) -->
+        <div class="card" style="margin-bottom: 20px;">
+          <div class="card-header">
+            <h3 class="card-title">🚛 Truck 77 — Active Trips</h3>
+          </div>
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Trip #</th>
+                  <th>Driver</th>
+                  <th>Start Date</th>
+                  <th>End Date</th>
+                  <th>Status</th>
+                  <th>Vehicles</th>
+                  <th class="text-right">Revenue</th>
+                  <th class="text-right">Expenses</th>
+                  <th class="text-right">Profit</th>
+                  <th class="text-right">Margin</th>
+                  <th class="sticky-col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="font-mono">TRIP 3 - 77 - 2025</td>
+                  <td>John Smith</td>
+                  <td>2025-01-15</td>
+                  <td>2025-01-22</td>
+                  <td><span class="badge badge-green">COMPLETED</span></td>
+                  <td>9</td>
+                  <td class="mono text-right">$8,450.00</td>
+                  <td class="mono text-right">$3,215.75</td>
+                  <td class="mono text-right">$5,234.25</td>
+                  <td class="mono text-right">61.95%</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono">TRIP 5 - 77 - 2025</td>
+                  <td>Maria Garcia</td>
+                  <td>2025-01-20</td>
+                  <td>2025-01-28</td>
+                  <td><span class="badge badge-amber">IN_PROGRESS</span></td>
+                  <td>8</td>
+                  <td class="mono text-right">$7,240.00</td>
+                  <td class="mono text-right">$2,847.50</td>
+                  <td class="mono text-right">$4,392.50</td>
+                  <td class="mono text-right">60.67%</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono">TRIP 7 - 77 - 2025</td>
+                  <td>David Chen</td>
+                  <td>2025-02-01</td>
+                  <td>2025-02-08</td>
+                  <td><span class="badge badge-blue">PLANNED</span></td>
+                  <td>10</td>
+                  <td class="mono text-right">$9,875.00</td>
+                  <td class="mono text-right">$3,642.20</td>
+                  <td class="mono text-right">$6,232.80</td>
+                  <td class="mono text-right">63.12%</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono">TRIP 9 - 77 - 2025</td>
+                  <td>Sarah Johnson</td>
+                  <td>2025-02-05</td>
+                  <td>2025-02-12</td>
+                  <td><span class="badge badge-green">COMPLETED</span></td>
+                  <td>7</td>
+                  <td class="mono text-right">$6,580.00</td>
+                  <td class="mono text-right">$2,475.30</td>
+                  <td class="mono text-right">$4,104.70</td>
+                  <td class="mono text-right">62.38%</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono">TRIP 11 - 77 - 2025</td>
+                  <td>Robert Williams</td>
+                  <td>2025-02-08</td>
+                  <td>2025-02-16</td>
+                  <td><span class="badge badge-amber">IN_PROGRESS</span></td>
+                  <td>11</td>
+                  <td class="mono text-right">$10,925.00</td>
+                  <td class="mono text-right">$4,128.85</td>
+                  <td class="mono text-right">$6,796.15</td>
+                  <td class="mono text-right">62.21%</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono">TRIP 13 - 77 - 2025</td>
+                  <td>John Smith</td>
+                  <td>2025-02-12</td>
+                  <td>2025-02-20</td>
+                  <td><span class="badge badge-blue">PLANNED</span></td>
+                  <td>9</td>
+                  <td class="mono text-right">$8,640.00</td>
+                  <td class="mono text-right">$3,175.60</td>
+                  <td class="mono text-right">$5,464.40</td>
+                  <td class="mono text-right">63.24%</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono">TRIP 15 - 77 - 2025</td>
+                  <td>Maria Garcia</td>
+                  <td>2025-02-15</td>
+                  <td>2025-02-23</td>
+                  <td><span class="badge badge-green">COMPLETED</span></td>
+                  <td>10</td>
+                  <td class="mono text-right">$9,780.00</td>
+                  <td class="mono text-right">$3,564.20</td>
+                  <td class="mono text-right">$6,215.80</td>
+                  <td class="mono text-right">63.55%</td>
+                  <td class="sticky-col">
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section 5: Totals Summary Row -->
+        <div class="summary-row">
+          <div class="summary-item">
+            <span class="summary-label">Total Trips:</span>
+            <span class="summary-value">7</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Total Vehicles:</span>
+            <span class="summary-value">64</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Total Revenue:</span>
+            <span class="summary-value" style="color: var(--green);">$61,490.00</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Total Expenses:</span>
+            <span class="summary-value" style="color: var(--red);">$23,049.40</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Total Profit:</span>
+            <span class="summary-value" style="color: var(--blue);">$38,440.60</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Avg Margin:</span>
+            <span class="summary-value">62.52%</span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    themeToggle.addEventListener('click', function() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('tms-theme', next);
+      // Update icon
+      themeIcon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
+      lucide.createIcons();
+    });
+
+    // Sidebar toggle (collapse/expand)
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    sidebarToggle.addEventListener('click', function() {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('sidebar-collapsed');
+      // Update toggle icon
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+      lucide.createIcons();
+    });
+
+    // Mobile hamburger
+    const hamburger = document.getElementById('hamburger');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (hamburger) {
+      hamburger.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('active');
+      });
+    }
+
+    if (sidebarOverlay) {
+      sidebarOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      });
+    }
+
+    // Responsive: show hamburger on mobile
+    function handleResize() {
+      if (window.innerWidth <= 768) {
+        hamburger.style.display = 'flex';
+      } else {
+        hamburger.style.display = 'none';
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+  </script>
+</body>
+</html>
