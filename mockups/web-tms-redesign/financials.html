@@ -1,0 +1,1869 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon Star TMS — Financials</title>
+
+  <!-- FART prevention: set theme before CSS loads -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('tms-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared.css">
+
+  <style>
+    /* Page-specific styles for Financials */
+
+    /* Year selector dropdown */
+    .year-selector {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .year-selector:hover {
+      background: var(--bg-card-hover);
+    }
+
+    /* 8-tab segmented control */
+    .tab-bar {
+      display: flex;
+      overflow-x: auto;
+      background: var(--bg-elevated);
+      border-radius: var(--radius);
+      padding: 3px;
+      gap: 2px;
+      margin-bottom: 24px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tab-bar::-webkit-scrollbar {
+      height: 4px;
+    }
+
+    .tab-button {
+      white-space: nowrap;
+      padding: 8px 14px;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-button:hover {
+      color: var(--text-primary);
+      background: var(--bg-card);
+    }
+
+    .tab-button.active {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Health Score Hero Cards */
+    .health-score-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .health-score-card {
+      flex: 2;
+      min-width: 300px;
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
+    .health-score-card.current-year {
+      background: linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(34,197,94,0.02) 100%);
+      border: 2px solid var(--green);
+    }
+
+    .health-score-card.all-time {
+      flex: 1;
+      min-width: 200px;
+      background: linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(34,197,94,0.05) 100%);
+      border: 1px solid var(--border);
+    }
+
+    .health-score-left .year-badge {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .health-score-left .score {
+      font-size: 48px;
+      font-weight: 800;
+      color: var(--green);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .health-score-left .score.all-time {
+      font-size: 36px;
+    }
+
+    .health-score-left .grade {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--green);
+      margin-bottom: 4px;
+    }
+
+    .health-score-left .grade.all-time {
+      font-size: 20px;
+    }
+
+    .health-score-left .trips {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .mini-scores {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .mini-score-circle {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 3px solid;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-direction: column;
+    }
+
+    .mini-score-circle.green-border {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .mini-score-circle.amber-border {
+      border-color: var(--amber);
+      color: var(--amber);
+    }
+
+    .mini-score-label {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-top: 2px;
+      color: var(--text-muted);
+    }
+
+    /* AI Optimization Card */
+    .ai-card {
+      margin-bottom: 24px;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .ai-card-header {
+      background: linear-gradient(135deg, var(--amber) 0%, #fbbf24 100%);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .ai-card-header h3 {
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .ai-card-header i {
+      color: white;
+    }
+
+    .ai-card-body {
+      background: var(--bg-card);
+      padding: 20px;
+    }
+
+    .ai-card-body ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .ai-card-body li {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .ai-card-body li:last-child {
+      border-bottom: none;
+    }
+
+    .ai-card-body li::before {
+      content: "•";
+      color: var(--amber);
+      font-weight: 700;
+      margin-right: 10px;
+    }
+
+    /* Key metrics grid */
+    .key-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .metric-card {
+      background: var(--bg-card);
+      padding: 16px;
+      border-radius: var(--radius);
+      border-left: 4px solid;
+    }
+
+    .metric-card.border-green {
+      border-left-color: var(--green);
+    }
+
+    .metric-card.border-blue {
+      border-left-color: var(--blue);
+    }
+
+    .metric-card.border-purple {
+      border-left-color: var(--purple);
+    }
+
+    .metric-card .value {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .metric-card .value.green {
+      color: var(--green);
+    }
+
+    .metric-card .value.blue {
+      color: var(--blue);
+    }
+
+    .metric-card .value.purple {
+      color: var(--purple);
+    }
+
+    .metric-card .label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* Dark gradient hero (Analysis tab) */
+    .dark-hero {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .dark-hero-left h3 {
+      color: white;
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 0 6px 0;
+    }
+
+    .dark-hero-left .subtitle {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: rgba(34,197,94,0.2);
+      border: 1px solid #22c55e;
+    }
+
+    .status-pill .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4ade80;
+    }
+
+    .status-pill .text {
+      color: #4ade80;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Hero stats (gradient KPI cards) */
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+      margin-bottom: 24px;
+    }
+
+    .hero-stat-card {
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+    }
+
+    .hero-stat-card.green-gradient {
+      background: linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(34,197,94,0.05) 100%);
+    }
+
+    .hero-stat-card.blue-gradient {
+      background: linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0.05) 100%);
+    }
+
+    .hero-stat-card.amber-gradient {
+      background: linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(245,158,11,0.05) 100%);
+    }
+
+    .hero-stat-card.purple-gradient {
+      background: linear-gradient(135deg, rgba(168,85,247,0.15) 0%, rgba(168,85,247,0.05) 100%);
+    }
+
+    .hero-stat-card .kpi-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .hero-stat-card .kpi-value {
+      font-size: 36px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .hero-stat-card .kpi-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Two-column breakdown */
+    .breakdown-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .breakdown-card {
+      flex: 1;
+      min-width: 280px;
+      background: var(--bg-card);
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+    }
+
+    .breakdown-card h4 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    .breakdown-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .breakdown-item:last-child {
+      border-bottom: none;
+    }
+
+    .breakdown-item.total {
+      font-weight: 700;
+      font-size: 16px;
+      padding-top: 12px;
+      margin-top: 8px;
+      border-top: 2px solid var(--border);
+    }
+
+    .breakdown-item .label {
+      color: var(--text-secondary);
+    }
+
+    .breakdown-item .value {
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    .breakdown-item .value.green {
+      color: var(--green);
+    }
+
+    .breakdown-item .value.red {
+      color: var(--red);
+    }
+
+    /* Centered metrics card */
+    .centered-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      text-align: center;
+      background: var(--bg-card);
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    .centered-metric .value {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .centered-metric .label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* Fuel card expenses */
+    .fuel-card {
+      background: var(--bg-card);
+      border-left: 4px solid var(--red);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .fuel-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .fuel-card-header h4 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .fuel-card-header .total {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--red);
+    }
+
+    .fuel-card-body {
+      background: var(--red-dim);
+      padding: 16px;
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+    }
+
+    .fuel-mini-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .fuel-mini-stat {
+      text-align: center;
+    }
+
+    .fuel-mini-stat .value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .fuel-mini-stat .label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .fuel-card-footer {
+      text-align: center;
+    }
+
+    .fuel-card-footer a {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* Tables */
+    .table-section {
+      margin-bottom: 32px;
+    }
+
+    .table-section h3 {
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    thead {
+      background: var(--bg-elevated);
+    }
+
+    th {
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+
+    th.sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    th.sortable:hover {
+      color: var(--text-primary);
+    }
+
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background: var(--bg-card-hover);
+    }
+
+    td.mono {
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    .table-footer-row {
+      background: var(--bg-elevated);
+      font-weight: 700;
+    }
+
+    .table-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .table-actions button {
+      padding: 4px 10px;
+      font-size: 12px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .table-actions button:hover {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+    }
+
+    /* Summary stats row */
+    .summary-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .summary-stat-card {
+      background: var(--bg-card);
+      padding: 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .summary-stat-card .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .summary-stat-card .dot.green {
+      background: var(--green);
+    }
+
+    .summary-stat-card .dot.blue {
+      background: var(--blue);
+    }
+
+    .summary-stat-card .dot.purple {
+      background: var(--purple);
+    }
+
+    .summary-stat-card .dot.amber {
+      background: var(--amber);
+    }
+
+    .summary-stat-card .dot.red {
+      background: var(--red);
+    }
+
+    .summary-stat-card .content {
+      flex: 1;
+    }
+
+    .summary-stat-card .label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 2px;
+    }
+
+    .summary-stat-card .value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <i data-lucide="truck"></i>
+        </div>
+        <span class="sidebar-logo-text">Horizon Star</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- MAIN Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Main</div>
+          <a class="nav-item" data-page="dashboard">
+            <i data-lucide="layout-dashboard" class="nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+          </a>
+          <a class="nav-item" data-page="trips">
+            <i data-lucide="map" class="nav-icon"></i>
+            <span class="nav-label">Trips</span>
+          </a>
+          <a class="nav-item" data-page="messages">
+            <i data-lucide="message-square" class="nav-icon"></i>
+            <span class="nav-label">Messages</span>
+          </a>
+          <a class="nav-item" data-page="trailers">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trailers</span>
+          </a>
+          <a class="nav-item" data-page="load-board">
+            <i data-lucide="package" class="nav-icon"></i>
+            <span class="nav-label">Load Board</span>
+          </a>
+          <a class="nav-item" data-page="inspections">
+            <i data-lucide="clipboard-list" class="nav-icon"></i>
+            <span class="nav-label">Inspections</span>
+          </a>
+          <a class="nav-item" data-page="tasks">
+            <i data-lucide="check-square" class="nav-icon"></i>
+            <span class="nav-label">Tasks</span>
+          </a>
+        </div>
+
+        <!-- FLEET Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Fleet</div>
+          <a class="nav-item" data-page="drivers">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Drivers</span>
+          </a>
+          <a class="nav-item" data-page="trucks">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trucks</span>
+          </a>
+          <a class="nav-item" data-page="local-drivers">
+            <i data-lucide="user" class="nav-icon"></i>
+            <span class="nav-label">Local Drivers</span>
+          </a>
+        </div>
+
+        <!-- PARTNERS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Partners</div>
+          <a class="nav-item" data-page="brokers">
+            <i data-lucide="briefcase" class="nav-icon"></i>
+            <span class="nav-label">Brokers</span>
+          </a>
+          <a class="nav-item" data-page="dealers">
+            <i data-lucide="building" class="nav-icon"></i>
+            <span class="nav-label">Dealers</span>
+          </a>
+          <a class="nav-item" data-page="dispatchers">
+            <i data-lucide="phone" class="nav-icon"></i>
+            <span class="nav-label">Dispatchers</span>
+          </a>
+          <a class="nav-item" data-page="dispatcher-ranking">
+            <i data-lucide="star" class="nav-icon"></i>
+            <span class="nav-label">Dispatcher Ranking</span>
+          </a>
+        </div>
+
+        <!-- FINANCIALS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Financials</div>
+          <a class="nav-item active" data-page="financials">
+            <i data-lucide="dollar-sign" class="nav-icon"></i>
+            <span class="nav-label">Financials</span>
+          </a>
+          <a class="nav-item" data-page="billing">
+            <i data-lucide="file-text" class="nav-icon"></i>
+            <span class="nav-label">Billing</span>
+          </a>
+          <a class="nav-item" data-page="trip-profitability">
+            <i data-lucide="trending-up" class="nav-icon"></i>
+            <span class="nav-label">Trip Profitability</span>
+          </a>
+          <a class="nav-item" data-page="payroll">
+            <i data-lucide="credit-card" class="nav-icon"></i>
+            <span class="nav-label">Payroll</span>
+          </a>
+          <a class="nav-item" data-page="fuel">
+            <i data-lucide="droplet" class="nav-icon"></i>
+            <span class="nav-label">Fuel</span>
+          </a>
+          <a class="nav-item" data-page="ifta">
+            <i data-lucide="file" class="nav-icon"></i>
+            <span class="nav-label">IFTA</span>
+          </a>
+          <a class="nav-item" data-page="reports">
+            <i data-lucide="bar-chart-2" class="nav-icon"></i>
+            <span class="nav-label">Reports</span>
+          </a>
+          <a class="nav-item" data-page="ai-advisor">
+            <i data-lucide="brain" class="nav-icon"></i>
+            <span class="nav-label">AI Advisor</span>
+          </a>
+        </div>
+
+        <!-- OPERATIONS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Operations</div>
+          <a class="nav-item" data-page="maintenance">
+            <i data-lucide="wrench" class="nav-icon"></i>
+            <span class="nav-label">Maintenance</span>
+          </a>
+          <a class="nav-item" data-page="compliance">
+            <i data-lucide="shield-check" class="nav-icon"></i>
+            <span class="nav-label">Compliance</span>
+          </a>
+          <a class="nav-item" data-page="applications">
+            <i data-lucide="file-plus" class="nav-icon"></i>
+            <span class="nav-label">Applications</span>
+          </a>
+        </div>
+
+        <!-- SETTINGS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Settings</div>
+          <a class="nav-item" data-page="settings">
+            <i data-lucide="settings" class="nav-icon"></i>
+            <span class="nav-label">Settings</span>
+          </a>
+          <a class="nav-item" data-page="users">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Users</span>
+          </a>
+          <a class="nav-item" data-page="activity-log">
+            <i data-lucide="activity" class="nav-icon"></i>
+            <span class="nav-label">Activity Log</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-toggle" id="sidebarToggle">
+        <i data-lucide="panel-left-close" class="nav-icon" id="toggleIcon"></i>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger" style="display:none;">
+            <i data-lucide="menu"></i>
+          </button>
+          <h1 class="header-title">
+            <i data-lucide="bar-chart-3" style="display:inline-block;vertical-align:middle;margin-right:8px;"></i>
+            Financial Analysis
+          </h1>
+        </div>
+
+        <div class="header-search">
+          <i data-lucide="search" class="ico-sm"></i>
+          <input type="text" placeholder="Search orders, trips, drivers...">
+        </div>
+
+        <div class="header-right">
+          <select class="year-selector">
+            <option value="2026" selected>2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+            <option value="2023">2023</option>
+          </select>
+          <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+            <i data-lucide="moon" class="ico" id="themeIcon"></i>
+          </button>
+          <div class="header-avatar">JD</div>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Tab Bar -->
+        <div class="tab-bar">
+          <button class="tab-button active" data-tab="executive">Executive</button>
+          <button class="tab-button" data-tab="analysis">Analysis</button>
+          <button class="tab-button" data-tab="overview">Overview</button>
+          <button class="tab-button" data-tab="costs">Costs</button>
+          <button class="tab-button" data-tab="by-trip">By Trip</button>
+          <button class="tab-button" data-tab="by-driver">By Driver</button>
+          <button class="tab-button" data-tab="by-broker">By Broker</button>
+          <button class="tab-button" data-tab="by-lane">By Lane</button>
+        </div>
+
+        <!-- TAB 1: EXECUTIVE -->
+        <div class="tab-content active" id="tab-executive">
+          <!-- Health Score Hero -->
+          <div class="health-score-row">
+            <!-- Current Year Card -->
+            <div class="health-score-card current-year">
+              <div class="health-score-left">
+                <div class="year-badge">2026</div>
+                <div class="score">82/100</div>
+                <div class="grade">A-</div>
+                <div class="trips">Based on 42 trips</div>
+              </div>
+              <div class="mini-scores">
+                <div style="text-align:center;">
+                  <div class="mini-score-circle green-border">85%</div>
+                  <div class="mini-score-label">Profit</div>
+                </div>
+                <div style="text-align:center;">
+                  <div class="mini-score-circle amber-border">78%</div>
+                  <div class="mini-score-label">Efficiency</div>
+                </div>
+                <div style="text-align:center;">
+                  <div class="mini-score-circle green-border">80%</div>
+                  <div class="mini-score-label">Util</div>
+                </div>
+                <div style="text-align:center;">
+                  <div class="mini-score-circle amber-border">72%</div>
+                  <div class="mini-score-label">Growth</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- All Time Card -->
+            <div class="health-score-card all-time">
+              <div class="health-score-left">
+                <div class="year-badge">All Time</div>
+                <div class="score all-time">76/100</div>
+                <div class="grade all-time">B+</div>
+                <div class="trips">186 trips</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Optimization Card -->
+          <div class="ai-card">
+            <div class="ai-card-header">
+              <i data-lucide="lightbulb"></i>
+              <h3>AI-Powered Optimization Recommendations</h3>
+            </div>
+            <div class="ai-card-body">
+              <ul>
+                <li>Increase load density on NY→FL lane — current avg 3.2 cars, capacity suggests 4.5+</li>
+                <li>Negotiate 2% lower broker fees with Central Dispatch — volume justifies discount</li>
+                <li>Reduce deadhead miles by 12% by accepting return loads from FL→NY</li>
+                <li>Consider fuel hedging — current fuel costs trending 8% above last year</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Key Metrics -->
+          <div class="key-metrics">
+            <div class="metric-card border-green">
+              <div class="value green">$487,320.00</div>
+              <div class="label">Total Revenue</div>
+              <div style="font-size:12px;color:var(--green);margin-top:4px;">↑ 12% vs last year</div>
+            </div>
+            <div class="metric-card border-green">
+              <div class="value green">$68,240.00</div>
+              <div class="label">Net Profit</div>
+              <div style="margin-top:4px;"><span class="badge-green">14.0% margin</span></div>
+            </div>
+            <div class="metric-card border-blue">
+              <div class="value blue">$42,180.00</div>
+              <div class="label">Cash Position</div>
+              <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Collected this year</div>
+            </div>
+            <div class="metric-card border-purple">
+              <div class="value purple">42 trips</div>
+              <div class="label">Trip Volume</div>
+              <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">186 cars transported</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: ANALYSIS -->
+        <div class="tab-content" id="tab-analysis">
+          <!-- Dark Gradient Hero Banner -->
+          <div class="dark-hero">
+            <div class="dark-hero-left">
+              <h3>Financial Health Dashboard</h3>
+              <div class="subtitle">All-time analysis • 186 trips • 892 cars • 245,680 miles</div>
+            </div>
+            <div class="status-pill">
+              <div class="dot"></div>
+              <div class="text">PROFITABLE</div>
+            </div>
+          </div>
+
+          <!-- Hero Stats Row (4 gradient KPI cards) -->
+          <div class="hero-stats">
+            <div class="hero-stat-card green-gradient">
+              <div class="kpi-label">PROFIT PER CAR</div>
+              <div class="kpi-value" style="color:var(--green);">$76.50</div>
+              <div class="kpi-subtitle">After all costs incl. fixed</div>
+            </div>
+            <div class="hero-stat-card blue-gradient">
+              <div class="kpi-label">EST. MONTHLY PROFIT</div>
+              <div class="kpi-value" style="color:var(--green);">$5,687.00</div>
+              <div class="kpi-subtitle">Based on last 3 months avg</div>
+            </div>
+            <div class="hero-stat-card amber-gradient">
+              <div class="kpi-label">MONTHLY FIXED COSTS</div>
+              <div class="kpi-value" style="color:var(--red);">$9,840.00</div>
+              <div class="kpi-subtitle">$2,460/truck (4 trucks)</div>
+            </div>
+            <div class="hero-stat-card purple-gradient">
+              <div class="kpi-label">BREAK-EVEN PPC</div>
+              <div class="kpi-value" style="color:var(--purple);">$198.50</div>
+              <div class="kpi-subtitle" style="color:var(--green);">Actual: $275.00 (+$76.50 above)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: OVERVIEW -->
+        <div class="tab-content" id="tab-overview">
+          <!-- Summary Cards -->
+          <div class="summary-stats">
+            <div class="summary-stat-card">
+              <div class="dot green"></div>
+              <div class="content">
+                <div class="label">Total Revenue</div>
+                <div class="value">$487,320.00</div>
+              </div>
+            </div>
+            <div class="summary-stat-card">
+              <div class="dot blue"></div>
+              <div class="content">
+                <div class="label">Clean Revenue</div>
+                <div class="value">$438,588.00</div>
+              </div>
+            </div>
+            <div class="summary-stat-card">
+              <div class="dot green"></div>
+              <div class="content">
+                <div class="label">Net Profit</div>
+                <div class="value">$68,240.00</div>
+              </div>
+            </div>
+            <div class="summary-stat-card">
+              <div class="dot green"></div>
+              <div class="content">
+                <div class="label">Profit / Car</div>
+                <div class="value">$76.50</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Two-Column Breakdown -->
+          <div class="breakdown-row">
+            <div class="breakdown-card">
+              <h4>
+                <i data-lucide="trending-up"></i>
+                Revenue Breakdown
+              </h4>
+              <div class="breakdown-item">
+                <span class="label">Gross Revenue</span>
+                <span class="value green">$487,320.00</span>
+              </div>
+              <div class="breakdown-item">
+                <span class="label">− Broker Fees</span>
+                <span class="value red">($38,985.60)</span>
+              </div>
+              <div class="breakdown-item">
+                <span class="label">− Local Fees</span>
+                <span class="value red">($9,746.40)</span>
+              </div>
+              <div class="breakdown-item total">
+                <span class="label">= Clean Revenue</span>
+                <span class="value green">$438,588.00</span>
+              </div>
+            </div>
+
+            <div class="breakdown-card">
+              <h4>
+                <i data-lucide="trending-down"></i>
+                Expenses Breakdown
+              </h4>
+              <div class="breakdown-item">
+                <span class="label">Driver Pay</span>
+                <span class="value red">($185,182.80)</span>
+              </div>
+              <div class="breakdown-item">
+                <span class="label">Trip Expenses</span>
+                <span class="value red">($42,650.00)</span>
+              </div>
+              <div class="breakdown-item">
+                <span class="label">Variable Costs</span>
+                <span class="value red">($28,420.00)</span>
+              </div>
+              <div class="breakdown-item">
+                <span class="label">Fixed Costs (monthly × 12)</span>
+                <span class="value red">($118,080.00)</span>
+              </div>
+              <div class="breakdown-item total">
+                <span class="label">= Total Expenses</span>
+                <span class="value red">($374,332.80)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Key Metrics Card -->
+          <div class="centered-metrics">
+            <div class="centered-metric">
+              <div class="value" style="color:var(--green);">$1.98</div>
+              <div class="label">Revenue / Mile</div>
+            </div>
+            <div class="centered-metric">
+              <div class="value" style="color:var(--green);">$0.28</div>
+              <div class="label">Profit / Mile</div>
+            </div>
+            <div class="centered-metric">
+              <div class="value" style="color:var(--blue);">$546.30</div>
+              <div class="label">Avg Revenue / Car</div>
+            </div>
+            <div class="centered-metric">
+              <div class="value" style="color:var(--purple);">245,680</div>
+              <div class="label">Total Miles</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: COSTS -->
+        <div class="tab-content" id="tab-costs">
+          <!-- Summary Cards -->
+          <div class="summary-stats">
+            <div class="summary-stat-card">
+              <div class="dot red"></div>
+              <div class="content">
+                <div class="label">Monthly Fixed</div>
+                <div class="value">$9,840.00/mo</div>
+              </div>
+            </div>
+            <div class="summary-stat-card">
+              <div class="dot amber"></div>
+              <div class="content">
+                <div class="label">Total Variable</div>
+                <div class="value">$28,420.00</div>
+              </div>
+            </div>
+            <div class="summary-stat-card">
+              <div class="dot red"></div>
+              <div class="content">
+                <div class="label">Fuel (records)</div>
+                <div class="value">$18,650.00</div>
+              </div>
+            </div>
+            <div class="summary-stat-card">
+              <div class="dot amber"></div>
+              <div class="content">
+                <div class="label">Maintenance</div>
+                <div class="value">$6,230.00</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fuel Card Expenses Card -->
+          <div class="fuel-card">
+            <div class="fuel-card-header">
+              <h4>Fuel Card Expenses</h4>
+              <div class="total">$14,280.00</div>
+            </div>
+            <div class="fuel-card-body">
+              <div class="fuel-mini-stats">
+                <div class="fuel-mini-stat">
+                  <div class="value">87</div>
+                  <div class="label">Transactions</div>
+                </div>
+                <div class="fuel-mini-stat">
+                  <div class="value">4,260</div>
+                  <div class="label">Total Gallons</div>
+                </div>
+                <div class="fuel-mini-stat">
+                  <div class="value">$3.35</div>
+                  <div class="label">Avg $/Gallon</div>
+                </div>
+                <div class="fuel-mini-stat">
+                  <div class="value">$164.14</div>
+                  <div class="label">Avg per Fill</div>
+                </div>
+              </div>
+            </div>
+            <div class="fuel-card-footer">
+              <a href="#">View Fuel Tracking →</a>
+            </div>
+          </div>
+
+          <!-- Fixed Costs Table -->
+          <div class="table-section">
+            <h3>Fixed Monthly Costs</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Name</th>
+                  <th>Amount</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="badge-blue">Insurance</span></td>
+                  <td>Cargo Insurance</td>
+                  <td class="mono">$1,200.00/mo</td>
+                  <td>
+                    <div class="table-actions">
+                      <button>Edit</button>
+                      <button>Del</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><span class="badge-blue">Insurance</span></td>
+                  <td>Liability Insurance</td>
+                  <td class="mono">$850.00/mo</td>
+                  <td>
+                    <div class="table-actions">
+                      <button>Edit</button>
+                      <button>Del</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><span class="badge-blue">Insurance</span></td>
+                  <td>Physical Damage</td>
+                  <td class="mono">$620.00/mo</td>
+                  <td>
+                    <div class="table-actions">
+                      <button>Edit</button>
+                      <button>Del</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><span class="badge-purple">Payment</span></td>
+                  <td>Truck Payment (T-101)</td>
+                  <td class="mono">$2,400.00/mo</td>
+                  <td>
+                    <div class="table-actions">
+                      <button>Edit</button>
+                      <button>Del</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><span class="badge-purple">Payment</span></td>
+                  <td>Truck Payment (T-102)</td>
+                  <td class="mono">$2,200.00/mo</td>
+                  <td>
+                    <div class="table-actions">
+                      <button>Edit</button>
+                      <button>Del</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><span class="badge-amber">Operating</span></td>
+                  <td>Permits & Licensing</td>
+                  <td class="mono">$570.00/mo</td>
+                  <td>
+                    <div class="table-actions">
+                      <button>Edit</button>
+                      <button>Del</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr class="table-footer-row">
+                  <td colspan="2"><strong>Total</strong></td>
+                  <td class="mono"><strong>$9,840.00/mo</strong></td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <!-- Variable Costs Table -->
+          <div class="table-section">
+            <h3>Variable Costs (Year to Date)</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Category</th>
+                  <th>Description</th>
+                  <th>Amount</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Jan 28, 2026</td>
+                  <td><span class="badge-red">Fuel</span></td>
+                  <td>Diesel - Pilot Travel #2847</td>
+                  <td class="mono">$485.00</td>
+                  <td>
+                    <div class="table-actions">
+                      <button>Edit</button>
+                      <button>Del</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Jan 22, 2026</td>
+                  <td><span class="badge-amber">Maintenance</span></td>
+                  <td>Oil change - T-101</td>
+                  <td class="mono">$320.00</td>
+                  <td>
+                    <div class="table-actions">
+                      <button>Edit</button>
+                      <button>Del</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Jan 15, 2026</td>
+                  <td><span class="badge-blue">Tolls</span></td>
+                  <td>E-ZPass monthly</td>
+                  <td class="mono">$280.00</td>
+                  <td>
+                    <div class="table-actions">
+                      <button>Edit</button>
+                      <button>Del</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Jan 8, 2026</td>
+                  <td><span class="badge-red">Fuel</span></td>
+                  <td>Diesel - Love's #1923</td>
+                  <td class="mono">$510.00</td>
+                  <td>
+                    <div class="table-actions">
+                      <button>Edit</button>
+                      <button>Del</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Jan 3, 2026</td>
+                  <td><span class="badge-amber">Maintenance</span></td>
+                  <td>Tire rotation - T-102</td>
+                  <td class="mono">$180.00</td>
+                  <td>
+                    <div class="table-actions">
+                      <button>Edit</button>
+                      <button>Del</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 5: BY TRIP -->
+        <div class="tab-content" id="tab-by-trip">
+          <!-- Summary Stats -->
+          <div class="summary-stats">
+            <div class="summary-stat-card">
+              <div class="dot blue"></div>
+              <div class="content">
+                <div class="label">Total Trips</div>
+                <div class="value">42</div>
+              </div>
+            </div>
+            <div class="summary-stat-card">
+              <div class="dot green"></div>
+              <div class="content">
+                <div class="label">Avg Revenue/Trip</div>
+                <div class="value">$11,603.00</div>
+              </div>
+            </div>
+            <div class="summary-stat-card">
+              <div class="dot green"></div>
+              <div class="content">
+                <div class="label">Avg Margin</div>
+                <div class="value">14.0%</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trip Table -->
+          <div class="table-section">
+            <table>
+              <thead>
+                <tr>
+                  <th class="sortable">Trip # ↕</th>
+                  <th class="sortable">Date ↕</th>
+                  <th class="sortable">Driver ↕</th>
+                  <th class="sortable">Cars ↕</th>
+                  <th class="sortable">Revenue ↕</th>
+                  <th class="sortable">Costs ↕</th>
+                  <th class="sortable">Net Profit ↕</th>
+                  <th class="sortable">Margin % ↕</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>T-2026-0042</td>
+                  <td>Jan 28</td>
+                  <td>John Smith</td>
+                  <td>5</td>
+                  <td class="mono">$12,400.00</td>
+                  <td class="mono">$9,200.00</td>
+                  <td class="mono" style="color:var(--green);">$3,200.00</td>
+                  <td><span class="badge-green">25.8%</span></td>
+                </tr>
+                <tr>
+                  <td>T-2026-0040</td>
+                  <td>Jan 22</td>
+                  <td>Maria Garcia</td>
+                  <td>4</td>
+                  <td class="mono">$10,800.00</td>
+                  <td class="mono">$7,920.00</td>
+                  <td class="mono" style="color:var(--green);">$2,880.00</td>
+                  <td><span class="badge-green">26.7%</span></td>
+                </tr>
+                <tr>
+                  <td>T-2026-0038</td>
+                  <td>Jan 15</td>
+                  <td>David Chen</td>
+                  <td>6</td>
+                  <td class="mono">$14,200.00</td>
+                  <td class="mono">$11,400.00</td>
+                  <td class="mono" style="color:var(--green);">$2,800.00</td>
+                  <td><span class="badge-amber">19.7%</span></td>
+                </tr>
+                <tr>
+                  <td>T-2026-0035</td>
+                  <td>Jan 8</td>
+                  <td>James Lee</td>
+                  <td>3</td>
+                  <td class="mono">$7,600.00</td>
+                  <td class="mono">$6,080.00</td>
+                  <td class="mono" style="color:var(--green);">$1,520.00</td>
+                  <td><span class="badge-green">20.0%</span></td>
+                </tr>
+                <tr>
+                  <td>T-2026-0032</td>
+                  <td>Jan 3</td>
+                  <td>Sarah Johnson</td>
+                  <td>5</td>
+                  <td class="mono">$13,500.00</td>
+                  <td class="mono">$11,200.00</td>
+                  <td class="mono" style="color:var(--green);">$2,300.00</td>
+                  <td><span class="badge-amber">17.0%</span></td>
+                </tr>
+                <tr>
+                  <td>T-2026-0030</td>
+                  <td>Dec 28</td>
+                  <td>John Smith</td>
+                  <td>4</td>
+                  <td class="mono">$9,800.00</td>
+                  <td class="mono">$8,820.00</td>
+                  <td class="mono" style="color:var(--green);">$980.00</td>
+                  <td><span class="badge-amber">10.0%</span></td>
+                </tr>
+                <tr>
+                  <td>T-2026-0028</td>
+                  <td>Dec 22</td>
+                  <td>David Chen</td>
+                  <td>3</td>
+                  <td class="mono">$6,400.00</td>
+                  <td class="mono">$6,080.00</td>
+                  <td class="mono" style="color:var(--green);">$320.00</td>
+                  <td><span class="badge-amber" style="background:rgba(245,158,11,0.15);color:#fb923c;">5.0%</span></td>
+                </tr>
+                <tr>
+                  <td>T-2026-0025</td>
+                  <td>Dec 15</td>
+                  <td>Robert Williams</td>
+                  <td>2</td>
+                  <td class="mono">$4,200.00</td>
+                  <td class="mono">$4,620.00</td>
+                  <td class="mono" style="color:var(--red);">($420.00)</td>
+                  <td><span class="badge-red">-10.0%</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 6: BY DRIVER -->
+        <div class="tab-content" id="tab-by-driver">
+          <!-- Summary Stats -->
+          <div class="summary-stats">
+            <div class="summary-stat-card">
+              <div class="dot blue"></div>
+              <div class="content">
+                <div class="label">Active Drivers</div>
+                <div class="value">5</div>
+              </div>
+            </div>
+            <div class="summary-stat-card">
+              <div class="dot green"></div>
+              <div class="content">
+                <div class="label">Top Earner</div>
+                <div class="value">Maria Garcia</div>
+              </div>
+            </div>
+            <div class="summary-stat-card">
+              <div class="dot green"></div>
+              <div class="content">
+                <div class="label">Avg Margin</div>
+                <div class="value">15.2%</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Driver Table -->
+          <div class="table-section">
+            <table>
+              <thead>
+                <tr>
+                  <th class="sortable">Driver ↕</th>
+                  <th class="sortable">Type ↕</th>
+                  <th class="sortable">Trips ↕</th>
+                  <th class="sortable">Cars ↕</th>
+                  <th class="sortable">Revenue ↕</th>
+                  <th class="sortable">Costs ↕</th>
+                  <th class="sortable">Net Profit ↕</th>
+                  <th class="sortable">Margin % ↕</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>John Smith</td>
+                  <td><span class="badge-blue">Company</span></td>
+                  <td>12</td>
+                  <td>48</td>
+                  <td class="mono">$58,200.00</td>
+                  <td class="mono">$47,120.00</td>
+                  <td class="mono" style="color:var(--green);">$11,080.00</td>
+                  <td><span class="badge-amber">19.0%</span></td>
+                </tr>
+                <tr>
+                  <td>Maria Garcia</td>
+                  <td><span class="badge-purple">Owner-OP</span></td>
+                  <td>8</td>
+                  <td>32</td>
+                  <td class="mono">$72,400.00</td>
+                  <td class="mono">$58,620.00</td>
+                  <td class="mono" style="color:var(--green);">$13,780.00</td>
+                  <td><span class="badge-amber">19.0%</span></td>
+                </tr>
+                <tr>
+                  <td>David Chen</td>
+                  <td><span class="badge-blue">Company</span></td>
+                  <td>10</td>
+                  <td>42</td>
+                  <td class="mono">$51,600.00</td>
+                  <td class="mono">$43,860.00</td>
+                  <td class="mono" style="color:var(--green);">$7,740.00</td>
+                  <td><span class="badge-amber">15.0%</span></td>
+                </tr>
+                <tr>
+                  <td>Sarah Johnson</td>
+                  <td><span class="badge-purple">Owner-OP</span></td>
+                  <td>8</td>
+                  <td>35</td>
+                  <td class="mono">$68,500.00</td>
+                  <td class="mono">$57,540.00</td>
+                  <td class="mono" style="color:var(--green);">$10,960.00</td>
+                  <td><span class="badge-amber">16.0%</span></td>
+                </tr>
+                <tr>
+                  <td>James Lee</td>
+                  <td><span class="badge-blue">Company</span></td>
+                  <td>4</td>
+                  <td>14</td>
+                  <td class="mono">$28,400.00</td>
+                  <td class="mono">$22,720.00</td>
+                  <td class="mono" style="color:var(--green);">$5,680.00</td>
+                  <td><span class="badge-green">20.0%</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 7: BY BROKER -->
+        <div class="tab-content" id="tab-by-broker">
+          <!-- Summary Stats -->
+          <div class="summary-stats">
+            <div class="summary-stat-card">
+              <div class="dot blue"></div>
+              <div class="content">
+                <div class="label">Active Brokers</div>
+                <div class="value">5</div>
+              </div>
+            </div>
+            <div class="summary-stat-card">
+              <div class="dot green"></div>
+              <div class="content">
+                <div class="label">Highest Revenue</div>
+                <div class="value">Central Dispatch</div>
+              </div>
+            </div>
+            <div class="summary-stat-card">
+              <div class="dot amber"></div>
+              <div class="content">
+                <div class="label">Avg Fee %</div>
+                <div class="value">9.8%</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Broker Table -->
+          <div class="table-section">
+            <table>
+              <thead>
+                <tr>
+                  <th class="sortable">Broker ↕</th>
+                  <th class="sortable">Loads ↕</th>
+                  <th class="sortable">Revenue ↕</th>
+                  <th class="sortable">Broker Fees ↕</th>
+                  <th class="sortable">Net After Fees ↕</th>
+                  <th class="sortable">Fee % ↕</th>
+                  <th class="sortable">Avg Rate/Load ↕</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Central Dispatch</td>
+                  <td>45</td>
+                  <td class="mono">$83,250.00</td>
+                  <td class="mono">$7,425.00</td>
+                  <td class="mono">$75,825.00</td>
+                  <td><span class="badge-green">8.9%</span></td>
+                  <td class="mono">$1,850.00</td>
+                </tr>
+                <tr>
+                  <td>Super Dispatch</td>
+                  <td>38</td>
+                  <td class="mono">$61,560.00</td>
+                  <td class="mono">$7,410.00</td>
+                  <td class="mono">$54,150.00</td>
+                  <td><span class="badge-amber">12.0%</span></td>
+                  <td class="mono">$1,620.00</td>
+                </tr>
+                <tr>
+                  <td>LoadMax</td>
+                  <td>28</td>
+                  <td class="mono">$41,440.00</td>
+                  <td class="mono">$4,144.00</td>
+                  <td class="mono">$37,296.00</td>
+                  <td><span class="badge-amber">10.0%</span></td>
+                  <td class="mono">$1,480.00</td>
+                </tr>
+                <tr>
+                  <td>Ship.Cars</td>
+                  <td>15</td>
+                  <td class="mono">$20,100.00</td>
+                  <td class="mono">$3,015.00</td>
+                  <td class="mono">$17,085.00</td>
+                  <td><span class="badge-red">15.0%</span></td>
+                  <td class="mono">$1,340.00</td>
+                </tr>
+                <tr>
+                  <td>QuickShip Transport</td>
+                  <td>22</td>
+                  <td class="mono">$34,100.00</td>
+                  <td class="mono">$3,740.00</td>
+                  <td class="mono">$30,360.00</td>
+                  <td><span class="badge-amber">11.0%</span></td>
+                  <td class="mono">$1,550.00</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 8: BY LANE -->
+        <div class="tab-content" id="tab-by-lane">
+          <!-- Summary Stats -->
+          <div class="summary-stats">
+            <div class="summary-stat-card">
+              <div class="dot blue"></div>
+              <div class="content">
+                <div class="label">Active Lanes</div>
+                <div class="value">4</div>
+              </div>
+            </div>
+            <div class="summary-stat-card">
+              <div class="dot green"></div>
+              <div class="content">
+                <div class="label">Most Profitable</div>
+                <div class="value">NY → FL</div>
+              </div>
+            </div>
+            <div class="summary-stat-card">
+              <div class="dot purple"></div>
+              <div class="content">
+                <div class="label">Avg Cars/Lane</div>
+                <div class="value">223</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lane Table -->
+          <div class="table-section">
+            <table>
+              <thead>
+                <tr>
+                  <th class="sortable">Lane ↕</th>
+                  <th class="sortable">Trips ↕</th>
+                  <th class="sortable">Cars ↕</th>
+                  <th class="sortable">Revenue ↕</th>
+                  <th class="sortable">Costs ↕</th>
+                  <th class="sortable">Net Profit ↕</th>
+                  <th class="sortable">Margin % ↕</th>
+                  <th class="sortable">RPM ↕</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>NY → FL</td>
+                  <td>18</td>
+                  <td>86</td>
+                  <td class="mono">$198,400.00</td>
+                  <td class="mono">$152,170.00</td>
+                  <td class="mono" style="color:var(--green);">$46,230.00</td>
+                  <td><span class="badge-green">23.3%</span></td>
+                  <td class="mono">$1.62</td>
+                </tr>
+                <tr>
+                  <td>FL → NY</td>
+                  <td>12</td>
+                  <td>52</td>
+                  <td class="mono">$124,800.00</td>
+                  <td class="mono">$101,090.00</td>
+                  <td class="mono" style="color:var(--green);">$23,710.00</td>
+                  <td><span class="badge-amber">19.0%</span></td>
+                  <td class="mono">$1.48</td>
+                </tr>
+                <tr>
+                  <td>Home → NY</td>
+                  <td>8</td>
+                  <td>28</td>
+                  <td class="mono">$78,400.00</td>
+                  <td class="mono">$68,520.00</td>
+                  <td class="mono" style="color:var(--green);">$9,880.00</td>
+                  <td><span class="badge-amber">12.6%</span></td>
+                  <td class="mono">$1.35</td>
+                </tr>
+                <tr>
+                  <td>NY → Home</td>
+                  <td>4</td>
+                  <td>14</td>
+                  <td class="mono">$42,000.00</td>
+                  <td class="mono">$38,640.00</td>
+                  <td class="mono" style="color:var(--green);">$3,360.00</td>
+                  <td><span class="badge-amber" style="background:rgba(245,158,11,0.15);color:#fb923c;">8.0%</span></td>
+                  <td class="mono">$1.18</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    themeToggle.addEventListener('click', function() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('tms-theme', next);
+      // Update icon
+      themeIcon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
+      lucide.createIcons();
+    });
+
+    // Sidebar toggle (collapse/expand)
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    sidebarToggle.addEventListener('click', function() {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('sidebar-collapsed');
+      // Update toggle icon
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+      lucide.createIcons();
+    });
+
+    // Mobile hamburger
+    const hamburger = document.getElementById('hamburger');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (hamburger) {
+      hamburger.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('active');
+      });
+    }
+
+    if (sidebarOverlay) {
+      sidebarOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      });
+    }
+
+    // Responsive: show hamburger on mobile
+    function handleResize() {
+      if (window.innerWidth <= 768) {
+        hamburger.style.display = 'flex';
+      } else {
+        hamburger.style.display = 'none';
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    // Tab switching
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        const tabId = this.getAttribute('data-tab');
+
+        // Remove active from all buttons and contents
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        tabContents.forEach(content => content.classList.remove('active'));
+
+        // Add active to clicked button and corresponding content
+        this.classList.add('active');
+        document.getElementById('tab-' + tabId).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>
