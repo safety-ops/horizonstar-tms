@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon Star TMS — Trip Profitability</title>
+
+  <!-- FART prevention: set theme before CSS loads -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('tms-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared.css">
+
+  <style>
+    /* Page-specific styles */
+    .filter-section {
+      background: var(--bg-elevated);
+      padding: var(--space-4);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      align-items: center;
+      margin-bottom: var(--space-4);
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .filter-group label {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .filter-group input[type="date"],
+    .filter-group select {
+      padding: 6px 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: var(--text-sm);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: var(--space-4);
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      box-shadow: var(--shadow-card);
+    }
+
+    .stat-card .colored-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+
+    .stat-card .stat-content {
+      flex: 1;
+    }
+
+    .stat-card .stat-label {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      margin-bottom: var(--space-1);
+    }
+
+    .stat-card .stat-value {
+      font-size: var(--text-2xl);
+      font-weight: var(--weight-bold);
+      margin-bottom: var(--space-1);
+    }
+
+    .stat-card .stat-subtitle {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+
+    .performers-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+
+    @media (max-width: 768px) {
+      .performers-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .performer-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: var(--space-4);
+      box-shadow: var(--shadow-card);
+    }
+
+    .performer-card.best {
+      border-left: 4px solid var(--green);
+    }
+
+    .performer-card.worst {
+      border-left: 4px solid var(--red);
+    }
+
+    .performer-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-bottom: var(--space-4);
+      font-size: var(--text-lg);
+      font-weight: var(--weight-semibold);
+      color: var(--text-primary);
+    }
+
+    .performer-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .performer-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-2);
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      font-size: var(--text-sm);
+    }
+
+    .performer-item:nth-child(even) {
+      background: var(--bg-card);
+    }
+
+    .performer-item .rank {
+      font-weight: var(--weight-bold);
+      color: var(--text-secondary);
+      width: 32px;
+    }
+
+    .performer-item .trip-id {
+      color: var(--text-secondary);
+      flex: 1;
+    }
+
+    .performer-item .profit {
+      font-family: var(--font-mono);
+      font-weight: var(--weight-semibold);
+    }
+
+    .table-note {
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+      margin-bottom: var(--space-3);
+    }
+
+    table th {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    table th .sort-icon {
+      margin-left: 4px;
+      opacity: 0.5;
+    }
+
+    table tr.selected-row {
+      background: var(--blue-dim) !important;
+    }
+
+    table tr.selected-row:hover {
+      background: rgba(59, 130, 246, 0.18) !important;
+    }
+
+    .comparison-section {
+      margin-top: var(--space-8);
+      padding-top: var(--space-6);
+      border-top: 2px solid var(--border);
+    }
+
+    .comparison-heading {
+      font-size: var(--text-lg);
+      font-weight: var(--weight-bold);
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: var(--space-6);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .comparison-modal {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      box-shadow: var(--shadow-card-hover);
+    }
+
+    .comparison-modal .modal-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-bottom: var(--space-2);
+    }
+
+    .comparison-modal .modal-title {
+      font-size: var(--text-xl);
+      font-weight: var(--weight-bold);
+      color: var(--text-primary);
+    }
+
+    .comparison-modal .modal-subtitle {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      margin-bottom: var(--space-4);
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      padding: var(--space-3);
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .comparison-table th {
+      background: var(--bg-elevated);
+      font-weight: var(--weight-semibold);
+      color: var(--text-secondary);
+      font-size: var(--text-sm);
+    }
+
+    .comparison-table td {
+      font-size: var(--text-base);
+      color: var(--text-primary);
+    }
+
+    .comparison-table tr:nth-child(even) {
+      background: var(--bg-elevated);
+    }
+
+    .comparison-table td:first-child {
+      font-weight: var(--weight-semibold);
+      color: var(--text-secondary);
+    }
+
+    .comparison-table .winner {
+      background: var(--green-dim);
+      font-weight: var(--weight-semibold);
+    }
+
+    .comparison-table .highlight-row td {
+      font-weight: var(--weight-bold);
+      padding-top: var(--space-4);
+      padding-bottom: var(--space-4);
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <i data-lucide="truck"></i>
+        </div>
+        <span class="sidebar-logo-text">Horizon Star</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- MAIN Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Main</div>
+          <a class="nav-item" data-page="dashboard">
+            <i data-lucide="layout-dashboard" class="nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+          </a>
+          <a class="nav-item" data-page="trips">
+            <i data-lucide="map" class="nav-icon"></i>
+            <span class="nav-label">Trips</span>
+          </a>
+          <a class="nav-item" data-page="messages">
+            <i data-lucide="message-square" class="nav-icon"></i>
+            <span class="nav-label">Messages</span>
+          </a>
+          <a class="nav-item" data-page="trailers">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trailers</span>
+          </a>
+          <a class="nav-item" data-page="load-board">
+            <i data-lucide="package" class="nav-icon"></i>
+            <span class="nav-label">Load Board</span>
+          </a>
+          <a class="nav-item" data-page="inspections">
+            <i data-lucide="clipboard-list" class="nav-icon"></i>
+            <span class="nav-label">Inspections</span>
+          </a>
+          <a class="nav-item" data-page="tasks">
+            <i data-lucide="check-square" class="nav-icon"></i>
+            <span class="nav-label">Tasks</span>
+          </a>
+        </div>
+
+        <!-- FLEET Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Fleet</div>
+          <a class="nav-item" data-page="drivers">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Drivers</span>
+          </a>
+          <a class="nav-item" data-page="trucks">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trucks</span>
+          </a>
+          <a class="nav-item" data-page="local-drivers">
+            <i data-lucide="user" class="nav-icon"></i>
+            <span class="nav-label">Local Drivers</span>
+          </a>
+        </div>
+
+        <!-- PARTNERS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Partners</div>
+          <a class="nav-item" data-page="brokers">
+            <i data-lucide="briefcase" class="nav-icon"></i>
+            <span class="nav-label">Brokers</span>
+          </a>
+          <a class="nav-item" data-page="dealers">
+            <i data-lucide="building" class="nav-icon"></i>
+            <span class="nav-label">Dealers</span>
+          </a>
+          <a class="nav-item" data-page="dispatchers">
+            <i data-lucide="phone" class="nav-icon"></i>
+            <span class="nav-label">Dispatchers</span>
+          </a>
+          <a class="nav-item" data-page="dispatcher-ranking">
+            <i data-lucide="star" class="nav-icon"></i>
+            <span class="nav-label">Dispatcher Ranking</span>
+          </a>
+        </div>
+
+        <!-- FINANCIALS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Financials</div>
+          <a class="nav-item" data-page="financials">
+            <i data-lucide="dollar-sign" class="nav-icon"></i>
+            <span class="nav-label">Financials</span>
+          </a>
+          <a class="nav-item" data-page="billing">
+            <i data-lucide="file-text" class="nav-icon"></i>
+            <span class="nav-label">Billing</span>
+          </a>
+          <a class="nav-item active" data-page="trip-profitability">
+            <i data-lucide="trending-up" class="nav-icon"></i>
+            <span class="nav-label">Trip Profitability</span>
+          </a>
+          <a class="nav-item" data-page="payroll">
+            <i data-lucide="credit-card" class="nav-icon"></i>
+            <span class="nav-label">Payroll</span>
+          </a>
+          <a class="nav-item" data-page="fuel">
+            <i data-lucide="droplet" class="nav-icon"></i>
+            <span class="nav-label">Fuel</span>
+          </a>
+          <a class="nav-item" data-page="ifta">
+            <i data-lucide="file" class="nav-icon"></i>
+            <span class="nav-label">IFTA</span>
+          </a>
+          <a class="nav-item" data-page="reports">
+            <i data-lucide="bar-chart-2" class="nav-icon"></i>
+            <span class="nav-label">Reports</span>
+          </a>
+          <a class="nav-item" data-page="ai-advisor">
+            <i data-lucide="brain" class="nav-icon"></i>
+            <span class="nav-label">AI Advisor</span>
+          </a>
+        </div>
+
+        <!-- OPERATIONS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Operations</div>
+          <a class="nav-item" data-page="maintenance">
+            <i data-lucide="wrench" class="nav-icon"></i>
+            <span class="nav-label">Maintenance</span>
+          </a>
+          <a class="nav-item" data-page="compliance">
+            <i data-lucide="shield-check" class="nav-icon"></i>
+            <span class="nav-label">Compliance</span>
+          </a>
+          <a class="nav-item" data-page="applications">
+            <i data-lucide="file-plus" class="nav-icon"></i>
+            <span class="nav-label">Applications</span>
+          </a>
+        </div>
+
+        <!-- SETTINGS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Settings</div>
+          <a class="nav-item" data-page="settings">
+            <i data-lucide="settings" class="nav-icon"></i>
+            <span class="nav-label">Settings</span>
+          </a>
+          <a class="nav-item" data-page="users">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Users</span>
+          </a>
+          <a class="nav-item" data-page="activity-log">
+            <i data-lucide="activity" class="nav-icon"></i>
+            <span class="nav-label">Activity Log</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-toggle" id="sidebarToggle">
+        <i data-lucide="panel-left-close" class="nav-icon" id="toggleIcon"></i>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger" style="display:none;">
+            <i data-lucide="menu"></i>
+          </button>
+          <h1 class="header-title">Trip Profitability Analysis</h1>
+        </div>
+
+        <div class="header-search">
+          <i data-lucide="search" class="ico-sm"></i>
+          <input type="text" placeholder="Search orders, trips, drivers...">
+        </div>
+
+        <div class="header-right">
+          <button class="btn btn-secondary" style="display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+            Export CSV
+          </button>
+          <button class="btn btn-primary" style="display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="scale" style="width: 16px; height: 16px;"></i>
+            Compare Selected (2)
+          </button>
+          <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+            <i data-lucide="moon" class="ico" id="themeIcon"></i>
+          </button>
+          <div class="header-avatar">JD</div>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Filter Section -->
+        <div class="filter-section">
+          <div class="filter-group">
+            <label>From:</label>
+            <input type="date" value="2025-12-01">
+          </div>
+          <div class="filter-group">
+            <label>To:</label>
+            <input type="date" value="2026-02-09">
+          </div>
+          <div class="filter-group">
+            <label>Driver:</label>
+            <select>
+              <option>All Drivers</option>
+              <option>John Smith</option>
+              <option>Maria Garcia</option>
+              <option>David Chen</option>
+              <option>Sarah Johnson</option>
+              <option>James Lee</option>
+              <option>Robert Williams</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Truck:</label>
+            <select>
+              <option>All Trucks</option>
+              <option>T-101</option>
+              <option>T-102</option>
+              <option>T-103</option>
+              <option>T-104</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Status:</label>
+            <select>
+              <option>All Trips</option>
+              <option>Profitable Only</option>
+              <option>Unprofitable Only</option>
+            </select>
+          </div>
+          <button class="btn btn-ghost btn-sm">Clear Filters</button>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="colored-dot" style="background: var(--green);"></div>
+            <div class="stat-content">
+              <div class="stat-label">Total Revenue</div>
+              <div class="stat-value" style="color: var(--green);">$487,320.00</div>
+              <div class="stat-subtitle">42 trips</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="colored-dot" style="background: var(--green);"></div>
+            <div class="stat-content">
+              <div class="stat-label">Net Profit</div>
+              <div class="stat-value" style="color: var(--green);">$68,240.00</div>
+              <div class="stat-subtitle">
+                <span class="badge badge-amber">14.0% overall margin</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="colored-dot" style="background: var(--green);"></div>
+            <div class="stat-content">
+              <div class="stat-label">Profitable Trips</div>
+              <div class="stat-value" style="color: var(--green);">38</div>
+              <div class="stat-subtitle">90.5% success rate</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="colored-dot" style="background: var(--green);"></div>
+            <div class="stat-content">
+              <div class="stat-label">Avg Profit/Mile</div>
+              <div class="stat-value" style="color: var(--green);">$0.28</div>
+              <div class="stat-subtitle">245,680 total miles</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Best/Worst Performers -->
+        <div class="performers-grid">
+          <!-- Top 5 Most Profitable -->
+          <div class="performer-card best">
+            <div class="performer-header">
+              <i data-lucide="trophy" style="width: 20px; height: 20px; color: var(--green);"></i>
+              Top 5 Most Profitable
+            </div>
+            <div class="performer-list">
+              <div class="performer-item">
+                <span class="rank">#1</span>
+                <span class="trip-id">T-2026-0040</span>
+                <span class="profit" style="color: var(--green);">$4,280.00</span>
+                <span class="badge badge-green">28.5%</span>
+              </div>
+              <div class="performer-item">
+                <span class="rank">#2</span>
+                <span class="trip-id">T-2026-0042</span>
+                <span class="profit" style="color: var(--green);">$3,200.00</span>
+                <span class="badge badge-green">25.8%</span>
+              </div>
+              <div class="performer-item">
+                <span class="rank">#3</span>
+                <span class="trip-id">T-2026-0038</span>
+                <span class="profit" style="color: var(--green);">$2,880.00</span>
+                <span class="badge badge-green">26.7%</span>
+              </div>
+              <div class="performer-item">
+                <span class="rank">#4</span>
+                <span class="trip-id">T-2026-0032</span>
+                <span class="profit" style="color: var(--green);">$2,540.00</span>
+                <span class="badge badge-green">22.1%</span>
+              </div>
+              <div class="performer-item">
+                <span class="rank">#5</span>
+                <span class="trip-id">T-2026-0035</span>
+                <span class="profit" style="color: var(--green);">$2,300.00</span>
+                <span class="badge badge-amber">17.0%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom 5 Performers -->
+          <div class="performer-card worst">
+            <div class="performer-header">
+              <i data-lucide="alert-triangle" style="width: 20px; height: 20px; color: var(--red);"></i>
+              Bottom 5 Performers
+            </div>
+            <div class="performer-list">
+              <div class="performer-item">
+                <span class="rank">#1</span>
+                <span class="trip-id">T-2026-0025</span>
+                <span class="profit" style="color: var(--red);">($420.00)</span>
+                <span class="badge badge-red">-10.0%</span>
+              </div>
+              <div class="performer-item">
+                <span class="rank">#2</span>
+                <span class="trip-id">T-2026-0022</span>
+                <span class="profit" style="color: var(--red);">($180.00)</span>
+                <span class="badge badge-red">-4.3%</span>
+              </div>
+              <div class="performer-item">
+                <span class="rank">#3</span>
+                <span class="trip-id">T-2026-0028</span>
+                <span class="profit" style="color: var(--amber);">$320.00</span>
+                <span class="badge badge-orange">5.0%</span>
+              </div>
+              <div class="performer-item">
+                <span class="rank">#4</span>
+                <span class="trip-id">T-2026-0018</span>
+                <span class="profit" style="color: var(--amber);">$480.00</span>
+                <span class="badge badge-orange">6.2%</span>
+              </div>
+              <div class="performer-item">
+                <span class="rank">#5</span>
+                <span class="trip-id">T-2026-0030</span>
+                <span class="profit" style="color: var(--green);">$980.00</span>
+                <span class="badge badge-amber">10.0%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Trips Table -->
+        <div class="table-note">
+          Select trips to compare | Click headers to sort
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 50px;">Compare</th>
+                <th>Date <span class="sort-icon">↕</span></th>
+                <th>Trip # <span class="sort-icon">↕</span></th>
+                <th>Driver <span class="sort-icon">↕</span></th>
+                <th>Truck <span class="sort-icon">↕</span></th>
+                <th>Revenue <span class="sort-icon">↕</span></th>
+                <th>Broker Fees</th>
+                <th>Driver Pay</th>
+                <th>Expenses</th>
+                <th>Net Profit <span class="sort-icon">↕</span></th>
+                <th>Margin % <span class="sort-icon">↕</span></th>
+                <th style="width: 80px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Row 1 - SELECTED -->
+              <tr class="selected-row">
+                <td><input type="checkbox" checked></td>
+                <td>Jan 28, 2026</td>
+                <td>T-2026-0042</td>
+                <td>John Smith</td>
+                <td>T-101</td>
+                <td style="font-family: var(--font-mono); color: var(--green);">$12,400.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$1,116.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$3,968.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$480.00</td>
+                <td style="font-family: var(--font-mono); font-weight: var(--weight-semibold); color: var(--green);">$3,200.00</td>
+                <td><span class="badge badge-green">25.8%</span></td>
+                <td><button class="btn btn-sm btn-ghost">View</button></td>
+              </tr>
+
+              <!-- Row 2 -->
+              <tr>
+                <td><input type="checkbox"></td>
+                <td>Jan 25, 2026</td>
+                <td>T-2026-0040</td>
+                <td>Maria Garcia</td>
+                <td>T-103</td>
+                <td style="font-family: var(--font-mono); color: var(--green);">$15,020.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$1,352.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$4,506.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$620.00</td>
+                <td style="font-family: var(--font-mono); font-weight: var(--weight-semibold); color: var(--green);">$4,280.00</td>
+                <td><span class="badge badge-green">28.5%</span></td>
+                <td><button class="btn btn-sm btn-ghost">View</button></td>
+              </tr>
+
+              <!-- Row 3 - SELECTED -->
+              <tr class="selected-row">
+                <td><input type="checkbox" checked></td>
+                <td>Jan 22, 2026</td>
+                <td>T-2026-0038</td>
+                <td>David Chen</td>
+                <td>T-101</td>
+                <td style="font-family: var(--font-mono); color: var(--green);">$10,800.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$972.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$3,456.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$380.00</td>
+                <td style="font-family: var(--font-mono); font-weight: var(--weight-semibold); color: var(--green);">$2,880.00</td>
+                <td><span class="badge badge-green">26.7%</span></td>
+                <td><button class="btn btn-sm btn-ghost">View</button></td>
+              </tr>
+
+              <!-- Row 4 -->
+              <tr>
+                <td><input type="checkbox"></td>
+                <td>Jan 18, 2026</td>
+                <td>T-2026-0035</td>
+                <td>Sarah Johnson</td>
+                <td>T-104</td>
+                <td style="font-family: var(--font-mono); color: var(--green);">$13,500.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$1,350.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$4,050.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$520.00</td>
+                <td style="font-family: var(--font-mono); font-weight: var(--weight-semibold); color: var(--green);">$2,300.00</td>
+                <td><span class="badge badge-amber">17.0%</span></td>
+                <td><button class="btn btn-sm btn-ghost">View</button></td>
+              </tr>
+
+              <!-- Row 5 -->
+              <tr>
+                <td><input type="checkbox"></td>
+                <td>Jan 15, 2026</td>
+                <td>T-2026-0032</td>
+                <td>James Lee</td>
+                <td>T-102</td>
+                <td style="font-family: var(--font-mono); color: var(--green);">$11,500.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$1,035.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$3,450.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$410.00</td>
+                <td style="font-family: var(--font-mono); font-weight: var(--weight-semibold); color: var(--green);">$2,540.00</td>
+                <td><span class="badge badge-green">22.1%</span></td>
+                <td><button class="btn btn-sm btn-ghost">View</button></td>
+              </tr>
+
+              <!-- Row 6 -->
+              <tr>
+                <td><input type="checkbox"></td>
+                <td>Jan 12, 2026</td>
+                <td>T-2026-0030</td>
+                <td>John Smith</td>
+                <td>T-101</td>
+                <td style="font-family: var(--font-mono); color: var(--green);">$9,800.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$882.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$3,136.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$340.00</td>
+                <td style="font-family: var(--font-mono); font-weight: var(--weight-semibold); color: var(--green);">$980.00</td>
+                <td><span class="badge badge-amber">10.0%</span></td>
+                <td><button class="btn btn-sm btn-ghost">View</button></td>
+              </tr>
+
+              <!-- Row 7 -->
+              <tr>
+                <td><input type="checkbox"></td>
+                <td>Jan 8, 2026</td>
+                <td>T-2026-0028</td>
+                <td>David Chen</td>
+                <td>T-102</td>
+                <td style="font-family: var(--font-mono); color: var(--green);">$6,400.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$576.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$2,048.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$280.00</td>
+                <td style="font-family: var(--font-mono); font-weight: var(--weight-semibold); color: var(--green);">$320.00</td>
+                <td><span class="badge badge-orange">5.0%</span></td>
+                <td><button class="btn btn-sm btn-ghost">View</button></td>
+              </tr>
+
+              <!-- Row 8 -->
+              <tr>
+                <td><input type="checkbox"></td>
+                <td>Jan 5, 2026</td>
+                <td>T-2026-0025</td>
+                <td>Robert Williams</td>
+                <td>T-102</td>
+                <td style="font-family: var(--font-mono); color: var(--green);">$4,200.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$378.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$1,344.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$250.00</td>
+                <td style="font-family: var(--font-mono); font-weight: var(--weight-semibold); color: var(--red);">($420.00)</td>
+                <td><span class="badge badge-red">-10.0%</span></td>
+                <td><button class="btn btn-sm btn-ghost">View</button></td>
+              </tr>
+
+              <!-- Row 9 -->
+              <tr>
+                <td><input type="checkbox"></td>
+                <td>Jan 3, 2026</td>
+                <td>T-2026-0022</td>
+                <td>James Lee</td>
+                <td>T-103</td>
+                <td style="font-family: var(--font-mono); color: var(--green);">$4,180.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$376.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$1,338.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$220.00</td>
+                <td style="font-family: var(--font-mono); font-weight: var(--weight-semibold); color: var(--red);">($180.00)</td>
+                <td><span class="badge badge-red">-4.3%</span></td>
+                <td><button class="btn btn-sm btn-ghost">View</button></td>
+              </tr>
+
+              <!-- Row 10 -->
+              <tr>
+                <td><input type="checkbox"></td>
+                <td>Dec 28, 2025</td>
+                <td>T-2026-0018</td>
+                <td>John Smith</td>
+                <td>T-101</td>
+                <td style="font-family: var(--font-mono); color: var(--green);">$7,700.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$693.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$2,464.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$310.00</td>
+                <td style="font-family: var(--font-mono); font-weight: var(--weight-semibold); color: var(--green);">$480.00</td>
+                <td><span class="badge badge-orange">6.2%</span></td>
+                <td><button class="btn btn-sm btn-ghost">View</button></td>
+              </tr>
+
+              <!-- Row 11 -->
+              <tr>
+                <td><input type="checkbox"></td>
+                <td>Dec 22, 2025</td>
+                <td>T-2026-0015</td>
+                <td>Sarah Johnson</td>
+                <td>T-104</td>
+                <td style="font-family: var(--font-mono); color: var(--green);">$11,200.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$1,008.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$3,360.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$420.00</td>
+                <td style="font-family: var(--font-mono); font-weight: var(--weight-semibold); color: var(--green);">$1,820.00</td>
+                <td><span class="badge badge-amber">16.3%</span></td>
+                <td><button class="btn btn-sm btn-ghost">View</button></td>
+              </tr>
+
+              <!-- Row 12 -->
+              <tr>
+                <td><input type="checkbox"></td>
+                <td>Dec 18, 2025</td>
+                <td>T-2026-0012</td>
+                <td>Maria Garcia</td>
+                <td>T-103</td>
+                <td style="font-family: var(--font-mono); color: var(--green);">$13,800.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$1,242.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$4,140.00</td>
+                <td style="font-family: var(--font-mono); color: var(--red);">$540.00</td>
+                <td style="font-family: var(--font-mono); font-weight: var(--weight-semibold); color: var(--green);">$3,420.00</td>
+                <td><span class="badge badge-green">24.8%</span></td>
+                <td><button class="btn btn-sm btn-ghost">View</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Trip Comparison Section -->
+        <div class="comparison-section">
+          <div class="comparison-heading">Trip Comparison (Below)</div>
+
+          <div class="comparison-modal">
+            <div class="modal-header">
+              <i data-lucide="scale" style="width: 24px; height: 24px; color: var(--blue);"></i>
+              <span class="modal-title">Trip Comparison</span>
+            </div>
+            <div class="modal-subtitle">Comparing 2 trips</div>
+
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th>Metric</th>
+                  <th>Trip T-2026-0042</th>
+                  <th>Trip T-2026-0038</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Date</td>
+                  <td>Jan 28, 2026</td>
+                  <td>Jan 22, 2026</td>
+                </tr>
+                <tr>
+                  <td>Driver</td>
+                  <td>John Smith</td>
+                  <td>David Chen</td>
+                </tr>
+                <tr>
+                  <td>Truck</td>
+                  <td>T-101</td>
+                  <td>T-101</td>
+                </tr>
+                <tr>
+                  <td>Cars</td>
+                  <td class="winner">5</td>
+                  <td>4</td>
+                </tr>
+                <tr>
+                  <td>Revenue</td>
+                  <td class="winner" style="font-family: var(--font-mono); color: var(--green);">$12,400.00</td>
+                  <td style="font-family: var(--font-mono); color: var(--green);">$10,800.00</td>
+                </tr>
+                <tr>
+                  <td>Broker Fees</td>
+                  <td style="font-family: var(--font-mono); color: var(--red);">($1,116.00)</td>
+                  <td class="winner" style="font-family: var(--font-mono); color: var(--red);">($972.00)</td>
+                </tr>
+                <tr>
+                  <td>Driver Pay</td>
+                  <td style="font-family: var(--font-mono); color: var(--red);">($3,968.00)</td>
+                  <td class="winner" style="font-family: var(--font-mono); color: var(--red);">($3,456.00)</td>
+                </tr>
+                <tr>
+                  <td>Expenses</td>
+                  <td style="font-family: var(--font-mono); color: var(--red);">($480.00)</td>
+                  <td class="winner" style="font-family: var(--font-mono); color: var(--red);">($380.00)</td>
+                </tr>
+                <tr class="highlight-row">
+                  <td>Net Profit</td>
+                  <td class="winner" style="font-family: var(--font-mono); color: var(--green);">$3,200.00</td>
+                  <td style="font-family: var(--font-mono); color: var(--green);">$2,880.00</td>
+                </tr>
+                <tr class="highlight-row">
+                  <td>Margin %</td>
+                  <td><span class="badge badge-green">25.8%</span></td>
+                  <td class="winner"><span class="badge badge-green">26.7%</span></td>
+                </tr>
+                <tr>
+                  <td>Revenue/Mile</td>
+                  <td style="font-family: var(--font-mono);">$1.82</td>
+                  <td class="winner" style="font-family: var(--font-mono);">$1.95</td>
+                </tr>
+                <tr>
+                  <td>Profit/Mile</td>
+                  <td style="font-family: var(--font-mono);">$0.47</td>
+                  <td class="winner" style="font-family: var(--font-mono);">$0.52</td>
+                </tr>
+                <tr>
+                  <td>Revenue/Car</td>
+                  <td style="font-family: var(--font-mono);">$2,480.00</td>
+                  <td class="winner" style="font-family: var(--font-mono);">$2,700.00</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    themeToggle.addEventListener('click', function() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('tms-theme', next);
+      // Update icon
+      themeIcon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
+      lucide.createIcons();
+    });
+
+    // Sidebar toggle (collapse/expand)
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    sidebarToggle.addEventListener('click', function() {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('sidebar-collapsed');
+      // Update toggle icon
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+      lucide.createIcons();
+    });
+
+    // Mobile hamburger
+    const hamburger = document.getElementById('hamburger');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (hamburger) {
+      hamburger.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('active');
+      });
+    }
+
+    if (sidebarOverlay) {
+      sidebarOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      });
+    }
+
+    // Responsive: show hamburger on mobile
+    function handleResize() {
+      if (window.innerWidth <= 768) {
+        hamburger.style.display = 'flex';
+      } else {
+        hamburger.style.display = 'none';
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+  </script>
+</body>
+</html>
