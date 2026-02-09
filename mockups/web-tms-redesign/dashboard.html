@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon Star TMS — Dashboard</title>
+
+  <!-- FART prevention: set theme before CSS loads -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('tms-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared.css">
+</head>
+<body>
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <i data-lucide="truck"></i>
+        </div>
+        <span class="sidebar-logo-text">Horizon Star</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- MAIN Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Main</div>
+          <a class="nav-item active" data-page="dashboard">
+            <i data-lucide="layout-dashboard" class="nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+          </a>
+          <a class="nav-item" data-page="trips">
+            <i data-lucide="map" class="nav-icon"></i>
+            <span class="nav-label">Trips</span>
+          </a>
+          <a class="nav-item" data-page="messages">
+            <i data-lucide="message-square" class="nav-icon"></i>
+            <span class="nav-label">Messages</span>
+          </a>
+          <a class="nav-item" data-page="trailers">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trailers</span>
+          </a>
+          <a class="nav-item" data-page="load-board">
+            <i data-lucide="package" class="nav-icon"></i>
+            <span class="nav-label">Load Board</span>
+          </a>
+          <a class="nav-item" data-page="inspections">
+            <i data-lucide="clipboard-list" class="nav-icon"></i>
+            <span class="nav-label">Inspections</span>
+          </a>
+          <a class="nav-item" data-page="tasks">
+            <i data-lucide="check-square" class="nav-icon"></i>
+            <span class="nav-label">Tasks</span>
+          </a>
+        </div>
+
+        <!-- FLEET Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Fleet</div>
+          <a class="nav-item" data-page="drivers">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Drivers</span>
+          </a>
+          <a class="nav-item" data-page="trucks">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trucks</span>
+          </a>
+          <a class="nav-item" data-page="local-drivers">
+            <i data-lucide="user" class="nav-icon"></i>
+            <span class="nav-label">Local Drivers</span>
+          </a>
+        </div>
+
+        <!-- PARTNERS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Partners</div>
+          <a class="nav-item" data-page="brokers">
+            <i data-lucide="briefcase" class="nav-icon"></i>
+            <span class="nav-label">Brokers</span>
+          </a>
+          <a class="nav-item" data-page="dealers">
+            <i data-lucide="building" class="nav-icon"></i>
+            <span class="nav-label">Dealers</span>
+          </a>
+          <a class="nav-item" data-page="dispatchers">
+            <i data-lucide="phone" class="nav-icon"></i>
+            <span class="nav-label">Dispatchers</span>
+          </a>
+          <a class="nav-item" data-page="dispatcher-ranking">
+            <i data-lucide="star" class="nav-icon"></i>
+            <span class="nav-label">Dispatcher Ranking</span>
+          </a>
+        </div>
+
+        <!-- FINANCIALS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Financials</div>
+          <a class="nav-item" data-page="financials">
+            <i data-lucide="dollar-sign" class="nav-icon"></i>
+            <span class="nav-label">Financials</span>
+          </a>
+          <a class="nav-item" data-page="billing">
+            <i data-lucide="file-text" class="nav-icon"></i>
+            <span class="nav-label">Billing</span>
+          </a>
+          <a class="nav-item" data-page="trip-profitability">
+            <i data-lucide="trending-up" class="nav-icon"></i>
+            <span class="nav-label">Trip Profitability</span>
+          </a>
+          <a class="nav-item" data-page="payroll">
+            <i data-lucide="credit-card" class="nav-icon"></i>
+            <span class="nav-label">Payroll</span>
+          </a>
+          <a class="nav-item" data-page="fuel">
+            <i data-lucide="droplet" class="nav-icon"></i>
+            <span class="nav-label">Fuel</span>
+          </a>
+          <a class="nav-item" data-page="ifta">
+            <i data-lucide="file" class="nav-icon"></i>
+            <span class="nav-label">IFTA</span>
+          </a>
+          <a class="nav-item" data-page="reports">
+            <i data-lucide="bar-chart-2" class="nav-icon"></i>
+            <span class="nav-label">Reports</span>
+          </a>
+          <a class="nav-item" data-page="ai-advisor">
+            <i data-lucide="brain" class="nav-icon"></i>
+            <span class="nav-label">AI Advisor</span>
+          </a>
+        </div>
+
+        <!-- OPERATIONS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Operations</div>
+          <a class="nav-item" data-page="maintenance">
+            <i data-lucide="wrench" class="nav-icon"></i>
+            <span class="nav-label">Maintenance</span>
+          </a>
+          <a class="nav-item" data-page="compliance">
+            <i data-lucide="shield-check" class="nav-icon"></i>
+            <span class="nav-label">Compliance</span>
+          </a>
+          <a class="nav-item" data-page="applications">
+            <i data-lucide="file-plus" class="nav-icon"></i>
+            <span class="nav-label">Applications</span>
+          </a>
+        </div>
+
+        <!-- SETTINGS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Settings</div>
+          <a class="nav-item" data-page="settings">
+            <i data-lucide="settings" class="nav-icon"></i>
+            <span class="nav-label">Settings</span>
+          </a>
+          <a class="nav-item" data-page="users">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Users</span>
+          </a>
+          <a class="nav-item" data-page="activity-log">
+            <i data-lucide="activity" class="nav-icon"></i>
+            <span class="nav-label">Activity Log</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-toggle" id="sidebarToggle">
+        <i data-lucide="panel-left-close" class="nav-icon" id="toggleIcon"></i>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger" style="display:none;">
+            <i data-lucide="menu"></i>
+          </button>
+          <h1 class="header-title">Dashboard</h1>
+        </div>
+
+        <div class="header-search">
+          <i data-lucide="search" class="ico-sm"></i>
+          <input type="text" placeholder="Search orders, trips, drivers...">
+        </div>
+
+        <div class="header-right">
+          <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+            <i data-lucide="moon" class="ico" id="themeIcon"></i>
+          </button>
+          <div class="header-avatar">JD</div>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- SECTION 1: Tasks Widget -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <h3 class="card-title">Tasks</h3>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span class="badge badge-amber">5</span>
+              <button class="btn btn-ghost">View All</button>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Task</th>
+                  <th>Priority</th>
+                  <th>Due Date</th>
+                  <th>Assigned To</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Follow up on COD payment - ORD-2024-027</td>
+                  <td><span class="badge badge-red">High</span></td>
+                  <td>2025-01-16</td>
+                  <td>Maria Garcia</td>
+                  <td><button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button></td>
+                </tr>
+                <tr>
+                  <td>Schedule truck 88 maintenance</td>
+                  <td><span class="badge badge-amber">Medium</span></td>
+                  <td>2025-01-18</td>
+                  <td>David Chen</td>
+                  <td><button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button></td>
+                </tr>
+                <tr>
+                  <td>Confirm delivery - ORD-2025-003</td>
+                  <td><span class="badge badge-red">High</span></td>
+                  <td>2025-01-15</td>
+                  <td>John Smith</td>
+                  <td><button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button></td>
+                </tr>
+                <tr>
+                  <td>Update broker contract - Central Dispatch</td>
+                  <td><span class="badge badge-blue">Low</span></td>
+                  <td>2025-01-20</td>
+                  <td>Sarah Johnson</td>
+                  <td><button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button></td>
+                </tr>
+                <tr>
+                  <td>Review driver settlement - Week 3</td>
+                  <td><span class="badge badge-amber">Medium</span></td>
+                  <td>2025-01-19</td>
+                  <td>Robert Williams</td>
+                  <td><button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SECTION 2: Recent Trips Table -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <h3 class="card-title">Recent Trips</h3>
+            <button class="btn btn-ghost">View All</button>
+          </div>
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Trip #</th>
+                  <th>Truck</th>
+                  <th>Driver</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th class="text-right">Revenue</th>
+                  <th class="text-right">Profit</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="font-mono">TRIP 3 - 77 - 2025</td>
+                  <td>77</td>
+                  <td>John Smith</td>
+                  <td>2025-01-15</td>
+                  <td><span class="badge badge-green">COMPLETED</span></td>
+                  <td class="mono text-right">$8,450.00</td>
+                  <td class="mono text-right">$3,250.00</td>
+                  <td>
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono">TRIP 5 - 88 - 2025</td>
+                  <td>88</td>
+                  <td>Maria Garcia</td>
+                  <td>2025-01-14</td>
+                  <td><span class="badge badge-green">COMPLETED</span></td>
+                  <td class="mono text-right">$6,780.00</td>
+                  <td class="mono text-right">$2,105.50</td>
+                  <td>
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono">TRIP 2 - 55 - 2025</td>
+                  <td>55</td>
+                  <td>David Chen</td>
+                  <td>2025-01-13</td>
+                  <td><span class="badge badge-amber">IN_PROGRESS</span></td>
+                  <td class="mono text-right">$5,920.00</td>
+                  <td class="mono text-right">$1,890.00</td>
+                  <td>
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono">TRIP 4 - 42 - 2025</td>
+                  <td>42</td>
+                  <td>Robert Williams</td>
+                  <td>2025-01-12</td>
+                  <td><span class="badge badge-green">COMPLETED</span></td>
+                  <td class="mono text-right">$7,340.00</td>
+                  <td class="mono text-right">$2,678.50</td>
+                  <td>
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="font-mono">TRIP 1 - 63 - 2025</td>
+                  <td>63</td>
+                  <td>Sarah Johnson</td>
+                  <td>2025-01-10</td>
+                  <td><span class="badge badge-blue">PLANNED</span></td>
+                  <td class="mono text-right">$0.00</td>
+                  <td class="mono text-right">$0.00</td>
+                  <td>
+                    <button class="btn-icon"><i data-lucide="eye" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SECTION 3: Revenue / Expenses / Profit Stat Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          <div class="stat-card">
+            <div class="stat-icon green">
+              <i data-lucide="dollar-sign" class="ico-lg"></i>
+            </div>
+            <div class="stat-value">$47,230.00</div>
+            <div class="stat-label">Total Revenue</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon red">
+              <i data-lucide="trending-down" class="ico-lg"></i>
+            </div>
+            <div class="stat-value">$12,450.00</div>
+            <div class="stat-label">Total Expenses</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon blue">
+              <i data-lucide="trending-up" class="ico-lg"></i>
+            </div>
+            <div class="stat-value">$34,780.00</div>
+            <div class="stat-label">Net Profit</div>
+          </div>
+        </div>
+
+        <!-- SECTION 4: Quick View Profitability Hero -->
+        <div class="hero-card green" style="margin-bottom: 24px;">
+          <h3 class="card-title" style="margin-bottom: 16px;">Quick View — Profitability Overview</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+            <div style="text-align: center; padding: 12px;">
+              <div class="stat-label">CPM (Cost Per Mile)</div>
+              <div class="stat-value" style="font-size: var(--text-xl);">$1.82</div>
+            </div>
+            <div style="text-align: center; padding: 12px;">
+              <div class="stat-label">RPM (Revenue Per Mile)</div>
+              <div class="stat-value" style="font-size: var(--text-xl);">$3.47</div>
+            </div>
+            <div style="text-align: center; padding: 12px;">
+              <div class="stat-label">Margin Per Mile</div>
+              <div class="stat-value" style="font-size: var(--text-xl);">$1.65</div>
+            </div>
+            <div style="text-align: center; padding: 12px;">
+              <div class="stat-label">Avg Vehicle Price</div>
+              <div class="stat-value" style="font-size: var(--text-xl);">$987.50</div>
+            </div>
+            <div style="text-align: center; padding: 12px;">
+              <div class="stat-label">Break-Even Price</div>
+              <div class="stat-value" style="font-size: var(--text-xl);">$612.00</div>
+            </div>
+            <div style="text-align: center; padding: 12px;">
+              <div class="stat-label">Profit Per Vehicle</div>
+              <div class="stat-value" style="font-size: var(--text-xl);">$375.50</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 5: Other Metrics + Direct Trip Expenses Breakdown -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+          <!-- Other Metrics Card -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Other Metrics</h3>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
+                <span style="color: var(--text-secondary);">Average Load Size</span>
+                <span class="font-mono font-semibold">4.8 vehicles</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
+                <span style="color: var(--text-secondary);">Total Miles Driven</span>
+                <span class="font-mono font-semibold">12,450 mi</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
+                <span style="color: var(--text-secondary);">Active Trucks</span>
+                <span class="font-mono font-semibold">5</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
+                <span style="color: var(--text-secondary);">Active Drivers</span>
+                <span class="font-mono font-semibold">5</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                <span style="color: var(--text-secondary);">Trips Completed</span>
+                <span class="font-mono font-semibold">23</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Direct Trip Expenses Breakdown -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Direct Trip Expenses</h3>
+            </div>
+            <div class="table-container">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th class="text-right">Amount</th>
+                    <th class="text-right">% of Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Fuel</td>
+                    <td class="mono text-right">$6,750.00</td>
+                    <td class="text-right">54.2%</td>
+                  </tr>
+                  <tr>
+                    <td>Tolls</td>
+                    <td class="mono text-right">$2,340.00</td>
+                    <td class="text-right">18.8%</td>
+                  </tr>
+                  <tr>
+                    <td>Parking</td>
+                    <td class="mono text-right">$1,890.00</td>
+                    <td class="text-right">15.2%</td>
+                  </tr>
+                  <tr>
+                    <td>Permits</td>
+                    <td class="mono text-right">$980.00</td>
+                    <td class="text-right">7.9%</td>
+                  </tr>
+                  <tr>
+                    <td>Maintenance</td>
+                    <td class="mono text-right">$490.00</td>
+                    <td class="text-right">3.9%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 6: Fuel Tracking Comparison Card -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <h3 class="card-title">Fuel Tracking Comparison</h3>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <!-- Trip-Level Fuel -->
+            <div style="padding: 16px; background: var(--bg-app); border-radius: var(--radius); border: 1px solid var(--border);">
+              <h4 style="font-size: var(--text-sm); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Trip-Level Fuel</h4>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--text-secondary);">Total Gallons</span>
+                  <span class="font-mono font-semibold">2,347 gal</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--text-secondary);">Total Cost</span>
+                  <span class="font-mono font-semibold">$6,750.00</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--text-secondary);">Avg Price/Gal</span>
+                  <span class="font-mono font-semibold">$2.88</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--text-secondary);">MPG</span>
+                  <span class="font-mono font-semibold">5.3</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fleet Fuel -->
+            <div style="padding: 16px; background: var(--bg-app); border-radius: var(--radius); border: 1px solid var(--border);">
+              <h4 style="font-size: var(--text-sm); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Fleet Fuel</h4>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--text-secondary);">Total Gallons</span>
+                  <span class="font-mono font-semibold">2,450 gal</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--text-secondary);">Total Cost</span>
+                  <span class="font-mono font-semibold">$7,105.00</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--text-secondary);">Avg Price/Gal</span>
+                  <span class="font-mono font-semibold">$2.90</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--text-secondary);">Variance</span>
+                  <span class="font-mono font-semibold" style="color: var(--red);">+$355.00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 7: KPIs + Top Performers -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+          <!-- Key Performance Indicators -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Key Performance Indicators</h3>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
+                <span style="color: var(--text-secondary);">On-Time Delivery Rate</span>
+                <span class="font-mono font-semibold" style="color: var(--green);">96.5%</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
+                <span style="color: var(--text-secondary);">Customer Satisfaction</span>
+                <span class="font-mono font-semibold" style="color: var(--green);">4.8/5.0</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
+                <span style="color: var(--text-secondary);">Average Trip Duration</span>
+                <span class="font-mono font-semibold">4.2 days</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
+                <span style="color: var(--text-secondary);">Utilization Rate</span>
+                <span class="font-mono font-semibold" style="color: var(--blue);">87.3%</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                <span style="color: var(--text-secondary);">Claims Rate</span>
+                <span class="font-mono font-semibold" style="color: var(--amber);">1.2%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Performers -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Top Performers</h3>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div style="padding: 12px; background: var(--bg-app); border-radius: var(--radius); border-left: 3px solid var(--green);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                  <span class="font-semibold">John Smith</span>
+                  <span class="font-mono font-semibold" style="color: var(--green);">$12,450</span>
+                </div>
+                <div style="font-size: var(--text-xs); color: var(--text-muted);">Truck 77 • 8 trips completed</div>
+              </div>
+              <div style="padding: 12px; background: var(--bg-app); border-radius: var(--radius); border-left: 3px solid var(--blue);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                  <span class="font-semibold">Maria Garcia</span>
+                  <span class="font-mono font-semibold" style="color: var(--blue);">$10,780</span>
+                </div>
+                <div style="font-size: var(--text-xs); color: var(--text-muted);">Truck 88 • 7 trips completed</div>
+              </div>
+              <div style="padding: 12px; background: var(--bg-app); border-radius: var(--radius); border-left: 3px solid var(--amber);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                  <span class="font-semibold">David Chen</span>
+                  <span class="font-mono font-semibold" style="color: var(--amber);">$9,340</span>
+                </div>
+                <div style="font-size: var(--text-xs); color: var(--text-muted);">Truck 55 • 6 trips completed</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 8: Payment Collection Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          <div class="stat-card">
+            <div class="stat-icon blue">
+              <i data-lucide="banknote" class="ico-lg"></i>
+            </div>
+            <div class="stat-value">$18,450.00</div>
+            <div class="stat-label">COD (Cash on Delivery)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">
+              <i data-lucide="check-circle" class="ico-lg"></i>
+            </div>
+            <div class="stat-value">$12,340.00</div>
+            <div class="stat-label">COP (Check on Pickup)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple">
+              <i data-lucide="wallet" class="ico-lg"></i>
+            </div>
+            <div class="stat-value">$8,750.00</div>
+            <div class="stat-label">Local COD</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon amber">
+              <i data-lucide="file-text" class="ico-lg"></i>
+            </div>
+            <div class="stat-value">$5,690.00</div>
+            <div class="stat-label">Check</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon red">
+              <i data-lucide="receipt" class="ico-lg"></i>
+            </div>
+            <div class="stat-value">$2,000.00</div>
+            <div class="stat-label">Bill (Invoiced)</div>
+          </div>
+        </div>
+
+        <!-- SECTION 9: Cost Trend Sparklines -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Cost Trends (Last 12 Weeks)</h3>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+            <!-- Fuel -->
+            <div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Fuel</div>
+              <div style="font-size: var(--text-xl); font-weight: var(--weight-heavy); font-family: var(--font-mono); margin-bottom: 8px;">$6,750</div>
+              <div style="display: flex; align-items: flex-end; gap: 2px; height: 40px;">
+                <div style="flex: 1; background: var(--green-dim); border-radius: 2px 2px 0 0; height: 60%;"></div>
+                <div style="flex: 1; background: var(--green-dim); border-radius: 2px 2px 0 0; height: 70%;"></div>
+                <div style="flex: 1; background: var(--green-dim); border-radius: 2px 2px 0 0; height: 55%;"></div>
+                <div style="flex: 1; background: var(--green-dim); border-radius: 2px 2px 0 0; height: 80%;"></div>
+                <div style="flex: 1; background: var(--green-dim); border-radius: 2px 2px 0 0; height: 75%;"></div>
+                <div style="flex: 1; background: var(--green-dim); border-radius: 2px 2px 0 0; height: 65%;"></div>
+                <div style="flex: 1; background: var(--green-dim); border-radius: 2px 2px 0 0; height: 85%;"></div>
+                <div style="flex: 1; background: var(--green-dim); border-radius: 2px 2px 0 0; height: 90%;"></div>
+                <div style="flex: 1; background: var(--green-dim); border-radius: 2px 2px 0 0; height: 100%;"></div>
+                <div style="flex: 1; background: var(--green-dim); border-radius: 2px 2px 0 0; height: 95%;"></div>
+                <div style="flex: 1; background: var(--green); border-radius: 2px 2px 0 0; height: 100%;"></div>
+                <div style="flex: 1; background: var(--green); border-radius: 2px 2px 0 0; height: 90%;"></div>
+              </div>
+            </div>
+
+            <!-- Tolls -->
+            <div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Tolls</div>
+              <div style="font-size: var(--text-xl); font-weight: var(--weight-heavy); font-family: var(--font-mono); margin-bottom: 8px;">$2,340</div>
+              <div style="display: flex; align-items: flex-end; gap: 2px; height: 40px;">
+                <div style="flex: 1; background: var(--blue-dim); border-radius: 2px 2px 0 0; height: 50%;"></div>
+                <div style="flex: 1; background: var(--blue-dim); border-radius: 2px 2px 0 0; height: 55%;"></div>
+                <div style="flex: 1; background: var(--blue-dim); border-radius: 2px 2px 0 0; height: 60%;"></div>
+                <div style="flex: 1; background: var(--blue-dim); border-radius: 2px 2px 0 0; height: 65%;"></div>
+                <div style="flex: 1; background: var(--blue-dim); border-radius: 2px 2px 0 0; height: 70%;"></div>
+                <div style="flex: 1; background: var(--blue-dim); border-radius: 2px 2px 0 0; height: 80%;"></div>
+                <div style="flex: 1; background: var(--blue-dim); border-radius: 2px 2px 0 0; height: 85%;"></div>
+                <div style="flex: 1; background: var(--blue-dim); border-radius: 2px 2px 0 0; height: 90%;"></div>
+                <div style="flex: 1; background: var(--blue); border-radius: 2px 2px 0 0; height: 100%;"></div>
+                <div style="flex: 1; background: var(--blue); border-radius: 2px 2px 0 0; height: 95%;"></div>
+                <div style="flex: 1; background: var(--blue); border-radius: 2px 2px 0 0; height: 90%;"></div>
+                <div style="flex: 1; background: var(--blue); border-radius: 2px 2px 0 0; height: 85%;"></div>
+              </div>
+            </div>
+
+            <!-- Maintenance -->
+            <div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Maintenance</div>
+              <div style="font-size: var(--text-xl); font-weight: var(--weight-heavy); font-family: var(--font-mono); margin-bottom: 8px;">$490</div>
+              <div style="display: flex; align-items: flex-end; gap: 2px; height: 40px;">
+                <div style="flex: 1; background: var(--amber-dim); border-radius: 2px 2px 0 0; height: 30%;"></div>
+                <div style="flex: 1; background: var(--amber-dim); border-radius: 2px 2px 0 0; height: 35%;"></div>
+                <div style="flex: 1; background: var(--amber-dim); border-radius: 2px 2px 0 0; height: 40%;"></div>
+                <div style="flex: 1; background: var(--amber-dim); border-radius: 2px 2px 0 0; height: 50%;"></div>
+                <div style="flex: 1; background: var(--amber-dim); border-radius: 2px 2px 0 0; height: 45%;"></div>
+                <div style="flex: 1; background: var(--amber-dim); border-radius: 2px 2px 0 0; height: 60%;"></div>
+                <div style="flex: 1; background: var(--amber-dim); border-radius: 2px 2px 0 0; height: 70%;"></div>
+                <div style="flex: 1; background: var(--amber); border-radius: 2px 2px 0 0; height: 80%;"></div>
+                <div style="flex: 1; background: var(--amber); border-radius: 2px 2px 0 0; height: 90%;"></div>
+                <div style="flex: 1; background: var(--amber); border-radius: 2px 2px 0 0; height: 100%;"></div>
+                <div style="flex: 1; background: var(--amber); border-radius: 2px 2px 0 0; height: 95%;"></div>
+                <div style="flex: 1; background: var(--amber); border-radius: 2px 2px 0 0; height: 85%;"></div>
+              </div>
+            </div>
+
+            <!-- Permits -->
+            <div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Permits</div>
+              <div style="font-size: var(--text-xl); font-weight: var(--weight-heavy); font-family: var(--font-mono); margin-bottom: 8px;">$980</div>
+              <div style="display: flex; align-items: flex-end; gap: 2px; height: 40px;">
+                <div style="flex: 1; background: var(--purple-dim); border-radius: 2px 2px 0 0; height: 85%;"></div>
+                <div style="flex: 1; background: var(--purple-dim); border-radius: 2px 2px 0 0; height: 80%;"></div>
+                <div style="flex: 1; background: var(--purple-dim); border-radius: 2px 2px 0 0; height: 75%;"></div>
+                <div style="flex: 1; background: var(--purple-dim); border-radius: 2px 2px 0 0; height: 70%;"></div>
+                <div style="flex: 1; background: var(--purple-dim); border-radius: 2px 2px 0 0; height: 80%;"></div>
+                <div style="flex: 1; background: var(--purple-dim); border-radius: 2px 2px 0 0; height: 85%;"></div>
+                <div style="flex: 1; background: var(--purple-dim); border-radius: 2px 2px 0 0; height: 90%;"></div>
+                <div style="flex: 1; background: var(--purple); border-radius: 2px 2px 0 0; height: 95%;"></div>
+                <div style="flex: 1; background: var(--purple); border-radius: 2px 2px 0 0; height: 100%;"></div>
+                <div style="flex: 1; background: var(--purple); border-radius: 2px 2px 0 0; height: 100%;"></div>
+                <div style="flex: 1; background: var(--purple); border-radius: 2px 2px 0 0; height: 95%;"></div>
+                <div style="flex: 1; background: var(--purple); border-radius: 2px 2px 0 0; height: 90%;"></div>
+              </div>
+            </div>
+
+            <!-- Parking -->
+            <div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Parking</div>
+              <div style="font-size: var(--text-xl); font-weight: var(--weight-heavy); font-family: var(--font-mono); margin-bottom: 8px;">$1,890</div>
+              <div style="display: flex; align-items: flex-end; gap: 2px; height: 40px;">
+                <div style="flex: 1; background: var(--red-dim); border-radius: 2px 2px 0 0; height: 60%;"></div>
+                <div style="flex: 1; background: var(--red-dim); border-radius: 2px 2px 0 0; height: 65%;"></div>
+                <div style="flex: 1; background: var(--red-dim); border-radius: 2px 2px 0 0; height: 70%;"></div>
+                <div style="flex: 1; background: var(--red-dim); border-radius: 2px 2px 0 0; height: 75%;"></div>
+                <div style="flex: 1; background: var(--red-dim); border-radius: 2px 2px 0 0; height: 80%;"></div>
+                <div style="flex: 1; background: var(--red-dim); border-radius: 2px 2px 0 0; height: 85%;"></div>
+                <div style="flex: 1; background: var(--red-dim); border-radius: 2px 2px 0 0; height: 90%;"></div>
+                <div style="flex: 1; background: var(--red); border-radius: 2px 2px 0 0; height: 95%;"></div>
+                <div style="flex: 1; background: var(--red); border-radius: 2px 2px 0 0; height: 100%;"></div>
+                <div style="flex: 1; background: var(--red); border-radius: 2px 2px 0 0; height: 100%;"></div>
+                <div style="flex: 1; background: var(--red); border-radius: 2px 2px 0 0; height: 95%;"></div>
+                <div style="flex: 1; background: var(--red); border-radius: 2px 2px 0 0; height: 90%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    themeToggle.addEventListener('click', function() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('tms-theme', next);
+      // Update icon
+      themeIcon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
+      lucide.createIcons();
+    });
+
+    // Sidebar toggle (collapse/expand)
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    sidebarToggle.addEventListener('click', function() {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('sidebar-collapsed');
+      // Update toggle icon
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+      lucide.createIcons();
+    });
+
+    // Mobile hamburger
+    const hamburger = document.getElementById('hamburger');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (hamburger) {
+      hamburger.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('active');
+      });
+    }
+
+    if (sidebarOverlay) {
+      sidebarOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      });
+    }
+
+    // Responsive: show hamburger on mobile
+    function handleResize() {
+      if (window.innerWidth <= 768) {
+        hamburger.style.display = 'flex';
+      } else {
+        hamburger.style.display = 'none';
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+  </script>
+</body>
+</html>
