@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon Star TMS — Fleet</title>
+
+  <!-- FART prevention: set theme before CSS loads -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('tms-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared.css">
+  <style>
+    /* Page-specific styles */
+    .page-separator {
+      height: 2px;
+      background: linear-gradient(to right, var(--border), transparent);
+      margin: 48px 0;
+    }
+
+    .back-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: var(--text-sm);
+      transition: all 0.2s;
+    }
+
+    .back-button:hover {
+      background: var(--bg-hover);
+      border-color: var(--text-muted);
+    }
+
+    .detail-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .detail-title-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .folder-section {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .folder-header {
+      padding: 12px 16px;
+      background: var(--bg-hover);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+
+    .folder-name {
+      font-weight: var(--weight-semibold);
+      color: var(--text-primary);
+    }
+
+    .folder-count {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <i data-lucide="truck"></i>
+        </div>
+        <span class="sidebar-logo-text">Horizon Star</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- MAIN Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Main</div>
+          <a class="nav-item" data-page="dashboard">
+            <i data-lucide="layout-dashboard" class="nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+          </a>
+          <a class="nav-item" data-page="trips">
+            <i data-lucide="map" class="nav-icon"></i>
+            <span class="nav-label">Trips</span>
+          </a>
+          <a class="nav-item" data-page="messages">
+            <i data-lucide="message-square" class="nav-icon"></i>
+            <span class="nav-label">Messages</span>
+          </a>
+          <a class="nav-item" data-page="trailers">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trailers</span>
+          </a>
+          <a class="nav-item" data-page="load-board">
+            <i data-lucide="package" class="nav-icon"></i>
+            <span class="nav-label">Load Board</span>
+          </a>
+          <a class="nav-item" data-page="inspections">
+            <i data-lucide="clipboard-list" class="nav-icon"></i>
+            <span class="nav-label">Inspections</span>
+          </a>
+          <a class="nav-item" data-page="tasks">
+            <i data-lucide="check-square" class="nav-icon"></i>
+            <span class="nav-label">Tasks</span>
+          </a>
+        </div>
+
+        <!-- FLEET Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Fleet</div>
+          <a class="nav-item" data-page="drivers">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Drivers</span>
+          </a>
+          <a class="nav-item active" data-page="trucks">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trucks</span>
+          </a>
+          <a class="nav-item" data-page="local-drivers">
+            <i data-lucide="user" class="nav-icon"></i>
+            <span class="nav-label">Local Drivers</span>
+          </a>
+        </div>
+
+        <!-- PARTNERS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Partners</div>
+          <a class="nav-item" data-page="brokers">
+            <i data-lucide="briefcase" class="nav-icon"></i>
+            <span class="nav-label">Brokers</span>
+          </a>
+          <a class="nav-item" data-page="dealers">
+            <i data-lucide="building" class="nav-icon"></i>
+            <span class="nav-label">Dealers</span>
+          </a>
+          <a class="nav-item" data-page="dispatchers">
+            <i data-lucide="phone" class="nav-icon"></i>
+            <span class="nav-label">Dispatchers</span>
+          </a>
+          <a class="nav-item" data-page="dispatcher-ranking">
+            <i data-lucide="star" class="nav-icon"></i>
+            <span class="nav-label">Dispatcher Ranking</span>
+          </a>
+        </div>
+
+        <!-- FINANCIALS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Financials</div>
+          <a class="nav-item" data-page="financials">
+            <i data-lucide="dollar-sign" class="nav-icon"></i>
+            <span class="nav-label">Financials</span>
+          </a>
+          <a class="nav-item" data-page="billing">
+            <i data-lucide="file-text" class="nav-icon"></i>
+            <span class="nav-label">Billing</span>
+          </a>
+          <a class="nav-item" data-page="trip-profitability">
+            <i data-lucide="trending-up" class="nav-icon"></i>
+            <span class="nav-label">Trip Profitability</span>
+          </a>
+          <a class="nav-item" data-page="payroll">
+            <i data-lucide="credit-card" class="nav-icon"></i>
+            <span class="nav-label">Payroll</span>
+          </a>
+          <a class="nav-item" data-page="fuel">
+            <i data-lucide="droplet" class="nav-icon"></i>
+            <span class="nav-label">Fuel</span>
+          </a>
+          <a class="nav-item" data-page="ifta">
+            <i data-lucide="file" class="nav-icon"></i>
+            <span class="nav-label">IFTA</span>
+          </a>
+          <a class="nav-item" data-page="reports">
+            <i data-lucide="bar-chart-2" class="nav-icon"></i>
+            <span class="nav-label">Reports</span>
+          </a>
+          <a class="nav-item" data-page="ai-advisor">
+            <i data-lucide="brain" class="nav-icon"></i>
+            <span class="nav-label">AI Advisor</span>
+          </a>
+        </div>
+
+        <!-- OPERATIONS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Operations</div>
+          <a class="nav-item" data-page="maintenance">
+            <i data-lucide="wrench" class="nav-icon"></i>
+            <span class="nav-label">Maintenance</span>
+          </a>
+          <a class="nav-item" data-page="compliance">
+            <i data-lucide="shield-check" class="nav-icon"></i>
+            <span class="nav-label">Compliance</span>
+          </a>
+          <a class="nav-item" data-page="applications">
+            <i data-lucide="file-plus" class="nav-icon"></i>
+            <span class="nav-label">Applications</span>
+          </a>
+        </div>
+
+        <!-- SETTINGS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Settings</div>
+          <a class="nav-item" data-page="settings">
+            <i data-lucide="settings" class="nav-icon"></i>
+            <span class="nav-label">Settings</span>
+          </a>
+          <a class="nav-item" data-page="users">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Users</span>
+          </a>
+          <a class="nav-item" data-page="activity-log">
+            <i data-lucide="activity" class="nav-icon"></i>
+            <span class="nav-label">Activity Log</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-toggle" id="sidebarToggle">
+        <i data-lucide="panel-left-close" class="nav-icon" id="toggleIcon"></i>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger" style="display:none;">
+            <i data-lucide="menu"></i>
+          </button>
+          <h1 class="header-title">Fleet</h1>
+        </div>
+
+        <div class="header-search">
+          <i data-lucide="search" class="ico-sm"></i>
+          <input type="text" placeholder="Search orders, trips, drivers...">
+        </div>
+
+        <div class="header-right">
+          <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+            <i data-lucide="moon" class="ico" id="themeIcon"></i>
+          </button>
+          <div class="header-avatar">JD</div>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- SECTION A: TRUCKS LIST VIEW -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i data-lucide="truck" class="ico" style="margin-right: 8px;"></i>
+              Fleet
+            </h3>
+            <button class="btn btn-primary">
+              <i data-lucide="plus" class="ico-sm"></i>
+              New Unit
+            </button>
+          </div>
+
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Unit #</th>
+                  <th>Type</th>
+                  <th>Year/Make/Model</th>
+                  <th>VIN</th>
+                  <th>Plate</th>
+                  <th>Ownership</th>
+                  <th>Compliance</th>
+                  <th>Status</th>
+                  <th class="sticky-col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Row 1 - Truck 77 -->
+                <tr>
+                  <td>
+                    <span class="font-semibold">#77</span>
+                    <span class="badge badge-blue" style="margin-left: 8px;">T-01</span>
+                  </td>
+                  <td>
+                    <div>Car Hauler</div>
+                    <div style="color: var(--text-secondary); font-size: var(--text-xs);">8 cars</div>
+                  </td>
+                  <td>
+                    <div>2022 Peterbilt 389</div>
+                    <div style="color: var(--text-muted); font-size: var(--text-xs);">White</div>
+                  </td>
+                  <td class="mono">A12345</td>
+                  <td>
+                    <div>ABC-1234</div>
+                    <span class="badge badge-blue">PA</span>
+                  </td>
+                  <td><span class="badge badge-green">OWNED</span></td>
+                  <td><span class="badge badge-green">OK</span></td>
+                  <td><span class="badge badge-green">ACTIVE</span></td>
+                  <td class="sticky-col">
+                    <button class="btn-icon" title="View Files"><i data-lucide="folder" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Edit"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Delete"><i data-lucide="trash-2" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+
+                <!-- Row 2 - Truck 88 -->
+                <tr>
+                  <td><span class="font-semibold">#88</span></td>
+                  <td>
+                    <div>Car Hauler</div>
+                    <div style="color: var(--text-secondary); font-size: var(--text-xs);">7 cars</div>
+                  </td>
+                  <td>
+                    <div>2021 Freightliner Cascadia</div>
+                    <div style="color: var(--text-muted); font-size: var(--text-xs);">Blue</div>
+                  </td>
+                  <td class="mono">B67890</td>
+                  <td>
+                    <div>XYZ-5678</div>
+                    <span class="badge badge-blue">NJ</span>
+                  </td>
+                  <td><span class="badge badge-amber">LEASED</span></td>
+                  <td><span class="badge badge-red">2 Issues</span></td>
+                  <td><span class="badge badge-green">ACTIVE</span></td>
+                  <td class="sticky-col">
+                    <button class="btn-icon" title="View Files"><i data-lucide="folder" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Edit"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Delete"><i data-lucide="trash-2" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+
+                <!-- Row 3 - Truck 55 -->
+                <tr>
+                  <td><span class="font-semibold">#55</span></td>
+                  <td>
+                    <div>Car Hauler</div>
+                    <div style="color: var(--text-secondary); font-size: var(--text-xs);">6 cars</div>
+                  </td>
+                  <td>
+                    <div>2023 Kenworth T680</div>
+                    <div style="color: var(--text-muted); font-size: var(--text-xs);">Red</div>
+                  </td>
+                  <td class="mono">C24680</td>
+                  <td>
+                    <div>DEF-9012</div>
+                    <span class="badge badge-blue">FL</span>
+                  </td>
+                  <td><span class="badge badge-blue">FINANCED</span></td>
+                  <td><span class="badge badge-green">OK</span></td>
+                  <td><span class="badge badge-green">ACTIVE</span></td>
+                  <td class="sticky-col">
+                    <button class="btn-icon" title="View Files"><i data-lucide="folder" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Edit"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Delete"><i data-lucide="trash-2" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+
+                <!-- Row 4 - Truck 42 -->
+                <tr>
+                  <td><span class="font-semibold">#42</span></td>
+                  <td>
+                    <div>Flatbed</div>
+                    <div style="color: var(--text-secondary); font-size: var(--text-xs);">3 cars</div>
+                  </td>
+                  <td>
+                    <div>2020 International LT</div>
+                    <div style="color: var(--text-muted); font-size: var(--text-xs);">Silver</div>
+                  </td>
+                  <td class="mono">D13579</td>
+                  <td>
+                    <div>GHI-3456</div>
+                    <span class="badge badge-blue">GA</span>
+                  </td>
+                  <td><span class="badge badge-green">OWNED</span></td>
+                  <td><span class="badge badge-red">1 Issue</span></td>
+                  <td><span class="badge badge-amber">MAINTENANCE</span></td>
+                  <td class="sticky-col">
+                    <button class="btn-icon" title="View Files"><i data-lucide="folder" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Edit"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Delete"><i data-lucide="trash-2" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+
+                <!-- Row 5 - Truck 63 -->
+                <tr>
+                  <td><span class="font-semibold">#63</span></td>
+                  <td>
+                    <div>Car Hauler</div>
+                    <div style="color: var(--text-secondary); font-size: var(--text-xs);">8 cars</div>
+                  </td>
+                  <td>
+                    <div>2024 Peterbilt 579</div>
+                    <div style="color: var(--text-muted); font-size: var(--text-xs);">Black</div>
+                  </td>
+                  <td class="mono">E97531</td>
+                  <td>
+                    <div>JKL-7890</div>
+                    <span class="badge badge-blue">TX</span>
+                  </td>
+                  <td><span class="badge badge-amber">LEASED</span></td>
+                  <td><span class="badge badge-green">OK</span></td>
+                  <td><span class="badge badge-green">ACTIVE</span></td>
+                  <td class="sticky-col">
+                    <button class="btn-icon" title="View Files"><i data-lucide="folder" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Edit"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Delete"><i data-lucide="trash-2" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+
+                <!-- Row 6 - Trailer T-01 -->
+                <tr>
+                  <td>
+                    <span class="font-semibold">#T-01</span>
+                    <span class="badge badge-gray" style="margin-left: 8px;">TRAILER</span>
+                  </td>
+                  <td>
+                    <div>Open Trailer</div>
+                    <div style="color: var(--text-secondary); font-size: var(--text-xs);">7 cars</div>
+                  </td>
+                  <td>
+                    <div>2021 Cottrell CX-09</div>
+                    <div style="color: var(--text-muted); font-size: var(--text-xs);">--</div>
+                  </td>
+                  <td class="mono">F86420</td>
+                  <td>
+                    <div>TRL-0001</div>
+                    <span class="badge badge-blue">PA</span>
+                  </td>
+                  <td><span class="badge badge-green">OWNED</span></td>
+                  <td><span class="badge badge-green">OK</span></td>
+                  <td><span class="badge badge-green">ACTIVE</span></td>
+                  <td class="sticky-col">
+                    <button class="btn-icon" title="View Files"><i data-lucide="folder" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Edit"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Delete"><i data-lucide="trash-2" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Page Separator -->
+        <div class="page-separator"></div>
+
+        <!-- SECTION B: TRUCK DETAIL VIEW (Truck 88) -->
+        <div class="detail-header">
+          <div class="detail-title-group">
+            <button class="back-button">
+              <i data-lucide="arrow-left" class="ico-sm"></i>
+              Back
+            </button>
+            <h2 class="card-title" style="margin: 0;">Truck #88 - 2021 Freightliner Cascadia</h2>
+          </div>
+          <span class="badge badge-green">ACTIVE</span>
+        </div>
+
+        <!-- B2. Stats Cards Row -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          <div class="stat-card">
+            <div class="stat-icon amber">
+              <i data-lucide="file-check" class="ico-lg"></i>
+            </div>
+            <div class="stat-value">6/8</div>
+            <div class="stat-label">Compliance Files</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon blue">
+              <i data-lucide="folder" class="ico-lg"></i>
+            </div>
+            <div class="stat-value">1</div>
+            <div class="stat-label">Custom Folders</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">
+              <i data-lucide="wrench" class="ico-lg"></i>
+            </div>
+            <div class="stat-value" style="color: var(--green);">$4,230.00</div>
+            <div class="stat-label">Total Maintenance Cost</div>
+          </div>
+        </div>
+
+        <!-- B3. Truck Compliance Files Section -->
+        <div class="card" style="margin-bottom: 24px; border-left: 3px solid var(--amber);">
+          <div class="card-header">
+            <h3 class="card-title">Truck Compliance Files</h3>
+            <button class="btn btn-primary">
+              <i data-lucide="upload" class="ico-sm"></i>
+              Upload
+            </button>
+          </div>
+
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Document Type</th>
+                  <th>Status</th>
+                  <th>Expiration</th>
+                  <th>Uploaded</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- 1. VEHICLE_REGISTRATION -->
+                <tr>
+                  <td>Vehicle Registration</td>
+                  <td><span class="badge badge-green">Uploaded</span></td>
+                  <td><span class="badge badge-green">Valid until Dec 31, 2026</span></td>
+                  <td>Jan 15, 2026</td>
+                  <td>
+                    <button class="btn-icon" title="View"><i data-lucide="eye" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Delete"><i data-lucide="trash-2" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+
+                <!-- 2. ANNUAL_INSPECTION -->
+                <tr>
+                  <td>Annual Inspection</td>
+                  <td><span class="badge badge-green">Uploaded</span></td>
+                  <td><span class="badge badge-red">EXPIRED (Dec 1, 2025)</span></td>
+                  <td>Dec 1, 2024</td>
+                  <td>
+                    <button class="btn-icon" title="View"><i data-lucide="eye" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Delete"><i data-lucide="trash-2" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+
+                <!-- 3. PA_INSPECTION -->
+                <tr>
+                  <td>PA Inspection</td>
+                  <td><span class="badge badge-green">Uploaded</span></td>
+                  <td><span class="badge badge-amber">Expires in 6d</span></td>
+                  <td>Feb 15, 2025</td>
+                  <td>
+                    <button class="btn-icon" title="View"><i data-lucide="eye" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Delete"><i data-lucide="trash-2" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+
+                <!-- 4. INSURANCE_CARD -->
+                <tr>
+                  <td>Insurance Card</td>
+                  <td><span class="badge badge-green">Uploaded</span></td>
+                  <td><span class="badge badge-green">Valid until Jun 30, 2026</span></td>
+                  <td>Jul 1, 2025</td>
+                  <td>
+                    <button class="btn-icon" title="View"><i data-lucide="eye" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Delete"><i data-lucide="trash-2" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+
+                <!-- 5. TITLE -->
+                <tr>
+                  <td>Title</td>
+                  <td><span class="badge badge-green">Uploaded</span></td>
+                  <td>--</td>
+                  <td>Mar 20, 2021</td>
+                  <td>
+                    <button class="btn-icon" title="View"><i data-lucide="eye" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Delete"><i data-lucide="trash-2" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+
+                <!-- 6. LEASE_AGREEMENT -->
+                <tr>
+                  <td>Lease Agreement</td>
+                  <td><span class="badge badge-green">Uploaded</span></td>
+                  <td><span class="badge badge-green">Valid until Mar 31, 2027</span></td>
+                  <td>Apr 1, 2024</td>
+                  <td>
+                    <button class="btn-icon" title="View"><i data-lucide="eye" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Delete"><i data-lucide="trash-2" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+
+                <!-- 7. IRP_CAB_CARD -->
+                <tr>
+                  <td>IRP Cab Card</td>
+                  <td><span class="badge badge-gray">Missing</span></td>
+                  <td>--</td>
+                  <td>--</td>
+                  <td>
+                    <button class="btn btn-sm btn-primary">
+                      <i data-lucide="upload" class="ico-sm"></i>
+                      Upload
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- 8. IFTA_PERMIT -->
+                <tr>
+                  <td>IFTA Permit</td>
+                  <td><span class="badge badge-gray">Missing</span></td>
+                  <td>--</td>
+                  <td>--</td>
+                  <td>
+                    <button class="btn btn-sm btn-primary">
+                      <i data-lucide="upload" class="ico-sm"></i>
+                      Upload
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- B4. Custom Folders Section -->
+        <div class="card" style="margin-bottom: 24px; border-left: 3px solid var(--blue);">
+          <div class="card-header">
+            <h3 class="card-title">Custom Folders</h3>
+            <button class="btn btn-primary">
+              <i data-lucide="folder-plus" class="ico-sm"></i>
+              New Folder
+            </button>
+          </div>
+
+          <!-- Folder: Repair Receipts -->
+          <div class="folder-section" style="margin: 0 20px 20px;">
+            <div class="folder-header">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <i data-lucide="folder" class="ico"></i>
+                <span class="folder-name">Repair Receipts</span>
+                <span class="folder-count">(3 files)</span>
+              </div>
+              <i data-lucide="chevron-down" class="ico-sm"></i>
+            </div>
+
+            <!-- Folder contents (expanded) -->
+            <div style="padding: 0;">
+              <table class="table" style="margin: 0;">
+                <thead>
+                  <tr>
+                    <th>File Name</th>
+                    <th>Type</th>
+                    <th>Uploaded</th>
+                    <th>Notes</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Transmission_Repair_2025.pdf</td>
+                    <td><span class="badge badge-blue">PDF</span></td>
+                    <td>Nov 10, 2025</td>
+                    <td style="color: var(--text-secondary);">Major transmission rebuild</td>
+                    <td>
+                      <button class="btn-icon" title="View"><i data-lucide="eye" class="ico-sm"></i></button>
+                      <button class="btn-icon" title="Delete"><i data-lucide="trash-2" class="ico-sm"></i></button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Brake_Service_Jan2026.pdf</td>
+                    <td><span class="badge badge-blue">PDF</span></td>
+                    <td>Jan 20, 2026</td>
+                    <td style="color: var(--text-secondary);"></td>
+                    <td>
+                      <button class="btn-icon" title="View"><i data-lucide="eye" class="ico-sm"></i></button>
+                      <button class="btn-icon" title="Delete"><i data-lucide="trash-2" class="ico-sm"></i></button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Oil_Change_Receipt.jpg</td>
+                    <td><span class="badge badge-green">Image</span></td>
+                    <td>Feb 1, 2026</td>
+                    <td style="color: var(--text-secondary);">Regular service</td>
+                    <td>
+                      <button class="btn-icon" title="View"><i data-lucide="eye" class="ico-sm"></i></button>
+                      <button class="btn-icon" title="Delete"><i data-lucide="trash-2" class="ico-sm"></i></button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- B5. Maintenance Records Section -->
+        <div class="card" style="border-left: 3px solid var(--green);">
+          <div class="card-header">
+            <h3 class="card-title">Maintenance Records</h3>
+            <button class="btn btn-primary">
+              <i data-lucide="plus" class="ico-sm"></i>
+              Add Service Record
+            </button>
+          </div>
+
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Service Type</th>
+                  <th>Shop</th>
+                  <th>Description</th>
+                  <th>Odometer</th>
+                  <th class="text-right">Cost</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Feb 1, 2026</td>
+                  <td>Oil Change</td>
+                  <td>Quick Lube Miami</td>
+                  <td>Regular oil change and filter replacement</td>
+                  <td class="mono">145,230</td>
+                  <td class="mono text-right">$89.00</td>
+                  <td>
+                    <button class="btn-icon" title="Edit"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Delete"><i data-lucide="trash-2" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Jan 20, 2026</td>
+                  <td>Brake Service</td>
+                  <td>Pete's Truck Service</td>
+                  <td>Front and rear brake pad replacement</td>
+                  <td class="mono">144,800</td>
+                  <td class="mono text-right">$1,240.00</td>
+                  <td>
+                    <button class="btn-icon" title="Edit"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Delete"><i data-lucide="trash-2" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Nov 10, 2025</td>
+                  <td>Transmission</td>
+                  <td>Freightliner Dealer</td>
+                  <td>Major transmission rebuild - warranty claim</td>
+                  <td class="mono">138,500</td>
+                  <td class="mono text-right">$2,450.00</td>
+                  <td>
+                    <button class="btn-icon" title="Edit"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Delete"><i data-lucide="trash-2" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Sep 5, 2025</td>
+                  <td>Tire Replacement</td>
+                  <td>Goodyear Fleet</td>
+                  <td>Replaced 4 drive tires</td>
+                  <td class="mono">132,000</td>
+                  <td class="mono text-right">$451.00</td>
+                  <td>
+                    <button class="btn-icon" title="Edit"><i data-lucide="edit" class="ico-sm"></i></button>
+                    <button class="btn-icon" title="Delete"><i data-lucide="trash-2" class="ico-sm"></i></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    themeToggle.addEventListener('click', function() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('tms-theme', next);
+      // Update icon
+      themeIcon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
+      lucide.createIcons();
+    });
+
+    // Sidebar toggle (collapse/expand)
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    sidebarToggle.addEventListener('click', function() {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('sidebar-collapsed');
+      // Update toggle icon
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+      lucide.createIcons();
+    });
+
+    // Mobile hamburger
+    const hamburger = document.getElementById('hamburger');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (hamburger) {
+      hamburger.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('active');
+      });
+    }
+
+    if (sidebarOverlay) {
+      sidebarOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      });
+    }
+
+    // Responsive: show hamburger on mobile
+    function handleResize() {
+      if (window.innerWidth <= 768) {
+        hamburger.style.display = 'flex';
+      } else {
+        hamburger.style.display = 'none';
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+  </script>
+</body>
+</html>

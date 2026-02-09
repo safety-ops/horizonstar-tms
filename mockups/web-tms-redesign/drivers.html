@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon Star TMS — Drivers</title>
+
+  <!-- FART prevention: set theme before CSS loads -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('tms-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared.css">
+
+  <style>
+    /* Page-specific styles for drivers grid and card layout */
+    .drivers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .driver-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow 0.2s ease;
+    }
+
+    .driver-card:hover {
+      box-shadow: var(--shadow-md);
+    }
+
+    .driver-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .driver-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: var(--weight-heavy);
+      font-size: var(--text-base);
+      flex-shrink: 0;
+    }
+
+    .driver-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .driver-name {
+      font-size: var(--text-lg);
+      font-weight: var(--weight-heavy);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .driver-type-cut {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+
+    .driver-status {
+      margin-left: auto;
+    }
+
+    .driver-contact {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .file-badges {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .file-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: var(--weight-semibold);
+    }
+
+    .file-badge.qual {
+      background: var(--blue-dim);
+      color: var(--blue);
+    }
+
+    .file-badge.pers {
+      background: var(--purple-dim);
+      color: var(--purple);
+    }
+
+    .file-badge.exp {
+      background: var(--red-dim);
+      color: var(--red);
+    }
+
+    .compliance-counts {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .compliance-item {
+      font-size: var(--text-xs);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .driver-footer {
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .driver-stats {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+
+    .driver-earnings {
+      font-family: var(--font-mono);
+      font-weight: var(--weight-semibold);
+      color: var(--green);
+    }
+
+    .driver-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .alert-banner {
+      background: var(--red-dim);
+      border-left: 3px solid var(--red);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .alert-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .alert-title {
+      font-size: var(--text-base);
+      font-weight: var(--weight-semibold);
+      color: var(--red);
+    }
+
+    .alert-items {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .alert-item {
+      font-size: var(--text-sm);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-divider {
+      margin: 48px 0;
+      padding: 24px;
+      background: var(--bg-elevated);
+      border-radius: var(--radius);
+      text-align: center;
+      border: 2px dashed var(--border);
+    }
+
+    .detail-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .detail-header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .detail-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: var(--weight-heavy);
+      font-size: var(--text-lg);
+      background: var(--green-dim);
+      color: var(--green);
+    }
+
+    .detail-header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .folder-accordion {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .folder-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--bg-elevated);
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .folder-header:hover {
+      background: var(--bg-hover);
+    }
+
+    .folder-body {
+      padding: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .folder-collapsed .folder-body {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <i data-lucide="truck"></i>
+        </div>
+        <span class="sidebar-logo-text">Horizon Star</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- MAIN Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Main</div>
+          <a class="nav-item" data-page="dashboard">
+            <i data-lucide="layout-dashboard" class="nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+          </a>
+          <a class="nav-item" data-page="trips">
+            <i data-lucide="map" class="nav-icon"></i>
+            <span class="nav-label">Trips</span>
+          </a>
+          <a class="nav-item" data-page="messages">
+            <i data-lucide="message-square" class="nav-icon"></i>
+            <span class="nav-label">Messages</span>
+          </a>
+          <a class="nav-item" data-page="trailers">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trailers</span>
+          </a>
+          <a class="nav-item" data-page="load-board">
+            <i data-lucide="package" class="nav-icon"></i>
+            <span class="nav-label">Load Board</span>
+          </a>
+          <a class="nav-item" data-page="inspections">
+            <i data-lucide="clipboard-list" class="nav-icon"></i>
+            <span class="nav-label">Inspections</span>
+          </a>
+          <a class="nav-item" data-page="tasks">
+            <i data-lucide="check-square" class="nav-icon"></i>
+            <span class="nav-label">Tasks</span>
+          </a>
+        </div>
+
+        <!-- FLEET Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Fleet</div>
+          <a class="nav-item active" data-page="drivers">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Drivers</span>
+          </a>
+          <a class="nav-item" data-page="trucks">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trucks</span>
+          </a>
+          <a class="nav-item" data-page="local-drivers">
+            <i data-lucide="user" class="nav-icon"></i>
+            <span class="nav-label">Local Drivers</span>
+          </a>
+        </div>
+
+        <!-- PARTNERS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Partners</div>
+          <a class="nav-item" data-page="brokers">
+            <i data-lucide="briefcase" class="nav-icon"></i>
+            <span class="nav-label">Brokers</span>
+          </a>
+          <a class="nav-item" data-page="dealers">
+            <i data-lucide="building" class="nav-icon"></i>
+            <span class="nav-label">Dealers</span>
+          </a>
+          <a class="nav-item" data-page="dispatchers">
+            <i data-lucide="phone" class="nav-icon"></i>
+            <span class="nav-label">Dispatchers</span>
+          </a>
+          <a class="nav-item" data-page="dispatcher-ranking">
+            <i data-lucide="star" class="nav-icon"></i>
+            <span class="nav-label">Dispatcher Ranking</span>
+          </a>
+        </div>
+
+        <!-- FINANCIALS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Financials</div>
+          <a class="nav-item" data-page="financials">
+            <i data-lucide="dollar-sign" class="nav-icon"></i>
+            <span class="nav-label">Financials</span>
+          </a>
+          <a class="nav-item" data-page="billing">
+            <i data-lucide="file-text" class="nav-icon"></i>
+            <span class="nav-label">Billing</span>
+          </a>
+          <a class="nav-item" data-page="trip-profitability">
+            <i data-lucide="trending-up" class="nav-icon"></i>
+            <span class="nav-label">Trip Profitability</span>
+          </a>
+          <a class="nav-item" data-page="payroll">
+            <i data-lucide="credit-card" class="nav-icon"></i>
+            <span class="nav-label">Payroll</span>
+          </a>
+          <a class="nav-item" data-page="fuel">
+            <i data-lucide="droplet" class="nav-icon"></i>
+            <span class="nav-label">Fuel</span>
+          </a>
+          <a class="nav-item" data-page="ifta">
+            <i data-lucide="file" class="nav-icon"></i>
+            <span class="nav-label">IFTA</span>
+          </a>
+          <a class="nav-item" data-page="reports">
+            <i data-lucide="bar-chart-2" class="nav-icon"></i>
+            <span class="nav-label">Reports</span>
+          </a>
+          <a class="nav-item" data-page="ai-advisor">
+            <i data-lucide="brain" class="nav-icon"></i>
+            <span class="nav-label">AI Advisor</span>
+          </a>
+        </div>
+
+        <!-- OPERATIONS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Operations</div>
+          <a class="nav-item" data-page="maintenance">
+            <i data-lucide="wrench" class="nav-icon"></i>
+            <span class="nav-label">Maintenance</span>
+          </a>
+          <a class="nav-item" data-page="compliance">
+            <i data-lucide="shield-check" class="nav-icon"></i>
+            <span class="nav-label">Compliance</span>
+          </a>
+          <a class="nav-item" data-page="applications">
+            <i data-lucide="file-plus" class="nav-icon"></i>
+            <span class="nav-label">Applications</span>
+          </a>
+        </div>
+
+        <!-- SETTINGS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Settings</div>
+          <a class="nav-item" data-page="settings">
+            <i data-lucide="settings" class="nav-icon"></i>
+            <span class="nav-label">Settings</span>
+          </a>
+          <a class="nav-item" data-page="users">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Users</span>
+          </a>
+          <a class="nav-item" data-page="activity-log">
+            <i data-lucide="activity" class="nav-icon"></i>
+            <span class="nav-label">Activity Log</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-toggle" id="sidebarToggle">
+        <i data-lucide="panel-left-close" class="nav-icon" id="toggleIcon"></i>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger" style="display:none;">
+            <i data-lucide="menu"></i>
+          </button>
+          <h1 class="header-title">Drivers</h1>
+        </div>
+
+        <div class="header-search">
+          <i data-lucide="search" class="ico-sm"></i>
+          <input type="text" placeholder="Search orders, trips, drivers...">
+        </div>
+
+        <div class="header-right">
+          <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+            <i data-lucide="moon" class="ico" id="themeIcon"></i>
+          </button>
+          <div class="header-avatar">JD</div>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- SECTION A: DRIVER LIST VIEW -->
+
+        <!-- A1. Header Row -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <i data-lucide="users" class="ico-lg"></i>
+            <h2 style="font-size: var(--text-2xl); font-weight: var(--weight-heavy); margin: 0;">Drivers</h2>
+          </div>
+          <div style="display: flex; gap: 12px;">
+            <button class="btn btn-primary">
+              <i data-lucide="plus" class="ico-sm"></i>
+              New Driver
+            </button>
+            <button class="btn btn-secondary">
+              <i data-lucide="plus" class="ico-sm"></i>
+              Add Owner-OP
+            </button>
+          </div>
+        </div>
+
+        <!-- A2. Document Expiration Alerts Banner -->
+        <div class="alert-banner">
+          <div class="alert-header">
+            <i data-lucide="alert-triangle" style="color: var(--red);"></i>
+            <span class="alert-title">Document Expiration Alerts</span>
+          </div>
+          <div class="alert-items">
+            <div class="alert-item">
+              <span>John Smith - CDL</span>
+              <span class="badge badge-red">EXPIRED</span>
+            </div>
+            <div class="alert-item">
+              <span>Maria Garcia - Medical Card</span>
+              <span class="badge badge-amber">Expires in 5d</span>
+            </div>
+            <div class="alert-item">
+              <span>David Chen - MVR</span>
+              <span class="badge badge-red">Expires in 2d</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- A3. Drivers Grid -->
+        <div class="drivers-grid">
+
+          <!-- Card 1 - John Smith -->
+          <div class="driver-card">
+            <div class="driver-header">
+              <div class="driver-avatar" style="background: var(--green-dim); color: var(--green);">JS</div>
+              <div class="driver-info">
+                <div class="driver-name">
+                  <span>John Smith</span>
+                </div>
+                <div class="driver-type-cut">32% cut</div>
+              </div>
+              <div class="driver-status">
+                <span class="badge badge-green">ACTIVE</span>
+              </div>
+            </div>
+
+            <div class="driver-contact">
+              <div>(215) 555-0147</div>
+              <div>jsmith@example.com</div>
+            </div>
+
+            <div class="file-badges">
+              <span class="file-badge qual">📋 8 Qual</span>
+              <span class="file-badge pers">🔒 2 Pers</span>
+              <span class="file-badge exp">⚠️ 2 Exp</span>
+            </div>
+
+            <div class="compliance-counts">
+              <div class="compliance-item">
+                <i data-lucide="alert-circle" class="ico-sm" style="color: var(--amber);"></i>
+                <span class="badge badge-amber">1</span>
+                <span>ticket</span>
+              </div>
+            </div>
+
+            <div class="driver-footer">
+              <div class="driver-stats">
+                <span>12 Trips</span>
+                <span class="driver-earnings">$18,450.00</span>
+              </div>
+              <div class="driver-actions">
+                <button class="btn btn-ghost btn-sm">View</button>
+                <button class="btn btn-ghost btn-sm">Edit</button>
+                <button class="btn btn-ghost btn-sm">Del</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2 - Maria Garcia -->
+          <div class="driver-card">
+            <div class="driver-header">
+              <div class="driver-avatar" style="background: var(--blue-dim); color: var(--blue);">MG</div>
+              <div class="driver-info">
+                <div class="driver-name">
+                  <span>Maria Garcia</span>
+                  <span class="badge badge-amber">Owner-OP</span>
+                </div>
+                <div class="driver-type-cut">15% dispatch fee</div>
+              </div>
+              <div class="driver-status">
+                <span class="badge badge-green">ACTIVE</span>
+              </div>
+            </div>
+
+            <div class="driver-contact">
+              <div>(305) 555-0293</div>
+              <div>mgarcia@email.com</div>
+            </div>
+
+            <div class="file-badges">
+              <span class="file-badge qual">📋 10 Qual</span>
+              <span class="file-badge pers">🔒 3 Pers</span>
+            </div>
+
+            <div class="compliance-counts">
+              <span style="font-size: var(--text-xs); color: var(--text-muted);">No compliance issues</span>
+            </div>
+
+            <div class="driver-footer">
+              <div class="driver-stats">
+                <span>8 Trips</span>
+                <span class="driver-earnings">$24,780.00</span>
+              </div>
+              <div class="driver-actions">
+                <button class="btn btn-ghost btn-sm">View</button>
+                <button class="btn btn-ghost btn-sm">Edit</button>
+                <button class="btn btn-ghost btn-sm">Del</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3 - David Chen -->
+          <div class="driver-card">
+            <div class="driver-header">
+              <div class="driver-avatar" style="background: var(--amber-dim); color: var(--amber);">DC</div>
+              <div class="driver-info">
+                <div class="driver-name">
+                  <span>David Chen</span>
+                </div>
+                <div class="driver-type-cut">32% cut</div>
+              </div>
+              <div class="driver-status">
+                <span class="badge badge-green">ACTIVE</span>
+              </div>
+            </div>
+
+            <div class="driver-contact">
+              <div>(718) 555-0412</div>
+            </div>
+
+            <div class="file-badges">
+              <span class="file-badge qual">📋 7 Qual</span>
+              <span class="file-badge pers">🔒 1 Pers</span>
+              <span class="file-badge exp">⚠️ 3 Exp</span>
+            </div>
+
+            <div class="compliance-counts">
+              <div class="compliance-item">
+                <i data-lucide="octagon" class="ico-sm" style="color: var(--purple);"></i>
+                <span class="badge badge-purple">2</span>
+                <span>violations</span>
+              </div>
+            </div>
+
+            <div class="driver-footer">
+              <div class="driver-stats">
+                <span>15 Trips</span>
+                <span class="driver-earnings">$22,100.00</span>
+              </div>
+              <div class="driver-actions">
+                <button class="btn btn-ghost btn-sm">View</button>
+                <button class="btn btn-ghost btn-sm">Edit</button>
+                <button class="btn btn-ghost btn-sm">Del</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 4 - Robert Williams -->
+          <div class="driver-card">
+            <div class="driver-header">
+              <div class="driver-avatar" style="background: var(--red-dim); color: var(--red);">RW</div>
+              <div class="driver-info">
+                <div class="driver-name">
+                  <span>Robert Williams</span>
+                </div>
+                <div class="driver-type-cut">30% cut</div>
+              </div>
+              <div class="driver-status">
+                <span class="badge badge-red">INACTIVE</span>
+              </div>
+            </div>
+
+            <div class="driver-contact">
+              <div>(404) 555-0188</div>
+            </div>
+
+            <div class="file-badges">
+              <span class="file-badge qual">📋 5 Qual</span>
+              <span class="file-badge pers">🔒 0 Pers</span>
+            </div>
+
+            <div class="compliance-counts">
+              <div class="compliance-item">
+                <i data-lucide="file-text" class="ico-sm" style="color: var(--amber);"></i>
+                <span class="badge badge-amber">1</span>
+                <span>claim</span>
+              </div>
+            </div>
+
+            <div class="driver-footer">
+              <div class="driver-stats">
+                <span>3 Trips</span>
+                <span class="driver-earnings">$4,200.00</span>
+              </div>
+              <div class="driver-actions">
+                <button class="btn btn-ghost btn-sm">View</button>
+                <button class="btn btn-ghost btn-sm">Edit</button>
+                <button class="btn btn-ghost btn-sm">Del</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 5 - Sarah Johnson -->
+          <div class="driver-card">
+            <div class="driver-header">
+              <div class="driver-avatar" style="background: var(--purple-dim); color: var(--purple);">SJ</div>
+              <div class="driver-info">
+                <div class="driver-name">
+                  <span>Sarah Johnson</span>
+                  <span class="badge badge-amber">Owner-OP</span>
+                </div>
+                <div class="driver-type-cut">12% dispatch fee</div>
+              </div>
+              <div class="driver-status">
+                <span class="badge badge-green">ACTIVE</span>
+              </div>
+            </div>
+
+            <div class="driver-contact">
+              <div>(312) 555-0567</div>
+              <div>sjohnson@trucking.com</div>
+            </div>
+
+            <div class="file-badges">
+              <span class="file-badge qual">📋 9 Qual</span>
+              <span class="file-badge pers">🔒 3 Pers</span>
+              <span class="file-badge exp">⚠️ 1 Exp</span>
+            </div>
+
+            <div class="compliance-counts">
+              <span style="font-size: var(--text-xs); color: var(--text-muted);">No compliance issues</span>
+            </div>
+
+            <div class="driver-footer">
+              <div class="driver-stats">
+                <span>20 Trips</span>
+                <span class="driver-earnings">$45,320.00</span>
+              </div>
+              <div class="driver-actions">
+                <button class="btn btn-ghost btn-sm">View</button>
+                <button class="btn btn-ghost btn-sm">Edit</button>
+                <button class="btn btn-ghost btn-sm">Del</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 6 - James Lee -->
+          <div class="driver-card">
+            <div class="driver-header">
+              <div class="driver-avatar" style="background: var(--green-dim); color: var(--green);">JL</div>
+              <div class="driver-info">
+                <div class="driver-name">
+                  <span>James Lee</span>
+                </div>
+                <div class="driver-type-cut">32% cut</div>
+              </div>
+              <div class="driver-status">
+                <span class="badge badge-green">ACTIVE</span>
+              </div>
+            </div>
+
+            <div class="driver-contact">
+              <div>(817) 555-0634</div>
+            </div>
+
+            <div class="file-badges">
+              <span class="file-badge qual">📋 10 Qual</span>
+              <span class="file-badge pers">🔒 2 Pers</span>
+            </div>
+
+            <div class="compliance-counts">
+              <span style="font-size: var(--text-xs); color: var(--text-muted);">No compliance issues</span>
+            </div>
+
+            <div class="driver-footer">
+              <div class="driver-stats">
+                <span>6 Trips</span>
+                <span class="driver-earnings">$9,870.00</span>
+              </div>
+              <div class="driver-actions">
+                <button class="btn btn-ghost btn-sm">View</button>
+                <button class="btn btn-ghost btn-sm">Edit</button>
+                <button class="btn btn-ghost btn-sm">Del</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- SECTION DIVIDER -->
+        <div class="section-divider">
+          <h3 style="margin: 0; color: var(--text-secondary);">DRIVER DETAIL VIEW (below)</h3>
+        </div>
+
+        <!-- SECTION B: DRIVER DETAIL VIEW (John Smith) -->
+
+        <!-- B1. Header Row -->
+        <div class="detail-header">
+          <div class="detail-header-left">
+            <button class="btn btn-ghost">
+              <i data-lucide="arrow-left" class="ico-sm"></i>
+              Back
+            </button>
+            <div class="detail-avatar">JS</div>
+            <div>
+              <h2 style="font-size: var(--text-xl); font-weight: var(--weight-heavy); margin: 0 0 4px 0;">John Smith</h2>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary);">
+                (215) 555-0147 • jsmith@example.com
+              </div>
+            </div>
+          </div>
+          <div class="detail-header-right">
+            <span class="badge badge-green">ACTIVE</span>
+            <button class="btn btn-secondary">Edit Driver</button>
+          </div>
+        </div>
+
+        <!-- B2. Stats Cards Row -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          <div class="stat-card">
+            <div class="stat-label">Driver Cut</div>
+            <div class="stat-value">32%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Trips</div>
+            <div class="stat-value">12</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">
+              <i data-lucide="dollar-sign" class="ico-lg"></i>
+            </div>
+            <div class="stat-label">Total Earnings</div>
+            <div class="stat-value" style="color: var(--green);">$18,450.00</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon blue">
+              <i data-lucide="file-text" class="ico-lg"></i>
+            </div>
+            <div class="stat-label">Qual Files</div>
+            <div class="stat-value">8/10</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple">
+              <i data-lucide="lock" class="ico-lg"></i>
+            </div>
+            <div class="stat-label">Personal Files</div>
+            <div class="stat-value">2/3</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon blue">
+              <i data-lucide="folder" class="ico-lg"></i>
+            </div>
+            <div class="stat-label">Custom Folders</div>
+            <div class="stat-value">2</div>
+          </div>
+        </div>
+
+        <!-- B3. Qualification Files Section -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header" style="border-left: 3px solid var(--blue);">
+            <h3 class="card-title">Driver Qualification Files</h3>
+            <button class="btn btn-primary btn-sm">
+              <i data-lucide="upload" class="ico-sm"></i>
+              Upload
+            </button>
+          </div>
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Document Type</th>
+                  <th>Status</th>
+                  <th>Expiration</th>
+                  <th>Uploaded</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>CDL</td>
+                  <td><span class="badge badge-green">Uploaded</span></td>
+                  <td><span class="badge badge-red">EXPIRED</span> Jan 15, 2026</td>
+                  <td>Dec 10, 2024</td>
+                  <td>
+                    <button class="btn btn-ghost btn-sm">View</button>
+                    <button class="btn btn-ghost btn-sm">Del</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>MEDICAL_CARD</td>
+                  <td><span class="badge badge-green">Uploaded</span></td>
+                  <td><span class="badge badge-green">Valid until Aug 22, 2026</span></td>
+                  <td>Mar 5, 2025</td>
+                  <td>
+                    <button class="btn btn-ghost btn-sm">View</button>
+                    <button class="btn btn-ghost btn-sm">Del</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>MEDICAL_EXAMINER_VERIFICATION</td>
+                  <td><span class="badge badge-green">Uploaded</span></td>
+                  <td>--</td>
+                  <td>Mar 5, 2025</td>
+                  <td>
+                    <button class="btn btn-ghost btn-sm">View</button>
+                    <button class="btn btn-ghost btn-sm">Del</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>MVR</td>
+                  <td><span class="badge badge-green">Uploaded</span></td>
+                  <td><span class="badge badge-amber">Expires in 5d</span></td>
+                  <td>Jan 10, 2025</td>
+                  <td>
+                    <button class="btn btn-ghost btn-sm">View</button>
+                    <button class="btn btn-ghost btn-sm">Del</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>PSP_REPORT</td>
+                  <td><span class="badge badge-green">Uploaded</span></td>
+                  <td><span class="badge badge-green">Valid until Nov 1, 2026</span></td>
+                  <td>Oct 15, 2025</td>
+                  <td>
+                    <button class="btn btn-ghost btn-sm">View</button>
+                    <button class="btn btn-ghost btn-sm">Del</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>EMPLOYMENT_VERIFICATION</td>
+                  <td><span class="badge badge-green">Uploaded</span></td>
+                  <td>--</td>
+                  <td>Jun 20, 2024</td>
+                  <td>
+                    <button class="btn btn-ghost btn-sm">View</button>
+                    <button class="btn btn-ghost btn-sm">Del</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>APPLICATION_OF_EMPLOYMENT</td>
+                  <td><span class="badge badge-green">Uploaded</span></td>
+                  <td>--</td>
+                  <td>Jun 20, 2024</td>
+                  <td>
+                    <button class="btn btn-ghost btn-sm">View</button>
+                    <button class="btn btn-ghost btn-sm">Del</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>CLEARING_HOUSE_QUERY</td>
+                  <td><span class="badge badge-green">Uploaded</span></td>
+                  <td>--</td>
+                  <td>Sep 1, 2025</td>
+                  <td>
+                    <button class="btn btn-ghost btn-sm">View</button>
+                    <button class="btn btn-ghost btn-sm">Del</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>DRUG_TEST_RESULT</td>
+                  <td><span class="badge badge-gray">Missing</span></td>
+                  <td>--</td>
+                  <td>--</td>
+                  <td>
+                    <button class="btn btn-primary btn-sm">Upload</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>CHAIN_OF_CUSTODY</td>
+                  <td><span class="badge badge-gray">Missing</span></td>
+                  <td>--</td>
+                  <td>--</td>
+                  <td>
+                    <button class="btn btn-primary btn-sm">Upload</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- B4. Personal Files Section -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header" style="border-left: 3px solid var(--purple);">
+            <h3 class="card-title">Driver Personal Files</h3>
+          </div>
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Document Type</th>
+                  <th>Status</th>
+                  <th>Uploaded</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>SSN</td>
+                  <td><span class="badge badge-green">Uploaded</span></td>
+                  <td>Jun 20, 2024</td>
+                  <td>
+                    <button class="btn btn-ghost btn-sm">View</button>
+                    <button class="btn btn-ghost btn-sm">Del</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>BANKING_INFO</td>
+                  <td><span class="badge badge-green">Uploaded</span></td>
+                  <td>Jul 15, 2024</td>
+                  <td>
+                    <button class="btn btn-ghost btn-sm">View</button>
+                    <button class="btn btn-ghost btn-sm">Del</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>W9</td>
+                  <td><span class="badge badge-gray">Missing</span></td>
+                  <td>--</td>
+                  <td>
+                    <button class="btn btn-primary btn-sm">Upload</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- B5. Custom Folders Section -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header" style="border-left: 3px solid var(--blue);">
+            <h3 class="card-title">Custom Folders</h3>
+            <button class="btn btn-secondary btn-sm">
+              <i data-lucide="plus" class="ico-sm"></i>
+              New Folder
+            </button>
+          </div>
+          <div style="padding: 16px;">
+
+            <!-- Folder 1: Training Certificates (expanded) -->
+            <div class="folder-accordion">
+              <div class="folder-header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <i data-lucide="folder" class="ico"></i>
+                  <span class="font-semibold">Training Certificates</span>
+                  <span class="badge badge-blue">2 files</span>
+                </div>
+                <i data-lucide="chevron-down" class="ico-sm"></i>
+              </div>
+              <div class="folder-body">
+                <div class="table-container">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>File Name</th>
+                        <th>Type</th>
+                        <th>Uploaded</th>
+                        <th>Notes</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Hazmat Training 2025.pdf</td>
+                        <td>PDF</td>
+                        <td>Jan 5, 2026</td>
+                        <td>Annual renewal</td>
+                        <td>
+                          <button class="btn btn-ghost btn-sm">View</button>
+                          <button class="btn btn-ghost btn-sm">Del</button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>Defensive Driving.pdf</td>
+                        <td>PDF</td>
+                        <td>Sep 12, 2025</td>
+                        <td></td>
+                        <td>
+                          <button class="btn btn-ghost btn-sm">View</button>
+                          <button class="btn btn-ghost btn-sm">Del</button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Folder 2: Insurance Documents (collapsed) -->
+            <div class="folder-accordion folder-collapsed">
+              <div class="folder-header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <i data-lucide="folder" class="ico"></i>
+                  <span class="font-semibold">Insurance Documents</span>
+                  <span class="badge badge-blue">1 file</span>
+                </div>
+                <i data-lucide="chevron-right" class="ico-sm"></i>
+              </div>
+              <div class="folder-body">
+                <!-- Content hidden when collapsed -->
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- B6. Compliance Records Section -->
+        <div class="card">
+          <div class="card-header" style="border-left: 3px solid var(--red);">
+            <h3 class="card-title">Compliance Records</h3>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-ghost btn-sm">
+                <i data-lucide="plus" class="ico-sm"></i>
+                Ticket
+              </button>
+              <button class="btn btn-ghost btn-sm">
+                <i data-lucide="plus" class="ico-sm"></i>
+                Violation
+              </button>
+              <button class="btn btn-ghost btn-sm">
+                <i data-lucide="plus" class="ico-sm"></i>
+                Claim
+              </button>
+            </div>
+          </div>
+          <div style="padding: 16px;">
+
+            <!-- Summary badges -->
+            <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+              <span class="badge badge-amber">1 Open Ticket</span>
+              <span class="badge badge-gray">0 Violations</span>
+              <span class="badge badge-gray">0 Claims</span>
+            </div>
+
+            <!-- Tickets table -->
+            <div style="margin-bottom: 24px;">
+              <h4 style="font-size: var(--text-base); font-weight: var(--weight-semibold); margin-bottom: 12px;">Tickets</h4>
+              <div class="table-container">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Description</th>
+                      <th>Status</th>
+                      <th>Court Date</th>
+                      <th>Decision</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Jan 8, 2026</td>
+                      <td>Speeding - I-95 Pennsylvania</td>
+                      <td><span class="badge badge-amber">OPEN</span></td>
+                      <td>Mar 15, 2026</td>
+                      <td>--</td>
+                      <td>
+                        <button class="btn btn-ghost btn-sm">Edit</button>
+                        <button class="btn btn-ghost btn-sm">Del</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Violations table -->
+            <div style="margin-bottom: 24px;">
+              <h4 style="font-size: var(--text-base); font-weight: var(--weight-semibold); margin-bottom: 12px;">Violations</h4>
+              <div style="text-align: center; padding: 24px; color: var(--text-muted);">
+                No violations on record
+              </div>
+            </div>
+
+            <!-- Claims table -->
+            <div>
+              <h4 style="font-size: var(--text-base); font-weight: var(--weight-semibold); margin-bottom: 12px;">Claims</h4>
+              <div style="text-align: center; padding: 24px; color: var(--text-muted);">
+                No claims on record
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    themeToggle.addEventListener('click', function() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('tms-theme', next);
+      // Update icon
+      themeIcon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
+      lucide.createIcons();
+    });
+
+    // Sidebar toggle (collapse/expand)
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    sidebarToggle.addEventListener('click', function() {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('sidebar-collapsed');
+      // Update toggle icon
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+      lucide.createIcons();
+    });
+
+    // Mobile hamburger
+    const hamburger = document.getElementById('hamburger');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (hamburger) {
+      hamburger.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('active');
+      });
+    }
+
+    if (sidebarOverlay) {
+      sidebarOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      });
+    }
+
+    // Responsive: show hamburger on mobile
+    function handleResize() {
+      if (window.innerWidth <= 768) {
+        hamburger.style.display = 'flex';
+      } else {
+        hamburger.style.display = 'none';
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+  </script>
+</body>
+</html>
