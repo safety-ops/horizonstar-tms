@@ -15736,8 +15736,7 @@ ${rateText}`
             driver_id: selectedTrip?.driver_id || null,
             vehicle_direction: direction,
             load_category: null,
-            load_subcategory: null,
-            local_driver_id: null
+            load_subcategory: null
           });
 
           // Notify driver about new vehicle assignment
@@ -16885,7 +16884,7 @@ ${rateText}`
           o.trip_id === tripId &&
           parseFloat(o.local_fee || 0) > 0 &&
           isLocalDeliveryState(o.destination) &&
-          !o.local_driver_id
+          (!o.local_driver_id || o.local_delivery_status === 'UNASSIGNED')
         );
         for (const order of qualifyingOrders) {
           await dbUpdate('orders', order.id, { not_for_local_delivery: true });
@@ -16913,7 +16912,7 @@ ${rateText}`
           o.trip_id === tripId &&
           parseFloat(o.local_fee || 0) > 0 &&
           isLocalDeliveryState(o.destination) &&
-          !o.local_driver_id
+          (!o.local_driver_id || o.local_delivery_status === 'UNASSIGNED')
         );
         for (const order of qualifyingOrders) {
           await dbUpdate('orders', order.id, { not_for_local_delivery: false });
@@ -18856,7 +18855,7 @@ ${rateText}`
         terminalOrCompletedTripIds.includes(o.trip_id) &&
         parseFloat(o.local_fee || 0) > 0 &&
         isLocalDeliveryState(o.destination) &&
-        !o.local_driver_id &&
+        (!o.local_driver_id || o.local_delivery_status === 'UNASSIGNED') &&
         !o.not_for_local_delivery
       ).sort((a, b) => (a.dropoff_date || '').localeCompare(b.dropoff_date || ''));
       
@@ -18864,7 +18863,7 @@ ${rateText}`
       // Sorted by earliest pickup date first
       const pendingLocalPickup = appData.orders.filter(o =>
         (o.load_category === 'ny_to_home' || o.load_category === 'ny_to_fl') &&
-        !o.local_driver_id &&
+        (!o.local_driver_id || o.local_delivery_status === 'UNASSIGNED') &&
         !o.not_for_local_delivery
       ).sort((a, b) => (a.pickup_date || '').localeCompare(b.pickup_date || ''));
       
@@ -18874,7 +18873,7 @@ ${rateText}`
       const localDriverStats = (appData.local_drivers || []).map(ld => {
         const driverOrders = yearFilteredOrders.filter(o => o.local_driver_id === ld.id);
         const completedOrders = driverOrders.filter(o => o.local_delivery_status === 'DELIVERED');
-        const pendingOrders = driverOrders.filter(o => o.local_delivery_status !== 'DELIVERED');
+        const pendingOrders = driverOrders.filter(o => o.local_delivery_status !== 'DELIVERED' && o.local_delivery_status !== 'UNASSIGNED');
         const totalEarnings = driverOrders.reduce((s, o) => s + parseFloat(o.local_fee || 0), 0);
         return { ...ld, totalOrders: driverOrders.length, completedOrders: completedOrders.length, pendingOrders: pendingOrders.length, totalEarnings };
       });
@@ -19162,7 +19161,7 @@ ${rateText}`
 
       const driverOrders = yearFilteredOrders.filter(o => o.local_driver_id === localDriverId);
       const totalEarnings = driverOrders.reduce((s, o) => s + parseFloat(o.local_fee || 0), 0);
-      const pendingOrders = driverOrders.filter(o => o.local_delivery_status !== 'DELIVERED');
+      const pendingOrders = driverOrders.filter(o => o.local_delivery_status !== 'DELIVERED' && o.local_delivery_status !== 'UNASSIGNED');
       const completedOrders = driverOrders.filter(o => o.local_delivery_status === 'DELIVERED');
       const toTerminalOrders = driverOrders.filter(o => o.local_delivery_type === 'TO_TERMINAL');
       const fromTerminalOrders = driverOrders.filter(o => o.local_delivery_type === 'FROM_TERMINAL');
@@ -19210,7 +19209,7 @@ ${rateText}`
             '<button class="action-btn" style="background:#a855f7;color:white" onclick="openLocalNoteFromDriver(' + o.id + ',' + localDriverId + ')" title="' + o.local_notes.replace(/"/g, '&quot;').replace(/\n/g, ' ') + '">📝</button>' : 
             '<button class="action-btn" style="background:#e9d5ff;color:#7c3aed" onclick="openLocalNoteFromDriver(' + o.id + ',' + localDriverId + ')" title="Add note">📝+</button>';
           const noteHtml = o.local_notes ? '<tr style="background:#f3e8ff"><td colspan="14" style="padding:8px 16px;font-size:13px"><span style="font-weight:600;color:#7c3aed">📝 Local Note:</span> ' + o.local_notes + '</td></tr>' : '';
-          return '<tr style="background:' + rowColor + '"><td style="text-align:center"><button onclick="cycleConfirmationStatusFromDriver(' + o.id + ',' + localDriverId + ')" style="background:none;border:none;font-size:18px;cursor:pointer" title="Click to change status">' + statusIcon + '</button></td><td><strong>' + o.order_number + '</strong></td><td>' + (o.broker_name || '-') + '</td><td>' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + '</td><td title="' + (o.pickup_full_address || o.origin || '') + '">' + (o.origin || '-') + '</td><td>' + pickupPhoneDisplay + '</td><td title="' + (o.delivery_full_address || o.destination || '') + '">' + (o.destination || '-') + '</td><td>' + deliveryPhoneDisplay + '</td><td>' + getTypeBadge(o.local_delivery_type) + '</td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee || 0) + '</td><td class="money">' + formatMoney(o.revenue || 0) + '</td><td><span class="badge ' + (o.local_delivery_status === 'DELIVERED' ? 'badge-green' : 'badge-amber') + '">' + (o.local_delivery_status || 'ASSIGNED') + '</span></td><td class="sticky-col"><div class="actions">' + noteBtn + (o.local_delivery_status !== 'DELIVERED' ? '<button class="action-btn edit" style="background:#10b981;color:white" onclick="markLocalDelivered(' + o.id + ',' + localDriverId + ')">✓</button>' : '') + '<button class="action-btn delete" onclick="unassignLocalDriver(' + o.id + ',' + localDriverId + ')">✗</button></div></td></tr>' + noteHtml;
+          return '<tr style="background:' + rowColor + '"><td style="text-align:center"><button onclick="cycleConfirmationStatusFromDriver(' + o.id + ',' + localDriverId + ')" style="background:none;border:none;font-size:18px;cursor:pointer" title="Click to change status">' + statusIcon + '</button></td><td><strong>' + o.order_number + '</strong>' + (o.trip_id ? ' <span class="badge badge-blue" style="font-size:10px">On Trip</span>' : '') + '</td><td>' + (o.broker_name || '-') + '</td><td>' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + '</td><td title="' + (o.pickup_full_address || o.origin || '') + '">' + (o.origin || '-') + '</td><td>' + pickupPhoneDisplay + '</td><td title="' + (o.delivery_full_address || o.destination || '') + '">' + (o.destination || '-') + '</td><td>' + deliveryPhoneDisplay + '</td><td>' + getTypeBadge(o.local_delivery_type) + '</td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee || 0) + '</td><td class="money">' + formatMoney(o.revenue || 0) + '</td><td><span class="badge ' + (o.local_delivery_status === 'DELIVERED' ? 'badge-green' : o.local_delivery_status === 'UNASSIGNED' ? 'badge-gray' : 'badge-amber') + '">' + (o.local_delivery_status || 'ASSIGNED') + '</span></td><td class="sticky-col"><div class="actions">' + noteBtn + (o.local_delivery_status !== 'DELIVERED' && o.local_delivery_status !== 'UNASSIGNED' ? '<button class="action-btn edit" style="background:#10b981;color:white" onclick="markLocalDelivered(' + o.id + ',' + localDriverId + ')">✓</button>' : '') + (o.local_delivery_status !== 'UNASSIGNED' ? '<button class="action-btn delete" onclick="unassignLocalDriver(' + o.id + ',' + localDriverId + ')">✗</button>' : '') + '</div></td></tr>' + noteHtml;
         }).join('') +
         '</tbody></table></div>') +
         '</div>';
@@ -19228,7 +19227,7 @@ ${rateText}`
     async function unassignLocalDriver(orderId, localDriverId) {
       if (!confirm('Unassign this order from local driver?')) return;
       try {
-        await dbUpdate('orders', orderId, { local_driver_id: null, local_delivery_status: null });
+        await dbUpdate('orders', orderId, { local_delivery_status: 'UNASSIGNED' });
         showToast('Unassigned');
         await loadAllData(true);
         viewLocalDriverDetails(localDriverId);
