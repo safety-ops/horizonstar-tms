@@ -26,13 +26,13 @@
 
 ### People & Fleet Pages (PEOPLE)
 
-- [ ] **PEOPLE-01**: Drivers list mockup with driver cards, status badges
-- [ ] **PEOPLE-02**: Driver detail mockup with trips, files, earnings summary
-- [ ] **PEOPLE-03**: Local Drivers list mockup with stats, pending sections
-- [ ] **PEOPLE-04**: Local Driver detail mockup with assigned orders table
-- [ ] **PEOPLE-05**: Trucks list mockup with truck cards
-- [ ] **PEOPLE-06**: Brokers list mockup with broker cards/table
-- [ ] **PEOPLE-07**: Dispatchers list and ranking mockup
+- [x] **PEOPLE-01**: Drivers list mockup with driver cards, status badges
+- [x] **PEOPLE-02**: Driver detail mockup with trips, files, earnings summary
+- [x] **PEOPLE-03**: Local Drivers list mockup with stats, pending sections
+- [x] **PEOPLE-04**: Local Driver detail mockup with assigned orders table
+- [x] **PEOPLE-05**: Trucks list mockup with truck cards
+- [x] **PEOPLE-06**: Brokers list mockup with broker cards/table
+- [x] **PEOPLE-07**: Dispatchers list and ranking mockup
 
 ### Financial Pages (FIN)
 
@@ -82,13 +82,13 @@
 | CORE-04 | Phase 7 | Complete |
 | CORE-05 | Phase 7 | Complete |
 | CORE-06 | Phase 7 | Complete |
-| PEOPLE-01 | Phase 8 | Pending |
-| PEOPLE-02 | Phase 8 | Pending |
-| PEOPLE-03 | Phase 8 | Pending |
-| PEOPLE-04 | Phase 8 | Pending |
-| PEOPLE-05 | Phase 8 | Pending |
-| PEOPLE-06 | Phase 8 | Pending |
-| PEOPLE-07 | Phase 8 | Pending |
+| PEOPLE-01 | Phase 8 | Complete |
+| PEOPLE-02 | Phase 8 | Complete |
+| PEOPLE-03 | Phase 8 | Complete |
+| PEOPLE-04 | Phase 8 | Complete |
+| PEOPLE-05 | Phase 8 | Complete |
+| PEOPLE-06 | Phase 8 | Complete |
+| PEOPLE-07 | Phase 8 | Complete |
 | FIN-01 | Phase 9 | Pending |
 | FIN-02 | Phase 9 | Pending |
 | FIN-03 | Phase 9 | Pending |

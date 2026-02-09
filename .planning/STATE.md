@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 
 ## Current Position
 
-Phase: 7 (Core Dispatch Pages) of 10 — COMPLETE
-Plan: 6 of 6 — Order Detail (COMPLETE)
-Status: Phase 7 complete
-Last activity: 2026-02-09 — Completed all 6 plans (dashboard, load-board, trips, trip-detail, orders, order-detail)
+Phase: 8 (People & Fleet Pages) of 10 — COMPLETE
+Plan: 5 of 5 — Dispatchers (COMPLETE)
+Status: Phase 8 complete
+Last activity: 2026-02-09 — Completed all 5 plans (drivers, local-drivers, trucks, brokers, dispatchers)
 
-Progress: ████████░░░░░░░░░░░░ 8/22 plans (36%)
+Progress: █████████████░░░░░░░ 13/22 plans (59%)
 
 ## Accumulated Context
 
@@ -40,5 +40,5 @@ Progress: ████████░░░░░░░░░░░░ 8/22 plan
 ## Session Continuity
 
 Last session: 2026-02-09
-Stopped at: Phase 7 complete, all 6 core dispatch page mockups built and approved
+Stopped at: Phase 8 complete, all 5 people & fleet page mockups built and approved
 Resume file: None
