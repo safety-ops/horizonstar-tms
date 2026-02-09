@@ -40,7 +40,21 @@ Dispatchers can efficiently manage the full lifecycle of vehicle transport order
 
 <!-- Current scope. Building toward these. -->
 
-(To be defined for next milestone)
+- Web TMS UI redesign mockups — all major pages
+- Unified design system matching iOS v3 (dark/light theme)
+- Standalone HTML mockups with theme toggle (no production code changes)
+
+## Current Milestone: v1.1 Web TMS UI Redesign Mockups
+
+**Goal:** Create standalone HTML mockups for every major Web TMS page, applying the iOS v3 design system. Same layout and functionality, modern professional look. Both light and dark mode with toggle. One HTML file per page in `mockups/web-tms-redesign/`.
+
+**Target deliverables:**
+- Shared design system (CSS tokens, sidebar, header, common components)
+- Core dispatch pages (Dashboard, Load Board, Trips, Orders)
+- People & fleet pages (Drivers, Local Drivers, Trucks, Brokers, Dispatchers)
+- Financial pages (Payroll, Billing, Financials)
+- Operations pages (Fuel, IFTA, Compliance, Maintenance)
+- Admin pages (Tasks, Settings, Activity Log, Team Chat)
 
 ### Out of Scope
 
@@ -74,6 +88,8 @@ Dispatchers can efficiently manage the full lifecycle of vehicle transport order
 | Supabase for backend | Free tier, built-in auth/storage/realtime | ✓ Good |
 | SwiftUI for iOS | Modern Apple framework, declarative | ✓ Good |
 | Local driver fee preservation | Fees must persist through reassignment | ✓ Good — fixed 2026-02-09 |
+| Mockups before code changes | Review and approve designs before touching production index.html | — Pending |
+| Match iOS v3 design system | Unified brand across web and mobile products | — Pending |
 
 ---
-*Last updated: 2026-02-09 after GSD initialization*
+*Last updated: 2026-02-09 after v1.1 milestone definition*
