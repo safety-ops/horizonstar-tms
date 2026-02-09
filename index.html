@@ -16883,11 +16883,11 @@ ${rateText}`
         const qualifyingOrders = appData.orders.filter(o =>
           o.trip_id === tripId &&
           parseFloat(o.local_fee || 0) > 0 &&
-          isLocalDeliveryState(o.destination) &&
+          isLocalDeliveryState(o.destination, o.delivery_state) &&
           (!o.local_driver_id || o.local_delivery_status === 'UNASSIGNED')
         );
         for (const order of qualifyingOrders) {
-          await dbUpdate('orders', order.id, { not_for_local_delivery: true });
+          try { await dbUpdate('orders', order.id, { not_for_local_delivery: true }); } catch (e) { /* column may not exist yet */ }
         }
 
         showToast('Trip marked as completed!');
@@ -16911,11 +16911,11 @@ ${rateText}`
         const qualifyingOrders = appData.orders.filter(o =>
           o.trip_id === tripId &&
           parseFloat(o.local_fee || 0) > 0 &&
-          isLocalDeliveryState(o.destination) &&
+          isLocalDeliveryState(o.destination, o.delivery_state) &&
           (!o.local_driver_id || o.local_delivery_status === 'UNASSIGNED')
         );
         for (const order of qualifyingOrders) {
-          await dbUpdate('orders', order.id, { not_for_local_delivery: false });
+          try { await dbUpdate('orders', order.id, { not_for_local_delivery: false }); } catch (e) { /* column may not exist yet */ }
         }
 
         showToast('Trip marked at terminal!');
@@ -18817,13 +18817,25 @@ ${rateText}`
 
     // ============ LOCAL DRIVERS SECTION ============
     // Helper function to check if destination is in NY/NJ/PA
-    function isLocalDeliveryState(destination) {
-      if (!destination) return false;
-      const dest = destination.toUpperCase();
-      // Check for state abbreviations or full names
-      return dest.includes(', NY') || dest.includes(', NJ') || dest.includes(', PA') ||
-             dest.includes('NEW YORK') || dest.includes('NEW JERSEY') || dest.includes('PENNSYLVANIA') ||
-             dest.endsWith(' NY') || dest.endsWith(' NJ') || dest.endsWith(' PA');
+    function isLocalDeliveryState(destination, deliveryState) {
+      // Check destination field (e.g., "Brooklyn, NY")
+      if (destination) {
+        const dest = destination.toUpperCase();
+        if (dest.includes(', NY') || dest.includes(', NJ') || dest.includes(', PA') ||
+            dest.includes('NEW YORK') || dest.includes('NEW JERSEY') || dest.includes('PENNSYLVANIA') ||
+            dest.endsWith(' NY') || dest.endsWith(' NJ') || dest.endsWith(' PA')) {
+          return true;
+        }
+      }
+      // Also check delivery_state field (e.g., "NY")
+      if (deliveryState) {
+        const state = deliveryState.toUpperCase().trim();
+        if (state === 'NY' || state === 'NJ' || state === 'PA' ||
+            state === 'NEW YORK' || state === 'NEW JERSEY' || state === 'PENNSYLVANIA') {
+          return true;
+        }
+      }
+      return false;
     }
 
     // Local Drivers page year filter (default to current year)
@@ -18854,7 +18866,7 @@ ${rateText}`
       const pendingLocalDelivery = appData.orders.filter(o =>
         terminalOrCompletedTripIds.includes(o.trip_id) &&
         parseFloat(o.local_fee || 0) > 0 &&
-        isLocalDeliveryState(o.destination) &&
+        isLocalDeliveryState(o.destination, o.delivery_state) &&
         (!o.local_driver_id || o.local_delivery_status === 'UNASSIGNED') &&
         !o.not_for_local_delivery
       ).sort((a, b) => (a.dropoff_date || '').localeCompare(b.dropoff_date || ''));
