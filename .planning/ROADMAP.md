@@ -33,25 +33,39 @@ Plans:
 
 ## Phase 7: Core Dispatch Pages
 
-**Goal:** Mockup the 4 most-used daily pages: Dashboard, Load Board, Trips, and Orders.
+**Goal:** Mockup the 4 most-used daily pages (Dashboard, Load Board, Trips, Orders) + 2 detail views (Trip Detail, Order Detail) using the Phase 6 design system.
 
 **Requirements:** CORE-01, CORE-02, CORE-03, CORE-04, CORE-05, CORE-06
 
 **Depends on:** Phase 6 (shared CSS)
 
+**Plans:** 6 plans
+
+Plans:
+- [ ] 07-01-PLAN.md — Dashboard mockup (all 9 sections in production order)
+- [ ] 07-02-PLAN.md — Load Board mockup (7 category tabs, vehicle table)
+- [ ] 07-03-PLAN.md — Trips list mockup (status filters, truck tabs, trip table)
+- [ ] 07-04-PLAN.md — Trip Detail mockup (financials, vehicle directions, expenses)
+- [ ] 07-05-PLAN.md — Orders list mockup (filter bar, checkboxes, order table)
+- [ ] 07-06-PLAN.md — Order Detail mockup (vehicle info, route, payments, timeline)
+
 **Output:**
 - `mockups/web-tms-redesign/dashboard.html`
-- `mockups/web-tms-redesign/loadboard.html`
-- `mockups/web-tms-redesign/trips.html` (includes trip detail view)
-- `mockups/web-tms-redesign/orders.html` (includes edit modal)
+- `mockups/web-tms-redesign/load-board.html`
+- `mockups/web-tms-redesign/trips.html`
+- `mockups/web-tms-redesign/trip-detail.html`
+- `mockups/web-tms-redesign/orders.html`
+- `mockups/web-tms-redesign/order-detail.html`
 
 **Success Criteria:**
-1. Dashboard shows stat cards, revenue chart, recent activity, and quick stats
-2. Load Board shows category tabs, order cards with vehicle info, and assign modal
-3. Trips page shows status filter tabs, trip table/cards, and trip detail with financials
-4. Orders page shows search/filter bar, order table, and edit modal overlay
-5. All pages use shared.css design system with working light/dark toggle
-6. Layout matches current TMS structure (same sections, same data relationships)
+1. Dashboard shows all 9 sections in exact production order with realistic data
+2. Load Board shows 7 colored category tabs, subcategory pills, and vehicle table
+3. Trips page shows status filter tabs, truck tabs, and trip table with financials
+4. Trip Detail shows financials card, colored vehicle direction sections, and expenses
+5. Orders page shows filter bar, checkboxes, order table, and pagination
+6. Order Detail shows vehicle info, route, payments, inspection photos, and timeline
+7. All pages use shared.css design system with working light/dark toggle
+8. Layout matches current TMS structure (same sections, same data relationships)
 
 ---
 
