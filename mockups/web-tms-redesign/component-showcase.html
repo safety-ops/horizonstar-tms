@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Component Showcase — Horizon Star TMS Design System</title>
+
+  <!-- FART prevention: set theme before CSS loads -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('tms-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared.css">
+  <style>
+    .color-swatch {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .color-circle {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+    }
+    .color-label {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .component-section {
+      margin-bottom: 32px;
+    }
+    .component-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 16px;
+    }
+    .stat-card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+    .typography-sample {
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .typography-sample:last-child {
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <i data-lucide="truck"></i>
+        </div>
+        <span class="sidebar-logo-text">Horizon Star</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- MAIN Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Main</div>
+          <a class="nav-item" data-page="dashboard">
+            <i data-lucide="layout-dashboard" class="nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+          </a>
+          <a class="nav-item" data-page="trips">
+            <i data-lucide="map" class="nav-icon"></i>
+            <span class="nav-label">Trips</span>
+          </a>
+          <a class="nav-item" data-page="messages">
+            <i data-lucide="message-square" class="nav-icon"></i>
+            <span class="nav-label">Messages</span>
+          </a>
+          <a class="nav-item" data-page="trailers">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trailers</span>
+          </a>
+          <a class="nav-item" data-page="load-board">
+            <i data-lucide="package" class="nav-icon"></i>
+            <span class="nav-label">Load Board</span>
+          </a>
+          <a class="nav-item" data-page="inspections">
+            <i data-lucide="clipboard-list" class="nav-icon"></i>
+            <span class="nav-label">Inspections</span>
+          </a>
+          <a class="nav-item" data-page="tasks">
+            <i data-lucide="check-square" class="nav-icon"></i>
+            <span class="nav-label">Tasks</span>
+          </a>
+        </div>
+
+        <!-- FLEET Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Fleet</div>
+          <a class="nav-item" data-page="drivers">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Drivers</span>
+          </a>
+          <a class="nav-item" data-page="trucks">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trucks</span>
+          </a>
+          <a class="nav-item" data-page="local-drivers">
+            <i data-lucide="user" class="nav-icon"></i>
+            <span class="nav-label">Local Drivers</span>
+          </a>
+        </div>
+
+        <!-- PARTNERS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Partners</div>
+          <a class="nav-item" data-page="brokers">
+            <i data-lucide="briefcase" class="nav-icon"></i>
+            <span class="nav-label">Brokers</span>
+          </a>
+          <a class="nav-item" data-page="dealers">
+            <i data-lucide="building" class="nav-icon"></i>
+            <span class="nav-label">Dealers</span>
+          </a>
+          <a class="nav-item" data-page="dispatchers">
+            <i data-lucide="phone" class="nav-icon"></i>
+            <span class="nav-label">Dispatchers</span>
+          </a>
+          <a class="nav-item" data-page="dispatcher-ranking">
+            <i data-lucide="star" class="nav-icon"></i>
+            <span class="nav-label">Dispatcher Ranking</span>
+          </a>
+        </div>
+
+        <!-- FINANCIALS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Financials</div>
+          <a class="nav-item" data-page="financials">
+            <i data-lucide="dollar-sign" class="nav-icon"></i>
+            <span class="nav-label">Financials</span>
+          </a>
+          <a class="nav-item" data-page="billing">
+            <i data-lucide="file-text" class="nav-icon"></i>
+            <span class="nav-label">Billing</span>
+          </a>
+          <a class="nav-item" data-page="trip-profitability">
+            <i data-lucide="trending-up" class="nav-icon"></i>
+            <span class="nav-label">Trip Profitability</span>
+          </a>
+          <a class="nav-item" data-page="payroll">
+            <i data-lucide="credit-card" class="nav-icon"></i>
+            <span class="nav-label">Payroll</span>
+          </a>
+          <a class="nav-item" data-page="fuel">
+            <i data-lucide="droplet" class="nav-icon"></i>
+            <span class="nav-label">Fuel</span>
+          </a>
+          <a class="nav-item" data-page="ifta">
+            <i data-lucide="file" class="nav-icon"></i>
+            <span class="nav-label">IFTA</span>
+          </a>
+          <a class="nav-item" data-page="reports">
+            <i data-lucide="bar-chart-2" class="nav-icon"></i>
+            <span class="nav-label">Reports</span>
+          </a>
+          <a class="nav-item" data-page="ai-advisor">
+            <i data-lucide="brain" class="nav-icon"></i>
+            <span class="nav-label">AI Advisor</span>
+          </a>
+        </div>
+
+        <!-- OPERATIONS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Operations</div>
+          <a class="nav-item" data-page="maintenance">
+            <i data-lucide="wrench" class="nav-icon"></i>
+            <span class="nav-label">Maintenance</span>
+          </a>
+          <a class="nav-item" data-page="compliance">
+            <i data-lucide="shield-check" class="nav-icon"></i>
+            <span class="nav-label">Compliance</span>
+          </a>
+          <a class="nav-item" data-page="applications">
+            <i data-lucide="file-plus" class="nav-icon"></i>
+            <span class="nav-label">Applications</span>
+          </a>
+        </div>
+
+        <!-- SETTINGS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Settings</div>
+          <a class="nav-item" data-page="settings">
+            <i data-lucide="settings" class="nav-icon"></i>
+            <span class="nav-label">Settings</span>
+          </a>
+          <a class="nav-item" data-page="users">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Users</span>
+          </a>
+          <a class="nav-item" data-page="activity-log">
+            <i data-lucide="activity" class="nav-icon"></i>
+            <span class="nav-label">Activity Log</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-toggle" id="sidebarToggle">
+        <i data-lucide="panel-left-close" class="nav-icon" id="toggleIcon"></i>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger" style="display:none;">
+            <i data-lucide="menu"></i>
+          </button>
+          <h1 class="header-title">Component Showcase</h1>
+        </div>
+
+        <div class="header-search">
+          <i data-lucide="search" class="ico-sm"></i>
+          <input type="text" placeholder="Search components...">
+        </div>
+
+        <div class="header-right">
+          <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+            <i data-lucide="moon" class="ico" id="themeIcon"></i>
+          </button>
+          <div class="header-avatar">DS</div>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <p style="color: var(--text-secondary); margin-bottom: 24px;">
+          Living reference for the Horizon Star TMS design system. All components work in both dark and light themes.
+        </p>
+
+        <!-- 1. Color Tokens -->
+        <div class="component-section">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">1. Color Tokens</h3>
+            </div>
+
+            <h4 style="margin-bottom: 12px; color: var(--text-secondary); font-size: var(--text-sm);">Brand Colors</h4>
+            <div class="component-grid" style="margin-bottom: 24px;">
+              <div class="color-swatch">
+                <div class="color-circle" style="background: var(--green);"></div>
+                <span class="color-label">--green</span>
+              </div>
+              <div class="color-swatch">
+                <div class="color-circle" style="background: var(--green-dim);"></div>
+                <span class="color-label">--green-dim</span>
+              </div>
+              <div class="color-swatch">
+                <div class="color-circle" style="background: var(--blue);"></div>
+                <span class="color-label">--blue</span>
+              </div>
+              <div class="color-swatch">
+                <div class="color-circle" style="background: var(--blue-dim);"></div>
+                <span class="color-label">--blue-dim</span>
+              </div>
+              <div class="color-swatch">
+                <div class="color-circle" style="background: var(--amber);"></div>
+                <span class="color-label">--amber</span>
+              </div>
+              <div class="color-swatch">
+                <div class="color-circle" style="background: var(--amber-dim);"></div>
+                <span class="color-label">--amber-dim</span>
+              </div>
+              <div class="color-swatch">
+                <div class="color-circle" style="background: var(--red);"></div>
+                <span class="color-label">--red</span>
+              </div>
+              <div class="color-swatch">
+                <div class="color-circle" style="background: var(--red-dim);"></div>
+                <span class="color-label">--red-dim</span>
+              </div>
+              <div class="color-swatch">
+                <div class="color-circle" style="background: var(--purple);"></div>
+                <span class="color-label">--purple</span>
+              </div>
+              <div class="color-swatch">
+                <div class="color-circle" style="background: var(--purple-dim);"></div>
+                <span class="color-label">--purple-dim</span>
+              </div>
+            </div>
+
+            <h4 style="margin-bottom: 12px; color: var(--text-secondary); font-size: var(--text-sm);">Background Colors</h4>
+            <div class="component-grid" style="margin-bottom: 24px;">
+              <div class="color-swatch">
+                <div class="color-circle" style="background: var(--bg-app); border: 2px solid var(--border);"></div>
+                <span class="color-label">--bg-app</span>
+              </div>
+              <div class="color-swatch">
+                <div class="color-circle" style="background: var(--bg-card);"></div>
+                <span class="color-label">--bg-card</span>
+              </div>
+              <div class="color-swatch">
+                <div class="color-circle" style="background: var(--bg-card-hover);"></div>
+                <span class="color-label">--bg-card-hover</span>
+              </div>
+              <div class="color-swatch">
+                <div class="color-circle" style="background: var(--bg-elevated);"></div>
+                <span class="color-label">--bg-elevated</span>
+              </div>
+            </div>
+
+            <h4 style="margin-bottom: 12px; color: var(--text-secondary); font-size: var(--text-sm);">Text Colors</h4>
+            <div class="component-grid">
+              <div class="color-swatch">
+                <div class="color-circle" style="background: var(--text-primary);"></div>
+                <span class="color-label">--text-primary</span>
+              </div>
+              <div class="color-swatch">
+                <div class="color-circle" style="background: var(--text-secondary);"></div>
+                <span class="color-label">--text-secondary</span>
+              </div>
+              <div class="color-swatch">
+                <div class="color-circle" style="background: var(--text-muted);"></div>
+                <span class="color-label">--text-muted</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Typography -->
+        <div class="component-section">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">2. Typography</h3>
+            </div>
+
+            <div class="typography-sample">
+              <h1>Heading 1 — 28px Heavy</h1>
+              <span class="color-label">var(--text-3xl) / var(--weight-heavy)</span>
+            </div>
+            <div class="typography-sample">
+              <h2>Heading 2 — 24px Heavy</h2>
+              <span class="color-label">var(--text-2xl) / var(--weight-heavy)</span>
+            </div>
+            <div class="typography-sample">
+              <h3>Heading 3 — 20px Bold</h3>
+              <span class="color-label">var(--text-xl) / var(--weight-bold)</span>
+            </div>
+            <div class="typography-sample">
+              <h4>Heading 4 — 16px Bold</h4>
+              <span class="color-label">var(--text-lg) / var(--weight-bold)</span>
+            </div>
+            <div class="typography-sample">
+              <h5>Heading 5 — 14px Semibold</h5>
+              <span class="color-label">var(--text-base) / var(--weight-semibold)</span>
+            </div>
+            <div class="typography-sample">
+              <h6>Heading 6 — 13px Semibold</h6>
+              <span class="color-label">var(--text-sm) / var(--weight-semibold)</span>
+            </div>
+            <div class="typography-sample">
+              <p>Body text paragraph — This is the standard body text used throughout the application. It's 14px with a line height of 1.5 for optimal readability.</p>
+              <span class="color-label">var(--text-base) / var(--weight-normal)</span>
+            </div>
+            <div class="typography-sample">
+              <p style="font-family: var(--font-mono); font-weight: var(--weight-semibold);">$1,234.56</p>
+              <span class="color-label">Monospaced — for currency and numbers</span>
+            </div>
+            <div class="typography-sample">
+              <p class="text-primary">Text Primary</p>
+              <p class="text-secondary">Text Secondary</p>
+              <p class="text-muted">Text Muted</p>
+              <p class="text-success">Text Success (green)</p>
+              <p class="text-warning">Text Warning (amber)</p>
+              <p class="text-danger">Text Danger (red)</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Buttons -->
+        <div class="component-section">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">3. Buttons</h3>
+            </div>
+
+            <h4 style="margin-bottom: 12px; color: var(--text-secondary); font-size: var(--text-sm);">Button Variants</h4>
+            <div class="button-row" style="margin-bottom: 24px;">
+              <button class="btn btn-primary">
+                <i data-lucide="plus" class="ico-sm"></i>
+                Primary
+              </button>
+              <button class="btn btn-secondary">
+                <i data-lucide="edit" class="ico-sm"></i>
+                Secondary
+              </button>
+              <button class="btn btn-danger">
+                <i data-lucide="trash" class="ico-sm"></i>
+                Danger
+              </button>
+              <button class="btn btn-ghost">
+                <i data-lucide="more-horizontal" class="ico-sm"></i>
+                Ghost
+              </button>
+            </div>
+
+            <h4 style="margin-bottom: 12px; color: var(--text-secondary); font-size: var(--text-sm);">Button Sizes</h4>
+            <div class="button-row" style="margin-bottom: 24px;">
+              <button class="btn btn-primary btn-sm">Small</button>
+              <button class="btn btn-primary">Default</button>
+              <button class="btn btn-primary btn-lg">Large</button>
+            </div>
+
+            <h4 style="margin-bottom: 12px; color: var(--text-secondary); font-size: var(--text-sm);">Icon Buttons</h4>
+            <div class="button-row" style="margin-bottom: 24px;">
+              <button class="btn-icon">
+                <i data-lucide="settings" class="ico"></i>
+              </button>
+              <button class="btn-icon">
+                <i data-lucide="filter" class="ico"></i>
+              </button>
+              <button class="btn-icon">
+                <i data-lucide="download" class="ico"></i>
+              </button>
+              <button class="btn-icon">
+                <i data-lucide="more-vertical" class="ico"></i>
+              </button>
+            </div>
+
+            <h4 style="margin-bottom: 12px; color: var(--text-secondary); font-size: var(--text-sm);">Disabled State</h4>
+            <div class="button-row">
+              <button class="btn btn-primary" disabled style="opacity: 0.5; cursor: not-allowed;">Disabled</button>
+              <button class="btn btn-secondary" disabled style="opacity: 0.5; cursor: not-allowed;">Disabled</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Cards -->
+        <div class="component-section">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">4. Cards</h3>
+            </div>
+
+            <h4 style="margin-bottom: 12px; color: var(--text-secondary); font-size: var(--text-sm);">Standard Card</h4>
+            <div class="card" style="margin-bottom: 24px;">
+              <div class="card-header">
+                <div>
+                  <h4 class="card-title">Card Title</h4>
+                  <div class="card-subtitle">Optional subtitle or description</div>
+                </div>
+                <button class="btn-icon">
+                  <i data-lucide="more-horizontal" class="ico"></i>
+                </button>
+              </div>
+              <p style="color: var(--text-secondary);">This is a standard card component. It can contain any content including text, forms, tables, or other components.</p>
+            </div>
+
+            <h4 style="margin-bottom: 12px; color: var(--text-secondary); font-size: var(--text-sm);">Stat Cards</h4>
+            <div class="stat-card-grid" style="margin-bottom: 24px;">
+              <div class="stat-card">
+                <div class="stat-icon green">
+                  <i data-lucide="dollar-sign" class="ico-lg"></i>
+                </div>
+                <div class="stat-value">$142,500</div>
+                <div class="stat-label">Total Revenue</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon blue">
+                  <i data-lucide="truck" class="ico-lg"></i>
+                </div>
+                <div class="stat-value">47</div>
+                <div class="stat-label">Active Trips</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon amber">
+                  <i data-lucide="clock" class="ico-lg"></i>
+                </div>
+                <div class="stat-value">12</div>
+                <div class="stat-label">Pending Orders</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon red">
+                  <i data-lucide="alert-circle" class="ico-lg"></i>
+                </div>
+                <div class="stat-value">3</div>
+                <div class="stat-label">Overdue</div>
+              </div>
+            </div>
+
+            <h4 style="margin-bottom: 12px; color: var(--text-secondary); font-size: var(--text-sm);">Hero Cards</h4>
+            <div style="display: grid; gap: 16px;">
+              <div class="hero-card green">
+                <h4 style="margin-bottom: 8px;">Recent Activity</h4>
+                <p style="color: var(--text-secondary); font-size: var(--text-sm);">3 new trips assigned today</p>
+              </div>
+              <div class="hero-card blue">
+                <h4 style="margin-bottom: 8px;">Fleet Status</h4>
+                <p style="color: var(--text-secondary); font-size: var(--text-sm);">18 trucks on the road</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Badges -->
+        <div class="component-section">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">5. Badges</h3>
+            </div>
+
+            <h4 style="margin-bottom: 12px; color: var(--text-secondary); font-size: var(--text-sm);">Color Variants</h4>
+            <div class="button-row" style="margin-bottom: 24px;">
+              <span class="badge badge-green">Active</span>
+              <span class="badge badge-amber">Pending</span>
+              <span class="badge badge-blue">In Transit</span>
+              <span class="badge badge-red">Overdue</span>
+              <span class="badge badge-purple">VIP</span>
+              <span class="badge badge-gray">Archived</span>
+            </div>
+
+            <h4 style="margin-bottom: 12px; color: var(--text-secondary); font-size: var(--text-sm);">With Icons</h4>
+            <div class="button-row" style="margin-bottom: 24px;">
+              <span class="badge badge-green">
+                <i data-lucide="check" class="ico-sm"></i>
+                Completed
+              </span>
+              <span class="badge badge-amber">
+                <i data-lucide="clock" class="ico-sm"></i>
+                Scheduled
+              </span>
+              <span class="badge badge-red">
+                <i data-lucide="x" class="ico-sm"></i>
+                Cancelled
+              </span>
+            </div>
+
+            <h4 style="margin-bottom: 12px; color: var(--text-secondary); font-size: var(--text-sm);">Outline Variants</h4>
+            <div class="button-row">
+              <span class="badge badge-green badge-outline">Active</span>
+              <span class="badge badge-amber badge-outline">Pending</span>
+              <span class="badge badge-blue badge-outline">In Transit</span>
+              <span class="badge badge-red badge-outline">Overdue</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. Tables -->
+        <div class="component-section">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">6. Tables</h3>
+            </div>
+
+            <div class="table-container">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Order #</th>
+                    <th>Route</th>
+                    <th>Driver</th>
+                    <th>Status</th>
+                    <th class="text-right">Amount</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="font-mono">ORD-2024-001</td>
+                    <td>Miami, FL → Atlanta, GA</td>
+                    <td>John Smith</td>
+                    <td><span class="badge badge-green">Delivered</span></td>
+                    <td class="mono text-right">$1,250.00</td>
+                    <td>2024-01-15</td>
+                  </tr>
+                  <tr>
+                    <td class="font-mono">ORD-2024-002</td>
+                    <td>Dallas, TX → Phoenix, AZ</td>
+                    <td>Maria Garcia</td>
+                    <td><span class="badge badge-blue">In Transit</span></td>
+                    <td class="mono text-right">$2,100.00</td>
+                    <td>2024-01-16</td>
+                  </tr>
+                  <tr>
+                    <td class="font-mono">ORD-2024-003</td>
+                    <td>Chicago, IL → Detroit, MI</td>
+                    <td>David Chen</td>
+                    <td><span class="badge badge-amber">Pending</span></td>
+                    <td class="mono text-right">$875.50</td>
+                    <td>2024-01-17</td>
+                  </tr>
+                  <tr>
+                    <td class="font-mono">ORD-2024-004</td>
+                    <td>Seattle, WA → Portland, OR</td>
+                    <td>Sarah Johnson</td>
+                    <td><span class="badge badge-green">Delivered</span></td>
+                    <td class="mono text-right">$650.00</td>
+                    <td>2024-01-14</td>
+                  </tr>
+                  <tr>
+                    <td class="font-mono">ORD-2024-005</td>
+                    <td>New York, NY → Boston, MA</td>
+                    <td>Robert Williams</td>
+                    <td><span class="badge badge-red">Overdue</span></td>
+                    <td class="mono text-right">$1,450.00</td>
+                    <td>2024-01-12</td>
+                  </tr>
+                  <tr>
+                    <td class="font-mono">ORD-2024-006</td>
+                    <td>Los Angeles, CA → Las Vegas, NV</td>
+                    <td>Jennifer Martinez</td>
+                    <td><span class="badge badge-blue">In Transit</span></td>
+                    <td class="mono text-right">$980.00</td>
+                    <td>2024-01-16</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. Forms -->
+        <div class="component-section">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">7. Forms</h3>
+            </div>
+
+            <form>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="firstName">First Name</label>
+                  <input type="text" id="firstName" class="form-input" placeholder="John">
+                </div>
+                <div class="form-group">
+                  <label for="lastName">Last Name</label>
+                  <input type="text" id="lastName" class="form-input" placeholder="Smith">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" class="form-input" placeholder="john.smith@example.com" style="border-color: var(--green); box-shadow: 0 0 0 3px var(--green-dim);">
+              </div>
+
+              <div class="form-group">
+                <label for="role">Role</label>
+                <select id="role" class="form-input">
+                  <option>Select a role...</option>
+                  <option>Driver</option>
+                  <option>Dispatcher</option>
+                  <option>Manager</option>
+                  <option>Admin</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="notes">Notes</label>
+                <textarea id="notes" class="form-input" placeholder="Additional notes..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="errorExample">Error State Example</label>
+                <input type="text" id="errorExample" class="form-input error" value="Invalid input">
+                <div class="form-error">This field is required and must be valid.</div>
+              </div>
+
+              <div class="button-row">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <button type="button" class="btn btn-secondary">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- 8. Modals -->
+        <div class="component-section">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">8. Modals</h3>
+            </div>
+
+            <p style="color: var(--text-secondary); margin-bottom: 16px;">
+              Click the button below to open a demo modal. Close it by clicking the X, clicking the overlay, or pressing Escape.
+            </p>
+
+            <button class="btn btn-primary" id="showModalBtn">
+              <i data-lucide="square" class="ico-sm"></i>
+              Show Modal
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal Example -->
+  <div class="modal-overlay" id="demoModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Create New Trip</h3>
+        <button class="modal-close" id="closeModalBtn">
+          <i data-lucide="x" class="ico"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="form-group">
+            <label for="modalOrderId">Order ID</label>
+            <input type="text" id="modalOrderId" class="form-input" placeholder="ORD-2024-007">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="modalPickup">Pickup Location</label>
+              <input type="text" id="modalPickup" class="form-input" placeholder="Miami, FL">
+            </div>
+            <div class="form-group">
+              <label for="modalDropoff">Dropoff Location</label>
+              <input type="text" id="modalDropoff" class="form-input" placeholder="Atlanta, GA">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="modalDriver">Assign Driver</label>
+            <select id="modalDriver" class="form-input">
+              <option>Select driver...</option>
+              <option>John Smith</option>
+              <option>Maria Garcia</option>
+              <option>David Chen</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="modalNotes">Trip Notes</label>
+            <textarea id="modalNotes" class="form-input" placeholder="Special instructions..."></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelModalBtn">Cancel</button>
+        <button class="btn btn-primary">
+          <i data-lucide="check" class="ico-sm"></i>
+          Create Trip
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    themeToggle.addEventListener('click', function() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('tms-theme', next);
+      // Update icon
+      themeIcon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
+      lucide.createIcons();
+    });
+
+    // Sidebar toggle (collapse/expand)
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    sidebarToggle.addEventListener('click', function() {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('sidebar-collapsed');
+      // Update toggle icon
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+      lucide.createIcons();
+    });
+
+    // Mobile hamburger
+    const hamburger = document.getElementById('hamburger');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (hamburger) {
+      hamburger.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('active');
+      });
+    }
+
+    if (sidebarOverlay) {
+      sidebarOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      });
+    }
+
+    // Responsive: show hamburger on mobile
+    function handleResize() {
+      if (window.innerWidth <= 768) {
+        hamburger.style.display = 'flex';
+      } else {
+        hamburger.style.display = 'none';
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    // Modal functionality
+    const showModalBtn = document.getElementById('showModalBtn');
+    const demoModal = document.getElementById('demoModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const cancelModalBtn = document.getElementById('cancelModalBtn');
+
+    function openModal() {
+      demoModal.classList.add('active');
+      // Re-render icons in modal
+      lucide.createIcons();
+    }
+
+    function closeModal() {
+      demoModal.classList.remove('active');
+    }
+
+    showModalBtn.addEventListener('click', openModal);
+    closeModalBtn.addEventListener('click', closeModal);
+    cancelModalBtn.addEventListener('click', closeModal);
+
+    // Close modal on overlay click
+    demoModal.addEventListener('click', function(e) {
+      if (e.target === demoModal) {
+        closeModal();
+      }
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && demoModal.classList.contains('active')) {
+        closeModal();
+      }
+    });
+  </script>
+</body>
+</html>
