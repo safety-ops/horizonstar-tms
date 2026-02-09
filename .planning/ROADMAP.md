@@ -110,35 +110,37 @@ Plans:
 
 ---
 
-## Phase 9: Financial Pages
+## Phase 9: Financial Pages ✓
 
 **Goal:** Mockup Payroll, Billing, Financials, and Trip Profitability pages.
+
+**Status:** Complete (2026-02-09)
 
 **Requirements:** FIN-01, FIN-02, FIN-03, FIN-04
 
 **Depends on:** Phase 6 (shared CSS)
 
-**Plans:** 4 plans
+**Plans:** 4/4 complete
 
 Plans:
-- [ ] 09-01-PLAN.md — Payroll (settlement table, paystub modal, settlement modal)
-- [ ] 09-02-PLAN.md — Billing/Receivables (3 tabs: Overview, Brokers, Invoices with aging bars)
-- [ ] 09-03-PLAN.md — Consolidated Financials (8 sub-tabs: Executive, Analysis, Overview, Costs, By Trip/Driver/Broker/Lane)
-- [ ] 09-04-PLAN.md — Trip Profitability (filters, performers, sortable table, comparison modal)
+- [x] 09-01-PLAN.md — Payroll (settlement table, paystub modal, settlement modal)
+- [x] 09-02-PLAN.md — Billing/Receivables (3 tabs: Overview, Brokers, Invoices with aging bars)
+- [x] 09-03-PLAN.md — Consolidated Financials (8 sub-tabs: Executive, Analysis, Overview, Costs, By Trip/Driver/Broker/Lane)
+- [x] 09-04-PLAN.md — Trip Profitability (filters, performers, sortable table, comparison modal)
 
 **Output:**
-- `mockups/web-tms-redesign/payroll.html`
-- `mockups/web-tms-redesign/billing.html`
-- `mockups/web-tms-redesign/financials.html`
-- `mockups/web-tms-redesign/trip-profitability.html`
+- `mockups/web-tms-redesign/payroll.html` (1,193 lines — includes both modal variants)
+- `mockups/web-tms-redesign/billing.html` (800+ lines — 3 tabs with aging visualization)
+- `mockups/web-tms-redesign/financials.html` (1,869 lines — all 8 sub-tabs)
+- `mockups/web-tms-redesign/trip-profitability.html` (600+ lines — filters, performers, comparison)
 
 **Success Criteria:**
-1. Payroll shows period selector, driver settlement table, payment actions
-2. Billing shows invoice list with status badges, segmented tabs, totals
-3. Financials shows overview/costs/trips tabs with charts and summary cards
-4. Trip Profitability shows sortable table with revenue, margin, RPM metrics
-5. All financial numbers use monospaced formatting
-6. All pages use shared.css with working light/dark toggle
+1. ✓ Payroll shows year selector, driver settlement table, payment actions
+2. ✓ Billing shows invoice list with status badges, segmented tabs, totals
+3. ✓ Financials shows all 8 tabs with charts and summary cards
+4. ✓ Trip Profitability shows sortable table with revenue, margin, RPM metrics
+5. ✓ All financial numbers use monospaced formatting
+6. ✓ All pages use shared.css with working light/dark toggle
 
 ---
 
@@ -177,7 +179,7 @@ Plans:
 | 6 | Design System Foundation ✓ | DS-01 to DS-07 (7) | shared.css + component showcase |
 | 7 | Core Dispatch Pages ✓ | CORE-01 to CORE-06 (6) | 6 HTML files |
 | 8 | People & Fleet Pages ✓ | PEOPLE-01 to PEOPLE-07 (7) | 5 HTML files |
-| 9 | Financial Pages | FIN-01 to FIN-04 (4) | 4 HTML files |
+| 9 | Financial Pages ✓ | FIN-01 to FIN-04 (4) | 4 HTML files |
 | 10 | Operations & Admin Pages | OPS + ADMIN (8) | 8 HTML files |
 
 **Total:** 5 phases, 31 requirements, ~22 mockup files

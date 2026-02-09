@@ -36,10 +36,10 @@
 
 ### Financial Pages (FIN)
 
-- [ ] **FIN-01**: Payroll mockup with period selector, driver settlement table
-- [ ] **FIN-02**: Billing/Invoicing mockup with invoice list, status tracking
-- [ ] **FIN-03**: Consolidated Financials mockup (overview, costs, trips tabs)
-- [ ] **FIN-04**: Trip Profitability mockup with sortable metrics table
+- [x] **FIN-01**: Payroll mockup with period selector, driver settlement table
+- [x] **FIN-02**: Billing/Invoicing mockup with invoice list, status tracking
+- [x] **FIN-03**: Consolidated Financials mockup (overview, costs, trips tabs)
+- [x] **FIN-04**: Trip Profitability mockup with sortable metrics table
 
 ### Operations Pages (OPS)
 
@@ -89,10 +89,10 @@
 | PEOPLE-05 | Phase 8 | Complete |
 | PEOPLE-06 | Phase 8 | Complete |
 | PEOPLE-07 | Phase 8 | Complete |
-| FIN-01 | Phase 9 | Pending |
-| FIN-02 | Phase 9 | Pending |
-| FIN-03 | Phase 9 | Pending |
-| FIN-04 | Phase 9 | Pending |
+| FIN-01 | Phase 9 | Complete |
+| FIN-02 | Phase 9 | Complete |
+| FIN-03 | Phase 9 | Complete |
+| FIN-04 | Phase 9 | Complete |
 | OPS-01 | Phase 10 | Pending |
 | OPS-02 | Phase 10 | Pending |
 | OPS-03 | Phase 10 | Pending |
