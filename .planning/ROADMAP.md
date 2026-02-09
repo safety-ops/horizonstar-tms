@@ -12,7 +12,13 @@
 
 **Requirements:** DS-01, DS-02, DS-03, DS-04, DS-05, DS-06, DS-07
 
-**Output:** `mockups/web-tms-redesign/shared.css` + a base template HTML file
+**Plans:** 2 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — Shared CSS (tokens, base, typography, layout) + base template HTML
+- [ ] 06-02-PLAN.md — UI components (buttons, cards, badges, tables, forms, modals) + component showcase
+
+**Output:** `mockups/web-tms-redesign/shared.css` + a base template HTML file + component showcase
 
 **Success Criteria:**
 1. CSS file contains all iOS v3 color tokens (dark/light variants)
