@@ -13034,7 +13034,7 @@
       const m = document.getElementById('main-content');
 
       // Show loading state in main content area
-      m.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px"><div class="loading-spinner" style="width:40px;height:40px;border-width:4px"></div><p style="margin-top:16px;color:var(--text-muted)">Loading order details...</p></div>';
+      m.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px"><div class="loading-spinner" style="width:40px;height:40px;border-width:4px"></div><p style="margin-top:var(--spacing-4);color:var(--text-muted)">Loading order details...</p></div>';
 
       // Fetch related data
       const trip = order.trip_id ? appData.trips.find(t => t.id === order.trip_id) : null;
