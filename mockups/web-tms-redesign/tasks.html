@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon Star TMS — Tasks</title>
+
+  <!-- FART prevention: set theme before CSS loads -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('tms-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared.css">
+
+  <style>
+    /* Page-specific styles */
+    .stat-cards-clickable {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card-clickable {
+      background: var(--bg-card);
+      padding: 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all var(--transition-base) var(--ease-smooth);
+    }
+
+    .stat-card-clickable:hover {
+      background: var(--bg-card-hover);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-card-hover);
+    }
+
+    .stat-card-clickable.border-blue {
+      border-left: 4px solid var(--blue);
+    }
+
+    .stat-card-clickable.border-amber {
+      border-left: 4px solid var(--amber);
+    }
+
+    .stat-card-clickable.border-red {
+      border-left: 4px solid var(--red);
+    }
+
+    .stat-card-clickable .stat-label {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stat-card-clickable .stat-value {
+      font-size: 28px;
+      font-weight: var(--weight-bold);
+      font-family: var(--font-mono);
+    }
+
+    .stat-card-clickable .stat-value.blue {
+      color: var(--blue);
+    }
+
+    .stat-card-clickable .stat-value.amber {
+      color: var(--amber);
+    }
+
+    .stat-card-clickable .stat-value.red {
+      color: var(--red);
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .filter-tabs button {
+      padding: 10px 18px;
+      font-size: var(--text-sm);
+      font-weight: var(--weight-semibold);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-base) var(--ease-smooth);
+    }
+
+    .filter-tabs button:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+    }
+
+    .filter-tabs button.active {
+      background: var(--green);
+      color: white;
+      border-color: var(--green);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .task-card {
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg-card);
+      transition: all var(--transition-base) var(--ease-smooth);
+    }
+
+    .task-card:hover {
+      background: var(--bg-card-hover);
+    }
+
+    .task-card.overdue {
+      border-left: 4px solid var(--red);
+      background: var(--red-dim);
+    }
+
+    .task-card.urgent {
+      border-left: 4px solid var(--amber);
+      background: var(--amber-dim);
+    }
+
+    .task-card-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .task-checkbox {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      cursor: pointer;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .task-checkbox.checked {
+      background: var(--green);
+      border-color: var(--green);
+      position: relative;
+    }
+
+    .task-checkbox.checked::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .task-title {
+      flex: 1;
+      font-size: var(--text-base);
+      font-weight: var(--weight-semibold);
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .task-title.completed {
+      text-decoration: line-through;
+      opacity: 0.7;
+      color: var(--text-secondary);
+    }
+
+    .task-meta {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+
+    .task-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .task-meta-item.overdue-text {
+      color: var(--red);
+      font-weight: var(--weight-semibold);
+    }
+
+    .task-meta-item.due-soon {
+      color: var(--amber);
+      font-weight: var(--weight-semibold);
+    }
+
+    .assignee-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: var(--weight-semibold);
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <i data-lucide="truck"></i>
+        </div>
+        <span class="sidebar-logo-text">Horizon Star</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- MAIN Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Main</div>
+          <a class="nav-item" data-page="dashboard">
+            <i data-lucide="layout-dashboard" class="nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+          </a>
+          <a class="nav-item" data-page="trips">
+            <i data-lucide="map" class="nav-icon"></i>
+            <span class="nav-label">Trips</span>
+          </a>
+          <a class="nav-item" data-page="messages">
+            <i data-lucide="message-square" class="nav-icon"></i>
+            <span class="nav-label">Messages</span>
+          </a>
+          <a class="nav-item" data-page="trailers">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trailers</span>
+          </a>
+          <a class="nav-item" data-page="load-board">
+            <i data-lucide="package" class="nav-icon"></i>
+            <span class="nav-label">Load Board</span>
+          </a>
+          <a class="nav-item" data-page="inspections">
+            <i data-lucide="clipboard-list" class="nav-icon"></i>
+            <span class="nav-label">Inspections</span>
+          </a>
+          <a class="nav-item active" data-page="tasks">
+            <i data-lucide="check-square" class="nav-icon"></i>
+            <span class="nav-label">Tasks</span>
+          </a>
+        </div>
+
+        <!-- FLEET Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Fleet</div>
+          <a class="nav-item" data-page="drivers">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Drivers</span>
+          </a>
+          <a class="nav-item" data-page="trucks">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trucks</span>
+          </a>
+          <a class="nav-item" data-page="local-drivers">
+            <i data-lucide="user" class="nav-icon"></i>
+            <span class="nav-label">Local Drivers</span>
+          </a>
+        </div>
+
+        <!-- PARTNERS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Partners</div>
+          <a class="nav-item" data-page="brokers">
+            <i data-lucide="briefcase" class="nav-icon"></i>
+            <span class="nav-label">Brokers</span>
+          </a>
+          <a class="nav-item" data-page="dealers">
+            <i data-lucide="building" class="nav-icon"></i>
+            <span class="nav-label">Dealers</span>
+          </a>
+          <a class="nav-item" data-page="dispatchers">
+            <i data-lucide="phone" class="nav-icon"></i>
+            <span class="nav-label">Dispatchers</span>
+          </a>
+          <a class="nav-item" data-page="dispatcher-ranking">
+            <i data-lucide="star" class="nav-icon"></i>
+            <span class="nav-label">Dispatcher Ranking</span>
+          </a>
+        </div>
+
+        <!-- FINANCIALS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Financials</div>
+          <a class="nav-item" data-page="financials">
+            <i data-lucide="dollar-sign" class="nav-icon"></i>
+            <span class="nav-label">Financials</span>
+          </a>
+          <a class="nav-item" data-page="billing">
+            <i data-lucide="file-text" class="nav-icon"></i>
+            <span class="nav-label">Billing</span>
+          </a>
+          <a class="nav-item" data-page="trip-profitability">
+            <i data-lucide="trending-up" class="nav-icon"></i>
+            <span class="nav-label">Trip Profitability</span>
+          </a>
+          <a class="nav-item" data-page="payroll">
+            <i data-lucide="credit-card" class="nav-icon"></i>
+            <span class="nav-label">Payroll</span>
+          </a>
+          <a class="nav-item" data-page="fuel">
+            <i data-lucide="droplet" class="nav-icon"></i>
+            <span class="nav-label">Fuel</span>
+          </a>
+          <a class="nav-item" data-page="ifta">
+            <i data-lucide="file" class="nav-icon"></i>
+            <span class="nav-label">IFTA</span>
+          </a>
+          <a class="nav-item" data-page="reports">
+            <i data-lucide="bar-chart-2" class="nav-icon"></i>
+            <span class="nav-label">Reports</span>
+          </a>
+          <a class="nav-item" data-page="ai-advisor">
+            <i data-lucide="brain" class="nav-icon"></i>
+            <span class="nav-label">AI Advisor</span>
+          </a>
+        </div>
+
+        <!-- OPERATIONS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Operations</div>
+          <a class="nav-item" data-page="maintenance">
+            <i data-lucide="wrench" class="nav-icon"></i>
+            <span class="nav-label">Maintenance</span>
+          </a>
+          <a class="nav-item" data-page="compliance">
+            <i data-lucide="shield-check" class="nav-icon"></i>
+            <span class="nav-label">Compliance</span>
+          </a>
+          <a class="nav-item" data-page="applications">
+            <i data-lucide="file-plus" class="nav-icon"></i>
+            <span class="nav-label">Applications</span>
+          </a>
+        </div>
+
+        <!-- SETTINGS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Settings</div>
+          <a class="nav-item" data-page="settings">
+            <i data-lucide="settings" class="nav-icon"></i>
+            <span class="nav-label">Settings</span>
+          </a>
+          <a class="nav-item" data-page="users">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Users</span>
+          </a>
+          <a class="nav-item" data-page="activity-log">
+            <i data-lucide="activity" class="nav-icon"></i>
+            <span class="nav-label">Activity Log</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-toggle" id="sidebarToggle">
+        <i data-lucide="panel-left-close" class="nav-icon" id="toggleIcon"></i>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger" style="display:none;">
+            <i data-lucide="menu"></i>
+          </button>
+          <h1 class="header-title">Tasks</h1>
+        </div>
+
+        <div class="header-search">
+          <i data-lucide="search" class="ico-sm"></i>
+          <input type="text" placeholder="Search orders, trips, drivers...">
+        </div>
+
+        <div class="header-right">
+          <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+            <i data-lucide="moon" class="ico" id="themeIcon"></i>
+          </button>
+          <div class="header-avatar">JD</div>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Page Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <i data-lucide="check-square" style="width: 32px; height: 32px; color: var(--green);"></i>
+            <h2 style="margin: 0; font-size: var(--text-3xl); font-weight: var(--weight-bold); color: var(--text-primary);">Tasks</h2>
+          </div>
+          <button class="btn btn-primary">
+            <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+            Add Task
+          </button>
+        </div>
+
+        <!-- Stat Cards (Clickable Filters) -->
+        <div class="stat-cards-clickable">
+          <div class="stat-card-clickable border-blue">
+            <div class="stat-label">
+              <i data-lucide="clock" style="width: 16px; height: 16px;"></i>
+              Pending
+            </div>
+            <div class="stat-value blue">8</div>
+            <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px;">Pending tasks</div>
+          </div>
+          <div class="stat-card-clickable border-amber">
+            <div class="stat-label">
+              <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
+              Due Today
+            </div>
+            <div class="stat-value amber">2</div>
+            <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px;">Due today</div>
+          </div>
+          <div class="stat-card-clickable border-red">
+            <div class="stat-label">
+              <i data-lucide="alert-triangle" style="width: 16px; height: 16px;"></i>
+              Overdue
+            </div>
+            <div class="stat-value red">1</div>
+            <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px;">Overdue tasks</div>
+          </div>
+          <div class="stat-card-clickable border-amber">
+            <div class="stat-label">
+              <i data-lucide="zap" style="width: 16px; height: 16px;"></i>
+              Urgent
+            </div>
+            <div class="stat-value amber">3</div>
+            <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px;">Urgent priority</div>
+          </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="filter-tabs">
+          <button class="active" onclick="switchTab('all-pending')">All Pending</button>
+          <button onclick="switchTab('today')">Today</button>
+          <button onclick="switchTab('upcoming')">Upcoming</button>
+          <button onclick="switchTab('overdue')">Overdue</button>
+          <button onclick="switchTab('completed')">Completed</button>
+        </div>
+
+        <!-- ALL PENDING Tab -->
+        <div id="all-pending-tab" class="tab-content active">
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="list" style="width: 20px; height: 20px;"></i> All Pending Tasks (8)</h3>
+            </div>
+            <div style="padding: 16px;">
+              <div class="task-list">
+
+                <!-- Task 1 - OVERDUE -->
+                <div class="task-card overdue">
+                  <div class="task-card-header">
+                    <div class="task-checkbox"></div>
+                    <div style="flex: 1;">
+                      <h4 class="task-title">Schedule Annual DOT Inspection — T-101</h4>
+                      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <span class="badge badge-red">Urgent</span>
+                        <span class="badge badge-red">Overdue</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="task-meta">
+                    <div class="task-meta-item overdue-text">
+                      <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                      Jan 20, 2026 — 8 days overdue
+                    </div>
+                    <div class="task-meta-item">
+                      <div class="assignee-avatar">OF</div>
+                      Office
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Task 2 - URGENT -->
+                <div class="task-card urgent">
+                  <div class="task-card-header">
+                    <div class="task-checkbox"></div>
+                    <div style="flex: 1;">
+                      <h4 class="task-title">Submit Q4 2025 IFTA Filing</h4>
+                      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <span class="badge badge-amber">High</span>
+                        <span class="badge badge-amber">Due Soon</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="task-meta">
+                    <div class="task-meta-item due-soon">
+                      <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                      Jan 31, 2026 — 3 days left
+                    </div>
+                    <div class="task-meta-item">
+                      <div class="assignee-avatar">OF</div>
+                      Office
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Task 3 - URGENT -->
+                <div class="task-card urgent">
+                  <div class="task-card-header">
+                    <div class="task-checkbox"></div>
+                    <div style="flex: 1;">
+                      <h4 class="task-title">Renew Medical Card — John Smith</h4>
+                      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <span class="badge badge-amber">High</span>
+                        <span class="badge badge-amber">Due Soon</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="task-meta">
+                    <div class="task-meta-item">
+                      <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                      Feb 28, 2026
+                    </div>
+                    <div class="task-meta-item">
+                      <div class="assignee-avatar">JS</div>
+                      John Smith
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Task 4 - URGENT -->
+                <div class="task-card urgent">
+                  <div class="task-card-header">
+                    <div class="task-checkbox"></div>
+                    <div style="flex: 1;">
+                      <h4 class="task-title">Drug & Alcohol Random Testing Q1</h4>
+                      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <span class="badge badge-amber">High</span>
+                        <span class="badge badge-blue">Pending</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="task-meta">
+                    <div class="task-meta-item">
+                      <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                      Mar 15, 2026
+                    </div>
+                    <div class="task-meta-item">
+                      <div class="assignee-avatar">OF</div>
+                      Office
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Task 5 - Normal -->
+                <div class="task-card">
+                  <div class="task-card-header">
+                    <div class="task-checkbox"></div>
+                    <div style="flex: 1;">
+                      <h4 class="task-title">Review driver MVR reports</h4>
+                      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <span class="badge badge-blue">Normal</span>
+                        <span class="badge badge-blue">Pending</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="task-meta">
+                    <div class="task-meta-item">
+                      <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                      Feb 15, 2026
+                    </div>
+                    <div class="task-meta-item">
+                      <div class="assignee-avatar">OF</div>
+                      Office
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Task 6 - Normal -->
+                <div class="task-card">
+                  <div class="task-card-header">
+                    <div class="task-checkbox"></div>
+                    <div style="flex: 1;">
+                      <h4 class="task-title">Update BOC-3 Process Agent</h4>
+                      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <span class="badge badge-blue">Normal</span>
+                        <span class="badge badge-blue">Pending</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="task-meta">
+                    <div class="task-meta-item">
+                      <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                      Jun 30, 2026
+                    </div>
+                    <div class="task-meta-item">
+                      <div class="assignee-avatar">OF</div>
+                      Office
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Task 7 - Normal -->
+                <div class="task-card">
+                  <div class="task-card-header">
+                    <div class="task-checkbox"></div>
+                    <div style="flex: 1;">
+                      <h4 class="task-title">Renew IRP Cab Cards</h4>
+                      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <span class="badge badge-blue">Normal</span>
+                        <span class="badge badge-blue">Pending</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="task-meta">
+                    <div class="task-meta-item">
+                      <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                      Apr 15, 2026
+                    </div>
+                    <div class="task-meta-item">
+                      <div class="assignee-avatar">OF</div>
+                      Office
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Task 8 - Low -->
+                <div class="task-card">
+                  <div class="task-card-header">
+                    <div class="task-checkbox"></div>
+                    <div style="flex: 1;">
+                      <h4 class="task-title">Organize digital filing system</h4>
+                      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <span class="badge badge-green">Low</span>
+                        <span class="badge badge-blue">Pending</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="task-meta">
+                    <div class="task-meta-item">
+                      <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                      Mar 31, 2026
+                    </div>
+                    <div class="task-meta-item">
+                      <div class="assignee-avatar">OF</div>
+                      Office
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TODAY Tab -->
+        <div id="today-tab" class="tab-content">
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="calendar" style="width: 20px; height: 20px;"></i> Today's Tasks (2)</h3>
+            </div>
+            <div style="padding: 16px;">
+              <div class="task-list">
+
+                <!-- Task: IFTA Filing -->
+                <div class="task-card urgent">
+                  <div class="task-card-header">
+                    <div class="task-checkbox"></div>
+                    <div style="flex: 1;">
+                      <h4 class="task-title">Submit Q4 2025 IFTA Filing</h4>
+                      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <span class="badge badge-amber">High</span>
+                        <span class="badge badge-amber">Due Soon</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="task-meta">
+                    <div class="task-meta-item due-soon">
+                      <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                      Jan 31, 2026 — 3 days left
+                    </div>
+                    <div class="task-meta-item">
+                      <div class="assignee-avatar">OF</div>
+                      Office
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Task: Follow up repair invoice -->
+                <div class="task-card">
+                  <div class="task-card-header">
+                    <div class="task-checkbox"></div>
+                    <div style="flex: 1;">
+                      <h4 class="task-title">Follow up on T-101 repair invoice</h4>
+                      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <span class="badge badge-blue">Normal</span>
+                        <span class="badge badge-blue">Pending</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="task-meta">
+                    <div class="task-meta-item">
+                      <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                      Jan 28, 2026
+                    </div>
+                    <div class="task-meta-item">
+                      <div class="assignee-avatar">OF</div>
+                      Office
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- UPCOMING Tab -->
+        <div id="upcoming-tab" class="tab-content">
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="calendar-days" style="width: 20px; height: 20px;"></i> Upcoming Tasks (5)</h3>
+            </div>
+            <div style="padding: 16px;">
+              <div class="task-list">
+                <p style="color: var(--text-secondary);">Shows tasks due in the next 30 days (excluding overdue). Same 5 tasks from All Pending list would appear here.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- OVERDUE Tab -->
+        <div id="overdue-tab" class="tab-content">
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="alert-triangle" style="width: 20px; height: 20px;"></i> Overdue Tasks (1)</h3>
+            </div>
+            <div style="padding: 16px;">
+              <div class="task-list">
+
+                <!-- Task 1 - OVERDUE -->
+                <div class="task-card overdue">
+                  <div class="task-card-header">
+                    <div class="task-checkbox"></div>
+                    <div style="flex: 1;">
+                      <h4 class="task-title">Schedule Annual DOT Inspection — T-101</h4>
+                      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <span class="badge badge-red">Urgent</span>
+                        <span class="badge badge-red">Overdue</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="task-meta">
+                    <div class="task-meta-item overdue-text">
+                      <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                      Jan 20, 2026 — 8 days overdue
+                    </div>
+                    <div class="task-meta-item">
+                      <div class="assignee-avatar">OF</div>
+                      Office
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- COMPLETED Tab -->
+        <div id="completed-tab" class="tab-content">
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="check-circle" style="width: 20px; height: 20px;"></i> Completed Tasks (4)</h3>
+            </div>
+            <div style="padding: 16px;">
+              <div class="task-list">
+
+                <!-- Completed Task 1 -->
+                <div class="task-card">
+                  <div class="task-card-header">
+                    <div class="task-checkbox checked"></div>
+                    <div style="flex: 1;">
+                      <h4 class="task-title completed">Renew cargo insurance policy</h4>
+                      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <span class="badge badge-green">Done</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="task-meta">
+                    <div class="task-meta-item">
+                      <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+                      Completed Jan 1, 2026
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Completed Task 2 -->
+                <div class="task-card">
+                  <div class="task-card-header">
+                    <div class="task-checkbox checked"></div>
+                    <div style="flex: 1;">
+                      <h4 class="task-title completed">File 2290 Heavy Vehicle Tax</h4>
+                      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <span class="badge badge-green">Done</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="task-meta">
+                    <div class="task-meta-item">
+                      <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+                      Completed Aug 28, 2025
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Completed Task 3 -->
+                <div class="task-card">
+                  <div class="task-card-header">
+                    <div class="task-checkbox checked"></div>
+                    <div style="flex: 1;">
+                      <h4 class="task-title completed">Annual driver review — Maria Garcia</h4>
+                      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <span class="badge badge-green">Done</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="task-meta">
+                    <div class="task-meta-item">
+                      <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+                      Completed Jan 10, 2026
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Completed Task 4 -->
+                <div class="task-card">
+                  <div class="task-card-header">
+                    <div class="task-checkbox checked"></div>
+                    <div style="flex: 1;">
+                      <h4 class="task-title completed">Update UCR registration</h4>
+                      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <span class="badge badge-green">Done</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="task-meta">
+                    <div class="task-meta-item">
+                      <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+                      Completed Jan 2, 2026
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    themeToggle.addEventListener('click', function() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('tms-theme', next);
+      themeIcon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
+      lucide.createIcons();
+    });
+
+    // Sidebar toggle
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    sidebarToggle.addEventListener('click', function() {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('sidebar-collapsed');
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+      lucide.createIcons();
+    });
+
+    // Mobile hamburger
+    const hamburger = document.getElementById('hamburger');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (hamburger) {
+      hamburger.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('active');
+      });
+    }
+
+    if (sidebarOverlay) {
+      sidebarOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      });
+    }
+
+    // Responsive: show hamburger on mobile
+    function handleResize() {
+      if (window.innerWidth <= 768) {
+        hamburger.style.display = 'flex';
+      } else {
+        hamburger.style.display = 'none';
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    // Tab switching
+    function switchTab(tabId) {
+      // Remove active class from all tabs
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.querySelectorAll('.filter-tabs button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      // Add active class to selected tab
+      document.getElementById(tabId + '-tab').classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>
