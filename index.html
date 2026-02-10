@@ -10279,37 +10279,37 @@
             '<div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.1)">' +
             '<div style="display:flex;align-items:center;justify-content:space-between">' +
             '<h3 style="margin:0;color:white;font-size:16px">⚡ Quick View - Company Profitability</h3>' +
-            '<span style="background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:12px;font-size:11px">' + efficiency.totalMiles.toLocaleString() + ' miles • ' + efficiency.totalCars + ' cars</span>' +
+            '<span style="background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:var(--radius-lg);font-size:var(--text-xs)">' + efficiency.totalMiles.toLocaleString() + ' miles • ' + efficiency.totalCars + ' cars</span>' +
             '</div></div>' +
             '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0">' +
             '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)">' +
-            '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Cost Per Mile</div>' +
-            '<div style="font-size:28px;font-weight:700;color:var(--red)">$' + cpm.toFixed(2) + '</div>' +
+            '<div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Cost Per Mile</div>' +
+            '<div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:var(--red)">$' + cpm.toFixed(2) + '</div>' +
             '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Operating CPM</div>' +
             '</div>' +
             '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)">' +
-            '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Revenue Per Mile</div>' +
-            '<div style="font-size:28px;font-weight:700;color:var(--primary-400)">$' + rpm.toFixed(2) + '</div>' +
+            '<div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Revenue Per Mile</div>' +
+            '<div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:var(--primary-400)">$' + rpm.toFixed(2) + '</div>' +
             '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Gross RPM</div>' +
             '</div>' +
             '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);background:' + (marginPerMile >= 0 ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)') + '">' +
-            '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Margin Per Mile</div>' +
-            '<div style="font-size:28px;font-weight:700;color:' + (marginPerMile >= 0 ? 'var(--primary-400)' : 'var(--red)') + '">$' + marginPerMile.toFixed(2) + '</div>' +
+            '<div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Margin Per Mile</div>' +
+            '<div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:' + (marginPerMile >= 0 ? 'var(--primary-400)' : 'var(--red)') + '">$' + marginPerMile.toFixed(2) + '</div>' +
             '<div style="font-size:10px;color:' + (marginPerMile >= 0 ? 'var(--green)' : 'var(--red)') + ';margin-top:4px">' + (marginPerMile >= 0 ? '✓ Profitable' : '✗ Losing Money') + '</div>' +
             '</div>' +
             '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)">' +
-            '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Avg Vehicle Price</div>' +
-            '<div style="font-size:28px;font-weight:700;color:var(--blue)">$' + currentAvgPrice.toFixed(0) + '</div>' +
+            '<div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Avg Vehicle Price</div>' +
+            '<div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:var(--blue)">$' + currentAvgPrice.toFixed(0) + '</div>' +
             '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Current Average</div>' +
             '</div>' +
             '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)">' +
-            '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Break-Even Price</div>' +
-            '<div style="font-size:28px;font-weight:700;color:var(--purple)">$' + targetVehiclePrice.toFixed(0) + '</div>' +
+            '<div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Break-Even Price</div>' +
+            '<div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:var(--purple)">$' + targetVehiclePrice.toFixed(0) + '</div>' +
             '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Min per vehicle</div>' +
             '</div>' +
             '<div style="padding:20px;text-align:center;background:' + (priceGap <= 0 ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)') + '">' +
-            '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Profit Per Vehicle</div>' +
-            '<div style="font-size:28px;font-weight:700;color:' + (priceGap <= 0 ? 'var(--primary-400)' : 'var(--red)') + '">$' + Math.abs(currentAvgPrice - targetVehiclePrice).toFixed(0) + '</div>' +
+            '<div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Profit Per Vehicle</div>' +
+            '<div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:' + (priceGap <= 0 ? 'var(--primary-400)' : 'var(--red)') + '">$' + Math.abs(currentAvgPrice - targetVehiclePrice).toFixed(0) + '</div>' +
             '<div style="font-size:10px;color:' + (priceGap <= 0 ? 'var(--green)' : 'var(--red)') + ';margin-top:4px">' + (priceGap <= 0 ? '✓ Profitable' : '✗ Losing $' + Math.abs(priceGap).toFixed(0) + '/car') + '</div>' +
             '</div>' +
             '</div></div>';
@@ -13262,7 +13262,7 @@
                     <span>${formatMoney((order.revenue || 0) - (order.broker_fee || 0) - (order.local_fee || 0))}</span>
                   </div>
                 </div>
-                ${order.payment_status !== 'paid' ? '<button class="btn btn-primary btn-sm" style="width:100%;margin-top:12px" onclick="markOrderPaid(' + order.id + ')">Mark as Paid</button>' : ''}
+                ${order.payment_status !== 'paid' ? '<button class="btn btn-primary btn-sm" style="width:100%;margin-top:var(--spacing-3)" onclick="markOrderPaid(' + order.id + ')">Mark as Paid</button>' : ''}
               </div>
             </div>
 
@@ -14309,39 +14309,39 @@
             '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
             '<h3 style="margin:0;color:white;font-size:16px">⚡ Quick View - Company Profitability</h3>' +
             '<div style="display:flex;align-items:center;gap:12px">' +
-            '<span style="background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:12px;font-size:11px">' + totalMiles.toLocaleString() + ' mi ' + (dashboardMilesSource === 'samsara' ? '<span style="color:var(--blue-dim);font-size:9px">📡</span>' : '') + ' • ' + totalCars + ' cars</span>' +
-            '<button onclick="openSetupWizard()" style="background:rgba(59,130,246,0.3);color:var(--blue-dim);border:1px solid rgba(59,130,246,0.5);padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer">🧙‍♂️ Setup</button>' +
+            '<span style="background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:var(--radius-lg);font-size:var(--text-xs)">' + totalMiles.toLocaleString() + ' mi ' + (dashboardMilesSource === 'samsara' ? '<span style="color:var(--blue-dim);font-size:9px">📡</span>' : '') + ' • ' + totalCars + ' cars</span>' +
+            '<button onclick="openSetupWizard()" style="background:rgba(59,130,246,0.3);color:var(--blue-dim);border:1px solid rgba(59,130,246,0.5);padding:4px 10px;border-radius:var(--radius);font-size:var(--text-xs);cursor:pointer">🧙‍♂️ Setup</button>' +
             '</div></div></div>' +
             warningBanner +
             '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0">' +
             '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)">' +
-            '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Cost Per Mile</div>' +
-            '<div style="font-size:28px;font-weight:700;color:var(--red)">$' + cpm.toFixed(2) + '</div>' +
+            '<div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Cost Per Mile</div>' +
+            '<div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:var(--red)">$' + cpm.toFixed(2) + '</div>' +
             '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Operating CPM</div>' +
             '</div>' +
             '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)">' +
-            '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Revenue Per Mile</div>' +
-            '<div style="font-size:28px;font-weight:700;color:var(--primary-400)">$' + rpm.toFixed(2) + '</div>' +
+            '<div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Revenue Per Mile</div>' +
+            '<div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:var(--primary-400)">$' + rpm.toFixed(2) + '</div>' +
             '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Gross RPM</div>' +
             '</div>' +
             '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);background:' + (marginPerMile >= 0 ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)') + '">' +
-            '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Margin Per Mile</div>' +
-            '<div style="font-size:28px;font-weight:700;color:' + (marginPerMile >= 0 ? 'var(--primary-400)' : 'var(--red)') + '">$' + marginPerMile.toFixed(2) + '</div>' +
+            '<div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Margin Per Mile</div>' +
+            '<div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:' + (marginPerMile >= 0 ? 'var(--primary-400)' : 'var(--red)') + '">$' + marginPerMile.toFixed(2) + '</div>' +
             '<div style="font-size:10px;color:' + (marginPerMile >= 0 ? 'var(--green)' : 'var(--red)') + ';margin-top:4px">' + (marginPerMile >= 0 ? '✓ Profitable' : '✗ Losing Money') + '</div>' +
             '</div>' +
             '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)">' +
-            '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Avg Vehicle Price</div>' +
-            '<div style="font-size:28px;font-weight:700;color:var(--blue)">$' + currentAvgPrice.toFixed(0) + '</div>' +
+            '<div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Avg Vehicle Price</div>' +
+            '<div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:var(--blue)">$' + currentAvgPrice.toFixed(0) + '</div>' +
             '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Current Average</div>' +
             '</div>' +
             '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)">' +
-            '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Break-Even Price</div>' +
-            '<div style="font-size:28px;font-weight:700;color:var(--purple)">$' + targetVehiclePrice.toFixed(0) + '</div>' +
+            '<div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Break-Even Price</div>' +
+            '<div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:var(--purple)">$' + targetVehiclePrice.toFixed(0) + '</div>' +
             '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Min per vehicle</div>' +
             '</div>' +
             '<div style="padding:20px;text-align:center;background:' + (priceGap <= 0 ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)') + '">' +
-            '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Profit Per Vehicle</div>' +
-            '<div style="font-size:28px;font-weight:700;color:' + (priceGap <= 0 ? 'var(--primary-400)' : 'var(--red)') + '">$' + Math.abs(currentAvgPrice - targetVehiclePrice).toFixed(0) + '</div>' +
+            '<div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Profit Per Vehicle</div>' +
+            '<div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:' + (priceGap <= 0 ? 'var(--primary-400)' : 'var(--red)') + '">$' + Math.abs(currentAvgPrice - targetVehiclePrice).toFixed(0) + '</div>' +
             '<div style="font-size:10px;color:' + (priceGap <= 0 ? 'var(--green)' : 'var(--red)') + ';margin-top:4px">' + (priceGap <= 0 ? '✓ Profitable' : '✗ Losing $' + Math.abs(priceGap).toFixed(0) + '/car') + '</div>' +
             '</div>' +
             '</div></div>';
@@ -14352,7 +14352,7 @@
         
         // Left column - Other Metrics
         '<div class="card" style="padding:20px">' +
-        '<h3 style="margin-bottom:16px;color:var(--blue);border-bottom:2px solid var(--blue);padding-bottom:8px">📈 OTHER METRICS</h3>' +
+        '<h3 class="section-title blue">📈 OTHER METRICS</h3>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:14px">' +
         '<div><span style="color:var(--text-muted)"># of Trucks in Service</span></div><div style="text-align:right;font-weight:600">' + appData.trucks.filter(t => t.status === 'ACTIVE').length + '</div>' +
         '<div><span style="color:var(--text-muted)">Total Miles Traveled</span></div><div style="text-align:right;font-weight:600">' + totalMiles.toLocaleString() + '</div>' +
@@ -14375,7 +14375,7 @@
         
         // Right column - Direct Trip Expenses Breakdown
         '<div class="card" style="padding:20px">' +
-        '<h3 style="margin-bottom:16px;color:var(--red);border-bottom:2px solid var(--red);padding-bottom:8px">💸 DIRECT TRIP EXPENSES</h3>' +
+        '<h3 class="section-title red">💸 DIRECT TRIP EXPENSES</h3>' +
         '<div style="display:flex;flex-direction:column;gap:12px">' +
         '<div style="display:flex;justify-content:space-between;align-items:center"><span>Broker Fees</span><span style="font-weight:600;color:var(--red)">' + formatMoney(totalBrokerFees) + '</span></div>' +
         '<div style="background:var(--red-dim);height:8px;border-radius:4px"><div style="background:var(--red);height:100%;border-radius:4px;width:' + (totalRev > 0 ? (totalBrokerFees/totalRev*100) : 0) + '%"></div></div>' +
@@ -14392,7 +14392,7 @@
 
         // Fuel Tracking Comparison Card
         '<div class="card" style="padding:20px;margin-bottom:20px">' +
-        '<h3 style="margin-bottom:16px;color:var(--amber);border-bottom:2px solid var(--amber);padding-bottom:8px">⛽ FUEL TRACKING</h3>' +
+        '<h3 class="section-title amber">⛽ FUEL TRACKING</h3>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">' +
         '<div style="background:var(--amber-dim);padding:16px;border-radius:8px;border-left:4px solid var(--amber)">' +
         '<div style="font-size:12px;color:var(--amber);margin-bottom:4px">Trip-Level Fuel Expenses</div>' +
@@ -14413,7 +14413,7 @@
         
         // KPIs
         '<div class="card" style="padding:20px">' +
-        '<h3 style="margin-bottom:16px;color:var(--purple);border-bottom:2px solid var(--purple);padding-bottom:8px">📊 KEY PERFORMANCE INDICATORS</h3>' +
+        '<h3 class="section-title purple">📊 KEY PERFORMANCE INDICATORS</h3>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
         '<div style="background:var(--bg-app);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--text-muted)">Revenue/Mile</div><div style="font-size:18px;font-weight:700;color:var(--text-primary)">$' + revenuePerMile + '</div></div>' +
         '<div style="background:var(--bg-app);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--text-muted)">Profit/Mile</div><div style="font-size:18px;font-weight:700;color:' + (profitPerMile >= 0 ? 'var(--green)' : 'var(--red)') + '">$' + profitPerMile + '</div></div>' +
@@ -14426,7 +14426,7 @@
         
         // Truck & Dispatcher Performance
         '<div class="card" style="padding:20px">' +
-        '<h3 style="margin-bottom:16px;color:var(--green);border-bottom:2px solid var(--green);padding-bottom:8px">🏆 TOP PERFORMERS</h3>' +
+        '<h3 class="section-title green">🏆 TOP PERFORMERS</h3>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
         '<div style="background:var(--green-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--green)">Top Earner Truck</div><div style="font-size:24px;font-weight:700;color:var(--green)">#' + (topTruck ? appData.trucks.find(t => t.id == topTruck)?.truck_number || '-' : '-') + '</div><div style="font-size:14px;color:var(--green)">' + (topTruck ? formatMoney(truckPerf[topTruck].profit) : '-') + '</div></div>' +
         '<div style="background:var(--red-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--red)">Lowest Earner Truck</div><div style="font-size:24px;font-weight:700;color:var(--red)">#' + (bottomTruck ? appData.trucks.find(t => t.id == bottomTruck)?.truck_number || '-' : '-') + '</div><div style="font-size:14px;color:var(--red)">' + (bottomTruck ? formatMoney(truckPerf[bottomTruck].profit) : '-') + '</div></div>' +
@@ -14438,7 +14438,7 @@
         
         // Fourth row - Payment Collections
         '<div class="card" style="padding:20px;margin-bottom:20px">' +
-        '<h3 style="margin-bottom:16px;color:var(--blue);border-bottom:2px solid var(--blue);padding-bottom:8px">💵 PAYMENT COLLECTION</h3>' +
+        '<h3 class="section-title blue">💵 PAYMENT COLLECTION</h3>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px">' +
         '<div style="background:var(--green-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:var(--green)">COD Collected</div><div style="font-size:20px;font-weight:700;color:var(--green)">' + formatMoney(codAmount) + '</div></div>' +
         '<div style="background:var(--green-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:var(--primary-700)">COP Collected</div><div style="font-size:20px;font-weight:700;color:var(--primary-700)">' + formatMoney(copAmount) + '</div></div>' +
@@ -15491,7 +15491,7 @@ ${rateText}`
         const inactiveColor = 'var(--text-secondary)';
         const inactiveBorder = 'var(--border)';
         const badgeBg = isActive ? 'rgba(255,255,255,0.2)' : 'var(--bg-elevated)';
-        return '<button class="truck-tab" onclick="selectedTruckTab=' + t.id + ';renderTrips(document.getElementById(\'main-content\'))" style="padding:10px 16px;border:2px solid ' + (isActive ? 'var(--blue)' : inactiveBorder) + ';cursor:pointer;font-weight:600;border-radius:8px;margin:4px;transition:all 0.2s;background:' + (isActive ? 'var(--blue)' : inactiveBg) + ';color:' + (isActive ? 'white' : inactiveColor) + '">🚛 ' + t.truck_number + ' <span style="background:' + badgeBg + ';padding:2px 8px;border-radius:12px;font-size:12px;margin-left:4px">' + tripCount + '</span></button>';
+        return '<button class="truck-tab" onclick="selectedTruckTab=' + t.id + ';renderTrips(document.getElementById(\'main-content\'))" style="padding:var(--spacing-2-5) var(--spacing-4);border:2px solid ' + (isActive ? 'var(--blue)' : inactiveBorder) + ';cursor:pointer;font-weight:var(--weight-semibold);border-radius:var(--radius);margin:var(--spacing-1);transition:all 0.2s;background:' + (isActive ? 'var(--blue)' : inactiveBg) + ';color:' + (isActive ? 'white' : inactiveColor) + '">🚛 ' + t.truck_number + ' <span style="background:' + badgeBg + ';padding:var(--spacing-0-5) var(--spacing-2);border-radius:var(--radius-full);font-size:var(--text-xs);margin-left:4px">' + tripCount + '</span></button>';
       }).join('');
       
       // Build trip rows
@@ -15513,18 +15513,18 @@ ${rateText}`
       ).join('');
 
       // Status filter tabs
-      const statusTabStyle = (isActive) => 'padding:8px 16px;border:none;cursor:pointer;font-weight:600;border-radius:6px;transition:all 0.2s;background:' + (isActive ? 'var(--blue)' : 'var(--bg-card-hover)') + ';color:' + (isActive ? 'white' : 'var(--text-secondary)');
-      const statusTabs = '<div style="display:flex;gap:8px;margin-bottom:16px">' +
-        '<button onclick="tripStatusFilter=\'active\';renderTrips(document.getElementById(\'main-content\'))" style="' + statusTabStyle(tripStatusFilter === 'active') + '">Active <span style="background:' + (tripStatusFilter === 'active' ? 'rgba(255,255,255,0.2)' : 'var(--bg-elevated)') + ';padding:2px 8px;border-radius:12px;font-size:12px;margin-left:4px">' + activeCount + '</span></button>' +
-        '<button onclick="tripStatusFilter=\'completed\';renderTrips(document.getElementById(\'main-content\'))" style="' + statusTabStyle(tripStatusFilter === 'completed') + '">Completed <span style="background:' + (tripStatusFilter === 'completed' ? 'rgba(255,255,255,0.2)' : 'var(--bg-elevated)') + ';padding:2px 8px;border-radius:12px;font-size:12px;margin-left:4px">' + completedCount + '</span></button>' +
-        '<button onclick="tripStatusFilter=\'all\';renderTrips(document.getElementById(\'main-content\'))" style="' + statusTabStyle(tripStatusFilter === 'all') + '">All <span style="background:' + (tripStatusFilter === 'all' ? 'rgba(255,255,255,0.2)' : 'var(--bg-elevated)') + ';padding:2px 8px;border-radius:12px;font-size:12px;margin-left:4px">' + allCount + '</span></button>' +
+      const statusTabStyle = (isActive) => 'padding:var(--spacing-2) var(--spacing-4);border:none;cursor:pointer;font-weight:var(--weight-semibold);border-radius:var(--radius);transition:all 0.2s;background:' + (isActive ? 'var(--blue)' : 'var(--bg-card-hover)') + ';color:' + (isActive ? 'white' : 'var(--text-secondary)');
+      const statusTabs = '<div style="display:flex;gap:var(--spacing-2);margin-bottom:var(--spacing-4)">' +
+        '<button onclick="tripStatusFilter=\'active\';renderTrips(document.getElementById(\'main-content\'))" style="' + statusTabStyle(tripStatusFilter === 'active') + '">Active <span style="background:' + (tripStatusFilter === 'active' ? 'rgba(255,255,255,0.2)' : 'var(--bg-elevated)') + ';padding:var(--spacing-0-5) var(--spacing-2);border-radius:var(--radius-full);font-size:var(--text-xs);margin-left:4px">' + activeCount + '</span></button>' +
+        '<button onclick="tripStatusFilter=\'completed\';renderTrips(document.getElementById(\'main-content\'))" style="' + statusTabStyle(tripStatusFilter === 'completed') + '">Completed <span style="background:' + (tripStatusFilter === 'completed' ? 'rgba(255,255,255,0.2)' : 'var(--bg-elevated)') + ';padding:var(--spacing-0-5) var(--spacing-2);border-radius:var(--radius-full);font-size:var(--text-xs);margin-left:4px">' + completedCount + '</span></button>' +
+        '<button onclick="tripStatusFilter=\'all\';renderTrips(document.getElementById(\'main-content\'))" style="' + statusTabStyle(tripStatusFilter === 'all') + '">All <span style="background:' + (tripStatusFilter === 'all' ? 'rgba(255,255,255,0.2)' : 'var(--bg-elevated)') + ';padding:var(--spacing-0-5) var(--spacing-2);border-radius:var(--radius-full);font-size:var(--text-xs);margin-left:4px">' + allCount + '</span></button>' +
         '</div>';
 
-      c.innerHTML = '<div class="header"><h2>🚛 Trips by Truck</h2><div style="display:flex;align-items:center;gap:12px"><div style="display:flex;align-items:center;gap:8px;background:var(--bg-app);padding:8px 12px;border-radius:6px"><label style="font-weight:600;color:var(--text-secondary);font-size:13px">Year:</label><select onchange="tripsYear=parseInt(this.value);renderTrips(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px">' + tripsYearOptions + '</select></div><button class="btn btn-primary" onclick="openTripModal()">+ New Trip</button></div></div>' +
+      c.innerHTML = '<div class="header"><h2>🚛 Trips by Truck</h2><div style="display:flex;align-items:center;gap:12px"><div style="display:flex;align-items:center;gap:8px;background:var(--bg-app);padding:var(--spacing-2) var(--spacing-3);border-radius:var(--radius)"><label style="font-weight:600;color:var(--text-secondary);font-size:var(--text-sm)">Year:</label><select onchange="tripsYear=parseInt(this.value);renderTrips(document.getElementById(\'main-content\'))" style="padding:var(--spacing-1-5) var(--spacing-2-5);border:1px solid var(--border);border-radius:var(--radius);font-size:var(--text-sm)">' + tripsYearOptions + '</select></div><button class="btn btn-primary" onclick="openTripModal()">+ New Trip</button></div></div>' +
         statusTabs +
         '<div style="display:flex;flex-wrap:wrap;margin-bottom:16px">' + truckTabs + '</div>' +
-        '<div class="card"><div style="padding:16px;background:var(--bg-app);border-bottom:1px solid var(--border)"><div><strong style="font-size:18px">TRUCK ' + (selectedTruck ? selectedTruck.truck_number : '-') + '</strong><span style="color:var(--text-muted);margin-left:12px">' + truckTrips.length + ' trips | Home: Fairless Hills, PA</span></div></div><div class="table-wrapper"><table><thead><tr><th>Trip #</th><th>Date</th><th>Cars</th><th>Driver</th><th>Revenue</th><th>Status</th><th class="sticky-col">Actions</th></tr></thead><tbody>' + 
-        (tripRows || '<tr><td colspan="7" style="text-align:center;padding:40px">No trips for this truck yet</td></tr>') + 
+        '<div class="card"><div style="padding:var(--spacing-4);background:var(--bg-app);border-bottom:1px solid var(--border)"><div><strong style="font-size:var(--text-lg)">TRUCK ' + (selectedTruck ? selectedTruck.truck_number : '-') + '</strong><span style="color:var(--text-muted);margin-left:var(--spacing-3)">' + truckTrips.length + ' trips | Home: Fairless Hills, PA</span></div></div><div class="table-wrapper"><table><thead><tr><th>Trip #</th><th>Date</th><th>Cars</th><th>Driver</th><th>Revenue</th><th>Status</th><th class="sticky-col">Actions</th></tr></thead><tbody>' + 
+        (tripRows || '<tr><td colspan="7" style="text-align:center;padding:var(--spacing-10)">No trips for this truck yet</td></tr>') + 
         '</tbody></table></div></div>';
     }
 
@@ -16161,59 +16161,59 @@ ${rateText}`
       // Get pricing guidance for dispatchers
       const pricingGuidance = getDispatcherPricingGuidance(id);
       const pricingWidget = pricingGuidance ? `
-        <div style="background:linear-gradient(135deg,${pricingGuidance.statusColor}15,${pricingGuidance.statusColor}05);border:2px solid ${pricingGuidance.statusColor}40;border-radius:16px;padding:20px;margin-bottom:20px">
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:16px">
+        <div style="background:linear-gradient(135deg,${pricingGuidance.statusColor}15,${pricingGuidance.statusColor}05);border:2px solid ${pricingGuidance.statusColor}40;border-radius:var(--radius-xl);padding:var(--space-5);margin-bottom:var(--space-5)">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--space-4);margin-bottom:var(--space-4)">
             <div>
-              <div style="font-size:12px;color:${pricingGuidance.statusColor};font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Trip Status</div>
-              <div style="font-size:24px;font-weight:800;color:${pricingGuidance.statusColor}">${pricingGuidance.tripStatus.replace('_', ' ')}</div>
-              <div style="font-size:13px;color:var(--text-secondary);margin-top:4px">${pricingGuidance.statusMessage}</div>
+              <div style="font-size:var(--text-xs);color:${pricingGuidance.statusColor};font-weight:var(--weight-semibold);text-transform:uppercase;letter-spacing:0.5px">Trip Status</div>
+              <div style="font-size:var(--text-2xl);font-weight:var(--weight-heavy);color:${pricingGuidance.statusColor}">${pricingGuidance.tripStatus.replace('_', ' ')}</div>
+              <div style="font-size:var(--text-sm);color:var(--text-secondary);margin-top:var(--space-1)">${pricingGuidance.statusMessage}</div>
             </div>
-            <div style="display:flex;gap:16px;flex-wrap:wrap">
-              <div style="text-align:center;background:var(--bg-secondary);padding:12px 16px;border-radius:12px;min-width:100px">
-                <div style="font-size:10px;color:var(--text-muted);font-weight:600">LOADED</div>
-                <div style="font-size:24px;font-weight:800;color:var(--text-primary)">${pricingGuidance.currentCars}/${pricingGuidance.maxCapacity}</div>
-                <div style="font-size:11px;color:var(--text-muted)">${pricingGuidance.remainingSlots} slots left</div>
+            <div style="display:flex;gap:var(--space-4);flex-wrap:wrap">
+              <div style="text-align:center;background:var(--bg-secondary);padding:var(--space-3) var(--space-4);border-radius:var(--radius-lg);min-width:100px">
+                <div style="font-size:10px;color:var(--text-muted);font-weight:var(--weight-semibold)">LOADED</div>
+                <div style="font-size:var(--text-2xl);font-weight:var(--weight-heavy);color:var(--text-primary)">${pricingGuidance.currentCars}/${pricingGuidance.maxCapacity}</div>
+                <div style="font-size:var(--text-xs);color:var(--text-muted)">${pricingGuidance.remainingSlots} slots left</div>
               </div>
-              <div style="text-align:center;background:var(--bg-secondary);padding:12px 16px;border-radius:12px;min-width:100px">
-                <div style="font-size:10px;color:var(--text-muted);font-weight:600">CURRENT PPC</div>
-                <div style="font-size:24px;font-weight:800;color:${pricingGuidance.currentPPC >= pricingGuidance.pricing.target ? 'var(--green)' : 'var(--amber)'}">${formatMoney(pricingGuidance.currentPPC)}</div>
-                <div style="font-size:11px;color:var(--text-muted)">avg per car</div>
+              <div style="text-align:center;background:var(--bg-secondary);padding:var(--space-3) var(--space-4);border-radius:var(--radius-lg);min-width:100px">
+                <div style="font-size:10px;color:var(--text-muted);font-weight:var(--weight-semibold)">CURRENT PPC</div>
+                <div style="font-size:var(--text-2xl);font-weight:var(--weight-heavy);color:${pricingGuidance.currentPPC >= pricingGuidance.pricing.target ? 'var(--green)' : 'var(--amber)'}">${formatMoney(pricingGuidance.currentPPC)}</div>
+                <div style="font-size:var(--text-xs);color:var(--text-muted)">avg per car</div>
               </div>
-              <div style="text-align:center;background:var(--bg-secondary);padding:12px 16px;border-radius:12px;min-width:100px">
-                <div style="font-size:10px;color:var(--text-muted);font-weight:600">TRIP PROFIT</div>
-                <div style="font-size:24px;font-weight:800;color:${pricingGuidance.currentProfit >= 0 ? 'var(--green)' : 'var(--red)'}">${formatMoney(pricingGuidance.currentProfit)}</div>
-                <div style="font-size:11px;color:var(--text-muted)">current</div>
+              <div style="text-align:center;background:var(--bg-secondary);padding:var(--space-3) var(--space-4);border-radius:var(--radius-lg);min-width:100px">
+                <div style="font-size:10px;color:var(--text-muted);font-weight:var(--weight-semibold)">TRIP PROFIT</div>
+                <div style="font-size:var(--text-2xl);font-weight:var(--weight-heavy);color:${pricingGuidance.currentProfit >= 0 ? 'var(--green)' : 'var(--red)'}">${formatMoney(pricingGuidance.currentProfit)}</div>
+                <div style="font-size:var(--text-xs);color:var(--text-muted)">current</div>
               </div>
             </div>
           </div>
           
-          <div style="background:var(--bg-secondary);border-radius:12px;padding:16px">
-            <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:12px">💰 DISPATCHER PRICING GUIDANCE</div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">
-              <div style="background:var(--red-dim);padding:12px;border-radius:8px;text-align:center">
-                <div style="font-size:10px;color:var(--red);font-weight:600">MINIMUM PPC</div>
-                <div style="font-size:20px;font-weight:800;color:var(--red)">${formatMoney(pricingGuidance.pricing.minimum)}</div>
+          <div style="background:var(--bg-secondary);border-radius:var(--radius-lg);padding:var(--space-4)">
+            <div style="font-size:var(--text-sm);font-weight:var(--weight-bold);color:var(--text-primary);margin-bottom:var(--space-3)">💰 DISPATCHER PRICING GUIDANCE</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:var(--space-3)">
+              <div style="background:var(--red-dim);padding:var(--space-3);border-radius:var(--radius);text-align:center">
+                <div style="font-size:10px;color:var(--red);font-weight:var(--weight-semibold)">MINIMUM PPC</div>
+                <div style="font-size:var(--text-xl);font-weight:var(--weight-heavy);color:var(--red)">${formatMoney(pricingGuidance.pricing.minimum)}</div>
                 <div style="font-size:10px;color:var(--red)">Break-even</div>
               </div>
-              <div style="background:var(--green-dim);padding:12px;border-radius:8px;text-align:center;border:2px solid var(--green)">
-                <div style="font-size:10px;color:var(--primary-800);font-weight:600">TARGET PPC</div>
-                <div style="font-size:20px;font-weight:800;color:var(--green)">${formatMoney(pricingGuidance.pricing.target)}</div>
+              <div style="background:var(--green-dim);padding:var(--space-3);border-radius:var(--radius);text-align:center;border:2px solid var(--green)">
+                <div style="font-size:10px;color:var(--primary-800);font-weight:var(--weight-semibold)">TARGET PPC</div>
+                <div style="font-size:var(--text-xl);font-weight:var(--weight-heavy);color:var(--green)">${formatMoney(pricingGuidance.pricing.target)}</div>
                 <div style="font-size:10px;color:var(--primary-800)">Profitable</div>
               </div>
-              <div style="background:var(--blue-dim);padding:12px;border-radius:8px;text-align:center">
-                <div style="font-size:10px;color:var(--blue);font-weight:600">MARKET AVG</div>
-                <div style="font-size:20px;font-weight:800;color:var(--blue)">${formatMoney(pricingGuidance.pricing.marketAvg)}</div>
+              <div style="background:var(--blue-dim);padding:var(--space-3);border-radius:var(--radius);text-align:center">
+                <div style="font-size:10px;color:var(--blue);font-weight:var(--weight-semibold)">MARKET AVG</div>
+                <div style="font-size:var(--text-xl);font-weight:var(--weight-heavy);color:var(--blue)">${formatMoney(pricingGuidance.pricing.marketAvg)}</div>
                 <div style="font-size:10px;color:var(--blue)">Historical</div>
               </div>
               ${pricingGuidance.remainingSlots > 0 ? `
-              <div style="background:var(--amber-dim);padding:12px;border-radius:8px;text-align:center">
-                <div style="font-size:10px;color:var(--amber);font-weight:600">NEED FOR REMAINING</div>
-                <div style="font-size:20px;font-weight:800;color:var(--amber)">${formatMoney(pricingGuidance.pricing.recommendedForRemaining)}</div>
+              <div style="background:var(--amber-dim);padding:var(--space-3);border-radius:var(--radius);text-align:center">
+                <div style="font-size:10px;color:var(--amber);font-weight:var(--weight-semibold)">NEED FOR REMAINING</div>
+                <div style="font-size:var(--text-xl);font-weight:var(--weight-heavy);color:var(--amber)">${formatMoney(pricingGuidance.pricing.recommendedForRemaining)}</div>
                 <div style="font-size:10px;color:var(--amber)">${pricingGuidance.remainingSlots} cars @ this price</div>
               </div>
               ` : ''}
             </div>
-            <div style="margin-top:12px;padding:10px;background:var(--bg-tertiary);border-radius:8px;font-size:12px;color:var(--text-secondary)">
+            <div style="margin-top:var(--space-3);padding:10px;background:var(--bg-tertiary);border-radius:var(--radius);font-size:var(--text-xs);color:var(--text-secondary)">
               <strong>💡 Tip:</strong> Fixed cost allocation per trip: ${formatMoney(pricingGuidance.breakEvenInfo.fixedCostAllocation)}. 
               Truck gross ratio: ${(pricingGuidance.breakEvenInfo.truckGrossRatio * 100).toFixed(1)}% of revenue stays after fees and driver cut.
             </div>
@@ -16222,9 +16222,9 @@ ${rateText}`
       ` : '';
       
       const c = document.getElementById('main-content');
-      c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><button class="btn btn-secondary" onclick="renderTrips(document.getElementById(\'main-content\'))">← Back</button><h2>' + t.trip_number + '</h2><span class="badge ' + getBadge(t.status) + '">' + t.status + '</span>' + (t.status === 'COMPLETED' ? '<span style="color:var(--green);font-weight:600">✓ Trip Completed</span>' : (t.status === 'AT_TERMINAL' ? '<button class="btn btn-primary" style="background:var(--green)" onclick="markTripCompleted(' + id + ')">✓ Mark Completed</button>' : '<button class="btn btn-primary" style="background:var(--amber)" onclick="markTripAtTerminal(' + id + ')">🏢 Mark At Terminal</button><button class="btn btn-primary" style="background:var(--green)" onclick="markTripCompleted(' + id + ')">✓ Mark Completed</button>')) + '</div><div style="display:flex;gap:12px"><button class="btn btn-primary" onclick="openAddVehicle(' + id + ')">+ Add Vehicle</button><button class="btn btn-secondary" onclick="openAddExpense(' + id + ')">+ Expense</button><button class="btn btn-secondary" onclick="openTripMap(' + id + ')">🗺️ Trip Map</button></div></div>' +
+      c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:var(--space-4);flex-wrap:wrap"><button class="btn btn-secondary" onclick="renderTrips(document.getElementById(\'main-content\'))">← Back</button><h2>' + t.trip_number + '</h2><span class="badge ' + getBadge(t.status) + '">' + t.status + '</span>' + (t.status === 'COMPLETED' ? '<span style="color:var(--green);font-weight:var(--weight-semibold)">✓ Trip Completed</span>' : (t.status === 'AT_TERMINAL' ? '<button class="btn btn-primary" style="background:var(--green)" onclick="markTripCompleted(' + id + ')">✓ Mark Completed</button>' : '<button class="btn btn-primary" style="background:var(--amber)" onclick="markTripAtTerminal(' + id + ')">🏢 Mark At Terminal</button><button class="btn btn-primary" style="background:var(--green)" onclick="markTripCompleted(' + id + ')">✓ Mark Completed</button>')) + '</div><div style="display:flex;gap:var(--space-3)"><button class="btn btn-primary" onclick="openAddVehicle(' + id + ')">+ Add Vehicle</button><button class="btn btn-secondary" onclick="openAddExpense(' + id + ')">+ Expense</button><button class="btn btn-secondary" onclick="openTripMap(' + id + ')">🗺️ Trip Map</button></div></div>' +
         
-        '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px"><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Date</div><div class="value" style="font-size:16px">' + formatDate(t.trip_date) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:150px;padding:12px 16px;background:var(--purple-dim);cursor:pointer" onclick="openTripModal(' + id + ')"><div class="label">📅 Pay Period ✏️</div><div class="value" style="font-size:12px;color:var(--purple)">' + payPeriodText + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px;cursor:pointer" onclick="openAssignDriver(' + id + ')"><div class="label">Driver ✏️</div><div class="value" style="font-size:14px">' + (d ? d.first_name + ' ' + d.last_name : 'Not Assigned') + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:80px;padding:12px 16px;cursor:pointer" onclick="openAssignTruck(' + id + ')"><div class="label">Truck ✏️</div><div class="value" style="font-size:16px">' + (tr ? '#' + tr.truck_number : '-') + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:70px;padding:12px 16px"><div class="label">Cars</div><div class="value" style="font-size:16px">' + orders.length + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Broker Fees</div><div class="value" style="font-size:14px;color:var(--red)">' + formatMoney(f.brokerFee) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Local Fees</div><div class="value" style="font-size:14px;color:var(--red)">' + formatMoney(f.localFees) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Revenue</div><div class="value" style="font-size:14px">' + formatMoney(f.loadRevenue) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;background:var(--blue-dim)"><div class="label">Clean Revenue</div><div class="value" style="font-size:14px;color:var(--blue)">' + formatMoney(cleanRevenue) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;background:var(--amber-dim);border:2px solid var(--amber)"><div class="label">Driver Cut (' + (t.driver_cut_percent || 32) + '%)</div><div class="value" style="font-size:14px;color:var(--amber)">' + formatMoney(f.driverCut) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px;background:' + (f.netProfit >= 0 ? 'var(--green-dim)' : 'var(--red-dim)') + '"><div class="label">Net Profit</div><div class="value" style="font-size:14px">' + formatMoney(f.netProfit) + '</div></div></div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:var(--space-3);margin-bottom:var(--space-5)"><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:var(--space-3) var(--space-4)"><div class="label">Date</div><div class="value" style="font-size:var(--text-lg)">' + formatDate(t.trip_date) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:150px;padding:var(--space-3) var(--space-4);background:var(--purple-dim);cursor:pointer" onclick="openTripModal(' + id + ')"><div class="label">📅 Pay Period ✏️</div><div class="value" style="font-size:var(--text-xs);color:var(--purple)">' + payPeriodText + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:var(--space-3) var(--space-4);cursor:pointer" onclick="openAssignDriver(' + id + ')"><div class="label">Driver ✏️</div><div class="value" style="font-size:var(--text-sm)">' + (d ? d.first_name + ' ' + d.last_name : 'Not Assigned') + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:80px;padding:var(--space-3) var(--space-4);cursor:pointer" onclick="openAssignTruck(' + id + ')"><div class="label">Truck ✏️</div><div class="value" style="font-size:var(--text-lg)">' + (tr ? '#' + tr.truck_number : '-') + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:70px;padding:var(--space-3) var(--space-4)"><div class="label">Cars</div><div class="value" style="font-size:var(--text-lg)">' + orders.length + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:var(--space-3) var(--space-4)"><div class="label">Broker Fees</div><div class="value" style="font-size:var(--text-sm);color:var(--red)">' + formatMoney(f.brokerFee) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:var(--space-3) var(--space-4)"><div class="label">Local Fees</div><div class="value" style="font-size:var(--text-sm);color:var(--red)">' + formatMoney(f.localFees) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:var(--space-3) var(--space-4)"><div class="label">Revenue</div><div class="value" style="font-size:var(--text-sm)">' + formatMoney(f.loadRevenue) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:var(--space-3) var(--space-4);background:var(--blue-dim)"><div class="label">Clean Revenue</div><div class="value" style="font-size:var(--text-sm);color:var(--blue)">' + formatMoney(cleanRevenue) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:var(--space-3) var(--space-4);background:var(--amber-dim);border:2px solid var(--amber)"><div class="label">Driver Cut (' + (t.driver_cut_percent || 32) + '%)</div><div class="value" style="font-size:var(--text-sm);color:var(--amber)">' + formatMoney(f.driverCut) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:var(--space-3) var(--space-4);background:' + (f.netProfit >= 0 ? 'var(--green-dim)' : 'var(--red-dim)') + '"><div class="label">Net Profit</div><div class="value" style="font-size:var(--text-sm)">' + formatMoney(f.netProfit) + '</div></div></div>' +
         
         pricingWidget +
         
@@ -16234,7 +16234,7 @@ ${rateText}`
         
         '<div class="card"><div class="card-header"><h3>💸 Expenses (' + expenses.length + ')</h3><button class="btn btn-primary btn-sm" onclick="openAddExpense(' + id + ')">+ Add Expense</button></div>' + (expenses.length === 0 ? '<div style="padding:40px;text-align:center">No expenses yet. Click "+ Add Expense" to record expenses.</div>' : '<div class="table-wrapper"><table><thead><tr><th>Category</th><th>Description</th><th>Amount</th><th>Actions</th></tr></thead><tbody>' + expenses.map(e => '<tr><td><span class="badge badge-blue">' + e.category + '</span></td><td>' + (e.description || '-') + '</td><td class="money negative">' + formatMoney(e.amount) + '</td><td><button class="action-btn delete" onclick="deleteExpense(' + e.id + ',' + id + ')">Delete</button></td></tr>').join('') + '</tbody></table></div>') + '</div>' +
         
-        '<div class="card"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3>🛣️ Trip Miles</h3><button class="btn btn-secondary btn-sm" onclick="openEditMiles(' + id + ')">✏️ Edit Miles</button></div><div style="padding:20px;display:flex;align-items:center;gap:20px"><div style="font-size:32px;font-weight:700;color:var(--blue)">' + (t.miles || 0).toLocaleString() + '</div><div style="color:var(--text-muted)">miles</div></div></div>';
+        '<div class="card"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3>🛣️ Trip Miles</h3><button class="btn btn-secondary btn-sm" onclick="openEditMiles(' + id + ')">✏️ Edit Miles</button></div><div style="padding:20px;display:flex;align-items:center;gap:20px"><div style="font-size:32px;font-weight:var(--weight-bold);color:var(--blue)">' + (t.miles || 0).toLocaleString() + '</div><div style="color:var(--text-muted)">miles</div></div></div>';
     }
 
     function openEditMiles(tripId) {
@@ -17677,7 +17677,7 @@ ${rateText}`
         '<option value="' + y + '"' + (ordersYear === y ? ' selected' : '') + '>' + y + '</option>'
       ).join('');
 
-      c.innerHTML = '<div class="header"><h2>Vehicles / Orders</h2><div style="display:flex;align-items:center;gap:12px"><div style="display:flex;align-items:center;gap:8px;background:var(--bg-app);padding:8px 12px;border-radius:6px"><label style="font-weight:600;color:var(--text-secondary);font-size:13px">Year:</label><select onchange="ordersYear=parseInt(this.value);renderOrders(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px">' + ordersYearOptions + '</select></div><button class="btn btn-secondary" onclick="exportOrders()">📥 Export</button><button class="btn" style="background:var(--purple);color:white" onclick="openCreateNewLoad()">📄 AI Import</button><button class="btn btn-primary" onclick="openOrderModal()">+ New Order</button><button class="btn btn-secondary" id="bulkDeleteBtn" style="display:none;background:var(--red-dim);color:var(--red);border-color:var(--red-dim)" onclick="bulkDeleteOrders()">🗑️ Delete Selected (<span id="selectedCount">0</span>)</button></div></div>' +
+      c.innerHTML = '<div class="header"><h2>Vehicles / Orders</h2><div style="display:flex;align-items:center;gap:12px"><div style="display:flex;align-items:center;gap:8px;background:var(--bg-app);padding:var(--spacing-2) var(--spacing-3);border-radius:var(--radius)"><label style="font-weight:600;color:var(--text-secondary);font-size:var(--text-sm)">Year:</label><select onchange="ordersYear=parseInt(this.value);renderOrders(document.getElementById(\'main-content\'))" style="padding:var(--spacing-1-5) var(--spacing-2-5);border:1px solid var(--border);border-radius:var(--radius);font-size:var(--text-sm)">' + ordersYearOptions + '</select></div><button class="btn btn-secondary" onclick="exportOrders()">📥 Export</button><button class="btn" style="background:var(--purple);color:white" onclick="openCreateNewLoad()">📄 AI Import</button><button class="btn btn-primary" onclick="openOrderModal()">+ New Order</button><button class="btn btn-secondary" id="bulkDeleteBtn" style="display:none;background:var(--red-dim);color:var(--red);border-color:var(--red-dim)" onclick="bulkDeleteOrders()">🗑️ Delete Selected (<span id="selectedCount">0</span>)</button></div></div>' +
 
         // Search and Filters
         '<div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap;align-items:center;background:var(--bg-app);padding:16px;border-radius:8px">' +
@@ -18571,7 +18571,7 @@ ${rateText}`
         '<option value="' + y + '"' + (localDriversYear === y ? ' selected' : '') + '>' + y + '</option>'
       ).join('');
 
-      c.innerHTML = '<div class="header"><h2>🚙 Local Drivers</h2><div style="display:flex;align-items:center;gap:12px"><div style="display:flex;align-items:center;gap:8px;background:var(--bg-app);padding:8px 12px;border-radius:6px"><label style="font-weight:600;color:var(--text-secondary);font-size:13px">Year:</label><select onchange="localDriversYear=parseInt(this.value);renderLocalDrivers(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px">' + localDriversYearOptions + '</select></div><button class="btn btn-primary" onclick="openLocalDriverModal()">+ Add Local Driver</button></div></div>' +
+      c.innerHTML = '<div class="header"><h2>🚙 Local Drivers</h2><div style="display:flex;align-items:center;gap:12px"><div style="display:flex;align-items:center;gap:8px;background:var(--bg-app);padding:var(--spacing-2) var(--spacing-3);border-radius:var(--radius)"><label style="font-weight:600;color:var(--text-secondary);font-size:var(--text-sm)">Year:</label><select onchange="localDriversYear=parseInt(this.value);renderLocalDrivers(document.getElementById(\'main-content\'))" style="padding:var(--spacing-1-5) var(--spacing-2-5);border:1px solid var(--border);border-radius:var(--radius);font-size:var(--text-sm)">' + localDriversYearOptions + '</select></div><button class="btn btn-primary" onclick="openLocalDriverModal()">+ Add Local Driver</button></div></div>' +
 
         // Stats
         '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px">' +
@@ -24734,7 +24734,7 @@ ${rateText}`
         '<option value="' + y + '"' + (payrollYear === y ? ' selected' : '') + '>' + y + '</option>'
       ).join('');
 
-      c.innerHTML = '<div class="header"><h2>💰 Driver Payroll</h2><div style="display:flex;align-items:center;gap:12px"><div style="display:flex;align-items:center;gap:8px;background:var(--bg-app);padding:8px 12px;border-radius:6px"><label style="font-weight:600;color:var(--text-secondary);font-size:13px">Year:</label><select onchange="payrollYear=parseInt(this.value);renderPayroll(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px">' + yearOptions + '</select></div><button class="btn btn-secondary" onclick="window.print()">🖨️ Print</button></div></div>' +
+      c.innerHTML = '<div class="header"><h2>💰 Driver Payroll</h2><div style="display:flex;align-items:center;gap:12px"><div style="display:flex;align-items:center;gap:8px;background:var(--bg-app);padding:var(--spacing-2) var(--spacing-3);border-radius:var(--radius)"><label style="font-weight:600;color:var(--text-secondary);font-size:var(--text-sm)">Year:</label><select onchange="payrollYear=parseInt(this.value);renderPayroll(document.getElementById(\'main-content\'))" style="padding:var(--spacing-1-5) var(--spacing-2-5);border:1px solid var(--border);border-radius:var(--radius);font-size:var(--text-sm)">' + yearOptions + '</select></div><button class="btn btn-secondary" onclick="window.print()">🖨️ Print</button></div></div>' +
         '<div style="background:var(--blue-dim);border:1px solid var(--blue-dim);border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--blue)">📋 Formula:</strong><p style="color:var(--blue);margin-top:8px">Net Pay = Gross Earnings − Cash Collected + Expense Reimbursements (OTHER only)</p><p style="color:var(--text-muted);font-size:13px;margin-top:4px">Only COMPLETED trips are included. Only "OTHER" category expenses are reimbursed to drivers.</p></div>' +
         '<div class="card"><div class="table-wrapper"><table><thead><tr><th>Driver</th><th>Completed Trips</th><th>Gross Earnings</th><th>Cash Collected</th><th>Expense Reimb.</th><th>Net Pay</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
         (payrollData.length === 0 ? '<tr><td colspan="7" style="text-align:center;padding:40px">No drivers yet</td></tr>' :
@@ -30439,37 +30439,37 @@ ${rateText}`
         
         '<div class="fin-metric-card" style="background:var(--bg-card);border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.1);border:1px solid var(--border);text-align:center;transition:all 0.2s;cursor:pointer" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 4px 12px rgba(0,0,0,0.15)\'" onmouseout="this.style.transform=\'none\';this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\'">' +
         '<div style="width:48px;height:48px;background:var(--blue-dim);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px">💵</div>' +
-        '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Avg Price/Car</div>' +
+        '<div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Avg Price/Car</div>' +
         '<div style="font-size:22px;font-weight:700;color:var(--text-primary)">' + formatMoney(allTimeAvgPPC) + '</div>' +
         '</div>' +
         
         '<div class="fin-metric-card" style="background:var(--bg-card);border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.1);border:1px solid var(--border);text-align:center;transition:all 0.2s;cursor:pointer" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 4px 12px rgba(0,0,0,0.15)\'" onmouseout="this.style.transform=\'none\';this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\'">' +
         '<div style="width:48px;height:48px;background:var(--green-dim);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px">📍</div>' +
-        '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Avg Price/Mile</div>' +
+        '<div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Avg Price/Mile</div>' +
         '<div style="font-size:22px;font-weight:700;color:var(--text-primary)">' + formatMoney(allTimeAvgPPM) + '</div>' +
         '</div>' +
         
         '<div class="fin-metric-card" style="background:var(--bg-card);border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.1);border:1px solid var(--border);text-align:center;transition:all 0.2s;cursor:pointer" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 4px 12px rgba(0,0,0,0.15)\'" onmouseout="this.style.transform=\'none\';this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\'">' +
         '<div style="width:48px;height:48px;background:var(--amber-dim);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px">🚗</div>' +
-        '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Cars/Trip</div>' +
+        '<div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Cars/Trip</div>' +
         '<div style="font-size:22px;font-weight:700;color:var(--text-primary)">' + allTimeAvgCarsPerTrip.toFixed(1) + '</div>' +
         '</div>' +
         
         '<div class="fin-metric-card" style="background:var(--bg-card);border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.1);border:1px solid var(--border);text-align:center;transition:all 0.2s;cursor:pointer" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 4px 12px rgba(0,0,0,0.15)\'" onmouseout="this.style.transform=\'none\';this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\'">' +
         '<div style="width:48px;height:48px;background:var(--purple-dim);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px">🛣️</div>' +
-        '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Miles/Trip</div>' +
+        '<div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Miles/Trip</div>' +
         '<div style="font-size:22px;font-weight:700;color:var(--text-primary)">' + allTimeAvgMilesPerTrip.toFixed(0) + '</div>' +
         '</div>' +
         
         '<div class="fin-metric-card" style="background:var(--bg-card);border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.1);border:1px solid var(--border);text-align:center;transition:all 0.2s;cursor:pointer" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 4px 12px rgba(0,0,0,0.15)\'" onmouseout="this.style.transform=\'none\';this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\'">' +
         '<div style="width:48px;height:48px;background:var(--red-dim);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px">⛽</div>' +
-        '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Fuel/Mile</div>' +
+        '<div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Fuel/Mile</div>' +
         '<div style="font-size:22px;font-weight:700;color:var(--text-primary)">' + formatMoney(allTimeAvgFuelPerMile) + '</div>' +
         '</div>' +
         
         '<div class="fin-metric-card" style="background:var(--bg-card);border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.1);border:1px solid var(--border);text-align:center;transition:all 0.2s;cursor:pointer" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 4px 12px rgba(0,0,0,0.15)\'" onmouseout="this.style.transform=\'none\';this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\'">' +
         '<div style="width:48px;height:48px;background:var(--red-dim);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px">📋</div>' +
-        '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Expense/Trip</div>' +
+        '<div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Expense/Trip</div>' +
         '<div style="font-size:22px;font-weight:700;color:var(--text-primary)">' + formatMoney(allTimeAvgExpensePerTrip) + '</div>' +
         '</div>' +
         '</div>' +
@@ -30974,7 +30974,7 @@ ${rateText}`
         // Profitability Analysis
         '<div style="background:' + (trueNetProfit >= 0 ? 'var(--green)' : 'var(--red)') + ';color:white;padding:10px 16px;border-radius:8px 8px 0 0;font-weight:600;margin-top:16px">📈 Profitability Analysis</div>' +
         '<div style="border:1px solid var(--bg-elevated);border-top:none;padding:16px;border-radius:0 0 8px 8px">' +
-        '<div style="text-align:center;margin-bottom:16px"><div style="font-size:12px;color:var(--text-muted)">True Net Profit of Trip</div><div style="font-size:28px;font-weight:700;color:' + (trueNetProfit >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (trueNetProfit >= 0 ? '↑' : '↓') + ' ' + formatMoney(trueNetProfit) + '</div></div>' +
+        '<div style="text-align:center;margin-bottom:16px"><div style="font-size:12px;color:var(--text-muted)">True Net Profit of Trip</div><div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:' + (trueNetProfit >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (trueNetProfit >= 0 ? '↑' : '↓') + ' ' + formatMoney(trueNetProfit) + '</div></div>' +
         '<div style="background:' + (isAboveTarget ? 'var(--green-dim)' : 'var(--red-dim)') + ';padding:12px;border-radius:8px;text-align:center;margin-bottom:12px;font-size:13px">' +
         'This trip\'s contribution of ' + formatMoney(tripNetProfit) + ' was ' + (isAboveTarget ? '🟢 ABOVE' : '🔴 BELOW') + ' the overhead allocation per trip.' +
         '</div>' +
@@ -36164,7 +36164,7 @@ function jsonResponse(data, status = 200) {
       
       const totalMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
       
-      return '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px"><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Total Revenue</div><div style="font-size:28px;font-weight:700;color:var(--green)">' + formatMoney(totalRevenue) + '</div></div><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Total Costs</div><div style="font-size:28px;font-weight:700;color:var(--red)">' + formatMoney(totalDriverCut + totalFuel + totalOther) + '</div></div><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Net Profit</div><div style="font-size:28px;font-weight:700;color:' + (totalProfit >= 0 ? 'var(--green)' : 'var(--red)') + '">' + formatMoney(totalProfit) + '</div></div><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Profit Margin</div><div style="font-size:28px;font-weight:700;color:' + (totalMargin >= 25 ? 'var(--green)' : totalMargin >= 15 ? 'var(--amber)' : 'var(--red)') + '">' + totalMargin.toFixed(1) + '%</div></div></div>' +
+      return '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px"><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Total Revenue</div><div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:var(--green)">' + formatMoney(totalRevenue) + '</div></div><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Total Costs</div><div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:var(--red)">' + formatMoney(totalDriverCut + totalFuel + totalOther) + '</div></div><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Net Profit</div><div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:' + (totalProfit >= 0 ? 'var(--green)' : 'var(--red)') + '">' + formatMoney(totalProfit) + '</div></div><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Profit Margin</div><div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:' + (totalMargin >= 25 ? 'var(--green)' : totalMargin >= 15 ? 'var(--amber)' : 'var(--red)') + '">' + totalMargin.toFixed(1) + '%</div></div></div>' +
         '<div class="card"><div class="card-header"><h3>🚛 Profit & Loss by Truck</h3></div><div class="table-wrapper"><table><thead><tr><th>Truck</th><th>Trips</th><th>Cars</th><th>Revenue</th><th>Driver Cut</th><th>Fuel</th><th>Other Costs</th><th>Net Profit</th><th>Margin</th>' + (reportCompare ? '<th>vs Prev</th>' : '') + '</tr></thead><tbody>' +
         truckData.map((d, i) => '<tr><td><div style="display:flex;align-items:center;gap:8px">' + (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '🚛') + '<strong>' + d.truck.truck_number + '</strong></div></td><td>' + d.trips + '</td><td>' + d.cars + '</td><td style="color:var(--green);font-weight:600">' + formatMoney(d.revenue) + '</td><td style="color:var(--red)">' + formatMoney(d.driverCut) + '</td><td style="color:var(--amber)">' + formatMoney(d.fuel) + '</td><td style="color:var(--text-muted)">' + formatMoney(d.other) + '</td><td style="font-weight:700;color:' + (d.netProfit >= 0 ? 'var(--green)' : 'var(--red)') + '">' + formatMoney(d.netProfit) + '</td><td><span style="padding:4px 8px;border-radius:12px;font-size:12px;font-weight:600;background:' + (d.margin >= 25 ? 'var(--green-dim)' : d.margin >= 15 ? 'var(--amber-dim)' : 'var(--red-dim)') + ';color:' + (d.margin >= 25 ? 'var(--green)' : d.margin >= 15 ? 'var(--amber)' : 'var(--red)') + '">' + d.margin.toFixed(1) + '%</span></td>' + (reportCompare ? '<td>' + (d.prevData ? '<span style="color:' + (d.revenue >= d.prevData.revenue ? 'var(--green)' : 'var(--red)') + '">' + (d.revenue >= d.prevData.revenue ? '↑' : '↓') + ' ' + Math.abs(((d.revenue - d.prevData.revenue) / (d.prevData.revenue || 1)) * 100).toFixed(0) + '%</span>' : '-') + '</td>' : '') + '</tr>').join('') +
         '<tr style="background:var(--bg-darker);font-weight:700"><td><strong>TOTAL</strong></td><td>' + truckData.reduce((s, d) => s + d.trips, 0) + '</td><td>' + truckData.reduce((s, d) => s + d.cars, 0) + '</td><td style="color:var(--green)">' + formatMoney(totalRevenue) + '</td><td style="color:var(--red)">' + formatMoney(totalDriverCut) + '</td><td style="color:var(--amber)">' + formatMoney(totalFuel) + '</td><td style="color:var(--text-muted)">' + formatMoney(totalOther) + '</td><td style="color:' + (totalProfit >= 0 ? 'var(--green)' : 'var(--red)') + '">' + formatMoney(totalProfit) + '</td><td>' + totalMargin.toFixed(1) + '%</td>' + (reportCompare ? '<td></td>' : '') + '</tr></tbody></table></div></div>' +
@@ -36218,7 +36218,7 @@ function jsonResponse(data, status = 200) {
         return { driver, trips: driverTrips.length, cars: driverOrders.length, revenue: cleanGross, earnings, cashCollected, miles, avgPerCar, avgCut: driverTrips.length > 0 ? driverTrips.reduce((s, t) => s + (t.driver_cut_percent || 32), 0) / driverTrips.length : 32, prevData };
       }).filter(d => d.trips > 0).sort((a, b) => b.revenue - a.revenue);
       
-      return '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px"><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Total Trips</div><div style="font-size:28px;font-weight:700;color:var(--blue)">' + totalTrips + '</div></div><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Total Cars Hauled</div><div style="font-size:28px;font-weight:700;color:var(--purple)">' + totalCars + '</div></div><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Revenue Generated</div><div style="font-size:28px;font-weight:700;color:var(--green)">' + formatMoney(totalRevenue) + '</div></div><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Driver Earnings</div><div style="font-size:28px;font-weight:700;color:var(--amber)">' + formatMoney(totalEarnings) + '</div></div></div>' +
+      return '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px"><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Total Trips</div><div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:var(--blue)">' + totalTrips + '</div></div><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Total Cars Hauled</div><div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:var(--purple)">' + totalCars + '</div></div><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Revenue Generated</div><div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:var(--green)">' + formatMoney(totalRevenue) + '</div></div><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Driver Earnings</div><div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:var(--amber)">' + formatMoney(totalEarnings) + '</div></div></div>' +
         '<div class="card"><div class="card-header"><h3>👨‍✈️ Driver Performance</h3></div><div class="table-wrapper"><table><thead><tr><th>Driver</th><th>Trips</th><th>Cars</th><th>Miles</th><th>Revenue</th><th>Avg $/Car</th><th>Cut %</th><th>Earnings</th><th>Cash Collected</th>' + (reportCompare ? '<th>vs Prev</th>' : '') + '</tr></thead><tbody>' +
         driverData.map((d, i) => '<tr><td><div style="display:flex;align-items:center;gap:8px">' + (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '👨‍✈️') + '<div><strong>' + d.driver.first_name + ' ' + d.driver.last_name + '</strong><div style="font-size:11px;color:var(--text-muted)">' + (d.driver.phone || '') + '</div></div></div></td><td><span style="font-weight:600">' + d.trips + '</span></td><td>' + d.cars + '</td><td>' + d.miles.toLocaleString() + '</td><td style="color:var(--green);font-weight:600">' + formatMoney(d.revenue) + '</td><td>' + formatMoney(d.avgPerCar) + '</td><td><span style="color:var(--blue);font-weight:600">' + d.avgCut.toFixed(0) + '%</span></td><td style="color:var(--amber);font-weight:700">' + formatMoney(d.earnings) + '</td><td style="color:var(--purple)">' + formatMoney(d.cashCollected) + '</td>' + (reportCompare ? '<td>' + (d.prevData ? '<span style="color:' + (d.trips >= d.prevData.trips ? 'var(--green)' : 'var(--red)') + '">' + (d.trips >= d.prevData.trips ? '↑' : '↓') + ' ' + Math.abs(d.trips - d.prevData.trips) + ' trips</span>' : '-') + '</td>' : '') + '</tr>').join('') +
         '</tbody></table></div></div>' +
@@ -36272,7 +36272,7 @@ function jsonResponse(data, status = 200) {
         }
       });
       
-      return '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px"><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Active Lanes</div><div style="font-size:28px;font-weight:700;color:var(--blue)">' + laneData.length + '</div></div><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Total Revenue</div><div style="font-size:28px;font-weight:700;color:var(--green)">' + formatMoney(totalRevenue) + '</div></div><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Total Miles</div><div style="font-size:28px;font-weight:700;color:var(--purple)">' + totalMiles.toLocaleString() + '</div></div><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Avg $/Mile</div><div style="font-size:28px;font-weight:700;color:' + (avgRevenuePerMile >= 2 ? 'var(--green)' : 'var(--amber)') + '">' + formatMoney(avgRevenuePerMile) + '</div></div></div>' +
+      return '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px"><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Active Lanes</div><div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:var(--blue)">' + laneData.length + '</div></div><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Total Revenue</div><div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:var(--green)">' + formatMoney(totalRevenue) + '</div></div><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Total Miles</div><div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:var(--purple)">' + totalMiles.toLocaleString() + '</div></div><div class="card" style="padding:20px;text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Avg $/Mile</div><div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:' + (avgRevenuePerMile >= 2 ? 'var(--green)' : 'var(--amber)') + '">' + formatMoney(avgRevenuePerMile) + '</div></div></div>' +
         '<div class="card"><div class="card-header"><h3>🛣️ Lane Performance</h3></div><div class="table-wrapper"><table><thead><tr><th>Lane</th><th>Trips</th><th>Cars</th><th>Miles</th><th>Revenue</th><th>$/Mile</th><th>$/Car</th><th>Broker Fee %</th><th>% of Total</th></tr></thead><tbody>' +
         laneData.slice(0, 15).map((lane, i) => '<tr><td><div style="display:flex;align-items:center;gap:8px">' + (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '🛣️') + '<strong>' + lane.lane + '</strong></div></td><td>' + lane.trips + '</td><td>' + lane.cars + '</td><td>' + lane.miles.toLocaleString() + '</td><td style="color:var(--green);font-weight:600">' + formatMoney(lane.revenue) + '</td><td><span style="padding:4px 8px;border-radius:12px;font-size:12px;font-weight:600;background:' + (lane.revenuePerMile >= 2.5 ? 'var(--green-dim)' : lane.revenuePerMile >= 1.5 ? 'var(--amber-dim)' : 'var(--red-dim)') + ';color:' + (lane.revenuePerMile >= 2.5 ? 'var(--green)' : lane.revenuePerMile >= 1.5 ? 'var(--amber)' : 'var(--red)') + '">' + formatMoney(lane.revenuePerMile) + '</span></td><td>' + formatMoney(lane.avgPerCar) + '</td><td style="color:' + (lane.avgBrokerFee <= 5 ? 'var(--green)' : lane.avgBrokerFee <= 10 ? 'var(--amber)' : 'var(--red)') + '">' + lane.avgBrokerFee.toFixed(1) + '%</td><td><div style="display:flex;align-items:center;gap:8px"><div style="width:60px;height:8px;background:var(--bg-darker);border-radius:4px;overflow:hidden"><div style="width:' + ((lane.revenue / totalRevenue) * 100) + '%;height:100%;background:var(--blue)"></div></div><span style="font-size:12px">' + ((lane.revenue / totalRevenue) * 100).toFixed(1) + '%</span></div></td></tr>').join('') +
         '</tbody></table></div></div>' +
@@ -36584,7 +36584,7 @@ function jsonResponse(data, status = 200) {
             <div style="padding:16px">
               <div style="background:var(--bg-darker);padding:16px;border-radius:8px;margin-bottom:16px">
                 <div style="font-size:12px;color:var(--text-muted)">Break-Even per Truck/Month</div>
-                <div style="font-size:28px;font-weight:700;color:var(--amber)">${formatMoney(breakEven)}</div>
+                <div style="font-size:var(--text-3xl);font-weight:var(--weight-bold);font-family:var(--font-mono);color:var(--amber)">${formatMoney(breakEven)}</div>
                 <div style="font-size:12px;color:var(--text-muted);margin-top:8px">= ${carsNeeded} cars at ${formatMoney(fs.avgRevenuePerCar)}/car</div>
               </div>
               <div style="font-size:13px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
