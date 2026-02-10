@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-10)
 ## Current Position
 
 Phase: 11 of 15 (Design System Foundation + Global Components)
-Plan: 1 of TBD (plan 11-01 complete)
+Plan: 2 of TBD (plans 11-01, 11-02 complete)
 Status: In progress - Phase 11
-Last activity: 2026-02-10 — Completed 11-01-PLAN.md (design-system.css)
+Last activity: 2026-02-10 — Completed 11-02-PLAN.md (style block hex→var)
 
-Progress: [█░░░░░░░░░] ~5% (v1.2 in progress, 1 plan complete)
+Progress: [██░░░░░░░░] ~10% (v1.2 in progress, 2 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
 - v1.1 complete: 21 plans completed
-- v1.2 in progress: 1 plan completed
-- Latest: 11-01 (1m 16s) - design-system.css completion
+- v1.2 in progress: 2 plans completed
+- Latest: 11-02 (1m 57s) - style block hex→var replacement
 
 **By Milestone:**
 
@@ -34,7 +34,7 @@ Progress: [█░░░░░░░░░] ~5% (v1.2 in progress, 1 plan complet
 **v1.2 Progress:**
 - Total phases: 5 (11-15)
 - Phases complete: 0
-- Current: Phase 11 in progress (1 plan complete)
+- Current: Phase 11 in progress (2 plans complete)
 
 ## Accumulated Context
 
@@ -48,10 +48,10 @@ Recent decisions affecting v1.2:
 - design-system.css completed with all component styles (GLC-01 through GLC-10)
 - Toast animation name preserved as 'slideInRight' for ui.js compatibility
 - All new component styles use design system tokens exclusively
+- 13 intentional hex colors kept in style block (login page custom dark bg, print styles)
 
 ### Known Issues
 - Production index.html is ~38K lines — changes must be carefully targeted per renderXxx() function
-- Some hex→var() replacements already done in index.html — audit needed to avoid duplicate work
 
 ### Pending Todos
 - (None yet)
@@ -61,10 +61,10 @@ Recent decisions affecting v1.2:
 
 ## Session Continuity
 
-Last session: 2026-02-10 16:40 UTC
-Stopped at: Completed 11-01-PLAN.md execution (design-system.css complete)
+Last session: 2026-02-10 16:45 UTC
+Stopped at: Completed 11-02-PLAN.md execution (style block hex→var complete)
 Resume file: None
 
 ---
 
-**Next action**: Continue with plan 11-02 (sidebar hex→var() replacement) or `/gsd:plan-phase 11` for remaining plans
+**Next action**: Continue with plan 11-03 (JS render functions hex→var replacement) or `/gsd:plan-phase 11` for remaining plans
