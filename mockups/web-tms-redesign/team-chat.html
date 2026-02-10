@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon Star TMS — Team Chat</title>
+
+  <!-- FART prevention: set theme before CSS loads -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('tms-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared.css">
+
+  <style>
+    /* Team Chat page-specific styles */
+    .chat-container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .chat-header {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chat-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .chat-header-left h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .chat-header-center {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .online-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .messages-area {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      max-height: 600px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+    }
+
+    .messages-area::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .messages-area::-webkit-scrollbar-track {
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+    }
+
+    .messages-area::-webkit-scrollbar-thumb {
+      background: var(--border-default);
+      border-radius: 4px;
+    }
+
+    .messages-area::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    .message {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .message:last-child {
+      margin-bottom: 0;
+    }
+
+    .message.own-message .message-content-wrapper {
+      background: rgba(59, 130, 246, 0.05);
+      border-left: 2px solid var(--blue);
+    }
+
+    .message-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .message-avatar.blue {
+      background: var(--blue);
+    }
+
+    .message-avatar.green {
+      background: var(--green);
+    }
+
+    .message-avatar.purple {
+      background: var(--purple);
+    }
+
+    .message-avatar.amber {
+      background: var(--amber);
+    }
+
+    .message-avatar.red {
+      background: var(--red);
+    }
+
+    .message-content-wrapper {
+      flex: 1;
+      padding: 12px 16px;
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .message-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .message-sender {
+      font-weight: 700;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .message-sender.blue {
+      color: var(--blue);
+    }
+
+    .message-time {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .message-text {
+      color: var(--text-primary);
+      font-size: 14px;
+      line-height: 1.5;
+      word-wrap: break-word;
+    }
+
+    .message-text .mention {
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--blue);
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .message-attachment {
+      margin-top: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      color: var(--blue);
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .message-attachment:hover {
+      background: var(--bg-tertiary);
+    }
+
+    .input-area {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+
+    .input-textarea {
+      width: 100%;
+      min-height: 60px;
+      padding: 12px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      font-family: Inter, sans-serif;
+      font-size: 14px;
+      resize: vertical;
+      margin-bottom: 12px;
+    }
+
+    .input-textarea:focus {
+      outline: none;
+      border-color: var(--blue);
+    }
+
+    .input-textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    .input-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .input-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .attach-btn {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .attach-btn:hover {
+      background: var(--bg-tertiary);
+      border-color: var(--blue);
+      color: var(--blue);
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <i data-lucide="truck"></i>
+        </div>
+        <span class="sidebar-logo-text">Horizon Star</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- MAIN Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Main</div>
+          <a class="nav-item" data-page="dashboard">
+            <i data-lucide="layout-dashboard" class="nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+          </a>
+          <a class="nav-item" data-page="trips">
+            <i data-lucide="map" class="nav-icon"></i>
+            <span class="nav-label">Trips</span>
+          </a>
+          <a class="nav-item active" data-page="messages">
+            <i data-lucide="message-square" class="nav-icon"></i>
+            <span class="nav-label">Messages</span>
+          </a>
+          <a class="nav-item" data-page="trailers">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trailers</span>
+          </a>
+          <a class="nav-item" data-page="load-board">
+            <i data-lucide="package" class="nav-icon"></i>
+            <span class="nav-label">Load Board</span>
+          </a>
+          <a class="nav-item" data-page="inspections">
+            <i data-lucide="clipboard-list" class="nav-icon"></i>
+            <span class="nav-label">Inspections</span>
+          </a>
+          <a class="nav-item" data-page="tasks">
+            <i data-lucide="check-square" class="nav-icon"></i>
+            <span class="nav-label">Tasks</span>
+          </a>
+        </div>
+
+        <!-- FLEET Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Fleet</div>
+          <a class="nav-item" data-page="drivers">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Drivers</span>
+          </a>
+          <a class="nav-item" data-page="trucks">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trucks</span>
+          </a>
+          <a class="nav-item" data-page="local-drivers">
+            <i data-lucide="user" class="nav-icon"></i>
+            <span class="nav-label">Local Drivers</span>
+          </a>
+        </div>
+
+        <!-- PARTNERS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Partners</div>
+          <a class="nav-item" data-page="brokers">
+            <i data-lucide="briefcase" class="nav-icon"></i>
+            <span class="nav-label">Brokers</span>
+          </a>
+          <a class="nav-item" data-page="dealers">
+            <i data-lucide="building" class="nav-icon"></i>
+            <span class="nav-label">Dealers</span>
+          </a>
+          <a class="nav-item" data-page="dispatchers">
+            <i data-lucide="phone" class="nav-icon"></i>
+            <span class="nav-label">Dispatchers</span>
+          </a>
+          <a class="nav-item" data-page="dispatcher-ranking">
+            <i data-lucide="star" class="nav-icon"></i>
+            <span class="nav-label">Dispatcher Ranking</span>
+          </a>
+        </div>
+
+        <!-- FINANCIALS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Financials</div>
+          <a class="nav-item" data-page="financials">
+            <i data-lucide="dollar-sign" class="nav-icon"></i>
+            <span class="nav-label">Financials</span>
+          </a>
+          <a class="nav-item" data-page="billing">
+            <i data-lucide="file-text" class="nav-icon"></i>
+            <span class="nav-label">Billing</span>
+          </a>
+          <a class="nav-item" data-page="trip-profitability">
+            <i data-lucide="trending-up" class="nav-icon"></i>
+            <span class="nav-label">Trip Profitability</span>
+          </a>
+          <a class="nav-item" data-page="payroll">
+            <i data-lucide="credit-card" class="nav-icon"></i>
+            <span class="nav-label">Payroll</span>
+          </a>
+          <a class="nav-item" data-page="fuel">
+            <i data-lucide="droplet" class="nav-icon"></i>
+            <span class="nav-label">Fuel</span>
+          </a>
+          <a class="nav-item" data-page="ifta">
+            <i data-lucide="file" class="nav-icon"></i>
+            <span class="nav-label">IFTA</span>
+          </a>
+          <a class="nav-item" data-page="reports">
+            <i data-lucide="bar-chart-2" class="nav-icon"></i>
+            <span class="nav-label">Reports</span>
+          </a>
+          <a class="nav-item" data-page="ai-advisor">
+            <i data-lucide="brain" class="nav-icon"></i>
+            <span class="nav-label">AI Advisor</span>
+          </a>
+        </div>
+
+        <!-- OPERATIONS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Operations</div>
+          <a class="nav-item" data-page="maintenance">
+            <i data-lucide="wrench" class="nav-icon"></i>
+            <span class="nav-label">Maintenance</span>
+          </a>
+          <a class="nav-item" data-page="compliance">
+            <i data-lucide="shield-check" class="nav-icon"></i>
+            <span class="nav-label">Compliance</span>
+          </a>
+          <a class="nav-item" data-page="applications">
+            <i data-lucide="file-plus" class="nav-icon"></i>
+            <span class="nav-label">Applications</span>
+          </a>
+        </div>
+
+        <!-- SETTINGS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Settings</div>
+          <a class="nav-item" data-page="settings">
+            <i data-lucide="settings" class="nav-icon"></i>
+            <span class="nav-label">Settings</span>
+          </a>
+          <a class="nav-item" data-page="users">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Users</span>
+          </a>
+          <a class="nav-item" data-page="activity-log">
+            <i data-lucide="activity" class="nav-icon"></i>
+            <span class="nav-label">Activity Log</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-toggle" id="sidebarToggle">
+        <i data-lucide="panel-left-close" class="nav-icon" id="toggleIcon"></i>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger" style="display:none;">
+            <i data-lucide="menu"></i>
+          </button>
+          <h1 class="header-title">Team Chat</h1>
+        </div>
+
+        <div class="header-search">
+          <i data-lucide="search" class="ico-sm"></i>
+          <input type="text" placeholder="Search orders, trips, drivers...">
+        </div>
+
+        <div class="header-right">
+          <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+            <i data-lucide="moon" class="ico" id="themeIcon"></i>
+          </button>
+          <div class="header-avatar">JD</div>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <div class="chat-container">
+
+          <!-- Chat Header -->
+          <div class="chat-header">
+            <div class="chat-header-left">
+              <i data-lucide="message-circle" style="width: 20px; height: 20px; color: var(--blue);"></i>
+              <h2>Team Chat</h2>
+            </div>
+            <div class="chat-header-center">
+              <span class="online-dot"></span>
+              <span>4 online</span>
+            </div>
+            <div>
+              <button class="btn btn-outline btn-sm">
+                <i data-lucide="refresh-cw" class="ico-sm"></i>
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <!-- Messages Area -->
+          <div class="messages-area">
+
+            <!-- Message 1 - Admin (You) -->
+            <div class="message own-message">
+              <div class="message-avatar blue">A</div>
+              <div class="message-content-wrapper">
+                <div class="message-header">
+                  <span class="message-sender blue">Admin</span>
+                  <span class="message-time">9:15 AM</span>
+                </div>
+                <div class="message-text">
+                  Good morning team. We have 3 trips going out today — T-2026-0043 to FL, T-2026-0044 to GA, and a local delivery in NJ.
+                </div>
+              </div>
+            </div>
+
+            <!-- Message 2 - John Smith -->
+            <div class="message">
+              <div class="message-avatar green">JS</div>
+              <div class="message-content-wrapper">
+                <div class="message-header">
+                  <span class="message-sender">John Smith</span>
+                  <span class="message-time">9:18 AM</span>
+                </div>
+                <div class="message-text">
+                  Morning! I'm loaded up at the terminal, heading out to FL in about 30 min. 6 cars on the trailer.
+                </div>
+              </div>
+            </div>
+
+            <!-- Message 3 - Admin (You) with mention -->
+            <div class="message own-message">
+              <div class="message-avatar blue">A</div>
+              <div class="message-content-wrapper">
+                <div class="message-header">
+                  <span class="message-sender blue">Admin</span>
+                  <span class="message-time">9:20 AM</span>
+                </div>
+                <div class="message-text">
+                  Perfect <span class="mention">@John Smith</span>. Make sure to get the BOL signed before departure. The broker is Central Dispatch, load #CD-48293.
+                </div>
+              </div>
+            </div>
+
+            <!-- Message 4 - Maria Garcia -->
+            <div class="message">
+              <div class="message-avatar purple">MG</div>
+              <div class="message-content-wrapper">
+                <div class="message-header">
+                  <span class="message-sender">Maria Garcia</span>
+                  <span class="message-time">9:25 AM</span>
+                </div>
+                <div class="message-text">
+                  I'm picking up the GA load from the dealer in Edison. Should be loaded by noon.
+                </div>
+              </div>
+            </div>
+
+            <!-- Message 5 - David Chen with attachment -->
+            <div class="message">
+              <div class="message-avatar amber">DC</div>
+              <div class="message-content-wrapper">
+                <div class="message-header">
+                  <span class="message-sender">David Chen</span>
+                  <span class="message-time">9:30 AM</span>
+                </div>
+                <div class="message-text">
+                  Local delivery is done — dropped off 2 cars at the dealer in Cherry Hill. Inspection photos uploaded.
+                </div>
+                <a href="#" class="message-attachment">
+                  <i data-lucide="paperclip" style="width: 14px; height: 14px;"></i>
+                  inspection_photos.zip
+                </a>
+              </div>
+            </div>
+
+            <!-- Message 6 - Admin (You) with mention -->
+            <div class="message own-message">
+              <div class="message-avatar blue">A</div>
+              <div class="message-content-wrapper">
+                <div class="message-header">
+                  <span class="message-sender blue">Admin</span>
+                  <span class="message-time">9:32 AM</span>
+                </div>
+                <div class="message-text">
+                  Great work <span class="mention">@David Chen</span>! Head back to the yard, we might have another local run this afternoon.
+                </div>
+              </div>
+            </div>
+
+            <!-- Message 7 - Sarah Johnson -->
+            <div class="message">
+              <div class="message-avatar red">SJ</div>
+              <div class="message-content-wrapper">
+                <div class="message-header">
+                  <span class="message-sender">Sarah Johnson</span>
+                  <span class="message-time">10:15 AM</span>
+                </div>
+                <div class="message-text">
+                  Hey team, heads up — there's heavy traffic on I-95 near Philadelphia. Taking the PA Turnpike instead.
+                </div>
+              </div>
+            </div>
+
+            <!-- Message 8 - John Smith -->
+            <div class="message">
+              <div class="message-avatar green">JS</div>
+              <div class="message-content-wrapper">
+                <div class="message-header">
+                  <span class="message-sender">John Smith</span>
+                  <span class="message-time">10:45 AM</span>
+                </div>
+                <div class="message-text">
+                  Thanks for the heads up Sarah. I'll take the same route. Also — the fuel prices at Pilot in NJ are $3.45 right now, pretty good.
+                </div>
+              </div>
+            </div>
+
+            <!-- Message 9 - Admin (You) -->
+            <div class="message own-message">
+              <div class="message-avatar blue">A</div>
+              <div class="message-content-wrapper">
+                <div class="message-header">
+                  <span class="message-sender blue">Admin</span>
+                  <span class="message-time">11:00 AM</span>
+                </div>
+                <div class="message-text">
+                  Reminder: Q4 IFTA filing is due January 31st. I'll handle the submission this week.
+                </div>
+              </div>
+            </div>
+
+            <!-- Message 10 - Maria Garcia with attachment -->
+            <div class="message">
+              <div class="message-avatar purple">MG</div>
+              <div class="message-content-wrapper">
+                <div class="message-header">
+                  <span class="message-sender">Maria Garcia</span>
+                  <span class="message-time">11:30 AM</span>
+                </div>
+                <div class="message-text">
+                  Loaded and heading out to GA. 5 cars, all inspected. ETA tomorrow morning.
+                </div>
+                <a href="#" class="message-attachment">
+                  <i data-lucide="paperclip" style="width: 14px; height: 14px;"></i>
+                  bol_cd48295.pdf
+                </a>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Input Area -->
+          <div class="input-area">
+            <textarea
+              class="input-textarea"
+              placeholder="Type a message... (Use @ to mention someone)"
+              rows="2"
+            ></textarea>
+            <div class="input-actions">
+              <div class="input-hint">
+                <i data-lucide="info" style="width: 12px; height: 12px; vertical-align: middle;"></i>
+                Tip: Use @ to mention team members
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="attach-btn">
+                  <i data-lucide="paperclip" style="width: 16px; height: 16px;"></i>
+                  Attach File
+                </button>
+                <button class="btn btn-primary">
+                  <i data-lucide="send" class="ico-sm"></i>
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    themeToggle.addEventListener('click', function() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('tms-theme', next);
+      // Update icon
+      themeIcon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
+      lucide.createIcons();
+    });
+
+    // Sidebar toggle (collapse/expand)
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    sidebarToggle.addEventListener('click', function() {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('sidebar-collapsed');
+      // Update toggle icon
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+      lucide.createIcons();
+    });
+
+    // Mobile hamburger
+    const hamburger = document.getElementById('hamburger');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (hamburger) {
+      hamburger.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('active');
+      });
+    }
+
+    if (sidebarOverlay) {
+      sidebarOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      });
+    }
+
+    // Responsive: show hamburger on mobile
+    function handleResize() {
+      if (window.innerWidth <= 768) {
+        hamburger.style.display = 'flex';
+      } else {
+        hamburger.style.display = 'none';
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+  </script>
+</body>
+</html>
