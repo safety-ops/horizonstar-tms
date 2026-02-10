@@ -84,51 +84,58 @@ Requirements for applying the approved v1.1 UI redesign mockups to the productio
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DSF-01 | — | Pending |
-| DSF-02 | — | Pending |
-| DSF-03 | — | Pending |
-| DSF-04 | — | Pending |
-| DSF-05 | — | Pending |
-| DSF-06 | — | Pending |
-| GLC-01 | — | Pending |
-| GLC-02 | — | Pending |
-| GLC-03 | — | Pending |
-| GLC-04 | — | Pending |
-| GLC-05 | — | Pending |
-| GLC-06 | — | Pending |
-| GLC-07 | — | Pending |
-| GLC-08 | — | Pending |
-| GLC-09 | — | Pending |
-| GLC-10 | — | Pending |
-| DSP-01 | — | Pending |
-| DSP-02 | — | Pending |
-| DSP-03 | — | Pending |
-| DSP-04 | — | Pending |
-| DSP-05 | — | Pending |
-| DSP-06 | — | Pending |
-| PPL-01 | — | Pending |
-| PPL-02 | — | Pending |
-| PPL-03 | — | Pending |
-| PPL-04 | — | Pending |
-| PPL-05 | — | Pending |
-| FIN-01 | — | Pending |
-| FIN-02 | — | Pending |
-| FIN-03 | — | Pending |
-| FIN-04 | — | Pending |
-| OPS-01 | — | Pending |
-| OPS-02 | — | Pending |
-| OPS-03 | — | Pending |
-| OPS-04 | — | Pending |
-| OPS-05 | — | Pending |
-| OPS-06 | — | Pending |
-| OPS-07 | — | Pending |
-| OPS-08 | — | Pending |
+| DSF-01 | Phase 11 | Pending |
+| DSF-02 | Phase 11 | Pending |
+| DSF-03 | Phase 11 | Pending |
+| DSF-04 | Phase 11 | Pending |
+| DSF-05 | Phase 11 | Pending |
+| DSF-06 | Phase 11 | Pending |
+| GLC-01 | Phase 11 | Pending |
+| GLC-02 | Phase 11 | Pending |
+| GLC-03 | Phase 11 | Pending |
+| GLC-04 | Phase 11 | Pending |
+| GLC-05 | Phase 11 | Pending |
+| GLC-06 | Phase 11 | Pending |
+| GLC-07 | Phase 11 | Pending |
+| GLC-08 | Phase 11 | Pending |
+| GLC-09 | Phase 11 | Pending |
+| GLC-10 | Phase 11 | Pending |
+| DSP-01 | Phase 12 | Pending |
+| DSP-02 | Phase 12 | Pending |
+| DSP-03 | Phase 12 | Pending |
+| DSP-04 | Phase 12 | Pending |
+| DSP-05 | Phase 12 | Pending |
+| DSP-06 | Phase 12 | Pending |
+| PPL-01 | Phase 13 | Pending |
+| PPL-02 | Phase 13 | Pending |
+| PPL-03 | Phase 13 | Pending |
+| PPL-04 | Phase 13 | Pending |
+| PPL-05 | Phase 13 | Pending |
+| FIN-01 | Phase 14 | Pending |
+| FIN-02 | Phase 14 | Pending |
+| FIN-03 | Phase 14 | Pending |
+| FIN-04 | Phase 14 | Pending |
+| OPS-01 | Phase 15 | Pending |
+| OPS-02 | Phase 15 | Pending |
+| OPS-03 | Phase 15 | Pending |
+| OPS-04 | Phase 15 | Pending |
+| OPS-05 | Phase 15 | Pending |
+| OPS-06 | Phase 15 | Pending |
+| OPS-07 | Phase 15 | Pending |
+| OPS-08 | Phase 15 | Pending |
 
 **Coverage:**
 - v1.2 requirements: 37 total
-- Mapped to phases: 0
-- Unmapped: 37 (roadmap pending)
+- Mapped to phases: 37 (100% coverage)
+- Unmapped: 0
+
+**Phase Distribution:**
+- Phase 11 (Foundation): 16 requirements (DSF + GLC)
+- Phase 12 (Core Dispatch): 6 requirements (DSP)
+- Phase 13 (People & Fleet): 5 requirements (PPL)
+- Phase 14 (Financial): 4 requirements (FIN)
+- Phase 15 (Operations & Admin): 8 requirements (OPS)
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-10 after initial definition*
+*Last updated: 2026-02-10 after roadmap creation (100% coverage achieved)*
