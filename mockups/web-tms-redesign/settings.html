@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon Star TMS — Settings</title>
+
+  <!-- FART prevention: set theme before CSS loads -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('tms-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared.css">
+
+  <style>
+    /* Settings page-specific styles */
+    .integration-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-subtle);
+      transition: box-shadow 0.2s;
+    }
+
+    .integration-card:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .integration-card.border-green {
+      border-left: 4px solid var(--green);
+    }
+
+    .integration-card.border-blue {
+      border-left: 4px solid var(--blue);
+    }
+
+    .integration-card.border-purple {
+      border-left: 4px solid var(--purple);
+    }
+
+    .integration-card.border-amber {
+      border-left: 4px solid var(--amber);
+    }
+
+    .integration-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+
+    .integration-header-left {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .integration-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 20px;
+    }
+
+    .integration-icon.green {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--green);
+    }
+
+    .integration-icon.blue {
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--blue);
+    }
+
+    .integration-icon.purple {
+      background: rgba(168, 85, 247, 0.15);
+      color: var(--purple);
+    }
+
+    .integration-icon.amber {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--amber);
+    }
+
+    .integration-title-area h3 {
+      margin: 0 0 4px 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .integration-title-area p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .api-input-group {
+      margin-bottom: 16px;
+    }
+
+    .api-input-wrapper {
+      position: relative;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .api-input {
+      flex: 1;
+      padding: 12px 16px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+      font-size: 14px;
+      color: var(--text-primary);
+      transition: border-color 0.2s;
+    }
+
+    .api-input:focus {
+      outline: none;
+      border-color: var(--blue);
+    }
+
+    .api-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .eye-toggle {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .eye-toggle:hover {
+      background: var(--bg-tertiary);
+    }
+
+    .connection-info {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin: 8px 0;
+    }
+
+    .connection-info strong {
+      color: var(--text-secondary);
+    }
+
+    .setup-instructions {
+      background: var(--bg-elevated);
+      padding: 16px;
+      border-radius: var(--radius-md);
+      margin: 16px 0;
+    }
+
+    .setup-instructions h4 {
+      margin: 0 0 12px 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .setup-instructions ol {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .setup-instructions ol li {
+      margin-bottom: 6px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .status-badge-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .status-badge-inline.configured {
+      background: rgba(34, 197, 94, 0.1);
+      color: var(--green);
+    }
+
+    .status-badge-inline.not-configured {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--red);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .status-dot.green {
+      background: var(--green);
+    }
+
+    .status-dot.red {
+      background: var(--red);
+    }
+
+    .page-subtitle {
+      color: var(--text-secondary);
+      font-size: 14px;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <i data-lucide="truck"></i>
+        </div>
+        <span class="sidebar-logo-text">Horizon Star</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- MAIN Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Main</div>
+          <a class="nav-item" data-page="dashboard">
+            <i data-lucide="layout-dashboard" class="nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+          </a>
+          <a class="nav-item" data-page="trips">
+            <i data-lucide="map" class="nav-icon"></i>
+            <span class="nav-label">Trips</span>
+          </a>
+          <a class="nav-item" data-page="messages">
+            <i data-lucide="message-square" class="nav-icon"></i>
+            <span class="nav-label">Messages</span>
+          </a>
+          <a class="nav-item" data-page="trailers">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trailers</span>
+          </a>
+          <a class="nav-item" data-page="load-board">
+            <i data-lucide="package" class="nav-icon"></i>
+            <span class="nav-label">Load Board</span>
+          </a>
+          <a class="nav-item" data-page="inspections">
+            <i data-lucide="clipboard-list" class="nav-icon"></i>
+            <span class="nav-label">Inspections</span>
+          </a>
+          <a class="nav-item" data-page="tasks">
+            <i data-lucide="check-square" class="nav-icon"></i>
+            <span class="nav-label">Tasks</span>
+          </a>
+        </div>
+
+        <!-- FLEET Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Fleet</div>
+          <a class="nav-item" data-page="drivers">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Drivers</span>
+          </a>
+          <a class="nav-item" data-page="trucks">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trucks</span>
+          </a>
+          <a class="nav-item" data-page="local-drivers">
+            <i data-lucide="user" class="nav-icon"></i>
+            <span class="nav-label">Local Drivers</span>
+          </a>
+        </div>
+
+        <!-- PARTNERS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Partners</div>
+          <a class="nav-item" data-page="brokers">
+            <i data-lucide="briefcase" class="nav-icon"></i>
+            <span class="nav-label">Brokers</span>
+          </a>
+          <a class="nav-item" data-page="dealers">
+            <i data-lucide="building" class="nav-icon"></i>
+            <span class="nav-label">Dealers</span>
+          </a>
+          <a class="nav-item" data-page="dispatchers">
+            <i data-lucide="phone" class="nav-icon"></i>
+            <span class="nav-label">Dispatchers</span>
+          </a>
+          <a class="nav-item" data-page="dispatcher-ranking">
+            <i data-lucide="star" class="nav-icon"></i>
+            <span class="nav-label">Dispatcher Ranking</span>
+          </a>
+        </div>
+
+        <!-- FINANCIALS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Financials</div>
+          <a class="nav-item" data-page="financials">
+            <i data-lucide="dollar-sign" class="nav-icon"></i>
+            <span class="nav-label">Financials</span>
+          </a>
+          <a class="nav-item" data-page="billing">
+            <i data-lucide="file-text" class="nav-icon"></i>
+            <span class="nav-label">Billing</span>
+          </a>
+          <a class="nav-item" data-page="trip-profitability">
+            <i data-lucide="trending-up" class="nav-icon"></i>
+            <span class="nav-label">Trip Profitability</span>
+          </a>
+          <a class="nav-item" data-page="payroll">
+            <i data-lucide="credit-card" class="nav-icon"></i>
+            <span class="nav-label">Payroll</span>
+          </a>
+          <a class="nav-item" data-page="fuel">
+            <i data-lucide="droplet" class="nav-icon"></i>
+            <span class="nav-label">Fuel</span>
+          </a>
+          <a class="nav-item" data-page="ifta">
+            <i data-lucide="file" class="nav-icon"></i>
+            <span class="nav-label">IFTA</span>
+          </a>
+          <a class="nav-item" data-page="reports">
+            <i data-lucide="bar-chart-2" class="nav-icon"></i>
+            <span class="nav-label">Reports</span>
+          </a>
+          <a class="nav-item" data-page="ai-advisor">
+            <i data-lucide="brain" class="nav-icon"></i>
+            <span class="nav-label">AI Advisor</span>
+          </a>
+        </div>
+
+        <!-- OPERATIONS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Operations</div>
+          <a class="nav-item" data-page="maintenance">
+            <i data-lucide="wrench" class="nav-icon"></i>
+            <span class="nav-label">Maintenance</span>
+          </a>
+          <a class="nav-item" data-page="compliance">
+            <i data-lucide="shield-check" class="nav-icon"></i>
+            <span class="nav-label">Compliance</span>
+          </a>
+          <a class="nav-item" data-page="applications">
+            <i data-lucide="file-plus" class="nav-icon"></i>
+            <span class="nav-label">Applications</span>
+          </a>
+        </div>
+
+        <!-- SETTINGS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Settings</div>
+          <a class="nav-item active" data-page="settings">
+            <i data-lucide="settings" class="nav-icon"></i>
+            <span class="nav-label">Settings</span>
+          </a>
+          <a class="nav-item" data-page="users">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Users</span>
+          </a>
+          <a class="nav-item" data-page="activity-log">
+            <i data-lucide="activity" class="nav-icon"></i>
+            <span class="nav-label">Activity Log</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-toggle" id="sidebarToggle">
+        <i data-lucide="panel-left-close" class="nav-icon" id="toggleIcon"></i>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger" style="display:none;">
+            <i data-lucide="menu"></i>
+          </button>
+          <h1 class="header-title">Settings</h1>
+        </div>
+
+        <div class="header-search">
+          <i data-lucide="search" class="ico-sm"></i>
+          <input type="text" placeholder="Search orders, trips, drivers...">
+        </div>
+
+        <div class="header-right">
+          <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+            <i data-lucide="moon" class="ico" id="themeIcon"></i>
+          </button>
+          <div class="header-avatar">JD</div>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Page Header -->
+        <div style="margin-bottom: 32px;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+            <i data-lucide="settings" style="width: 28px; height: 28px; color: var(--blue);"></i>
+            <h2 style="margin: 0; font-size: 24px; font-weight: 700; color: var(--text-primary);">Settings</h2>
+          </div>
+          <p class="page-subtitle">Manage your integrations and API connections</p>
+        </div>
+
+        <!-- Integration Cards Container -->
+        <div style="max-width: 900px;">
+
+          <!-- Card 1: Samsara GPS Integration -->
+          <div class="integration-card border-green">
+            <div class="integration-header">
+              <div class="integration-header-left">
+                <div class="integration-icon green">
+                  <i data-lucide="radio"></i>
+                </div>
+                <div class="integration-title-area">
+                  <h3>Samsara GPS</h3>
+                  <p>Fleet tracking and mileage data</p>
+                </div>
+              </div>
+              <div>
+                <span class="status-badge-inline configured">
+                  <span class="status-dot green"></span>
+                  Configured
+                </span>
+              </div>
+            </div>
+
+            <div class="api-input-group">
+              <label style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-primary); font-size: 14px;">API Token</label>
+              <div class="api-input-wrapper">
+                <input type="password" class="api-input" value="••••••••••••sk_live_abc123" readonly>
+                <button class="eye-toggle" title="Show/hide token">
+                  <i data-lucide="eye-off" style="width: 18px; height: 18px; color: var(--text-muted);"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="connection-info">
+              <strong>Connected since:</strong> Oct 15, 2025
+            </div>
+            <div class="connection-info">
+              <strong>Last sync:</strong> 2 hours ago &bull; 4 trucks tracked &bull; 245,680 total miles
+            </div>
+
+            <div class="setup-instructions">
+              <h4>Setup Instructions</h4>
+              <ol>
+                <li>Log into Samsara Dashboard at <strong>cloud.samsara.com</strong></li>
+                <li>Go to <strong>Settings → API Tokens</strong></li>
+                <li>Create new token with "Read" permissions for Fleet</li>
+                <li>Copy the token and paste above</li>
+              </ol>
+            </div>
+
+            <div class="action-buttons">
+              <button class="btn btn-outline" style="color: var(--green); border-color: var(--green);">
+                <i data-lucide="activity" class="ico-sm"></i>
+                Test Connection
+              </button>
+              <button class="btn btn-primary">
+                <i data-lucide="save" class="ico-sm"></i>
+                Save
+              </button>
+              <button class="btn btn-outline" style="color: var(--red); border-color: var(--red);">
+                <i data-lucide="trash-2" class="ico-sm"></i>
+                Remove
+              </button>
+            </div>
+          </div>
+
+          <!-- Card 2: Google Maps Integration -->
+          <div class="integration-card border-blue">
+            <div class="integration-header">
+              <div class="integration-header-left">
+                <div class="integration-icon blue">
+                  <i data-lucide="map-pin"></i>
+                </div>
+                <div class="integration-title-area">
+                  <h3>Google Maps</h3>
+                  <p>Route optimization and distance calculations</p>
+                </div>
+              </div>
+              <div>
+                <span class="status-badge-inline configured">
+                  <span class="status-dot green"></span>
+                  Configured
+                </span>
+              </div>
+            </div>
+
+            <div class="api-input-group">
+              <label style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-primary); font-size: 14px;">API Key</label>
+              <div class="api-input-wrapper">
+                <input type="password" class="api-input" value="••••••••••••AIzaSyB_xyz" readonly>
+                <button class="eye-toggle" title="Show/hide key">
+                  <i data-lucide="eye-off" style="width: 18px; height: 18px; color: var(--text-muted);"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="connection-info">
+              <strong>Active since:</strong> Sep 1, 2025
+            </div>
+            <div class="connection-info">
+              <strong>Used for:</strong> Route display, distance calculations, ETA estimates
+            </div>
+
+            <div class="action-buttons">
+              <button class="btn btn-outline" style="color: var(--blue); border-color: var(--blue);">
+                <i data-lucide="activity" class="ico-sm"></i>
+                Test Connection
+              </button>
+              <button class="btn btn-primary">
+                <i data-lucide="save" class="ico-sm"></i>
+                Save
+              </button>
+              <button class="btn btn-outline" style="color: var(--red); border-color: var(--red);">
+                <i data-lucide="trash-2" class="ico-sm"></i>
+                Remove
+              </button>
+            </div>
+          </div>
+
+          <!-- Card 3: Email / Resend Integration -->
+          <div class="integration-card border-purple">
+            <div class="integration-header">
+              <div class="integration-header-left">
+                <div class="integration-icon purple">
+                  <i data-lucide="mail"></i>
+                </div>
+                <div class="integration-title-area">
+                  <h3>Email / Resend</h3>
+                  <p>Email notifications and invoicing</p>
+                </div>
+              </div>
+              <div>
+                <span class="status-badge-inline configured">
+                  <span class="status-dot green"></span>
+                  Configured
+                </span>
+              </div>
+            </div>
+
+            <div class="api-input-group">
+              <label style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-primary); font-size: 14px;">API Key</label>
+              <div class="api-input-wrapper">
+                <input type="password" class="api-input" value="••••••••••••re_abc123" readonly>
+                <button class="eye-toggle" title="Show/hide key">
+                  <i data-lucide="eye-off" style="width: 18px; height: 18px; color: var(--text-muted);"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="api-input-group">
+              <label style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-primary); font-size: 14px;">From Address</label>
+              <input type="text" class="api-input" value="dispatch@horizonstarllc.com" style="font-family: Inter, sans-serif;">
+            </div>
+
+            <div class="connection-info">
+              <strong>Active since:</strong> Nov 1, 2025
+            </div>
+            <div class="connection-info">
+              <strong>Emails sent this month:</strong> 47
+            </div>
+
+            <div class="action-buttons">
+              <button class="btn btn-outline" style="color: var(--purple); border-color: var(--purple);">
+                <i data-lucide="send" class="ico-sm"></i>
+                Send Test Email
+              </button>
+              <button class="btn btn-primary">
+                <i data-lucide="save" class="ico-sm"></i>
+                Save
+              </button>
+              <button class="btn btn-outline" style="color: var(--red); border-color: var(--red);">
+                <i data-lucide="trash-2" class="ico-sm"></i>
+                Remove
+              </button>
+            </div>
+          </div>
+
+          <!-- Card 4: Claude AI Integration -->
+          <div class="integration-card border-amber">
+            <div class="integration-header">
+              <div class="integration-header-left">
+                <div class="integration-icon amber">
+                  <i data-lucide="brain"></i>
+                </div>
+                <div class="integration-title-area">
+                  <h3>Claude AI</h3>
+                  <p>AI-powered recommendations and analysis</p>
+                </div>
+              </div>
+              <div>
+                <span class="status-badge-inline not-configured">
+                  <span class="status-dot red"></span>
+                  Not Configured
+                </span>
+              </div>
+            </div>
+
+            <div class="api-input-group">
+              <label style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-primary); font-size: 14px;">API Key</label>
+              <div class="api-input-wrapper">
+                <input type="text" class="api-input" placeholder="Enter your Anthropic API key...">
+              </div>
+            </div>
+
+            <div class="connection-info" style="margin-bottom: 12px;">
+              Claude AI powers financial optimization recommendations, load pricing suggestions, and compliance reminders.
+            </div>
+
+            <div class="setup-instructions">
+              <h4>Setup Instructions</h4>
+              <ol>
+                <li>Sign up at <strong>console.anthropic.com</strong></li>
+                <li>Go to <strong>API Keys</strong></li>
+                <li>Create a new key</li>
+                <li>Paste the key above and click Save</li>
+              </ol>
+            </div>
+
+            <div class="action-buttons">
+              <button class="btn btn-primary">
+                <i data-lucide="save" class="ico-sm"></i>
+                Save
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    themeToggle.addEventListener('click', function() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('tms-theme', next);
+      // Update icon
+      themeIcon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
+      lucide.createIcons();
+    });
+
+    // Sidebar toggle (collapse/expand)
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    sidebarToggle.addEventListener('click', function() {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('sidebar-collapsed');
+      // Update toggle icon
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+      lucide.createIcons();
+    });
+
+    // Mobile hamburger
+    const hamburger = document.getElementById('hamburger');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (hamburger) {
+      hamburger.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('active');
+      });
+    }
+
+    if (sidebarOverlay) {
+      sidebarOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      });
+    }
+
+    // Responsive: show hamburger on mobile
+    function handleResize() {
+      if (window.innerWidth <= 768) {
+        hamburger.style.display = 'flex';
+      } else {
+        hamburger.style.display = 'none';
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+  </script>
+</body>
+</html>

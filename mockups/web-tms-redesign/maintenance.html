@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon Star TMS — Maintenance</title>
+
+  <!-- FART prevention: set theme before CSS loads -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('tms-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared.css">
+
+  <style>
+    /* Page-specific styles */
+    .filter-row {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      background: var(--bg-card);
+      padding: 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-group label {
+      font-weight: var(--weight-semibold);
+      color: var(--text-secondary);
+      font-size: var(--text-sm);
+    }
+
+    .filter-row select {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      font-size: var(--text-sm);
+      cursor: pointer;
+    }
+
+    .filter-row select:focus {
+      outline: none;
+      border-color: var(--green);
+    }
+
+    .stat-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      padding: 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .stat-card.border-blue {
+      border-left: 4px solid var(--blue);
+    }
+
+    .stat-card.border-purple {
+      border-left: 4px solid var(--purple);
+    }
+
+    .stat-card.border-red {
+      border-left: 4px solid var(--red);
+    }
+
+    .stat-card .stat-label {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stat-card .stat-value {
+      font-size: 28px;
+      font-weight: var(--weight-bold);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+    }
+
+    .stat-card .stat-value.red {
+      color: var(--red);
+    }
+
+    .badge-preventive {
+      background: var(--amber-dim);
+      color: var(--amber);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: var(--weight-semibold);
+      display: inline-block;
+    }
+
+    .badge-repair {
+      background: var(--red-dim);
+      color: var(--red);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: var(--weight-semibold);
+      display: inline-block;
+    }
+
+    .badge-inspection {
+      background: var(--blue-dim);
+      color: var(--blue);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: var(--weight-semibold);
+      display: inline-block;
+    }
+
+    .badge-upgrade {
+      background: var(--green-dim);
+      color: var(--green);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: var(--weight-semibold);
+      display: inline-block;
+    }
+
+    .money-col {
+      font-family: var(--font-mono);
+      text-align: right;
+      font-weight: var(--weight-semibold);
+    }
+
+    .total-row {
+      font-weight: var(--weight-bold);
+      background: var(--bg-elevated);
+    }
+
+    .total-row .money-col {
+      color: var(--green);
+      font-size: var(--text-lg);
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <i data-lucide="truck"></i>
+        </div>
+        <span class="sidebar-logo-text">Horizon Star</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- MAIN Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Main</div>
+          <a class="nav-item" data-page="dashboard">
+            <i data-lucide="layout-dashboard" class="nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+          </a>
+          <a class="nav-item" data-page="trips">
+            <i data-lucide="map" class="nav-icon"></i>
+            <span class="nav-label">Trips</span>
+          </a>
+          <a class="nav-item" data-page="messages">
+            <i data-lucide="message-square" class="nav-icon"></i>
+            <span class="nav-label">Messages</span>
+          </a>
+          <a class="nav-item" data-page="trailers">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trailers</span>
+          </a>
+          <a class="nav-item" data-page="load-board">
+            <i data-lucide="package" class="nav-icon"></i>
+            <span class="nav-label">Load Board</span>
+          </a>
+          <a class="nav-item" data-page="inspections">
+            <i data-lucide="clipboard-list" class="nav-icon"></i>
+            <span class="nav-label">Inspections</span>
+          </a>
+          <a class="nav-item" data-page="tasks">
+            <i data-lucide="check-square" class="nav-icon"></i>
+            <span class="nav-label">Tasks</span>
+          </a>
+        </div>
+
+        <!-- FLEET Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Fleet</div>
+          <a class="nav-item" data-page="drivers">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Drivers</span>
+          </a>
+          <a class="nav-item" data-page="trucks">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trucks</span>
+          </a>
+          <a class="nav-item" data-page="local-drivers">
+            <i data-lucide="user" class="nav-icon"></i>
+            <span class="nav-label">Local Drivers</span>
+          </a>
+        </div>
+
+        <!-- PARTNERS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Partners</div>
+          <a class="nav-item" data-page="brokers">
+            <i data-lucide="briefcase" class="nav-icon"></i>
+            <span class="nav-label">Brokers</span>
+          </a>
+          <a class="nav-item" data-page="dealers">
+            <i data-lucide="building" class="nav-icon"></i>
+            <span class="nav-label">Dealers</span>
+          </a>
+          <a class="nav-item" data-page="dispatchers">
+            <i data-lucide="phone" class="nav-icon"></i>
+            <span class="nav-label">Dispatchers</span>
+          </a>
+          <a class="nav-item" data-page="dispatcher-ranking">
+            <i data-lucide="star" class="nav-icon"></i>
+            <span class="nav-label">Dispatcher Ranking</span>
+          </a>
+        </div>
+
+        <!-- FINANCIALS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Financials</div>
+          <a class="nav-item" data-page="financials">
+            <i data-lucide="dollar-sign" class="nav-icon"></i>
+            <span class="nav-label">Financials</span>
+          </a>
+          <a class="nav-item" data-page="billing">
+            <i data-lucide="file-text" class="nav-icon"></i>
+            <span class="nav-label">Billing</span>
+          </a>
+          <a class="nav-item" data-page="trip-profitability">
+            <i data-lucide="trending-up" class="nav-icon"></i>
+            <span class="nav-label">Trip Profitability</span>
+          </a>
+          <a class="nav-item" data-page="payroll">
+            <i data-lucide="credit-card" class="nav-icon"></i>
+            <span class="nav-label">Payroll</span>
+          </a>
+          <a class="nav-item" data-page="fuel">
+            <i data-lucide="droplet" class="nav-icon"></i>
+            <span class="nav-label">Fuel</span>
+          </a>
+          <a class="nav-item" data-page="ifta">
+            <i data-lucide="file" class="nav-icon"></i>
+            <span class="nav-label">IFTA</span>
+          </a>
+          <a class="nav-item" data-page="reports">
+            <i data-lucide="bar-chart-2" class="nav-icon"></i>
+            <span class="nav-label">Reports</span>
+          </a>
+          <a class="nav-item" data-page="ai-advisor">
+            <i data-lucide="brain" class="nav-icon"></i>
+            <span class="nav-label">AI Advisor</span>
+          </a>
+        </div>
+
+        <!-- OPERATIONS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Operations</div>
+          <a class="nav-item active" data-page="maintenance">
+            <i data-lucide="wrench" class="nav-icon"></i>
+            <span class="nav-label">Maintenance</span>
+          </a>
+          <a class="nav-item" data-page="compliance">
+            <i data-lucide="shield-check" class="nav-icon"></i>
+            <span class="nav-label">Compliance</span>
+          </a>
+          <a class="nav-item" data-page="applications">
+            <i data-lucide="file-plus" class="nav-icon"></i>
+            <span class="nav-label">Applications</span>
+          </a>
+        </div>
+
+        <!-- SETTINGS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Settings</div>
+          <a class="nav-item" data-page="settings">
+            <i data-lucide="settings" class="nav-icon"></i>
+            <span class="nav-label">Settings</span>
+          </a>
+          <a class="nav-item" data-page="users">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Users</span>
+          </a>
+          <a class="nav-item" data-page="activity-log">
+            <i data-lucide="activity" class="nav-icon"></i>
+            <span class="nav-label">Activity Log</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-toggle" id="sidebarToggle">
+        <i data-lucide="panel-left-close" class="nav-icon" id="toggleIcon"></i>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger" style="display:none;">
+            <i data-lucide="menu"></i>
+          </button>
+          <h1 class="header-title">Maintenance Records</h1>
+        </div>
+
+        <div class="header-search">
+          <i data-lucide="search" class="ico-sm"></i>
+          <input type="text" placeholder="Search orders, trips, drivers...">
+        </div>
+
+        <div class="header-right">
+          <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+            <i data-lucide="moon" class="ico" id="themeIcon"></i>
+          </button>
+          <div class="header-avatar">JD</div>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Page Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <i data-lucide="wrench" style="width: 32px; height: 32px; color: var(--blue);"></i>
+            <h2 style="margin: 0; font-size: var(--text-3xl); font-weight: var(--weight-bold); color: var(--text-primary);">Maintenance Records</h2>
+          </div>
+          <button class="btn btn-primary">
+            <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+            Add Record
+          </button>
+        </div>
+
+        <!-- Filter Row -->
+        <div class="filter-row">
+          <div class="filter-group">
+            <label><i data-lucide="truck" style="width: 14px; height: 14px;"></i> Truck:</label>
+            <select id="truckFilter">
+              <option value="all">All Trucks</option>
+              <option value="T-101">T-101</option>
+              <option value="T-102">T-102</option>
+              <option value="T-103">T-103</option>
+              <option value="T-104">T-104</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label><i data-lucide="calendar" style="width: 14px; height: 14px;"></i> Sort:</label>
+            <select id="sortFilter">
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+            </select>
+          </div>
+          <button class="btn btn-outline" style="padding: 8px 16px; font-size: var(--text-sm);">
+            Clear Filters
+          </button>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="stat-cards">
+          <div class="stat-card border-blue">
+            <div class="stat-label">
+              <i data-lucide="wrench" style="width: 16px; height: 16px;"></i>
+              Total Records
+            </div>
+            <div class="stat-value">24</div>
+          </div>
+          <div class="stat-card border-purple">
+            <div class="stat-label">
+              <i data-lucide="filter" style="width: 16px; height: 16px;"></i>
+              Filtered Records
+            </div>
+            <div class="stat-value">24</div>
+          </div>
+          <div class="stat-card border-red">
+            <div class="stat-label">
+              <i data-lucide="dollar-sign" style="width: 16px; height: 16px;"></i>
+              Total Spent
+            </div>
+            <div class="stat-value red">$18,640.00</div>
+          </div>
+        </div>
+
+        <!-- Maintenance Records Table -->
+        <div class="card">
+          <div class="card-header">
+            <h3><i data-lucide="list" style="width: 20px; height: 20px;"></i> Maintenance Records</h3>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Truck</th>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Shop</th>
+                  <th>Description</th>
+                  <th style="text-align: right;">Cost</th>
+                  <th class="sticky-col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>T-101</strong></td>
+                  <td>Jan 25, 2026</td>
+                  <td><span class="badge-preventive">Preventive</span></td>
+                  <td>Pete's Truck Service, Newark NJ</td>
+                  <td>Oil change and filter replacement</td>
+                  <td class="money-col">$320.00</td>
+                  <td class="sticky-col">
+                    <div class="actions">
+                      <button class="action-btn edit">Edit</button>
+                      <button class="action-btn delete">Del</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>T-103</strong></td>
+                  <td>Jan 20, 2026</td>
+                  <td><span class="badge-repair">Repair</span></td>
+                  <td>FL Diesel Repair, Jacksonville FL</td>
+                  <td>Turbo actuator replacement</td>
+                  <td class="money-col">$2,450.00</td>
+                  <td class="sticky-col">
+                    <div class="actions">
+                      <button class="action-btn edit">Edit</button>
+                      <button class="action-btn delete">Del</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>T-102</strong></td>
+                  <td>Jan 18, 2026</td>
+                  <td><span class="badge-preventive">Preventive</span></td>
+                  <td>Quick Lube Express, Edison NJ</td>
+                  <td>Tire rotation and brake inspection</td>
+                  <td class="money-col">$180.00</td>
+                  <td class="sticky-col">
+                    <div class="actions">
+                      <button class="action-btn edit">Edit</button>
+                      <button class="action-btn delete">Del</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>T-104</strong></td>
+                  <td>Jan 12, 2026</td>
+                  <td><span class="badge-inspection">Inspection</span></td>
+                  <td>DOT Inspection Station, Bordentown NJ</td>
+                  <td>Annual DOT inspection</td>
+                  <td class="money-col">$150.00</td>
+                  <td class="sticky-col">
+                    <div class="actions">
+                      <button class="action-btn edit">Edit</button>
+                      <button class="action-btn delete">Del</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>T-101</strong></td>
+                  <td>Jan 5, 2026</td>
+                  <td><span class="badge-repair">Repair</span></td>
+                  <td>Pete's Truck Service, Newark NJ</td>
+                  <td>Replace alternator and belt</td>
+                  <td class="money-col">$1,840.00</td>
+                  <td class="sticky-col">
+                    <div class="actions">
+                      <button class="action-btn edit">Edit</button>
+                      <button class="action-btn delete">Del</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>T-102</strong></td>
+                  <td>Dec 28, 2025</td>
+                  <td><span class="badge-preventive">Preventive</span></td>
+                  <td>Kenworth Dealer, Carlisle PA</td>
+                  <td>DEF system flush and refill</td>
+                  <td class="money-col">$420.00</td>
+                  <td class="sticky-col">
+                    <div class="actions">
+                      <button class="action-btn edit">Edit</button>
+                      <button class="action-btn delete">Del</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>T-103</strong></td>
+                  <td>Dec 20, 2025</td>
+                  <td><span class="badge-preventive">Preventive</span></td>
+                  <td>FL Diesel Repair, Jacksonville FL</td>
+                  <td>Air filter and fuel filter replacement</td>
+                  <td class="money-col">$280.00</td>
+                  <td class="sticky-col">
+                    <div class="actions">
+                      <button class="action-btn edit">Edit</button>
+                      <button class="action-btn delete">Del</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>T-104</strong></td>
+                  <td>Dec 15, 2025</td>
+                  <td><span class="badge-upgrade">Upgrade</span></td>
+                  <td>Custom Truck Parts, Newark NJ</td>
+                  <td>LED headlight conversion</td>
+                  <td class="money-col">$650.00</td>
+                  <td class="sticky-col">
+                    <div class="actions">
+                      <button class="action-btn edit">Edit</button>
+                      <button class="action-btn delete">Del</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>T-101</strong></td>
+                  <td>Dec 10, 2025</td>
+                  <td><span class="badge-repair">Repair</span></td>
+                  <td>Pete's Truck Service, Newark NJ</td>
+                  <td>EGR valve cleaning and DPF regen</td>
+                  <td class="money-col">$1,200.00</td>
+                  <td class="sticky-col">
+                    <div class="actions">
+                      <button class="action-btn edit">Edit</button>
+                      <button class="action-btn delete">Del</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>T-102</strong></td>
+                  <td>Dec 2, 2025</td>
+                  <td><span class="badge-inspection">Inspection</span></td>
+                  <td>DOT Inspection Station, Bordentown NJ</td>
+                  <td>Annual DOT inspection</td>
+                  <td class="money-col">$150.00</td>
+                  <td class="sticky-col">
+                    <div class="actions">
+                      <button class="action-btn edit">Edit</button>
+                      <button class="action-btn delete">Del</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>T-103</strong></td>
+                  <td>Nov 25, 2025</td>
+                  <td><span class="badge-repair">Repair</span></td>
+                  <td>Freightliner Dealer, Jacksonville FL</td>
+                  <td>Transmission service</td>
+                  <td class="money-col">$3,200.00</td>
+                  <td class="sticky-col">
+                    <div class="actions">
+                      <button class="action-btn edit">Edit</button>
+                      <button class="action-btn delete">Del</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>T-104</strong></td>
+                  <td>Nov 18, 2025</td>
+                  <td><span class="badge-preventive">Preventive</span></td>
+                  <td>Quick Lube Express, Edison NJ</td>
+                  <td>Oil change and coolant flush</td>
+                  <td class="money-col">$380.00</td>
+                  <td class="sticky-col">
+                    <div class="actions">
+                      <button class="action-btn edit">Edit</button>
+                      <button class="action-btn delete">Del</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="total-row">
+                  <td colspan="5" style="text-align: right; padding-right: 16px;">
+                    <strong>TOTAL:</strong>
+                  </td>
+                  <td class="money-col">$11,820.00</td>
+                  <td class="sticky-col"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    themeToggle.addEventListener('click', function() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('tms-theme', next);
+      themeIcon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
+      lucide.createIcons();
+    });
+
+    // Sidebar toggle
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    sidebarToggle.addEventListener('click', function() {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('sidebar-collapsed');
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+      lucide.createIcons();
+    });
+
+    // Mobile hamburger
+    const hamburger = document.getElementById('hamburger');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (hamburger) {
+      hamburger.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('active');
+      });
+    }
+
+    if (sidebarOverlay) {
+      sidebarOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      });
+    }
+
+    // Responsive: show hamburger on mobile
+    function handleResize() {
+      if (window.innerWidth <= 768) {
+        hamburger.style.display = 'flex';
+      } else {
+        hamburger.style.display = 'none';
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+  </script>
+</body>
+</html>
