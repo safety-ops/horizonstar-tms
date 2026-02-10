@@ -91,9 +91,15 @@ Plans:
 3. Trips list and detail pages match mockup table styling, status badges, timeline views, and action buttons
 4. Orders list and detail pages match mockup layout with vehicle cards, payment tracking, file attachments, and activity timelines
 
-**Plans**: TBD
+**Plans:** 6 plans
 
-Plans: (will be created during planning phase)
+Plans:
+- [ ] 12-01-PLAN.md -- Add sticky-col, summary-row, metric-cell, section-title CSS classes to design-system.css
+- [ ] 12-02-PLAN.md -- Restyle Dashboard page (stat cards, section headers, metrics, Quick View)
+- [ ] 12-03-PLAN.md -- Restyle Load Board + Trips list pages (tabs, filters, tables)
+- [ ] 12-04-PLAN.md -- Restyle Trip Detail page (stat cards, pricing widget, vehicle tables)
+- [ ] 12-05-PLAN.md -- Restyle Orders list page (filter bar, search, table)
+- [ ] 12-06-PLAN.md -- Restyle Order Detail page + inspection photo 4-image grid
 
 ---
 
@@ -171,7 +177,7 @@ Phases execute in numeric order: 11 → 12 → 13 → 14 → 15
 | 9. Financial Pages Mockup | v1.1 | 4/4 | Complete | 2026-02-10 |
 | 10. Operations & Admin Mockup | v1.1 | 8/8 | Complete | 2026-02-10 |
 | 11. Design System Foundation | v1.2 | 6/6 | Complete | 2026-02-10 |
-| 12. Core Dispatch Pages | v1.2 | 0/TBD | Not started | - |
+| 12. Core Dispatch Pages | v1.2 | 0/6 | Not started | - |
 | 13. People & Fleet Pages | v1.2 | 0/TBD | Not started | - |
 | 14. Financial Pages | v1.2 | 0/TBD | Not started | - |
 | 15. Operations & Admin Pages | v1.2 | 0/TBD | Not started | - |
