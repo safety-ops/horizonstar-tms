@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-10)
 ## Current Position
 
 Phase: 12 of 15 (Core Dispatch Pages)
-Plan: 5 of 5 (12-05 complete: Orders list restyled)
-Status: Phase 12 IN PROGRESS - 4 dispatch pages restyled (Dashboard, Load Board, Trips, Orders)
-Last activity: 2026-02-10 — Completed 12-05-PLAN.md (Orders list design tokens)
+Plan: 4 of 5 (12-04 complete: Trip Detail restyled)
+Status: Phase 12 IN PROGRESS - 4 dispatch pages restyled (Dashboard, Load Board, Trips, Trip Detail)
+Last activity: 2026-02-10 — Completed 12-04-PLAN.md (Trip Detail design tokens)
 
-Progress: [███░░░░░░░] ~26% (v1.2 in progress, Phase 11: 6/6, Phase 12: 5/5)
+Progress: [███░░░░░░░] ~25% (v1.2 in progress, Phase 11: 6/6, Phase 12: 4/5)
 
 ## Performance Metrics
 
 **Velocity:**
 - v1.1 complete: 21 plans completed
-- v1.2 in progress: 12 plans completed (Phase 11 complete, Phase 12: 5/5)
-- Latest: 12-05 (6m) - Orders list design token migration (9 sections restyled, all interactive functionality preserved)
+- v1.2 in progress: 11 plans completed (Phase 11 complete, Phase 12: 4/5)
+- Latest: 12-04 (6m) - Trip Detail design token migration (135 inline style values replaced, financial color coding preserved)
 
 **By Milestone:**
 
@@ -63,6 +63,9 @@ Recent decisions affecting v1.2:
 - Python script approach for atomic token replacements (12-03): Avoids file watcher conflicts, ensures atomic writes
 - Tab styling pattern established (12-03): Category/subcategory/status/truck tabs use consistent tokens (spacing-2-5/spacing-4 padding, radius, weight-semibold)
 - Count badge pattern established (12-03): Pill-style badges use radius-full, text-xs, spacing-0-5/spacing-2 padding
+- Trip Detail token migration (12-04): Python line-by-line replacement for complex inline HTML strings
+- Token gaps identified (12-04): padding:40px kept as-is (no --space-10), font-size:10px/32px kept as-is (no tokens)
+- Bug fix pattern (12-04): Incorrect --spacing-* tokens corrected to --space-* during migration
 
 ### Known Issues
 - Production index.html is ~38K lines — changes must be carefully targeted per renderXxx() function
