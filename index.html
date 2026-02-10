@@ -18622,7 +18622,19 @@ ${rateText}`
       });
 
       if (error) {
-        throw new Error(error.message || 'Failed to sync driver auth account.');
+        let detailedMessage = '';
+        try {
+          const payload = await error?.context?.json?.();
+          detailedMessage = payload?.error || payload?.message || '';
+        } catch (_) {
+          detailedMessage = '';
+        }
+
+        throw new Error(
+          detailedMessage ||
+          error.message ||
+          'Failed to sync driver auth account.'
+        );
       }
 
       if (!data || data.success !== true || !data.auth_user_id) {
