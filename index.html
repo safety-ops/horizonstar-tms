@@ -22108,11 +22108,11 @@ ${rateText}`
       
       c.innerHTML = '<div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">' +
         '<button class="btn ' + (dcTab === 'tickets' ? 'btn-primary' : 'btn-secondary') + '" onclick="dcTab=\'tickets\';renderCompliance(document.getElementById(\'main-content\'))">🎫 Tickets (' + tickets.length + ')</button>' +
-        '<button class="btn ' + (dcTab === 'violations' ? 'btn-primary' : 'btn-secondary') + '" style="' + (dcTab === 'violations' ? 'background:#8b5cf6;border-color:#8b5cf6' : '') + '" onclick="dcTab=\'violations\';renderCompliance(document.getElementById(\'main-content\'))">⚠️ Violations (' + violations.length + ')</button>' +
+        '<button class="btn ' + (dcTab === 'violations' ? 'btn-primary' : 'btn-secondary') + '" style="' + (dcTab === 'violations' ? 'background:var(--purple);border-color:var(--purple)' : '') + '" onclick="dcTab=\'violations\';renderCompliance(document.getElementById(\'main-content\'))">⚠️ Violations (' + violations.length + ')</button>' +
         '<button class="btn ' + (dcTab === 'claims' ? 'btn-primary' : 'btn-secondary') + '" style="' + (dcTab === 'claims' ? 'background:var(--amber);border-color:var(--amber)' : '') + '" onclick="dcTab=\'claims\';renderCompliance(document.getElementById(\'main-content\'))">💥 Claims (' + claims.length + ')</button>' +
         '<div style="margin-left:auto;display:flex;gap:8px">' +
         '<button class="btn btn-primary btn-sm" onclick="openTicketModal()">+ Ticket</button>' +
-        '<button class="btn btn-sm" style="background:#8b5cf6;border-color:#8b5cf6;color:white" onclick="openViolationModal()">+ Violation</button>' +
+        '<button class="btn btn-sm" style="background:var(--purple);border-color:var(--purple);color:white" onclick="openViolationModal()">+ Violation</button>' +
         '<button class="btn btn-sm" style="background:var(--amber);border-color:var(--amber);color:white" onclick="openClaimModal()">+ Claim</button>' +
         '</div></div>' +
         '<div id="dcSubContent"></div>';
@@ -22145,8 +22145,8 @@ ${rateText}`
             '<td><strong>' + (driver ? driver.first_name + ' ' + driver.last_name : '-') + '</strong></td>' +
             '<td><span class="badge badge-gray">' + (a.accident_type || '-') + '</span></td>' +
             '<td style="max-width:150px;font-size:12px">' + [a.street_address, a.city, a.state].filter(Boolean).join(', ') + '</td>' +
-            '<td style="text-align:center;color:' + (a.num_deaths > 0 ? '#dc2626' : 'inherit') + '">' + (a.num_deaths || 0) + '</td>' +
-            '<td style="text-align:center;color:' + (a.num_injuries > 0 ? '#f59e0b' : 'inherit') + '">' + (a.num_injuries || 0) + '</td>' +
+            '<td style="text-align:center;color:' + (a.num_deaths > 0 ? 'var(--red)' : 'inherit') + '">' + (a.num_deaths || 0) + '</td>' +
+            '<td style="text-align:center;color:' + (a.num_injuries > 0 ? 'var(--amber)' : 'inherit') + '">' + (a.num_injuries || 0) + '</td>' +
             '<td>' + (a.hazmat_involved ? '<span class="badge badge-red">YES</span>' : '<span class="badge badge-gray">NO</span>') + '</td>' +
             '<td>' + getDrugTestBadge(a.drug_test_result) + '</td>' +
             '<td>' + (a.report_filed ? '<span class="badge badge-green">Filed</span>' : '<span class="badge badge-gray">-</span>') + '</td>' +
@@ -22329,7 +22329,7 @@ ${rateText}`
       c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px"><button class="btn btn-secondary" onclick="renderCompliance(document.getElementById(\'main-content\'))">← Back</button><h2>🚚 Truck #' + t.truck_number + ' Compliance Files</h2><span class="badge ' + getBadge(t.status) + '">' + t.status + '</span></div></div>' +
         
         // Stats
-        '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px"><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Truck Type</div><div class="value" style="font-size:14px">' + t.truck_type + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Capacity</div><div class="value">' + t.capacity + ' cars</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Documents</div><div class="value">' + complianceFiles.length + '/' + truckFileTypes.length + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:130px;padding:12px 16px"><div class="label">Maintenance Records</div><div class="value">' + maintenanceRecords.length + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:140px;padding:12px 16px;background:var(--red-dim)"><div class="label">Total Maintenance Cost</div><div class="value" style="color:var(--red)">' + formatMoney(totalMaintenanceCost) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px;background:var(--blue-dim)"><div class="label">Custom Folders</div><div class="value" style="color:#1d4ed8">' + customFolders.length + '</div></div></div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px"><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Truck Type</div><div class="value" style="font-size:14px">' + t.truck_type + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Capacity</div><div class="value">' + t.capacity + ' cars</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Documents</div><div class="value">' + complianceFiles.length + '/' + truckFileTypes.length + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:130px;padding:12px 16px"><div class="label">Maintenance Records</div><div class="value">' + maintenanceRecords.length + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:140px;padding:12px 16px;background:var(--red-dim)"><div class="label">Total Maintenance Cost</div><div class="value" style="color:var(--red)">' + formatMoney(totalMaintenanceCost) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px;background:var(--blue-dim)"><div class="label">Custom Folders</div><div class="value" style="color:var(--blue)">' + customFolders.length + '</div></div></div>' +
         
         // Truck Files Section
         '<div class="card" style="margin-bottom:24px"><div class="card-header" style="background:var(--amber);color:white;border-radius:8px 8px 0 0"><h3 style="margin:0">📁 Truck Compliance Files</h3></div><div class="table-wrapper"><table><thead><tr><th>Document Type</th><th>Status</th><th>Expiration</th><th>Uploaded</th><th>Actions</th></tr></thead><tbody>' +
@@ -22340,12 +22340,12 @@ ${rateText}`
         '</tbody></table></div></div>' +
         
         // Custom Folders Section
-        '<div class="card" style="margin-bottom:24px"><div class="card-header" style="background:#0891b2;color:white;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">📂 Custom Folders</h3><button class="btn" style="background:var(--bg-card);color:#0891b2;padding:6px 12px;font-size:13px" onclick="openCustomFolderModal(' + truckId + ',\'truck\')">+ New Folder</button></div>' +
+        '<div class="card" style="margin-bottom:24px"><div class="card-header" style="background:var(--blue);color:white;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">📂 Custom Folders</h3><button class="btn" style="background:var(--bg-card);color:var(--blue);padding:6px 12px;font-size:13px" onclick="openCustomFolderModal(' + truckId + ',\'truck\')">+ New Folder</button></div>' +
         (customFolders.length === 0 ? '<div style="padding:40px;text-align:center;color:var(--text-muted)">No custom folders yet. Click "+ New Folder" to create one.</div>' :
         '<div style="padding:16px">' +
         customFolders.map(folder => {
           const folderFiles = customFiles.filter(f => (f.folder_name || 'Uncategorized') === folder);
-          return '<div style="margin-bottom:16px;border:1px solid #e5e7eb;border-radius:8px"><div style="background:#f0f9ff;padding:12px 16px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><strong>📁 ' + folder + ' (' + folderFiles.length + ' files)</strong><button class="action-btn edit" onclick="openCustomFileUpload(' + truckId + ',\'' + folder.replace(/'/g, "\\'") + '\',\'truck\')">+ Add File</button></div>' +
+          return '<div style="margin-bottom:16px;border:1px solid var(--bg-elevated);border-radius:8px"><div style="background:var(--blue-dim);padding:12px 16px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><strong>📁 ' + folder + ' (' + folderFiles.length + ' files)</strong><button class="action-btn edit" onclick="openCustomFileUpload(' + truckId + ',\'' + folder.replace(/'/g, "\\'") + '\',\'truck\')">+ Add File</button></div>' +
             '<div class="table-wrapper"><table><thead><tr><th>File Name</th><th>Type</th><th>Uploaded</th><th>Notes</th><th>Actions</th></tr></thead><tbody>' +
             folderFiles.map(f => '<tr><td>' + f.file_name + '</td><td>' + (f.file_type || '-') + '</td><td>' + formatDate(f.created_at) + '</td><td>' + (f.notes || '-') + '</td><td><div class="actions"><button class="action-btn view" onclick="viewTruckFile(' + f.id + ')">View</button><button class="action-btn delete" onclick="deleteTruckFile(' + f.id + ',' + truckId + ')">Del</button></div></td></tr>').join('') +
             '</tbody></table></div></div>';
@@ -22354,7 +22354,7 @@ ${rateText}`
         '</div>' +
         
         // Maintenance Records Section
-        '<div class="card"><div class="card-header" style="background:#059669;color:white;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">🔧 Maintenance Records</h3><button class="btn" style="background:var(--bg-card);color:#059669;padding:8px 16px" onclick="openMaintenanceModal(' + truckId + ')">+ Add Service Record</button></div>' +
+        '<div class="card"><div class="card-header" style="background:var(--green);color:white;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">🔧 Maintenance Records</h3><button class="btn" style="background:var(--bg-card);color:var(--green);padding:8px 16px" onclick="openMaintenanceModal(' + truckId + ')">+ Add Service Record</button></div>' +
         (maintenanceRecords.length === 0 ? '<div style="padding:40px;text-align:center;color:var(--text-muted)">No maintenance records yet. Add a service record or upload an invoice.</div>' :
         '<div class="table-wrapper"><table><thead><tr><th>Date</th><th>Service Type</th><th>Shop</th><th>Description</th><th>Odometer</th><th>Cost</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
         maintenanceRecords.map(m => '<tr><td>' + formatDate(m.service_date) + '</td><td><span class="badge badge-blue">' + (m.service_type || '-') + '</span></td><td>' + (m.shop_name || '-') + '</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (m.description || '-') + '</td><td>' + (m.odometer ? m.odometer.toLocaleString() + ' mi' : '-') + '</td><td class="money">' + formatMoney(m.total_cost) + '</td><td class="sticky-col"><div class="actions">' + (m.invoice_file ? '<button class="action-btn view" onclick="viewMaintenanceInvoice(' + m.id + ')">Invoice</button>' : '') + '<button class="action-btn edit" onclick="openMaintenanceModal(' + truckId + ',' + m.id + ')">Edit</button><button class="action-btn delete" onclick="deleteMaintenanceRecord(' + m.id + ',' + truckId + ')">Del</button></div></td></tr>').join('') +
@@ -22485,7 +22485,7 @@ ${rateText}`
       m.innerHTML = '<div class="modal" style="max-width:550px;max-height:90vh;overflow-y:auto"><div class="modal-header"><h3>🔧 ' + (record ? 'Edit' : 'Add') + ' Maintenance Record</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body">' +
         
         // Upload Invoice Section
-        '<div style="background:var(--blue-dim);padding:16px;border-radius:8px;margin-bottom:16px"><strong style="color:#1d4ed8">📤 ' + (hasApiKey ? 'Upload Invoice to Auto-Fill' : 'Attach Invoice') + '</strong><p style="font-size:13px;color:#1e40af;margin:8px 0 12px 0">' + (hasApiKey ? 'Upload shop invoice (PDF or image) and AI will extract the details' : 'Upload shop invoice to keep on record') + '</p><input type="file" id="maintenanceInvoice" accept=".pdf,.jpg,.jpeg,.png"><div id="invoicePreview" style="margin-top:8px"></div>' + (hasApiKey ? '<button type="button" id="extractBtn" class="btn btn-primary" style="display:none;margin-top:12px;background:#059669" onclick="extractInvoiceData(' + (truckId || 'null') + ')">🤖 Extract Invoice Data</button>' : '') + '</div>' +
+        '<div style="background:var(--blue-dim);padding:16px;border-radius:8px;margin-bottom:16px"><strong style="color:var(--blue)">📤 ' + (hasApiKey ? 'Upload Invoice to Auto-Fill' : 'Attach Invoice') + '</strong><p style="font-size:13px;color:var(--blue);margin:8px 0 12px 0">' + (hasApiKey ? 'Upload shop invoice (PDF or image) and AI will extract the details' : 'Upload shop invoice to keep on record') + '</p><input type="file" id="maintenanceInvoice" accept=".pdf,.jpg,.jpeg,.png"><div id="invoicePreview" style="margin-top:8px"></div>' + (hasApiKey ? '<button type="button" id="extractBtn" class="btn btn-primary" style="display:none;margin-top:12px;background:var(--green)" onclick="extractInvoiceData(' + (truckId || 'null') + ')">🤖 Extract Invoice Data</button>' : '') + '</div>' +
         
         '<div id="extractingStatus" style="display:none;background:var(--amber-dim);padding:12px;border-radius:8px;margin-bottom:16px;text-align:center"><span style="color:var(--amber)">⏳ Reading invoice... Please wait...</span></div>' +
         
@@ -22513,7 +22513,7 @@ ${rateText}`
         const extractBtn = document.getElementById('extractBtn');
         this.dataset.aiScanned = 'false'; // Reset scan status
         if (this.files && this.files[0]) {
-          preview.innerHTML = '<span style="color:#059669">✓ ' + this.files[0].name + ' selected</span><br><span style="font-size:11px;color:var(--text-muted)">📎 Invoice will be saved with record</span>';
+          preview.innerHTML = '<span style="color:var(--green)">✓ ' + this.files[0].name + ' selected</span><br><span style="font-size:11px;color:var(--text-muted)">📎 Invoice will be saved with record</span>';
           if (extractBtn) extractBtn.style.display = 'inline-block';
         } else {
           preview.innerHTML = '';
@@ -22668,7 +22668,7 @@ ${rateText}`
           
           // Update preview to show it will be saved
           const preview = document.getElementById('invoicePreview');
-          preview.innerHTML = '<span style="color:#059669">✓ ' + file.name + '</span><br><span style="font-size:11px;color:#047857;background:#d1fae5;padding:2px 8px;border-radius:4px;margin-top:4px;display:inline-block">📎 Invoice will be saved with record</span>';
+          preview.innerHTML = '<span style="color:var(--green)">✓ ' + file.name + '</span><br><span style="font-size:11px;color:var(--green);background:var(--green-dim);padding:2px 8px;border-radius:4px;margin-top:4px;display:inline-block">📎 Invoice will be saved with record</span>';
           
           showToast('✓ Invoice data extracted! Invoice will be saved automatically.');
         } else {
@@ -22837,35 +22837,35 @@ ${rateText}`
       
       c.innerHTML = '<div class="header"><h2>🎫 Driver Compliance</h2><div style="display:flex;gap:12px;flex-wrap:wrap">' +
         '<button class="btn btn-primary" onclick="openTicketModal()">+ Ticket</button>' +
-        '<button class="btn btn-secondary" style="background:#8b5cf6;border-color:#8b5cf6;color:white" onclick="openViolationModal()">+ Violation</button>' +
+        '<button class="btn btn-secondary" style="background:var(--purple);border-color:var(--purple);color:white" onclick="openViolationModal()">+ Violation</button>' +
         '<button class="btn btn-secondary" style="background:var(--amber);border-color:var(--amber);color:white" onclick="openClaimModal()">+ Claim</button>' +
         '</div></div>' +
         
         // Stats
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:24px">' +
-        '<div class="stat-card" style="border-left:4px solid #ef4444"><div class="label">Open Tickets</div><div class="value" style="color:var(--red)">' + openTickets + '</div></div>' +
-        '<div class="stat-card" style="border-left:4px solid #8b5cf6"><div class="label">Open Violations</div><div class="value" style="color:#8b5cf6">' + openViolations + '</div></div>' +
-        '<div class="stat-card" style="border-left:4px solid #f59e0b"><div class="label">Open Claims</div><div class="value" style="color:var(--amber)">' + openClaims + '</div></div>' +
-        '<div class="stat-card" style="border-left:4px solid #22c55e"><div class="label">Resolved</div><div class="value" style="color:var(--green)">' + (resolvedTickets + resolvedViolations) + '</div></div>' +
-        (totalClaimsPaid > 0 ? '<div class="stat-card" style="border-left:4px solid #dc2626;background:var(--red-dim)"><div class="label">Driver Claims Paid</div><div class="value" style="color:var(--red)">' + formatMoney(totalClaimsPaid) + '</div></div>' : '') +
+        '<div class="stat-card" style="border-left:4px solid var(--red)"><div class="label">Open Tickets</div><div class="value" style="color:var(--red)">' + openTickets + '</div></div>' +
+        '<div class="stat-card" style="border-left:4px solid var(--purple)"><div class="label">Open Violations</div><div class="value" style="color:var(--purple)">' + openViolations + '</div></div>' +
+        '<div class="stat-card" style="border-left:4px solid var(--amber)"><div class="label">Open Claims</div><div class="value" style="color:var(--amber)">' + openClaims + '</div></div>' +
+        '<div class="stat-card" style="border-left:4px solid var(--green)"><div class="label">Resolved</div><div class="value" style="color:var(--green)">' + (resolvedTickets + resolvedViolations) + '</div></div>' +
+        (totalClaimsPaid > 0 ? '<div class="stat-card" style="border-left:4px solid var(--red);background:var(--red-dim)"><div class="label">Driver Claims Paid</div><div class="value" style="color:var(--red)">' + formatMoney(totalClaimsPaid) + '</div></div>' : '') +
         '</div>' +
         
         // Upcoming Court Dates Alert
-        (upcomingCourt.length > 0 ? '<div class="card" style="margin-bottom:24px;background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #f59e0b"><div class="card-header" style="background:transparent"><h3 style="color:var(--amber)">⚠️ Upcoming Court Dates</h3></div><div style="padding:16px">' +
+        (upcomingCourt.length > 0 ? '<div class="card" style="margin-bottom:24px;background:linear-gradient(135deg,var(--amber-dim),var(--amber-dim));border:1px solid var(--amber)"><div class="card-header" style="background:transparent"><h3 style="color:var(--amber)">⚠️ Upcoming Court Dates</h3></div><div style="padding:16px">' +
         upcomingCourt.slice(0, 5).map(t => {
           const driver = appData.drivers.find(d => d.id === t.driver_id);
           const driverName = driver ? driver.first_name + ' ' + driver.last_name : 'Unknown';
           const daysUntil = Math.ceil((new Date(t.court_date) - new Date(today)) / (1000 * 60 * 60 * 24));
           return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg-card);border-radius:8px;margin-bottom:8px">' +
             '<div><strong>' + driverName + '</strong><div style="font-size:12px;color:var(--text-muted)">' + (t.ticket_description || 'No description') + '</div></div>' +
-            '<div style="text-align:right"><div style="font-weight:600;color:' + (daysUntil <= 3 ? '#dc2626' : daysUntil <= 7 ? '#d97706' : '#059669') + '">' + formatDate(t.court_date) + '</div>' +
+            '<div style="text-align:right"><div style="font-weight:600;color:' + (daysUntil <= 3 ? 'var(--red)' : daysUntil <= 7 ? 'var(--amber)' : 'var(--green)') + '">' + formatDate(t.court_date) + '</div>' +
             '<div style="font-size:12px;color:var(--text-muted)">' + (daysUntil === 0 ? 'TODAY!' : daysUntil === 1 ? 'Tomorrow' : daysUntil + ' days') + '</div></div></div>';
         }).join('') + '</div></div>' : '') +
         
         // Tabs
         '<div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">' +
         '<button class="btn ' + (dcTab === 'tickets' ? 'btn-primary' : 'btn-secondary') + '" onclick="dcTab=\'tickets\';renderDriverCompliance(document.getElementById(\'main-content\'))">🎫 Tickets (' + tickets.length + ')</button>' +
-        '<button class="btn ' + (dcTab === 'violations' ? 'btn-primary' : 'btn-secondary') + '" style="' + (dcTab === 'violations' ? 'background:#8b5cf6;border-color:#8b5cf6' : '') + '" onclick="dcTab=\'violations\';renderDriverCompliance(document.getElementById(\'main-content\'))">⚠️ Violations (' + violations.length + ')</button>' +
+        '<button class="btn ' + (dcTab === 'violations' ? 'btn-primary' : 'btn-secondary') + '" style="' + (dcTab === 'violations' ? 'background:var(--purple);border-color:var(--purple)' : '') + '" onclick="dcTab=\'violations\';renderDriverCompliance(document.getElementById(\'main-content\'))">⚠️ Violations (' + violations.length + ')</button>' +
         '<button class="btn ' + (dcTab === 'claims' ? 'btn-primary' : 'btn-secondary') + '" style="' + (dcTab === 'claims' ? 'background:var(--amber);border-color:var(--amber)' : '') + '" onclick="dcTab=\'claims\';renderDriverCompliance(document.getElementById(\'main-content\'))">💥 Claims (' + claims.length + ')</button>' +
         '</div>' +
         
@@ -23004,9 +23004,9 @@ ${rateText}`
         
         // Financial Summary
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px">' +
-        '<div style="background:var(--amber-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:var(--amber)">Total Claimed</div><div style="font-size:20px;font-weight:700;color:#d97706">' + formatMoney(filtered.reduce((s,cl) => s + parseFloat(cl.claim_amount || 0), 0)) + '</div></div>' +
-        '<div style="background:var(--red-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#991b1b">Driver Fault (Paid)</div><div style="font-size:20px;font-weight:700;color:var(--red)">' + formatMoney(filtered.filter(cl => cl.fault_party === 'DRIVER' && cl.status === 'SETTLED').reduce((s,cl) => s + parseFloat(cl.settlement_amount || cl.claim_amount || 0), 0)) + '</div></div>' +
-        '<div style="background:var(--green-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#166534">Recovered</div><div style="font-size:20px;font-weight:700;color:var(--green)">' + formatMoney(filtered.filter(cl => cl.fault_party !== 'DRIVER' && cl.status === 'SETTLED').reduce((s,cl) => s + parseFloat(cl.settlement_amount || 0), 0)) + '</div></div>' +
+        '<div style="background:var(--amber-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:var(--amber)">Total Claimed</div><div style="font-size:20px;font-weight:700;color:var(--amber)">' + formatMoney(filtered.reduce((s,cl) => s + parseFloat(cl.claim_amount || 0), 0)) + '</div></div>' +
+        '<div style="background:var(--red-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:var(--red)">Driver Fault (Paid)</div><div style="font-size:20px;font-weight:700;color:var(--red)">' + formatMoney(filtered.filter(cl => cl.fault_party === 'DRIVER' && cl.status === 'SETTLED').reduce((s,cl) => s + parseFloat(cl.settlement_amount || cl.claim_amount || 0), 0)) + '</div></div>' +
+        '<div style="background:var(--green-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:var(--green)">Recovered</div><div style="font-size:20px;font-weight:700;color:var(--green)">' + formatMoney(filtered.filter(cl => cl.fault_party !== 'DRIVER' && cl.status === 'SETTLED').reduce((s,cl) => s + parseFloat(cl.settlement_amount || 0), 0)) + '</div></div>' +
         '</div>' +
         
         '<div class="card"><div class="card-header"><h3>💥 Damage Claims</h3></div><div class="table-wrapper"><table><thead><tr>' +
@@ -23125,12 +23125,12 @@ ${rateText}`
     
     function getViolationTypeBadge(type) {
       const badges = {
-        'HOS': '<span class="badge" style="background:#dc2626;color:white">HOS</span>',
+        'HOS': '<span class="badge" style="background:var(--red);color:white">HOS</span>',
         'SPEEDING': '<span class="badge" style="background:var(--amber);color:white">SPEEDING</span>',
-        'LOGBOOK': '<span class="badge" style="background:#8b5cf6;color:white">LOGBOOK</span>',
+        'LOGBOOK': '<span class="badge" style="background:var(--purple);color:white">LOGBOOK</span>',
         'EQUIPMENT': '<span class="badge" style="background:var(--blue);color:white">EQUIPMENT</span>',
-        'WEIGHT': '<span class="badge" style="background:#64748b;color:white">WEIGHT</span>',
-        'SAFETY': '<span class="badge" style="background:#dc2626;color:white">SAFETY</span>',
+        'WEIGHT': '<span class="badge" style="background:var(--text-secondary);color:white">WEIGHT</span>',
+        'SAFETY': '<span class="badge" style="background:var(--red);color:white">SAFETY</span>',
         'OTHER': '<span class="badge badge-gray">OTHER</span>'
       };
       return badges[type] || '<span class="badge badge-gray">' + (type || 'N/A') + '</span>';
@@ -23141,7 +23141,7 @@ ${rateText}`
         'MINOR': '<span class="badge badge-blue">MINOR</span>',
         'MODERATE': '<span class="badge badge-amber">MODERATE</span>',
         'SERIOUS': '<span class="badge badge-red">SERIOUS</span>',
-        'CRITICAL': '<span class="badge" style="background:#7f1d1d;color:white">CRITICAL</span>'
+        'CRITICAL': '<span class="badge" style="background:var(--red);color:white">CRITICAL</span>'
       };
       return badges[severity] || '<span class="badge badge-gray">' + (severity || 'N/A') + '</span>';
     }
@@ -23469,7 +23469,7 @@ ${rateText}`
         '<div class="stat-card" style="padding:16px;text-align:center"><div style="font-size:24px;margin-bottom:4px">❌</div><div class="label">Denied</div><div class="value">' + deniedClaims + '</div></div>' +
         '<div class="stat-card" style="padding:16px;text-align:center"><div style="font-size:24px;margin-bottom:4px">💰</div><div class="label">Settled</div><div class="value">' + settledClaims + '</div></div>' +
         '<div class="stat-card" style="padding:16px;text-align:center;background:var(--amber-dim)"><div style="font-size:24px;margin-bottom:4px">💵</div><div class="label">Total Claimed</div><div class="value" style="color:var(--amber)">' + formatMoney(totalClaimAmount) + '</div></div>' +
-        '<div class="stat-card" style="padding:16px;text-align:center;background:#d1fae5"><div style="font-size:24px;margin-bottom:4px">✓</div><div class="label">Total Settled</div><div class="value" style="color:var(--green)">' + formatMoney(settledAmount) + '</div></div>' +
+        '<div class="stat-card" style="padding:16px;text-align:center;background:var(--green-dim)"><div style="font-size:24px;margin-bottom:4px">✓</div><div class="label">Total Settled</div><div class="value" style="color:var(--green)">' + formatMoney(settledAmount) + '</div></div>' +
         '</div>' +
         
         // Claims Table
@@ -23632,9 +23632,9 @@ ${rateText}`
         
         (claim.insurance_claim_number ? '<div style="padding:12px;background:var(--amber-dim);border-radius:8px"><strong>Insurance Claim #</strong><br>' + claim.insurance_claim_number + '</div>' : '') +
         
-        (claim.settlement_amount ? '<div style="padding:12px;background:#d1fae5;border-radius:8px"><strong>Settlement Amount</strong><br><span style="font-size:20px;color:#047857">' + formatMoney(claim.settlement_amount) + '</span></div>' : '') +
+        (claim.settlement_amount ? '<div style="padding:12px;background:var(--green-dim);border-radius:8px"><strong>Settlement Amount</strong><br><span style="font-size:20px;color:var(--green)">' + formatMoney(claim.settlement_amount) + '</span></div>' : '') +
         
-        (claim.resolution_notes ? '<div style="padding:12px;background:#e0e7ff;border-radius:8px"><strong>Resolution Notes</strong><br>' + claim.resolution_notes + '</div>' : '') +
+        (claim.resolution_notes ? '<div style="padding:12px;background:var(--purple-dim);border-radius:8px"><strong>Resolution Notes</strong><br>' + claim.resolution_notes + '</div>' : '') +
         
         '<div style="font-size:12px;color:var(--text-muted)">Created: ' + formatDate(claim.created_at) + '</div>' +
         '</div>',
@@ -23676,18 +23676,18 @@ ${rateText}`
       m.className = 'modal-overlay';
       m.onclick = e => { if (e.target === m) m.remove(); };
       m.innerHTML = '<div class="modal" style="max-width:600px">' +
-        '<div class="modal-header" style="background:#8b5cf6;color:white">' +
+        '<div class="modal-header" style="background:var(--purple);color:white">' +
         '<h3 style="margin:0">+ Create New Load</h3>' +
         '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()" style="color:white">×</button>' +
         '</div>' +
         '<div class="modal-body" style="padding:24px">' +
-        '<div style="background:#f3e8ff;padding:16px;border-radius:8px;margin-bottom:20px">' +
-        '<div style="font-weight:600;color:#7c3aed;margin-bottom:8px">Upload Rate Confirmation</div>' +
-        '<div style="color:#6b7280;font-size:13px">Upload a rate confirmation, manifest, or contract. AI will extract all vehicle and order information automatically.</div>' +
+        '<div style="background:var(--purple-dim);padding:16px;border-radius:8px;margin-bottom:20px">' +
+        '<div style="font-weight:600;color:var(--purple);margin-bottom:8px">Upload Rate Confirmation</div>' +
+        '<div style="color:var(--text-secondary);font-size:13px">Upload a rate confirmation, manifest, or contract. AI will extract all vehicle and order information automatically.</div>' +
         '</div>' +
         '<div id="createLoadUploadArea" style="border:2px dashed var(--border);border-radius:12px;padding:48px;text-align:center;cursor:pointer;transition:all 0.2s" ' +
         'onclick="document.getElementById(\'createLoadFile\').click()" ' +
-        'ondragover="event.preventDefault();this.style.borderColor=\'#8b5cf6\';this.style.background=\'#f3e8ff\'" ' +
+        'ondragover="event.preventDefault();this.style.borderColor=\'var(--purple)\';this.style.background=\'var(--purple-dim)\'" ' +
         'ondragleave="this.style.borderColor=\'var(--border)\';this.style.background=\'transparent\'" ' +
         'ondrop="handleCreateLoadDrop(event)">' +
         '<input type="file" id="createLoadFile" accept=".pdf,.jpg,.jpeg,.png" onchange="handleCreateLoadFile(event)" style="display:none">' +
@@ -23704,7 +23704,7 @@ ${rateText}`
         '</div>' +
         '<div class="modal-footer">' +
         '<button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>' +
-        '<button class="btn" style="background:#8b5cf6;color:white" id="createLoadBtn" onclick="processCreateLoad()" disabled>Analyze & Create</button>' +
+        '<button class="btn" style="background:var(--purple);color:white" id="createLoadBtn" onclick="processCreateLoad()" disabled>Analyze & Create</button>' +
         '</div></div>';
       document.body.appendChild(m);
     }
@@ -24068,10 +24068,10 @@ ${rateText}`
 
       return '<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;width:120px" title="Current: ' + formatMoney(aging.current) + ' | 1-30: ' + formatMoney(aging.days1_30) + ' | 31-60: ' + formatMoney(aging.days31_60) + ' | 61-90: ' + formatMoney(aging.days61_90) + ' | 90+: ' + formatMoney(aging.days90Plus) + '">' +
         (currentPct > 0 ? '<div style="width:' + currentPct + '%;background:var(--green)"></div>' : '') +
-        (d1_30Pct > 0 ? '<div style="width:' + d1_30Pct + '%;background:#eab308"></div>' : '') +
-        (d31_60Pct > 0 ? '<div style="width:' + d31_60Pct + '%;background:#f97316"></div>' : '') +
+        (d1_30Pct > 0 ? '<div style="width:' + d1_30Pct + '%;background:var(--amber)"></div>' : '') +
+        (d31_60Pct > 0 ? '<div style="width:' + d31_60Pct + '%;background:var(--amber)"></div>' : '') +
         (d61_90Pct > 0 ? '<div style="width:' + d61_90Pct + '%;background:var(--red)"></div>' : '') +
-        (d90PlusPct > 0 ? '<div style="width:' + d90PlusPct + '%;background:#dc2626"></div>' : '') +
+        (d90PlusPct > 0 ? '<div style="width:' + d90PlusPct + '%;background:var(--red)"></div>' : '') +
         '</div>';
     }
 
@@ -24087,16 +24087,16 @@ ${rateText}`
     }
 
     function getPaymentStatusInfo(order) {
-      if (order.payment_status === 'paid') return { text: 'Paid', color: '#22c55e', bg: '#dcfce7' };
-      if (order.daysOverdue > 60) return { text: 'Delinquent', color: '#dc2626', bg: '#fee2e2' };
-      if (order.daysOverdue > 0) return { text: 'Pending', color: '#eab308', bg: '#fef9c3' };
-      return { text: 'Pending', color: '#eab308', bg: '#fef9c3' };
+      if (order.payment_status === 'paid') return { text: 'Paid', color: 'var(--green)', bg: 'var(--green-dim)' };
+      if (order.daysOverdue > 60) return { text: 'Delinquent', color: 'var(--red)', bg: 'var(--red-dim)' };
+      if (order.daysOverdue > 0) return { text: 'Pending', color: 'var(--amber)', bg: 'var(--amber-dim)' };
+      return { text: 'Pending', color: 'var(--amber)', bg: 'var(--amber-dim)' };
     }
 
     function getTypeBadge(order) {
       // Default to BILL, could be extended based on broker preferences
       const type = 'BILL';
-      return { text: type, color: '#3b82f6', border: '#3b82f6' };
+      return { text: type, color: 'var(--blue)', border: 'var(--blue)' };
     }
 
     async function markBillingOrderPaid(orderId) {
@@ -24275,7 +24275,7 @@ ${rateText}`
       html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:24px">';
 
       const cards = [
-        { label: 'Total Invoiced', value: formatMoney(m.totalInvoiced), sub: (unpaidOrders.length + paidOrders.length) + ' invoices', color: '#8b5cf6', click: "billingFilter='all';billingTab='invoices';renderBillingPage(document.getElementById('main-content'))" },
+        { label: 'Total Invoiced', value: formatMoney(m.totalInvoiced), sub: (unpaidOrders.length + paidOrders.length) + ' invoices', color: 'var(--purple)', click: "billingFilter='all';billingTab='invoices';renderBillingPage(document.getElementById('main-content'))" },
         { label: 'Total Paid', value: formatMoney(m.collected), sub: paidOrders.length + ' paid', color: 'var(--success)', click: "billingFilter='paid';billingTab='invoices';renderBillingPage(document.getElementById('main-content'))" },
         { label: 'Outstanding', value: formatMoney(m.totalReceivables), sub: unpaidOrders.length + ' pending', color: 'var(--info)', click: "billingFilter='outstanding';billingTab='invoices';renderBillingPage(document.getElementById('main-content'))" },
         { label: 'Overdue', value: formatMoney(m.overdueAmount), sub: 'Needs attention', color: 'var(--danger)', click: "billingFilter='overdue';billingTab='invoices';renderBillingPage(document.getElementById('main-content'))" },
@@ -24313,10 +24313,10 @@ ${rateText}`
 
         html += '<div style="display:flex;height:32px;border-radius:var(--radius-sm);overflow:hidden;margin-bottom:16px">';
         if (currentPct > 0) html += '<div style="width:' + currentPct + '%;background:var(--green)"></div>';
-        if (days1_30Pct > 0) html += '<div style="width:' + days1_30Pct + '%;background:#eab308"></div>';
-        if (days31_60Pct > 0) html += '<div style="width:' + days31_60Pct + '%;background:#f97316"></div>';
+        if (days1_30Pct > 0) html += '<div style="width:' + days1_30Pct + '%;background:var(--amber)"></div>';
+        if (days31_60Pct > 0) html += '<div style="width:' + days31_60Pct + '%;background:var(--amber)"></div>';
         if (days61_90Pct > 0) html += '<div style="width:' + days61_90Pct + '%;background:var(--red)"></div>';
-        if (days90PlusPct > 0) html += '<div style="width:' + days90PlusPct + '%;background:#dc2626"></div>';
+        if (days90PlusPct > 0) html += '<div style="width:' + days90PlusPct + '%;background:var(--red)"></div>';
         html += '</div>';
       } else {
         html += '<div style="height:32px;background:var(--bg-tertiary);border-radius:var(--radius-sm);margin-bottom:16px"></div>';
@@ -24325,11 +24325,11 @@ ${rateText}`
       // Mini-card legend grid instead of inline legend
       html += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">';
       const ageBuckets = [
-        { label: 'Current', amt: m.currentAmt, color: '#22c55e' },
-        { label: '1-30 Days', amt: m.days1_30Amt, color: '#eab308' },
-        { label: '31-60 Days', amt: m.days31_60Amt, color: '#f97316' },
-        { label: '61-90 Days', amt: m.days61_90Amt, color: '#ef4444' },
-        { label: '90+ Days', amt: m.days90PlusAmt, color: '#dc2626' }
+        { label: 'Current', amt: m.currentAmt, color: 'var(--green)' },
+        { label: '1-30 Days', amt: m.days1_30Amt, color: 'var(--amber)' },
+        { label: '31-60 Days', amt: m.days31_60Amt, color: 'var(--amber)' },
+        { label: '61-90 Days', amt: m.days61_90Amt, color: 'var(--red)' },
+        { label: '90+ Days', amt: m.days90PlusAmt, color: 'var(--red)' }
       ];
       ageBuckets.forEach(bk => {
         html += '<div style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;text-align:center">';
@@ -24528,7 +24528,7 @@ ${rateText}`
 
           let statusInfo;
           if (isPaid) {
-            statusInfo = { text: 'Paid', color: '#22c55e', bg: 'var(--success-light)' };
+            statusInfo = { text: 'Paid', color: 'var(--green)', bg: 'var(--success-light)' };
           } else if (needsInvoice) {
             statusInfo = { text: 'Needs Invoice', color: 'var(--warning)', bg: 'var(--warning-light)' };
           } else {
@@ -24608,7 +24608,7 @@ ${rateText}`
       // 4 smaller metric cards
       html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px">';
       const metrics = [
-        { label: 'Total Invoiced', value: formatMoney(brokerStats.totalInvoiced), color: '#8b5cf6' },
+        { label: 'Total Invoiced', value: formatMoney(brokerStats.totalInvoiced), color: 'var(--purple)' },
         { label: 'Paid', value: formatMoney(brokerStats.totalPaid), color: 'var(--success)' },
         { label: 'Overdue', value: formatMoney(brokerStats.overdue), color: 'var(--danger)' },
         { label: 'Avg Days to Pay', value: brokerStats.avgDaysToPay !== null ? brokerStats.avgDaysToPay + 'd' : '-', color: 'var(--text-primary)' }
@@ -24628,19 +24628,19 @@ ${rateText}`
         const total = brokerStats.outstanding;
         html += '<div style="display:flex;height:32px;border-radius:var(--radius-sm);overflow:hidden;margin-bottom:12px">';
         if (a.current > 0) html += '<div style="width:' + (a.current/total*100) + '%;background:var(--green)" title="Current: ' + formatMoney(a.current) + '"></div>';
-        if (a.days1_30 > 0) html += '<div style="width:' + (a.days1_30/total*100) + '%;background:#eab308" title="1-30 Days: ' + formatMoney(a.days1_30) + '"></div>';
-        if (a.days31_60 > 0) html += '<div style="width:' + (a.days31_60/total*100) + '%;background:#f97316" title="31-60 Days: ' + formatMoney(a.days31_60) + '"></div>';
+        if (a.days1_30 > 0) html += '<div style="width:' + (a.days1_30/total*100) + '%;background:var(--amber)" title="1-30 Days: ' + formatMoney(a.days1_30) + '"></div>';
+        if (a.days31_60 > 0) html += '<div style="width:' + (a.days31_60/total*100) + '%;background:var(--amber)" title="31-60 Days: ' + formatMoney(a.days31_60) + '"></div>';
         if (a.days61_90 > 0) html += '<div style="width:' + (a.days61_90/total*100) + '%;background:var(--red)" title="61-90 Days: ' + formatMoney(a.days61_90) + '"></div>';
-        if (a.days90Plus > 0) html += '<div style="width:' + (a.days90Plus/total*100) + '%;background:#dc2626" title="90+ Days: ' + formatMoney(a.days90Plus) + '"></div>';
+        if (a.days90Plus > 0) html += '<div style="width:' + (a.days90Plus/total*100) + '%;background:var(--red)" title="90+ Days: ' + formatMoney(a.days90Plus) + '"></div>';
         html += '</div>';
         // Mini-card legend
         html += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">';
         const buckets = [
-          { label: 'Current', amt: a.current, color: '#22c55e' },
-          { label: '1-30d', amt: a.days1_30, color: '#eab308' },
-          { label: '31-60d', amt: a.days31_60, color: '#f97316' },
-          { label: '61-90d', amt: a.days61_90, color: '#ef4444' },
-          { label: '90+d', amt: a.days90Plus, color: '#dc2626' }
+          { label: 'Current', amt: a.current, color: 'var(--green)' },
+          { label: '1-30d', amt: a.days1_30, color: 'var(--amber)' },
+          { label: '31-60d', amt: a.days31_60, color: 'var(--amber)' },
+          { label: '61-90d', amt: a.days61_90, color: 'var(--red)' },
+          { label: '90+d', amt: a.days90Plus, color: 'var(--red)' }
         ];
         buckets.forEach(bk => {
           html += '<div style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;text-align:center">';
@@ -24761,16 +24761,16 @@ ${rateText}`
       ).join('');
 
       c.innerHTML = '<div class="header"><h2>💰 Driver Payroll</h2><div style="display:flex;align-items:center;gap:12px"><div style="display:flex;align-items:center;gap:8px;background:var(--bg-app);padding:8px 12px;border-radius:6px"><label style="font-weight:600;color:var(--text-secondary);font-size:13px">Year:</label><select onchange="payrollYear=parseInt(this.value);renderPayroll(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px">' + yearOptions + '</select></div><button class="btn btn-secondary" onclick="window.print()">🖨️ Print</button></div></div>' +
-        '<div style="background:var(--blue-dim);border:1px solid #93c5fd;border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:#1d4ed8">📋 Formula:</strong><p style="color:#1e40af;margin-top:8px">Net Pay = Gross Earnings − Cash Collected + Expense Reimbursements (OTHER only)</p><p style="color:var(--text-muted);font-size:13px;margin-top:4px">Only COMPLETED trips are included. Only "OTHER" category expenses are reimbursed to drivers.</p></div>' +
+        '<div style="background:var(--blue-dim);border:1px solid var(--blue-dim);border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--blue)">📋 Formula:</strong><p style="color:var(--blue);margin-top:8px">Net Pay = Gross Earnings − Cash Collected + Expense Reimbursements (OTHER only)</p><p style="color:var(--text-muted);font-size:13px;margin-top:4px">Only COMPLETED trips are included. Only "OTHER" category expenses are reimbursed to drivers.</p></div>' +
         '<div class="card"><div class="table-wrapper"><table><thead><tr><th>Driver</th><th>Completed Trips</th><th>Gross Earnings</th><th>Cash Collected</th><th>Expense Reimb.</th><th>Net Pay</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
         (payrollData.length === 0 ? '<tr><td colspan="7" style="text-align:center;padding:40px">No drivers yet</td></tr>' :
-        payrollData.map(p => '<tr><td><strong>' + p.driver.first_name + ' ' + p.driver.last_name + '</strong><br><span style="color:var(--text-muted);font-size:12px">' + p.driver.cut_percent + '% cut</span></td><td>' + p.tripCount + '</td><td class="money positive">' + formatMoney(p.grossEarnings) + '</td><td class="money negative">-' + formatMoney(p.cashCollected) + '</td><td class="money positive">+' + formatMoney(p.expenseReimbursements) + '</td><td class="money" style="font-size:16px;font-weight:700;color:' + (p.netPay >= 0 ? '#047857' : '#dc2626') + '">' + formatMoney(p.netPay) + '</td><td class="sticky-col"><button class="btn btn-primary btn-sm" onclick="openPaystubModal(' + p.driver.id + ')">📄 Generate Paystub</button></td></tr>').join('')) +
+        payrollData.map(p => '<tr><td><strong>' + p.driver.first_name + ' ' + p.driver.last_name + '</strong><br><span style="color:var(--text-muted);font-size:12px">' + p.driver.cut_percent + '% cut</span></td><td>' + p.tripCount + '</td><td class="money positive">' + formatMoney(p.grossEarnings) + '</td><td class="money negative">-' + formatMoney(p.cashCollected) + '</td><td class="money positive">+' + formatMoney(p.expenseReimbursements) + '</td><td class="money" style="font-size:16px;font-weight:700;color:' + (p.netPay >= 0 ? 'var(--green)' : 'var(--red)') + '">' + formatMoney(p.netPay) + '</td><td class="sticky-col"><button class="btn btn-primary btn-sm" onclick="openPaystubModal(' + p.driver.id + ')">📄 Generate Paystub</button></td></tr>').join('')) +
         '</tbody></table></div></div>' +
         '<div class="card"><div class="card-header"><h3>📊 Payroll Summary</h3></div><div style="padding:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:20px;text-align:center">' +
         '<div><div style="font-size:12px;color:var(--text-muted)">Total Gross</div><div style="font-size:20px;font-weight:700;color:var(--text-primary)">' + formatMoney(payrollData.reduce((s,p) => s + p.grossEarnings, 0)) + '</div></div>' +
         '<div><div style="font-size:12px;color:var(--text-muted)">Total Cash Collected</div><div style="font-size:20px;font-weight:700;color:var(--red)">' + formatMoney(payrollData.reduce((s,p) => s + p.cashCollected, 0)) + '</div></div>' +
         '<div><div style="font-size:12px;color:var(--text-muted)">Total Reimbursements</div><div style="font-size:20px;font-weight:700;color:var(--green)">' + formatMoney(payrollData.reduce((s,p) => s + p.expenseReimbursements, 0)) + '</div></div>' +
-        '<div style="background:#d1fae5;padding:16px;border-radius:8px"><div style="font-size:12px;color:#064e3b">Total Net Payroll</div><div style="font-size:20px;font-weight:700;color:#047857">' + formatMoney(payrollData.reduce((s,p) => s + p.netPay, 0)) + '</div></div>' +
+        '<div style="background:var(--green-dim);padding:16px;border-radius:8px"><div style="font-size:12px;color:var(--green)">Total Net Payroll</div><div style="font-size:20px;font-weight:700;color:var(--green)">' + formatMoney(payrollData.reduce((s,p) => s + p.netPay, 0)) + '</div></div>' +
         '</div></div>';
     }
 
@@ -24787,17 +24787,17 @@ ${rateText}`
       const mainValue = valueType === 'settlement'
         ? fin.cleanGross - fin.dispatchFee - fin.cashCollected
         : fin.driverCut;
-      const valueColor = valueType === 'settlement' ? '#f59e0b' : 'var(--green)';
+      const valueColor = valueType === 'settlement' ? 'var(--amber)' : 'var(--green)';
 
       // Payment type badge styles
       const getBadge = (type) => {
         const badges = {
           'COD': '<span style="background:var(--amber);color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">COD</span>',
           'COP': '<span style="background:var(--amber);color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">COP</span>',
-          'LOCAL_COD': '<span style="background:#eab308;color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">LOCAL</span>',
+          'LOCAL_COD': '<span style="background:var(--amber);color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">LOCAL</span>',
           'BILLED': '<span style="background:var(--blue);color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">BILLED</span>',
           'CHECK': '<span style="background:var(--green);color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">CHECK</span>',
-          'SPLIT': '<span style="background:#8b5cf6;color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">SPLIT</span>'
+          'SPLIT': '<span style="background:var(--purple);color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">SPLIT</span>'
         };
         return badges[type] || '<span style="background:var(--text-muted);color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">' + (type || 'N/A') + '</span>';
       };
@@ -24887,15 +24887,15 @@ ${rateText}`
         '<div style="text-align:right;margin-top:8px;font-weight:600;color:var(--red)">Total Deductions: $<span id="totalDeductionsDisplay">0.00</span></div></div>' +
         
         // Bonuses Section
-        '<div style="background:#d1fae5;padding:12px;border-radius:8px;margin-top:12px">' +
-        '<label style="font-weight:600;margin-bottom:8px;display:block;color:#059669">➕ BONUSES</label>' +
+        '<div style="background:var(--green-dim);padding:12px;border-radius:8px;margin-top:12px">' +
+        '<label style="font-weight:600;margin-bottom:8px;display:block;color:var(--green)">➕ BONUSES</label>' +
         '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Level I Inspection</label><input type="number" id="bonusLevel1" value="0" class="bonus-input" onchange="updatePaystubTotals()"></div>' +
         '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Level II Inspection</label><input type="number" id="bonusLevel2" value="0" class="bonus-input" onchange="updatePaystubTotals()"></div>' +
         '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Level III Inspection</label><input type="number" id="bonusLevel3" value="0" class="bonus-input" onchange="updatePaystubTotals()"></div></div>' +
         '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:0"><label style="font-size:12px">Other Bonus</label><input type="number" id="bonusOther" value="0" class="bonus-input" onchange="updatePaystubTotals()"></div></div>' +
-        '<div style="text-align:right;margin-top:8px;font-weight:600;color:#059669">Total Bonuses: $<span id="totalBonusesDisplay">0.00</span></div></div>' +
+        '<div style="text-align:right;margin-top:8px;font-weight:600;color:var(--green)">Total Bonuses: $<span id="totalBonusesDisplay">0.00</span></div></div>' +
         
-        '</div><div class="modal-footer" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="generatePaystub(' + driverId + ', \'print\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/><path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7z"/></svg>Print</button><button class="btn btn-primary" style="background:#059669" onclick="generatePaystub(' + driverId + ', \'email\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>Send Email</button><button class="btn btn-secondary" onclick="generatePaystub(' + driverId + ', \'both\')">Print & Email</button></div></div>';
+        '</div><div class="modal-footer" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="generatePaystub(' + driverId + ', \'print\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/><path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7z"/></svg>Print</button><button class="btn btn-primary" style="background:var(--green)" onclick="generatePaystub(' + driverId + ', \'email\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>Send Email</button><button class="btn btn-secondary" onclick="generatePaystub(' + driverId + ', \'both\')">Print & Email</button></div></div>';
       document.body.appendChild(m);
     }
 
@@ -24911,7 +24911,7 @@ ${rateText}`
 
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
       m.innerHTML = '<div class="modal" style="max-width:650px;max-height:90vh;display:flex;flex-direction:column"><div class="modal-header" style="background:var(--amber);color:white"><h3>📋 Generate Settlement Statement</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()" style="color:white">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
-        '<div style="background:var(--amber-dim);padding:12px;border-radius:8px;margin-bottom:16px;border:2px solid #f59e0b"><div style="font-weight:600;color:var(--amber)">🚛 Owner-Operator Settlement</div><div style="font-size:12px;color:var(--amber)">Dispatch Fee: ' + dispatchFeePercent + '%</div></div>' +
+        '<div style="background:var(--amber-dim);padding:12px;border-radius:8px;margin-bottom:16px;border:2px solid var(--amber)"><div style="font-weight:600;color:var(--amber)">🚛 Owner-Operator Settlement</div><div style="font-size:12px;color:var(--amber)">Dispatch Fee: ' + dispatchFeePercent + '%</div></div>' +
         '<div class="form-row"><div class="form-group"><label>Owner-Operator</label><input value="' + driver.first_name + ' ' + driver.last_name + '" readonly style="background:var(--bg-card-hover)"></div><div class="form-group"><label>Email</label><input type="email" id="driverEmail" value="' + (driver.email || '') + '" placeholder="owner@email.com"></div></div>' +
         '<div class="form-group"><label>Select Trip(s) for Settlement</label><div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px">' +
         (completedTrips.length === 0 ? '<p style="color:var(--text-muted);text-align:center;padding:20px">No completed trips</p>' :
@@ -24933,13 +24933,13 @@ ${rateText}`
         '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Reg Renewal</label><input type="number" id="settDedReg" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div>' +
         '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Advances</label><input type="number" id="settDedAdvances" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div>' +
         '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Other</label><input type="number" id="settDedOther" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
-        '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #fca5a5"><label style="font-size:11px;color:var(--red);font-weight:600">Custom Deductions:</label></div>' +
+        '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--red-dim)"><label style="font-size:11px;color:var(--red);font-weight:600">Custom Deductions:</label></div>' +
         '<div class="form-row" style="gap:8px;margin-top:4px"><div class="form-group" style="margin-bottom:4px;flex:2"><input type="text" id="settDedCustom1Label" placeholder="Description" style="font-size:12px"></div><div class="form-group" style="margin-bottom:4px;flex:1"><input type="number" id="settDedCustom1" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
         '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:4px;flex:2"><input type="text" id="settDedCustom2Label" placeholder="Description" style="font-size:12px"></div><div class="form-group" style="margin-bottom:4px;flex:1"><input type="number" id="settDedCustom2" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
         '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:4px;flex:2"><input type="text" id="settDedCustom3Label" placeholder="Description" style="font-size:12px"></div><div class="form-group" style="margin-bottom:4px;flex:1"><input type="number" id="settDedCustom3" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
         '<div style="text-align:right;margin-top:8px;font-weight:600;color:var(--red)">Total Deductions: $<span id="totalSettlementDeductions">0.00</span></div></div>' +
 
-        '</div><div class="modal-footer" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" style="background:var(--amber)" onclick="generateSettlement(' + driverId + ', \'print\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/><path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7z"/></svg>Print</button><button class="btn btn-primary" style="background:#059669" onclick="generateSettlement(' + driverId + ', \'email\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>Send Email</button></div></div>';
+        '</div><div class="modal-footer" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" style="background:var(--amber)" onclick="generateSettlement(' + driverId + ', \'print\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/><path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7z"/></svg>Print</button><button class="btn btn-primary" style="background:var(--green)" onclick="generateSettlement(' + driverId + ', \'email\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>Send Email</button></div></div>';
       document.body.appendChild(m);
     }
 
@@ -25802,8 +25802,8 @@ ${rateText}`
     body { 
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
       font-size: 12px; 
-      background: #ffffff;
-      color: #111827;
+      background: var(--bg-card);
+      color: var(--text-primary);
       line-height: 1.4;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
@@ -25812,8 +25812,8 @@ ${rateText}`
     
     /* Header */
     .header {
-      background: #111827;
-      color: #ffffff;
+      background: var(--text-primary);
+      color: white;
       padding: 24px 32px;
       display: flex;
       justify-content: space-between;
@@ -25822,8 +25822,8 @@ ${rateText}`
     .brand { display: flex; align-items: center; gap: 16px; }
     .brand-mark {
       width: 48px; height: 48px;
-      background: #ffffff;
-      color: #111827;
+      background: var(--bg-card);
+      color: var(--text-primary);
       display: flex; align-items: center; justify-content: center;
       font-size: 20px; font-weight: 700;
       letter-spacing: -1px;
@@ -25840,8 +25840,8 @@ ${rateText}`
     
     /* Amount Banner */
     .amount-banner {
-      background: ${netPay >= 0 ? '#047857' : '#b91c1c'};
-      color: #ffffff;
+      background: ${netPay >= 0 ? 'var(--green)' : 'var(--red)'};
+      color: white;
       padding: 28px 32px;
       display: flex;
       justify-content: space-between;
@@ -25851,7 +25851,7 @@ ${rateText}`
     .amount-value { font-size: 36px; font-weight: 700; letter-spacing: -1px; }
     
     /* Content Area */
-    .content { padding: 24px 32px; background: #ffffff; }
+    .content { padding: 24px 32px; background: var(--bg-card); }
     
     /* Driver Section */
     .driver-section {
@@ -25859,15 +25859,15 @@ ${rateText}`
       justify-content: space-between;
       align-items: flex-start;
       padding-bottom: 20px;
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid var(--bg-elevated);
       margin-bottom: 20px;
     }
-    .driver-info h2 { font-size: 16px; font-weight: 600; color: #111827; }
-    .driver-detail { font-size: 12px; color: #6b7280; margin-top: 4px; }
+    .driver-info h2 { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+    .driver-detail { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
     .driver-stats { display: flex; gap: 32px; }
     .stat-block { text-align: right; }
-    .stat-value { font-size: 18px; font-weight: 700; color: #111827; }
-    .stat-label { font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+    .stat-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
     
     /* Summary Grid */
     .summary-grid {
@@ -25877,73 +25877,73 @@ ${rateText}`
       margin-bottom: 24px;
     }
     .summary-item {
-      background: #f9fafb;
-      border: 1px solid #e5e7eb;
+      background: var(--bg-app);
+      border: 1px solid var(--bg-elevated);
       padding: 14px;
       text-align: center;
     }
-    .summary-item.highlight { background: #f0fdf4; border-color: #bbf7d0; }
-    .summary-item.negative { background: #fef2f2; border-color: #fecaca; }
-    .summary-amount { font-size: 18px; font-weight: 700; color: #111827; }
-    .summary-amount.green { color: #047857; }
-    .summary-amount.red { color: #b91c1c; }
-    .summary-label { font-size: 9px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+    .summary-item.highlight { background: var(--green-dim); border-color: var(--green-dim); }
+    .summary-item.negative { background: var(--red-dim); border-color: var(--red-dim); }
+    .summary-amount { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+    .summary-amount.green { color: var(--green); }
+    .summary-amount.red { color: var(--red); }
+    .summary-label { font-size: 9px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
     
     /* Section Headers */
     .section-header {
-      background: #f3f4f6;
+      background: var(--bg-card-hover);
       padding: 10px 16px;
       font-size: 11px;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 1px;
-      color: #374151;
+      color: var(--text-secondary);
       margin: 24px 0 0;
-      border-left: 3px solid #111827;
+      border-left: 3px solid var(--text-primary);
     }
     
     /* Tables */
     table { width: 100%; border-collapse: collapse; margin-top: 0; }
-    thead { background: #f9fafb; }
+    thead { background: var(--bg-app); }
     th { 
       padding: 10px 8px; 
       text-align: left; 
       font-weight: 600; 
-      color: #6b7280;
+      color: var(--text-secondary);
       font-size: 9px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid var(--bg-elevated);
     }
     td { 
       padding: 10px 8px; 
-      border-bottom: 1px solid #f3f4f6;
+      border-bottom: 1px solid var(--bg-card-hover);
       font-size: 11px;
     }
     .text-right { text-align: right; }
     .text-center { text-align: center; }
     .mono { font-family: 'SF Mono', Monaco, 'Courier New', monospace; font-size: 11px; }
-    .text-green { color: #047857; }
-    .text-red { color: #b91c1c; }
-    .text-muted { color: #9ca3af; }
+    .text-green { color: var(--green); }
+    .text-red { color: var(--red); }
+    .text-muted { color: var(--text-muted); }
     .font-medium { font-weight: 500; }
     .font-semibold { font-weight: 600; }
     
-    .total-row { background: #f3f4f6; }
+    .total-row { background: var(--bg-card-hover); }
     .total-row td { font-weight: 600; padding: 12px 8px; border-bottom: none; }
     
     .trip-badge {
       display: inline-block;
-      background: #e5e7eb;
-      color: #374151;
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
       padding: 2px 8px;
       font-size: 10px;
       font-weight: 500;
     }
     .cash-badge {
       display: inline-block;
-      background: #dcfce7;
-      color: #166534;
+      background: var(--green-dim);
+      color: var(--green);
       padding: 2px 8px;
       font-size: 10px;
       font-weight: 500;
@@ -25956,7 +25956,7 @@ ${rateText}`
       gap: 0;
       margin-top: 24px;
     }
-    .col { padding: 16px; border: 1px solid #e5e7eb; }
+    .col { padding: 16px; border: 1px solid var(--bg-elevated); }
     .col:first-child { border-right: none; }
     .col-header {
       font-size: 11px;
@@ -25965,13 +25965,13 @@ ${rateText}`
       letter-spacing: 0.5px;
       padding-bottom: 12px;
       margin-bottom: 12px;
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid var(--bg-elevated);
       display: flex;
       align-items: center;
       gap: 8px;
     }
-    .col-header.red { color: #b91c1c; border-color: #fecaca; }
-    .col-header.green { color: #047857; border-color: #bbf7d0; }
+    .col-header.red { color: var(--red); border-color: var(--red-dim); }
+    .col-header.green { color: var(--green); border-color: var(--green-dim); }
     .col-icon {
       width: 20px; height: 20px;
       display: flex; align-items: center; justify-content: center;
@@ -25982,7 +25982,7 @@ ${rateText}`
       justify-content: space-between;
       padding: 8px 0;
       font-size: 11px;
-      border-bottom: 1px dashed #f3f4f6;
+      border-bottom: 1px dashed var(--bg-card-hover);
     }
     .line-item:last-of-type { border-bottom: none; }
     .line-total {
@@ -25993,12 +25993,12 @@ ${rateText}`
       font-weight: 600;
       font-size: 12px;
     }
-    .line-total.red { background: #fef2f2; color: #b91c1c; }
-    .line-total.green { background: #f0fdf4; color: #047857; }
+    .line-total.red { background: var(--red-dim); color: var(--red); }
+    .line-total.green { background: var(--green-dim); color: var(--green); }
     .empty-state {
       text-align: center;
       padding: 20px;
-      color: #9ca3af;
+      color: var(--text-muted);
       font-size: 11px;
       font-style: italic;
     }
@@ -26006,17 +26006,17 @@ ${rateText}`
     /* Check Stub */
     .check-stub {
       margin-top: 32px;
-      border: 2px solid #111827;
+      border: 2px solid var(--text-primary);
     }
     .check-header {
-      background: #f9fafb;
+      background: var(--bg-app);
       padding: 16px 20px;
       display: flex;
       justify-content: space-between;
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid var(--bg-elevated);
     }
-    .check-company { font-size: 11px; color: #374151; }
-    .check-company strong { display: block; color: #111827; font-size: 12px; margin-bottom: 2px; }
+    .check-company { font-size: 11px; color: var(--text-secondary); }
+    .check-company strong { display: block; color: var(--text-primary); font-size: 12px; margin-bottom: 2px; }
     .check-numbers { text-align: right; font-size: 11px; }
     .check-numbers strong { font-size: 13px; }
     .check-body {
@@ -26025,22 +26025,22 @@ ${rateText}`
       justify-content: space-between;
       align-items: center;
     }
-    .pay-to-label { font-size: 10px; color: #6b7280; text-transform: uppercase; }
-    .pay-to-name { font-size: 16px; font-weight: 700; color: #111827; margin: 4px 0; }
+    .pay-to-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; }
+    .pay-to-name { font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 4px 0; }
     .check-amount-box {
-      background: ${netPay >= 0 ? '#f0fdf4' : '#fef2f2'};
-      border: 2px solid ${netPay >= 0 ? '#047857' : '#b91c1c'};
+      background: ${netPay >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'};
+      border: 2px solid ${netPay >= 0 ? 'var(--green)' : 'var(--red)'};
       padding: 12px 24px;
       text-align: center;
     }
     .check-amount-value {
       font-size: 24px;
       font-weight: 700;
-      color: ${netPay >= 0 ? '#047857' : '#b91c1c'};
+      color: ${netPay >= 0 ? 'var(--green)' : 'var(--red)'};
     }
     .check-footer {
-      background: #111827;
-      color: #ffffff;
+      background: var(--text-primary);
+      color: white;
       padding: 8px 20px;
       display: flex;
       justify-content: space-between;
@@ -26053,10 +26053,10 @@ ${rateText}`
     .footer {
       margin-top: 24px;
       padding-top: 16px;
-      border-top: 1px solid #e5e7eb;
+      border-top: 1px solid var(--bg-elevated);
       text-align: center;
       font-size: 10px;
-      color: #9ca3af;
+      color: var(--text-muted);
     }
     
     /* Print Button */
@@ -26065,8 +26065,8 @@ ${rateText}`
       top: 20px;
       right: 20px;
       padding: 12px 24px;
-      background: #111827;
-      color: #ffffff;
+      background: var(--text-primary);
+      color: white;
       border: none;
       cursor: pointer;
       font-size: 13px;
@@ -26076,7 +26076,7 @@ ${rateText}`
       align-items: center;
       gap: 8px;
     }
-    .print-btn:hover { background: #1f2937; }
+    .print-btn:hover { background: var(--text-primary); }
     
     @media print {
       body { background: white; }
@@ -27174,57 +27174,57 @@ ${rateText}`
 
         // Build email body
         const emailHtml = `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
-            <div style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 32px; text-align: center;">
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: var(--bg-card);">
+            <div style="background: linear-gradient(135deg, var(--amber), var(--amber)); padding: 32px; text-align: center;">
               <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">HORIZON STAR</h1>
               <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0; font-size: 14px;">Transportation Services</p>
             </div>
 
             <div style="padding: 32px;">
-              <h2 style="color: #1f2937; margin: 0 0 8px; font-size: 22px;">Invoice Attached</h2>
-              <p style="color: #6b7280; margin: 0 0 24px; font-size: 14px;">Please find your invoice attached to this email.</p>
+              <h2 style="color: var(--text-primary); margin: 0 0 8px; font-size: 22px;">Invoice Attached</h2>
+              <p style="color: var(--text-secondary); margin: 0 0 24px; font-size: 14px;">Please find your invoice attached to this email.</p>
 
-              <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+              <div style="background: var(--amber-dim); border: 1px solid var(--amber-dim); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
                 <table style="width: 100%; border-collapse: collapse;">
                   <tr>
-                    <td style="padding: 8px 0; color: #92400e; font-size: 14px;">Invoice Number</td>
-                    <td style="padding: 8px 0; color: #78350f; font-weight: 600; text-align: right;">INV-${order.order_number || 'N/A'}</td>
+                    <td style="padding: 8px 0; color: var(--amber); font-size: 14px;">Invoice Number</td>
+                    <td style="padding: 8px 0; color: var(--amber); font-weight: 600; text-align: right;">INV-${order.order_number || 'N/A'}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 8px 0; color: #92400e; font-size: 14px;">Order Number</td>
-                    <td style="padding: 8px 0; color: #78350f; font-weight: 600; text-align: right;">${order.order_number || 'N/A'}</td>
+                    <td style="padding: 8px 0; color: var(--amber); font-size: 14px;">Order Number</td>
+                    <td style="padding: 8px 0; color: var(--amber); font-weight: 600; text-align: right;">${order.order_number || 'N/A'}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 8px 0; color: #92400e; font-size: 14px;">Vehicle</td>
-                    <td style="padding: 8px 0; color: #78350f; font-weight: 600; text-align: right;">${order.vehicle_year || ''} ${order.vehicle_make || ''} ${order.vehicle_model || ''}</td>
+                    <td style="padding: 8px 0; color: var(--amber); font-size: 14px;">Vehicle</td>
+                    <td style="padding: 8px 0; color: var(--amber); font-weight: 600; text-align: right;">${order.vehicle_year || ''} ${order.vehicle_make || ''} ${order.vehicle_model || ''}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 8px 0; color: #92400e; font-size: 14px;">Route</td>
-                    <td style="padding: 8px 0; color: #78350f; font-weight: 600; text-align: right;">${order.origin || order.pickup_state || ''} → ${order.destination || order.delivery_state || ''}</td>
+                    <td style="padding: 8px 0; color: var(--amber); font-size: 14px;">Route</td>
+                    <td style="padding: 8px 0; color: var(--amber); font-weight: 600; text-align: right;">${order.origin || order.pickup_state || ''} → ${order.destination || order.delivery_state || ''}</td>
                   </tr>
-                  <tr style="border-top: 2px solid #fde68a;">
-                    <td style="padding: 12px 0 8px; color: #92400e; font-size: 16px; font-weight: 600;">Amount Due</td>
-                    <td style="padding: 12px 0 8px; color: #b45309; font-weight: 700; text-align: right; font-size: 20px;">${fmtMoney(amountDue)}</td>
+                  <tr style="border-top: 2px solid var(--amber-dim);">
+                    <td style="padding: 12px 0 8px; color: var(--amber); font-size: 16px; font-weight: 600;">Amount Due</td>
+                    <td style="padding: 12px 0 8px; color: var(--amber); font-weight: 700; text-align: right; font-size: 20px;">${fmtMoney(amountDue)}</td>
                   </tr>
                 </table>
               </div>
 
-              <div style="background: #f3f4f6; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
-                <h3 style="color: #374151; margin: 0 0 12px; font-size: 14px; font-weight: 600;">Payment Information</h3>
-                <p style="color: #6b7280; margin: 0; font-size: 13px; line-height: 1.6;">
+              <div style="background: var(--bg-card-hover); border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+                <h3 style="color: var(--text-secondary); margin: 0 0 12px; font-size: 14px; font-weight: 600;">Payment Information</h3>
+                <p style="color: var(--text-secondary); margin: 0; font-size: 13px; line-height: 1.6;">
                   <strong>Make checks payable to:</strong> Horizon Star, LLC<br>
                   <strong>Mail to:</strong> 118 Mary Ambler Way, Ambler, PA 19002<br>
                   <strong>Questions?</strong> billing@horizonstarllc.com | (267) 334-1834
                 </p>
               </div>
 
-              <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
+              <p style="color: var(--text-muted); font-size: 12px; text-align: center; margin: 0;">
                 Thank you for your business!
               </p>
             </div>
 
-            <div style="background: #1f2937; padding: 20px; text-align: center;">
-              <p style="color: #9ca3af; margin: 0; font-size: 12px;">
+            <div style="background: var(--text-primary); padding: 20px; text-align: center;">
+              <p style="color: var(--text-muted); margin: 0; font-size: 12px;">
                 Horizon Star, LLC | 118 Mary Ambler Way, Ambler, PA 19002<br>
                 (267) 334-1834 | billing@horizonstarllc.com
               </p>
@@ -27667,30 +27667,30 @@ ${rateText}`
             subject: 'Tracking Link - Order ' + order.order_number,
             from_name: 'Horizon Star Transport',
             html: '<div style="font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif; max-width: 600px; margin: 0 auto;">' +
-              '<div style="background: linear-gradient(135deg, #3b82f6, #2563eb); padding: 24px; text-align: center;">' +
+              '<div style="background: linear-gradient(135deg, var(--blue), var(--blue)); padding: 24px; text-align: center;">' +
                 '<h1 style="color: white; margin: 0; font-size: 24px;">HORIZON STAR</h1>' +
                 '<p style="color: rgba(255,255,255,0.9); margin: 8px 0 0;">Live Tracking Available</p>' +
               '</div>' +
-              '<div style="padding: 24px; background: #f8fafc;">' +
-                '<p style="color: #1e293b; font-size: 16px; margin-bottom: 20px;">Your shipment is ready to track! Click the button below to view real-time status updates.</p>' +
+              '<div style="padding: 24px; background: var(--bg-app);">' +
+                '<p style="color: var(--bg-elevated); font-size: 16px; margin-bottom: 20px;">Your shipment is ready to track! Click the button below to view real-time status updates.</p>' +
                 '<div style="background: white; border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 20px;">' +
                   '<table style="width: 100%; border-collapse: collapse;">' +
-                    '<tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Order #</td>' +
-                    '<td style="padding: 8px 0; color: #1e293b; font-weight: 600; text-align: right;">' + order.order_number + '</td></tr>' +
-                    '<tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Vehicle</td>' +
-                    '<td style="padding: 8px 0; color: #1e293b; font-weight: 600; text-align: right;">' + (order.vehicle_year || '') + ' ' + (order.vehicle_make || '') + ' ' + (order.vehicle_model || '') + '</td></tr>' +
-                    '<tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Route</td>' +
-                    '<td style="padding: 8px 0; color: #1e293b; font-weight: 600; text-align: right;">' + (order.origin || order.pickup_state || 'Origin') + ' → ' + (order.destination || order.delivery_state || 'Destination') + '</td></tr>' +
-                    (driver ? '<tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Driver</td>' +
-                    '<td style="padding: 8px 0; color: #1e293b; font-weight: 600; text-align: right;">' + driver.first_name + ' ' + driver.last_name + '</td></tr>' : '') +
+                    '<tr><td style="padding: 8px 0; color: var(--text-secondary); font-size: 14px;">Order #</td>' +
+                    '<td style="padding: 8px 0; color: var(--bg-elevated); font-weight: 600; text-align: right;">' + order.order_number + '</td></tr>' +
+                    '<tr><td style="padding: 8px 0; color: var(--text-secondary); font-size: 14px;">Vehicle</td>' +
+                    '<td style="padding: 8px 0; color: var(--bg-elevated); font-weight: 600; text-align: right;">' + (order.vehicle_year || '') + ' ' + (order.vehicle_make || '') + ' ' + (order.vehicle_model || '') + '</td></tr>' +
+                    '<tr><td style="padding: 8px 0; color: var(--text-secondary); font-size: 14px;">Route</td>' +
+                    '<td style="padding: 8px 0; color: var(--bg-elevated); font-weight: 600; text-align: right;">' + (order.origin || order.pickup_state || 'Origin') + ' → ' + (order.destination || order.delivery_state || 'Destination') + '</td></tr>' +
+                    (driver ? '<tr><td style="padding: 8px 0; color: var(--text-secondary); font-size: 14px;">Driver</td>' +
+                    '<td style="padding: 8px 0; color: var(--bg-elevated); font-weight: 600; text-align: right;">' + driver.first_name + ' ' + driver.last_name + '</td></tr>' : '') +
                   '</table>' +
                 '</div>' +
                 '<div style="text-align: center; margin: 24px 0;">' +
-                  '<a href="' + trackingUrl + '" style="display: inline-block; background: #3b82f6; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">View Live Tracking</a>' +
+                  '<a href="' + trackingUrl + '" style="display: inline-block; background: var(--blue); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">View Live Tracking</a>' +
                 '</div>' +
-                '<p style="color: #64748b; font-size: 13px; text-align: center;">Or copy this link: <a href="' + trackingUrl + '" style="color: #3b82f6;">' + trackingUrl + '</a></p>' +
+                '<p style="color: var(--text-secondary); font-size: 13px; text-align: center;">Or copy this link: <a href="' + trackingUrl + '" style="color: var(--blue);">' + trackingUrl + '</a></p>' +
               '</div>' +
-              '<div style="background: #1e293b; padding: 20px; text-align: center;">' +
+              '<div style="background: var(--bg-elevated); padding: 20px; text-align: center;">' +
                 '<p style="color: var(--text-muted); font-size: 13px; margin: 0 0 8px;">Questions? Contact our dispatch team</p>' +
                 '<p style="color: white; font-size: 14px; margin: 0;"><strong>(267) 334-1834</strong> | dispatch@horizonstarllc.com</p>' +
               '</div>' +
@@ -27822,26 +27822,26 @@ ${rateText}`
       // Determine status
       let status = 'pending';
       let statusLabel = 'Pending';
-      let statusColor = '#64748b';
-      let statusBg = 'linear-gradient(135deg, #64748b, #475569)';
+      let statusColor = 'var(--text-secondary)';
+      let statusBg = 'linear-gradient(135deg, var(--text-secondary), var(--text-secondary))';
 
       if (order) {
         const deliveryStatus = order.delivery_status?.toLowerCase();
         if (deliveryStatus === 'delivered') {
           status = 'delivered';
           statusLabel = 'Delivered';
-          statusColor = '#22c55e';
-          statusBg = 'linear-gradient(135deg, #22c55e, #16a34a)';
+          statusColor = 'var(--green)';
+          statusBg = 'linear-gradient(135deg, var(--green), var(--green))';
         } else if (deliveryStatus === 'picked_up' || trip) {
           status = 'in_transit';
           statusLabel = 'In Transit';
-          statusColor = '#3b82f6';
-          statusBg = 'linear-gradient(135deg, #3b82f6, #2563eb)';
+          statusColor = 'var(--blue)';
+          statusBg = 'linear-gradient(135deg, var(--blue), var(--blue))';
         } else if (order.trip_id) {
           status = 'assigned';
           statusLabel = 'Assigned';
-          statusColor = '#f59e0b';
-          statusBg = 'linear-gradient(135deg, #f59e0b, #d97706)';
+          statusColor = 'var(--amber)';
+          statusBg = 'linear-gradient(135deg, var(--amber), var(--amber))';
         }
       }
 
@@ -27945,12 +27945,12 @@ ${rateText}`
               font-weight: 600;
             }
             .tracking-refresh-note {
-              background: #eff6ff;
-              border: 1px solid #bfdbfe;
+              background: var(--blue-dim);
+              border: 1px solid var(--blue-dim);
               border-radius: 8px;
               padding: 12px 16px;
               font-size: 13px;
-              color: #1e40af;
+              color: var(--blue);
               text-align: center;
               margin-bottom: 24px;
             }
@@ -28009,8 +28009,8 @@ ${rateText}`
               border-radius: 20px;
               font-size: 12px;
               font-weight: 600;
-              background: ${status === 'delivered' ? '#dcfce7' : status === 'in_transit' ? '#dbeafe' : '#fef3c7'};
-              color: ${status === 'delivered' ? '#166534' : status === 'in_transit' ? '#1d4ed8' : '#92400e'};
+              background: ${status === 'delivered' ? 'var(--green-dim)' : status === 'in_transit' ? 'var(--blue-dim)' : 'var(--amber-dim)'};
+              color: ${status === 'delivered' ? 'var(--green)' : status === 'in_transit' ? 'var(--blue)' : 'var(--amber)'};
             }
             .tracking-timeline {
               position: relative;
@@ -28043,10 +28043,10 @@ ${rateText}`
               border: 3px solid var(--bg-card);
             }
             .tracking-timeline-dot.completed {
-              background: #22c55e;
+              background: var(--green);
             }
             .tracking-timeline-dot.current {
-              background: #3b82f6;
+              background: var(--blue);
               box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
             }
             .tracking-timeline-content {
@@ -28065,13 +28065,13 @@ ${rateText}`
             }
             .tracking-timeline-date {
               font-size: 12px;
-              color: #22c55e;
+              color: var(--green);
               margin-top: 4px;
               font-weight: 500;
             }
             .tracking-timeline-eta {
               font-size: 12px;
-              color: #f59e0b;
+              color: var(--amber);
               margin-top: 4px;
               font-weight: 500;
             }
@@ -28615,19 +28615,19 @@ ${rateText}`
     function renderFinOverview(totalRevenue, cleanRevenue, grossProfit, operatingProfit, netProfit, profitMargin, totalCars, totalMiles, tripCount, monthlyFixedCosts, totalVariableCosts, totalDriverPay, totalBrokerFees, totalLocalFees, totalTripExpenses, profitPerCar, profitPerMile, revenuePerMile, avgRevenuePerCar) {
       return `
         <div class="stats-grid" style="margin-bottom:24px;">
-          <div class="stat-card" style="border-left:4px solid #22c55e">
+          <div class="stat-card" style="border-left:4px solid var(--green)">
             <div class="label">Total Revenue</div>
             <div class="value" style="color:var(--green)">${formatMoney(totalRevenue)}</div>
             <div style="font-size:12px;color:var(--text-muted);margin-top:4px">${totalCars} cars • ${tripCount} trips</div>
           </div>
-          <div class="stat-card" style="border-left:4px solid #3b82f6">
+          <div class="stat-card" style="border-left:4px solid var(--blue)">
             <div class="label">Clean Revenue</div>
             <div class="value" style="color:var(--blue)">${formatMoney(cleanRevenue)}</div>
             <div style="font-size:12px;color:var(--text-muted);margin-top:4px">After broker & local fees</div>
           </div>
-          <div class="stat-card" style="border-left:4px solid ${netProfit >= 0 ? '#22c55e' : '#ef4444'}">
+          <div class="stat-card" style="border-left:4px solid ${netProfit >= 0 ? 'var(--green)' : 'var(--red)'}">
             <div class="label">Net Profit</div>
-            <div class="value" style="color:${netProfit >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(netProfit)}</div>
+            <div class="value" style="color:${netProfit >= 0 ? 'var(--green)' : 'var(--red)'}">${formatMoney(netProfit)}</div>
             <div style="font-size:12px;color:var(--text-muted);margin-top:4px">${profitMargin.toFixed(1)}% margin</div>
           </div>
           <div class="stat-card">
@@ -28686,7 +28686,7 @@ ${rateText}`
               <div style="font-size:13px;color:var(--text-muted);margin-top:4px">Profit / Mile</div>
             </div>
             <div style="text-align:center;padding:16px;background:var(--bg-app);border-radius:8px;">
-              <div style="font-size:24px;font-weight:700;color:#8b5cf6">${formatMoney(avgRevenuePerCar)}</div>
+              <div style="font-size:24px;font-weight:700;color:var(--purple)">${formatMoney(avgRevenuePerCar)}</div>
               <div style="font-size:13px;color:var(--text-muted);margin-top:4px">Avg Revenue / Car</div>
             </div>
             <div style="text-align:center;padding:16px;background:var(--bg-app);border-radius:8px;">
@@ -28715,11 +28715,11 @@ ${rateText}`
 
       return `
         <div class="stats-grid" style="margin-bottom:24px;">
-          <div class="stat-card" style="border-left:4px solid #ef4444">
+          <div class="stat-card" style="border-left:4px solid var(--red)">
             <div class="label">Monthly Fixed Costs</div>
             <div class="value" style="color:var(--red)">${formatMoney(monthlyFixedCosts)}</div>
           </div>
-          <div class="stat-card" style="border-left:4px solid #f59e0b">
+          <div class="stat-card" style="border-left:4px solid var(--amber)">
             <div class="label">Total Variable Costs</div>
             <div class="value" style="color:var(--amber)">${formatMoney(totalVariableCosts)}</div>
           </div>
@@ -28734,7 +28734,7 @@ ${rateText}`
         </div>
 
         <!-- Fuel Card Expenses Card -->
-        <div class="card" style="margin-bottom:24px;border-left:4px solid #dc2626">
+        <div class="card" style="margin-bottom:24px;border-left:4px solid var(--red)">
           <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
             <h3>⛽ Fuel Card Expenses</h3>
             <div style="font-size:24px;font-weight:700;color:var(--red)">${formatMoney(totalFuelFromRecords)}</div>
@@ -28808,7 +28808,7 @@ ${rateText}`
               <td class="money">${formatMoney(fin.loadRevenue)}</td>
               <td class="money negative">${formatMoney(fin.brokerFee + fin.localFees)}</td>
               <td class="money negative">${formatMoney(fin.driverCut + fin.totalExpenses)}</td>
-              <td class="money ${profit >= 0 ? '' : 'negative'}" style="font-weight:700;color:${profit >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(profit)}</td>
+              <td class="money ${profit >= 0 ? '' : 'negative'}" style="font-weight:700;color:${profit >= 0 ? 'var(--green)' : 'var(--red)'}">${formatMoney(profit)}</td>
             </tr>`;
           }).join('');
       
@@ -28854,7 +28854,7 @@ ${rateText}`
             <td>${d.miles.toLocaleString()}</td>
             <td class="money">${formatMoney(d.revenue)}</td>
             <td class="money">${formatMoney(d.driverPay)}</td>
-            <td class="money ${d.profit >= 0 ? '' : 'negative'}" style="font-weight:700;color:${d.profit >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(d.profit)}</td>
+            <td class="money ${d.profit >= 0 ? '' : 'negative'}" style="font-weight:700;color:${d.profit >= 0 ? 'var(--green)' : 'var(--red)'}">${formatMoney(d.profit)}</td>
             <td>${d.cars > 0 ? formatMoney(d.profit / d.cars) : '-'}</td>
           </tr>`).join('');
       
@@ -29151,14 +29151,14 @@ ${rateText}`
 
         <!-- Summary Stats -->
         <div class="stats-grid" style="margin-bottom:24px">
-          <div class="stat-card" style="border-left:4px solid #22c55e">
+          <div class="stat-card" style="border-left:4px solid var(--green)">
             <div class="label">Total Revenue</div>
             <div class="value" style="color:var(--green)">${formatMoney(totalRevenue)}</div>
             <div style="font-size:12px;color:var(--text-muted);margin-top:4px">${displayData.length} trips</div>
           </div>
-          <div class="stat-card" style="border-left:4px solid ${totalProfit >= 0 ? '#22c55e' : '#ef4444'}">
+          <div class="stat-card" style="border-left:4px solid ${totalProfit >= 0 ? 'var(--green)' : 'var(--red)'}">
             <div class="label">Net Profit</div>
-            <div class="value" style="color:${totalProfit >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(totalProfit)}</div>
+            <div class="value" style="color:${totalProfit >= 0 ? 'var(--green)' : 'var(--red)'}">${formatMoney(totalProfit)}</div>
             <div style="font-size:12px;color:var(--text-muted);margin-top:4px">${avgMargin.toFixed(1)}% margin</div>
           </div>
           <div class="stat-card">
@@ -29175,16 +29175,16 @@ ${rateText}`
 
         <!-- Best/Worst Performers -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
-          <div class="card" style="border-left:4px solid #22c55e">
+          <div class="card" style="border-left:4px solid var(--green)">
             <div class="card-header"><h3>Top 5 Most Profitable</h3></div>
             <div style="padding:12px">
               ${top5.length === 0 ? '<div style="text-align:center;color:var(--text-muted);padding:20px">No data</div>' : top5.map(d => '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-weight:600">' + d.trip.trip_number + '</span><span style="color:var(--green);font-weight:700">' + formatMoney(d.fin.netProfit) + ' (' + d.margin.toFixed(1) + '%)</span></div>').join('')}
             </div>
           </div>
-          <div class="card" style="border-left:4px solid #ef4444">
+          <div class="card" style="border-left:4px solid var(--red)">
             <div class="card-header"><h3>Bottom 5 Performers</h3></div>
             <div style="padding:12px">
-              ${bottom5.length === 0 ? '<div style="text-align:center;color:var(--text-muted);padding:20px">No data</div>' : bottom5.map(d => '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-weight:600">' + d.trip.trip_number + '</span><span style="color:' + (d.fin.netProfit >= 0 ? '#f59e0b' : '#ef4444') + ';font-weight:700">' + formatMoney(d.fin.netProfit) + ' (' + d.margin.toFixed(1) + '%)</span></div>').join('')}
+              ${bottom5.length === 0 ? '<div style="text-align:center;color:var(--text-muted);padding:20px">No data</div>' : bottom5.map(d => '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-weight:600">' + d.trip.trip_number + '</span><span style="color:' + (d.fin.netProfit >= 0 ? 'var(--amber)' : 'var(--red)') + ';font-weight:700">' + formatMoney(d.fin.netProfit) + ' (' + d.margin.toFixed(1) + '%)</span></div>').join('')}
             </div>
           </div>
         </div>
@@ -29227,8 +29227,8 @@ ${rateText}`
                     '<td class="money" style="color:var(--red)">' + formatMoney(d.fin.brokerFee) + '</td>' +
                     '<td class="money" style="color:var(--red)">' + formatMoney(d.fin.driverCut) + '</td>' +
                     '<td class="money" style="color:var(--red)">' + formatMoney(d.fin.totalExpenses) + '</td>' +
-                    '<td class="money" style="font-weight:700;color:' + (d.isProfitable ? '#22c55e' : '#ef4444') + '">' + formatMoney(d.fin.netProfit) + '</td>' +
-                    '<td style="color:' + (d.margin >= 20 ? '#22c55e' : d.margin >= 0 ? '#f59e0b' : '#ef4444') + '">' + d.margin.toFixed(1) + '%</td>' +
+                    '<td class="money" style="font-weight:700;color:' + (d.isProfitable ? 'var(--green)' : 'var(--red)') + '">' + formatMoney(d.fin.netProfit) + '</td>' +
+                    '<td style="color:' + (d.margin >= 20 ? 'var(--green)' : d.margin >= 0 ? 'var(--amber)' : 'var(--red)') + '">' + d.margin.toFixed(1) + '%</td>' +
                     '<td><button class="action-btn" onclick="showTripProfitDetailModal(' + d.trip.id + ')">Details</button></td>' +
                   '</tr>';
                 }).join('')}
@@ -29290,7 +29290,7 @@ ${rateText}`
           <div class="modal-body" style="padding:20px">
             <div style="display:grid;grid-template-columns:repeat(${trips.length}, 1fr);gap:16px;margin-bottom:24px">
               ${trips.map(t => `
-                <div class="card" style="border-top:4px solid ${t.fin.netProfit >= 0 ? '#22c55e' : '#ef4444'}">
+                <div class="card" style="border-top:4px solid ${t.fin.netProfit >= 0 ? 'var(--green)' : 'var(--red)'}">
                   <div class="card-header"><h3>${t.trip.trip_number}</h3></div>
                   <div style="padding:16px">
                     <div style="margin-bottom:12px"><strong>Date:</strong> ${formatDate(t.trip.trip_date)}</div>
@@ -29304,7 +29304,7 @@ ${rateText}`
                     <div style="margin-bottom:8px"><strong>Driver Pay:</strong> <span style="color:var(--red)">${formatMoney(t.fin.driverCut)}</span></div>
                     <div style="margin-bottom:8px"><strong>Expenses:</strong> <span style="color:var(--red)">${formatMoney(t.fin.totalExpenses)}</span></div>
                     <hr style="margin:16px 0">
-                    <div style="font-size:18px;font-weight:700;color:${t.fin.netProfit >= 0 ? '#22c55e' : '#ef4444'}">
+                    <div style="font-size:18px;font-weight:700;color:${t.fin.netProfit >= 0 ? 'var(--green)' : 'var(--red)'}">
                       Net Profit: ${formatMoney(t.fin.netProfit)}
                     </div>
                     <div style="margin-top:8px;color:var(--text-muted)">
@@ -29324,7 +29324,7 @@ ${rateText}`
                 </div>
                 <div style="text-align:center;padding:16px;background:var(--card-bg);border-radius:8px">
                   <div style="font-size:12px;color:var(--text-muted)">Avg Profit</div>
-                  <div style="font-size:20px;font-weight:700;color:${avgProfit >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(avgProfit)}</div>
+                  <div style="font-size:20px;font-weight:700;color:${avgProfit >= 0 ? 'var(--green)' : 'var(--red)'}">${formatMoney(avgProfit)}</div>
                 </div>
                 <div style="text-align:center;padding:16px;background:var(--card-bg);border-radius:8px">
                   <div style="font-size:12px;color:var(--text-muted)">Avg Margin</div>
@@ -29356,7 +29356,7 @@ ${rateText}`
       modal.onclick = e => { if (e.target === modal) modal.remove(); };
       modal.innerHTML = `
         <div class="modal" style="max-width:800px;max-height:90vh;overflow-y:auto">
-          <div class="modal-header" style="background:${fin.netProfit >= 0 ? '#dcfce7' : '#fee2e2'}">
+          <div class="modal-header" style="background:${fin.netProfit >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'}">
             <h3>Trip Report: ${trip.trip_number}</h3>
             <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
           </div>
@@ -29380,9 +29380,9 @@ ${rateText}`
                 <div style="font-size:12px;color:var(--text-muted)">Miles</div>
                 <div style="font-size:16px;font-weight:600">${miles.toLocaleString()}</div>
               </div>
-              <div style="text-align:center;padding:16px;background:var(--amber-dim);border-radius:8px;border:2px solid #f59e0b">
+              <div style="text-align:center;padding:16px;background:var(--amber-dim);border-radius:8px;border:2px solid var(--amber)">
                 <div style="font-size:12px;color:var(--amber)">Driver Cut</div>
-                <div style="font-size:16px;font-weight:600;color:#b45309">${trip.driver_cut_percent || 32}%</div>
+                <div style="font-size:16px;font-weight:600;color:var(--amber)">${trip.driver_cut_percent || 32}%</div>
               </div>
             </div>
 
@@ -29414,9 +29414,9 @@ ${rateText}`
                   <span style="color:var(--red)">− Trip Expenses</span>
                   <span style="color:var(--red)">${formatMoney(fin.totalExpenses)}</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;padding:16px 0;margin-top:8px;background:${fin.netProfit >= 0 ? '#dcfce7' : '#fee2e2'};margin:8px -20px -20px -20px;padding:16px 20px;border-radius:0 0 8px 8px">
+                <div style="display:flex;justify-content:space-between;padding:16px 0;margin-top:8px;background:${fin.netProfit >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'};margin:8px -20px -20px -20px;padding:16px 20px;border-radius:0 0 8px 8px">
                   <strong style="font-size:18px">NET PROFIT</strong>
-                  <strong style="font-size:18px;color:${fin.netProfit >= 0 ? '#16a34a' : '#dc2626'}">${formatMoney(fin.netProfit)} (${margin.toFixed(1)}%)</strong>
+                  <strong style="font-size:18px;color:${fin.netProfit >= 0 ? 'var(--green)' : 'var(--red)'}">${formatMoney(fin.netProfit)} (${margin.toFixed(1)}%)</strong>
                 </div>
               </div>
             </div>
@@ -29584,8 +29584,8 @@ ${rateText}`
       const totalMonthly = costs.reduce((s, fc) => s + parseFloat(fc.amount || 0), 0);
       
       c.innerHTML = '<div class="header"><h2>🏢 Fixed Costs (Monthly)</h2><div style="display:flex;gap:12px"><button class="btn btn-secondary" onclick="openSetupWizard()">🧙‍♂️ Setup Wizard</button><button class="btn btn-primary" onclick="openFixedCostModal()">+ Add Fixed Cost</button></div></div>' +
-        '<div style="background:var(--blue-dim);border:1px solid #93c5fd;border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:#1d4ed8">💡 Fixed Costs</strong><p style="color:#1e40af;margin-top:8px">Enter your monthly fixed business expenses here. These will be included in the Financial Analysis report.</p></div>' +
-        '<div class="stats-grid" style="margin-bottom:24px"><div class="stat-card" style="border-left:4px solid #ef4444"><div class="label">Total Monthly Fixed Costs</div><div class="value" style="color:var(--red)">' + formatMoney(totalMonthly) + '</div></div><div class="stat-card"><div class="label">Annual Fixed Costs</div><div class="value">' + formatMoney(totalMonthly * 12) + '</div></div></div>' +
+        '<div style="background:var(--blue-dim);border:1px solid var(--blue-dim);border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--blue)">💡 Fixed Costs</strong><p style="color:var(--blue);margin-top:8px">Enter your monthly fixed business expenses here. These will be included in the Financial Analysis report.</p></div>' +
+        '<div class="stats-grid" style="margin-bottom:24px"><div class="stat-card" style="border-left:4px solid var(--red)"><div class="label">Total Monthly Fixed Costs</div><div class="value" style="color:var(--red)">' + formatMoney(totalMonthly) + '</div></div><div class="stat-card"><div class="label">Annual Fixed Costs</div><div class="value">' + formatMoney(totalMonthly * 12) + '</div></div></div>' +
         '<div class="card"><div class="table-wrapper"><table><thead><tr><th>Category</th><th>Name</th><th>Monthly Amount</th><th>Actions</th></tr></thead><tbody>' +
         (costs.length === 0 ? '<tr><td colspan="4" style="text-align:center;padding:40px"><div style="margin-bottom:16px">No fixed costs yet.</div><button class="btn btn-primary" onclick="openSetupWizard()" style="font-size:16px;padding:12px 24px">🧙‍♂️ Start Setup Wizard</button><div style="margin-top:12px;color:var(--text-muted);font-size:13px">Walk through entering all your expenses step-by-step</div></td></tr>' :
         costs.map(fc => '<tr><td><span class="badge badge-blue">' + (fc.category || 'OTHER') + '</span></td><td><strong>' + fc.name + '</strong></td><td class="money">' + formatMoney(fc.amount) + '</td><td><div class="actions"><button class="action-btn edit" onclick="openFixedCostModal(' + fc.id + ')">Edit</button><button class="action-btn delete" onclick="deleteFixedCost(' + fc.id + ')">Del</button></div></td></tr>').join('')) +
@@ -29679,19 +29679,19 @@ ${rateText}`
       
       c.innerHTML = '<div class="header"><h2>📊 Variable Costs</h2><button class="btn btn-primary" onclick="openVariableCostModal()">+ Add Expense</button></div>' +
         
-        '<div style="background:var(--amber-dim);border:1px solid #fcd34d;border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--amber)">💡 Variable Costs</strong><p style="color:#a16207;margin-top:8px">Track expenses that vary based on operations: tolls, lumper fees, DEF, parking, etc. These are included in the Profitability Dashboard.</p></div>' +
+        '<div style="background:var(--amber-dim);border:1px solid var(--amber);border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--amber)">💡 Variable Costs</strong><p style="color:var(--amber);margin-top:8px">Track expenses that vary based on operations: tolls, lumper fees, DEF, parking, etc. These are included in the Profitability Dashboard.</p></div>' +
         
         // Period Filter
         '<div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap">' +
         '<button class="btn ' + (varCostFilter === 'all' ? 'btn-primary' : 'btn-secondary') + '" onclick="setVarCostFilter(\'all\')">All Time</button>' +
         '<button class="btn ' + (varCostFilter === 'month' ? 'btn-primary' : 'btn-secondary') + '" onclick="setVarCostFilter(\'month\')">By Month</button>' +
-        (varCostFilter === 'month' ? '<select onchange="setVarCostMonth(this.value)" style="padding:8px;border-radius:6px;border:1px solid #d1d5db">' + months.slice(1).map((m, i) => '<option value="' + (i + 1) + '"' + (varCostMonth === i + 1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select>' +
-        '<select onchange="setVarCostYear(this.value)" style="padding:8px;border-radius:6px;border:1px solid #d1d5db">' + [2023, 2024, 2025, 2026, 2027].map(y => '<option value="' + y + '"' + (varCostYear === y ? ' selected' : '') + '>' + y + '</option>').join('') + '</select>' : '') +
+        (varCostFilter === 'month' ? '<select onchange="setVarCostMonth(this.value)" style="padding:8px;border-radius:6px;border:1px solid var(--bg-elevated)">' + months.slice(1).map((m, i) => '<option value="' + (i + 1) + '"' + (varCostMonth === i + 1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select>' +
+        '<select onchange="setVarCostYear(this.value)" style="padding:8px;border-radius:6px;border:1px solid var(--bg-elevated)">' + [2023, 2024, 2025, 2026, 2027].map(y => '<option value="' + y + '"' + (varCostYear === y ? ' selected' : '') + '>' + y + '</option>').join('') + '</select>' : '') +
         '</div>' +
         
         // Stats
         '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px">' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:130px;padding:12px 16px;border-left:4px solid #f59e0b"><div class="label">' + (varCostFilter === 'all' ? 'All Time' : months[varCostMonth] + ' ' + varCostYear) + ' Total</div><div class="value" style="color:#d97706">' + formatMoney(totalFiltered) + '</div></div>' +
+        '<div class="stat-card" style="flex:0 0 auto;min-width:130px;padding:12px 16px;border-left:4px solid var(--amber)"><div class="label">' + (varCostFilter === 'all' ? 'All Time' : months[varCostMonth] + ' ' + varCostYear) + ' Total</div><div class="value" style="color:var(--amber)">' + formatMoney(totalFiltered) + '</div></div>' +
         '<div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Total Entries</div><div class="value">' + filtered.length + '</div></div>' +
         '<div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px"><div class="label">All Time Total</div><div class="value">' + formatMoney(totalAll) + '</div></div>' +
         '</div>' +
@@ -29705,7 +29705,7 @@ ${rateText}`
         sorted.map(vc => {
           const cat = variableCostCategories.find(c => c.id === vc.category) || { icon: '📝', name: vc.category };
           const truck = appData.trucks.find(t => t.id === vc.truck_id);
-          return '<tr><td>' + formatDate(vc.date) + '</td><td>' + cat.icon + ' ' + cat.name + '</td><td>' + (truck ? '#' + truck.truck_number : '-') + '</td><td class="money" style="color:#d97706;font-weight:600">' + formatMoney(vc.amount) + '</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (vc.notes || '-') + '</td><td class="sticky-col"><div class="actions"><button class="action-btn edit" onclick="openVariableCostModal(' + vc.id + ')">Edit</button><button class="action-btn delete" onclick="deleteVariableCost(' + vc.id + ')">Del</button></div></td></tr>';
+          return '<tr><td>' + formatDate(vc.date) + '</td><td>' + cat.icon + ' ' + cat.name + '</td><td>' + (truck ? '#' + truck.truck_number : '-') + '</td><td class="money" style="color:var(--amber);font-weight:600">' + formatMoney(vc.amount) + '</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (vc.notes || '-') + '</td><td class="sticky-col"><div class="actions"><button class="action-btn edit" onclick="openVariableCostModal(' + vc.id + ')">Edit</button><button class="action-btn delete" onclick="deleteVariableCost(' + vc.id + ')">Del</button></div></td></tr>';
         }).join('')) +
         '</tbody></table></div></div>';
     }
