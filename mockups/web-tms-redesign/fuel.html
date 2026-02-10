@@ -1,0 +1,1890 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon Star TMS — Fuel Tracking</title>
+
+  <!-- FART prevention: set theme before CSS loads -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('tms-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared.css">
+
+  <style>
+    /* Page-specific styles for Fuel Tracking */
+
+    /* Samsara status banner */
+    .samsara-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: rgba(59, 130, 246, 0.08);
+      border: 2px solid var(--blue);
+      border-radius: var(--radius);
+      margin-bottom: 24px;
+    }
+
+    .samsara-banner-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .samsara-banner-icon {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--blue);
+      border-radius: 8px;
+      color: white;
+    }
+
+    .samsara-banner-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .samsara-banner-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .samsara-banner-subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* Filter row */
+    .filter-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      padding: 16px;
+      background: var(--bg-elevated);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .filter-row label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .filter-row select {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-row select:hover {
+      border-color: var(--green);
+    }
+
+    /* Stat card grid */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .fuel-stat-card {
+      background: var(--bg-card);
+      padding: 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .fuel-stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .fuel-stat-card.border-green {
+      border-left: 4px solid var(--green);
+    }
+
+    .fuel-stat-card.border-red {
+      border-left: 4px solid var(--red);
+    }
+
+    .fuel-stat-card.border-amber {
+      border-left: 4px solid var(--amber);
+    }
+
+    .fuel-stat-card.border-blue {
+      border-left: 4px solid var(--blue);
+    }
+
+    .fuel-stat-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .fuel-stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .fuel-stat-value.mono {
+      font-family: 'Courier New', monospace;
+    }
+
+    .fuel-stat-value.green {
+      color: var(--green);
+    }
+
+    .fuel-stat-value.red {
+      color: var(--red);
+    }
+
+    /* Tab bar */
+    .tab-bar {
+      display: flex;
+      overflow-x: auto;
+      background: var(--bg-elevated);
+      border-radius: var(--radius);
+      padding: 3px;
+      gap: 2px;
+      margin-bottom: 24px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tab-button {
+      white-space: nowrap;
+      padding: 10px 16px;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-button:hover {
+      color: var(--text-primary);
+      background: var(--bg-card);
+    }
+
+    .tab-button.active {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Bar chart (Analytics tab) */
+    .bar-chart-container {
+      background: var(--bg-card);
+      padding: 20px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    .bar-chart-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 20px;
+    }
+
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      height: 200px;
+    }
+
+    .bar-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      height: 100%;
+      justify-content: flex-end;
+    }
+
+    .bar {
+      width: 100%;
+      background: var(--green);
+      border-radius: 4px 4px 0 0;
+      transition: opacity 0.2s;
+    }
+
+    .bar:hover {
+      opacity: 0.8;
+    }
+
+    .bar-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    .bar-value {
+      font-size: 11px;
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* Product split cards */
+    .product-split {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .product-card {
+      background: var(--bg-card);
+      padding: 20px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--green);
+    }
+
+    .product-card h4 {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin: 0 0 12px 0;
+    }
+
+    .product-card .product-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .product-card .product-detail {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* Efficiency metric cards */
+    .efficiency-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .efficiency-card {
+      background: var(--bg-card);
+      padding: 18px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .efficiency-card.border-blue {
+      border-left: 4px solid var(--blue);
+    }
+
+    .efficiency-card.border-green {
+      border-left: 4px solid var(--green);
+    }
+
+    .efficiency-card.border-amber {
+      border-left: 4px solid var(--amber);
+    }
+
+    .efficiency-card.border-purple {
+      border-left: 4px solid var(--purple);
+    }
+
+    .efficiency-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .efficiency-value {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .efficiency-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .efficiency-trend {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* Drill-down section */
+    .drill-down-section {
+      display: none;
+      margin-top: 24px;
+      padding: 20px;
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      background: var(--bg-elevated);
+    }
+
+    .back-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-primary);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 16px;
+      transition: all 0.2s;
+    }
+
+    .back-button:hover {
+      background: var(--bg-card-hover);
+    }
+
+    /* Price trend bars */
+    .price-trend-container {
+      background: var(--bg-card);
+      padding: 20px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    .price-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .price-bar-label {
+      width: 80px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .price-bar-track {
+      flex: 1;
+      height: 32px;
+      background: var(--bg-elevated);
+      border-radius: 6px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .price-bar-fill {
+      height: 100%;
+      background: var(--green);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      justify-content: flex-end;
+    }
+
+    .price-bar-value {
+      font-size: 13px;
+      color: white;
+      font-weight: 700;
+      font-family: 'Courier New', monospace;
+    }
+
+    /* IFTA tax adjustment card */
+    .ifta-card {
+      background: var(--bg-card);
+      padding: 20px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--amber);
+      margin-top: 24px;
+    }
+
+    .ifta-card h4 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0 0 16px 0;
+    }
+
+    .ifta-footer {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .ifta-link {
+      color: var(--green);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .ifta-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <i data-lucide="truck"></i>
+        </div>
+        <span class="sidebar-logo-text">Horizon Star</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- MAIN Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Main</div>
+          <a class="nav-item" data-page="dashboard">
+            <i data-lucide="layout-dashboard" class="nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+          </a>
+          <a class="nav-item" data-page="trips">
+            <i data-lucide="map" class="nav-icon"></i>
+            <span class="nav-label">Trips</span>
+          </a>
+          <a class="nav-item" data-page="messages">
+            <i data-lucide="message-square" class="nav-icon"></i>
+            <span class="nav-label">Messages</span>
+          </a>
+          <a class="nav-item" data-page="trailers">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trailers</span>
+          </a>
+          <a class="nav-item" data-page="load-board">
+            <i data-lucide="package" class="nav-icon"></i>
+            <span class="nav-label">Load Board</span>
+          </a>
+          <a class="nav-item" data-page="inspections">
+            <i data-lucide="clipboard-list" class="nav-icon"></i>
+            <span class="nav-label">Inspections</span>
+          </a>
+          <a class="nav-item" data-page="tasks">
+            <i data-lucide="check-square" class="nav-icon"></i>
+            <span class="nav-label">Tasks</span>
+          </a>
+        </div>
+
+        <!-- FLEET Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Fleet</div>
+          <a class="nav-item" data-page="drivers">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Drivers</span>
+          </a>
+          <a class="nav-item" data-page="trucks">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trucks</span>
+          </a>
+          <a class="nav-item" data-page="local-drivers">
+            <i data-lucide="user" class="nav-icon"></i>
+            <span class="nav-label">Local Drivers</span>
+          </a>
+        </div>
+
+        <!-- PARTNERS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Partners</div>
+          <a class="nav-item" data-page="brokers">
+            <i data-lucide="briefcase" class="nav-icon"></i>
+            <span class="nav-label">Brokers</span>
+          </a>
+          <a class="nav-item" data-page="dealers">
+            <i data-lucide="building" class="nav-icon"></i>
+            <span class="nav-label">Dealers</span>
+          </a>
+          <a class="nav-item" data-page="dispatchers">
+            <i data-lucide="phone" class="nav-icon"></i>
+            <span class="nav-label">Dispatchers</span>
+          </a>
+          <a class="nav-item" data-page="dispatcher-ranking">
+            <i data-lucide="star" class="nav-icon"></i>
+            <span class="nav-label">Dispatcher Ranking</span>
+          </a>
+        </div>
+
+        <!-- FINANCIALS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Financials</div>
+          <a class="nav-item" data-page="financials">
+            <i data-lucide="dollar-sign" class="nav-icon"></i>
+            <span class="nav-label">Financials</span>
+          </a>
+          <a class="nav-item" data-page="billing">
+            <i data-lucide="file-text" class="nav-icon"></i>
+            <span class="nav-label">Billing</span>
+          </a>
+          <a class="nav-item" data-page="trip-profitability">
+            <i data-lucide="trending-up" class="nav-icon"></i>
+            <span class="nav-label">Trip Profitability</span>
+          </a>
+          <a class="nav-item" data-page="payroll">
+            <i data-lucide="credit-card" class="nav-icon"></i>
+            <span class="nav-label">Payroll</span>
+          </a>
+          <a class="nav-item active" data-page="fuel">
+            <i data-lucide="droplet" class="nav-icon"></i>
+            <span class="nav-label">Fuel</span>
+          </a>
+          <a class="nav-item" data-page="ifta">
+            <i data-lucide="file" class="nav-icon"></i>
+            <span class="nav-label">IFTA</span>
+          </a>
+          <a class="nav-item" data-page="reports">
+            <i data-lucide="bar-chart-2" class="nav-icon"></i>
+            <span class="nav-label">Reports</span>
+          </a>
+          <a class="nav-item" data-page="ai-advisor">
+            <i data-lucide="brain" class="nav-icon"></i>
+            <span class="nav-label">AI Advisor</span>
+          </a>
+        </div>
+
+        <!-- OPERATIONS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Operations</div>
+          <a class="nav-item" data-page="maintenance">
+            <i data-lucide="wrench" class="nav-icon"></i>
+            <span class="nav-label">Maintenance</span>
+          </a>
+          <a class="nav-item" data-page="compliance">
+            <i data-lucide="shield-check" class="nav-icon"></i>
+            <span class="nav-label">Compliance</span>
+          </a>
+          <a class="nav-item" data-page="applications">
+            <i data-lucide="file-plus" class="nav-icon"></i>
+            <span class="nav-label">Applications</span>
+          </a>
+        </div>
+
+        <!-- SETTINGS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Settings</div>
+          <a class="nav-item" data-page="settings">
+            <i data-lucide="settings" class="nav-icon"></i>
+            <span class="nav-label">Settings</span>
+          </a>
+          <a class="nav-item" data-page="users">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Users</span>
+          </a>
+          <a class="nav-item" data-page="activity-log">
+            <i data-lucide="activity" class="nav-icon"></i>
+            <span class="nav-label">Activity Log</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-toggle" id="sidebarToggle">
+        <i data-lucide="panel-left-close" class="nav-icon" id="toggleIcon"></i>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger" style="display:none;">
+            <i data-lucide="menu"></i>
+          </button>
+          <h1 class="header-title">Fuel Tracking</h1>
+        </div>
+
+        <div class="header-search">
+          <i data-lucide="search" class="ico-sm"></i>
+          <input type="text" placeholder="Search fuel records...">
+        </div>
+
+        <div class="header-right">
+          <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+            <i data-lucide="moon" class="ico" id="themeIcon"></i>
+          </button>
+          <div class="header-avatar">JD</div>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Page Header with Actions -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <div>
+            <h2 style="margin: 0; font-size: 26px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
+              <i data-lucide="droplet" style="width: 28px; height: 28px; color: var(--green);"></i>
+              Fuel Tracking
+            </h2>
+          </div>
+          <div style="display: flex; gap: 12px;">
+            <button class="btn btn-primary">
+              <i data-lucide="plus" class="ico-sm"></i>
+              Add Fuel Record
+            </button>
+            <button class="btn btn-secondary">
+              <i data-lucide="upload" class="ico-sm"></i>
+              Upload Mileage
+            </button>
+          </div>
+        </div>
+
+        <!-- Samsara Mileage Status Banner -->
+        <div class="samsara-banner">
+          <div class="samsara-banner-left">
+            <div class="samsara-banner-icon">
+              <i data-lucide="truck" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div class="samsara-banner-text">
+              <div class="samsara-banner-title">Samsara Mileage Data Uploaded</div>
+              <div class="samsara-banner-subtitle">4 trucks • 245,680 total miles • Last updated: Jan 28, 2026</div>
+            </div>
+          </div>
+          <button class="btn btn-outline" style="padding: 6px 14px; font-size: 13px;">
+            <i data-lucide="refresh-cw" class="ico-sm"></i>
+            Refresh Data
+          </button>
+        </div>
+
+        <!-- Filter Row -->
+        <div class="filter-row">
+          <label>Truck:</label>
+          <select>
+            <option value="all">All Trucks</option>
+            <option value="t101">T-101</option>
+            <option value="t102">T-102</option>
+            <option value="t103">T-103</option>
+            <option value="t104">T-104</option>
+          </select>
+
+          <label>State:</label>
+          <select>
+            <option value="all">All States</option>
+            <option value="nj">New Jersey</option>
+            <option value="ny">New York</option>
+            <option value="pa">Pennsylvania</option>
+            <option value="fl">Florida</option>
+            <option value="ga">Georgia</option>
+            <option value="sc">South Carolina</option>
+            <option value="nc">North Carolina</option>
+            <option value="va">Virginia</option>
+            <option value="md">Maryland</option>
+          </select>
+
+          <label>Product:</label>
+          <select>
+            <option value="all">All Products</option>
+            <option value="diesel">Diesel</option>
+            <option value="def">DEF</option>
+          </select>
+
+          <label>Driver:</label>
+          <select>
+            <option value="all">All Drivers</option>
+            <option value="d1">John Smith</option>
+            <option value="d2">Maria Garcia</option>
+            <option value="d3">David Chen</option>
+            <option value="d4">Sarah Johnson</option>
+          </select>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="stat-grid">
+          <div class="fuel-stat-card border-green">
+            <div class="fuel-stat-label">
+              <i data-lucide="fuel" style="width: 16px; height: 16px;"></i>
+              Total Diesel
+            </div>
+            <div class="fuel-stat-value">18,420 gal</div>
+          </div>
+
+          <div class="fuel-stat-card border-red">
+            <div class="fuel-stat-label">
+              <i data-lucide="dollar-sign" style="width: 16px; height: 16px;"></i>
+              Diesel Cost
+            </div>
+            <div class="fuel-stat-value mono">$64,470.00</div>
+          </div>
+
+          <div class="fuel-stat-card border-amber">
+            <div class="fuel-stat-label">
+              <i data-lucide="tag" style="width: 16px; height: 16px;"></i>
+              Avg $/Gallon
+            </div>
+            <div class="fuel-stat-value mono">$3.50</div>
+          </div>
+
+          <div class="fuel-stat-card border-green">
+            <div class="fuel-stat-label">
+              <i data-lucide="trending-down" style="width: 16px; height: 16px;"></i>
+              Total Savings
+            </div>
+            <div class="fuel-stat-value mono green">$2,840.00</div>
+          </div>
+
+          <div class="fuel-stat-card border-blue">
+            <div class="fuel-stat-label">
+              <i data-lucide="droplet" style="width: 16px; height: 16px;"></i>
+              Total DEF
+            </div>
+            <div class="fuel-stat-value">1,240 gal</div>
+          </div>
+
+          <div class="fuel-stat-card border-red">
+            <div class="fuel-stat-label">
+              <i data-lucide="receipt" style="width: 16px; height: 16px;"></i>
+              Total Cost
+            </div>
+            <div class="fuel-stat-value mono">$68,350.00</div>
+          </div>
+        </div>
+
+        <!-- Tab Bar -->
+        <div class="tab-bar">
+          <button class="tab-button active" onclick="switchTab('overview')">Overview</button>
+          <button class="tab-button" onclick="switchTab('analytics')">Analytics</button>
+          <button class="tab-button" onclick="switchTab('efficiency')">Efficiency</button>
+          <button class="tab-button" onclick="switchTab('price')">Price Analysis</button>
+        </div>
+
+        <!-- TAB 1: OVERVIEW -->
+        <div id="overview-tab" class="tab-content active">
+          <div class="card">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date <i data-lucide="chevron-down" class="ico-xs"></i></th>
+                    <th>Truck <i data-lucide="chevron-down" class="ico-xs"></i></th>
+                    <th>Driver <i data-lucide="chevron-down" class="ico-xs"></i></th>
+                    <th>Location <i data-lucide="chevron-down" class="ico-xs"></i></th>
+                    <th>State <i data-lucide="chevron-down" class="ico-xs"></i></th>
+                    <th>Product <i data-lucide="chevron-down" class="ico-xs"></i></th>
+                    <th>Gallons <i data-lucide="chevron-down" class="ico-xs"></i></th>
+                    <th>PPG <i data-lucide="chevron-down" class="ico-xs"></i></th>
+                    <th>Total <i data-lucide="chevron-down" class="ico-xs"></i></th>
+                    <th>Discount <i data-lucide="chevron-down" class="ico-xs"></i></th>
+                    <th>Card <i data-lucide="chevron-down" class="ico-xs"></i></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Jan 28, 2026</td>
+                    <td><span class="badge badge-blue">T-101</span></td>
+                    <td>John Smith</td>
+                    <td>Pilot - Carlisle, PA</td>
+                    <td><strong>PA</strong></td>
+                    <td>Diesel</td>
+                    <td>215.3</td>
+                    <td class="money">$3.42</td>
+                    <td class="money">$736.33</td>
+                    <td class="money" style="color: var(--green);">-$0.05</td>
+                    <td>WEX</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 28, 2026</td>
+                    <td><span class="badge badge-green">T-102</span></td>
+                    <td>Maria Garcia</td>
+                    <td>Love's - Daytona Beach, FL</td>
+                    <td><strong>FL</strong></td>
+                    <td>Diesel</td>
+                    <td>208.7</td>
+                    <td class="money">$3.65</td>
+                    <td class="money">$761.76</td>
+                    <td class="money" style="color: var(--green);">-$0.03</td>
+                    <td>Comdata</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 27, 2026</td>
+                    <td><span class="badge badge-purple">T-103</span></td>
+                    <td>David Chen</td>
+                    <td>TA - Newark, NJ</td>
+                    <td><strong>NJ</strong></td>
+                    <td>Diesel</td>
+                    <td>220.1</td>
+                    <td class="money">$3.52</td>
+                    <td class="money">$774.75</td>
+                    <td class="money" style="color: var(--green);">-$0.04</td>
+                    <td>EFS</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 27, 2026</td>
+                    <td><span class="badge badge-amber">T-104</span></td>
+                    <td>Sarah Johnson</td>
+                    <td>Flying J - Charlotte, NC</td>
+                    <td><strong>NC</strong></td>
+                    <td>Diesel</td>
+                    <td>198.4</td>
+                    <td class="money">$3.39</td>
+                    <td class="money">$672.58</td>
+                    <td class="money" style="color: var(--green);">-$0.06</td>
+                    <td>WEX</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 26, 2026</td>
+                    <td><span class="badge badge-blue">T-101</span></td>
+                    <td>John Smith</td>
+                    <td>Sheetz - Allentown, PA</td>
+                    <td><strong>PA</strong></td>
+                    <td>DEF</td>
+                    <td>28.5</td>
+                    <td class="money">$2.95</td>
+                    <td class="money">$84.08</td>
+                    <td class="money">$0.00</td>
+                    <td>WEX</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 26, 2026</td>
+                    <td><span class="badge badge-green">T-102</span></td>
+                    <td>Maria Garcia</td>
+                    <td>Pilot - Savannah, GA</td>
+                    <td><strong>GA</strong></td>
+                    <td>Diesel</td>
+                    <td>212.6</td>
+                    <td class="money">$3.41</td>
+                    <td class="money">$724.97</td>
+                    <td class="money" style="color: var(--green);">-$0.07</td>
+                    <td>Comdata</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 25, 2026</td>
+                    <td><span class="badge badge-purple">T-103</span></td>
+                    <td>David Chen</td>
+                    <td>TA - Syracuse, NY</td>
+                    <td><strong>NY</strong></td>
+                    <td>Diesel</td>
+                    <td>218.9</td>
+                    <td class="money">$3.72</td>
+                    <td class="money">$814.31</td>
+                    <td class="money" style="color: var(--green);">-$0.02</td>
+                    <td>EFS</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 25, 2026</td>
+                    <td><span class="badge badge-amber">T-104</span></td>
+                    <td>Sarah Johnson</td>
+                    <td>Love's - Richmond, VA</td>
+                    <td><strong>VA</strong></td>
+                    <td>Diesel</td>
+                    <td>205.3</td>
+                    <td class="money">$3.48</td>
+                    <td class="money">$714.44</td>
+                    <td class="money" style="color: var(--green);">-$0.05</td>
+                    <td>WEX</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 24, 2026</td>
+                    <td><span class="badge badge-blue">T-101</span></td>
+                    <td>John Smith</td>
+                    <td>Wawa - Philadelphia, PA</td>
+                    <td><strong>PA</strong></td>
+                    <td>Diesel</td>
+                    <td>203.7</td>
+                    <td class="money">$3.38</td>
+                    <td class="money">$688.51</td>
+                    <td class="money" style="color: var(--green);">-$0.08</td>
+                    <td>WEX</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 24, 2026</td>
+                    <td><span class="badge badge-green">T-102</span></td>
+                    <td>Maria Garcia</td>
+                    <td>BP - Jacksonville, FL</td>
+                    <td><strong>FL</strong></td>
+                    <td>Diesel</td>
+                    <td>210.2</td>
+                    <td class="money">$3.59</td>
+                    <td class="money">$754.62</td>
+                    <td class="money" style="color: var(--green);">-$0.04</td>
+                    <td>Comdata</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 23, 2026</td>
+                    <td><span class="badge badge-purple">T-103</span></td>
+                    <td>David Chen</td>
+                    <td>Flying J - Trenton, NJ</td>
+                    <td><strong>NJ</strong></td>
+                    <td>DEF</td>
+                    <td>30.2</td>
+                    <td class="money">$3.05</td>
+                    <td class="money">$92.11</td>
+                    <td class="money">$0.00</td>
+                    <td>EFS</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 23, 2026</td>
+                    <td><span class="badge badge-amber">T-104</span></td>
+                    <td>Sarah Johnson</td>
+                    <td>Pilot - Greenville, SC</td>
+                    <td><strong>SC</strong></td>
+                    <td>Diesel</td>
+                    <td>195.8</td>
+                    <td class="money">$3.37</td>
+                    <td class="money">$659.85</td>
+                    <td class="money" style="color: var(--green);">-$0.06</td>
+                    <td>WEX</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 22, 2026</td>
+                    <td><span class="badge badge-blue">T-101</span></td>
+                    <td>John Smith</td>
+                    <td>TA - Harrisburg, PA</td>
+                    <td><strong>PA</strong></td>
+                    <td>Diesel</td>
+                    <td>216.4</td>
+                    <td class="money">$3.43</td>
+                    <td class="money">$742.25</td>
+                    <td class="money" style="color: var(--green);">-$0.03</td>
+                    <td>WEX</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 22, 2026</td>
+                    <td><span class="badge badge-green">T-102</span></td>
+                    <td>Maria Garcia</td>
+                    <td>Love's - Atlanta, GA</td>
+                    <td><strong>GA</strong></td>
+                    <td>Diesel</td>
+                    <td>207.9</td>
+                    <td class="money">$3.42</td>
+                    <td class="money">$711.02</td>
+                    <td class="money" style="color: var(--green);">-$0.05</td>
+                    <td>Comdata</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 21, 2026</td>
+                    <td><span class="badge badge-purple">T-103</span></td>
+                    <td>David Chen</td>
+                    <td>Sheetz - Buffalo, NY</td>
+                    <td><strong>NY</strong></td>
+                    <td>Diesel</td>
+                    <td>222.5</td>
+                    <td class="money">$3.69</td>
+                    <td class="money">$821.03</td>
+                    <td class="money" style="color: var(--green);">-$0.04</td>
+                    <td>EFS</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 21, 2026</td>
+                    <td><span class="badge badge-amber">T-104</span></td>
+                    <td>Sarah Johnson</td>
+                    <td>BP - Raleigh, NC</td>
+                    <td><strong>NC</strong></td>
+                    <td>Diesel</td>
+                    <td>201.3</td>
+                    <td class="money">$3.36</td>
+                    <td class="money">$676.37</td>
+                    <td class="money" style="color: var(--green);">-$0.07</td>
+                    <td>WEX</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 20, 2026</td>
+                    <td><span class="badge badge-blue">T-101</span></td>
+                    <td>John Smith</td>
+                    <td>Flying J - Lancaster, PA</td>
+                    <td><strong>PA</strong></td>
+                    <td>DEF</td>
+                    <td>27.8</td>
+                    <td class="money">$2.89</td>
+                    <td class="money">$80.34</td>
+                    <td class="money">$0.00</td>
+                    <td>WEX</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 20, 2026</td>
+                    <td><span class="badge badge-green">T-102</span></td>
+                    <td>Maria Garcia</td>
+                    <td>Pilot - Tampa, FL</td>
+                    <td><strong>FL</strong></td>
+                    <td>Diesel</td>
+                    <td>214.6</td>
+                    <td class="money">$3.62</td>
+                    <td class="money">$776.85</td>
+                    <td class="money" style="color: var(--green);">-$0.02</td>
+                    <td>Comdata</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 19, 2026</td>
+                    <td><span class="badge badge-purple">T-103</span></td>
+                    <td>David Chen</td>
+                    <td>TA - Atlantic City, NJ</td>
+                    <td><strong>NJ</strong></td>
+                    <td>Diesel</td>
+                    <td>219.4</td>
+                    <td class="money">$3.54</td>
+                    <td class="money">$776.68</td>
+                    <td class="money" style="color: var(--green);">-$0.03</td>
+                    <td>EFS</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 19, 2026</td>
+                    <td><span class="badge badge-amber">T-104</span></td>
+                    <td>Sarah Johnson</td>
+                    <td>Love's - Columbia, SC</td>
+                    <td><strong>SC</strong></td>
+                    <td>Diesel</td>
+                    <td>199.7</td>
+                    <td class="money">$3.38</td>
+                    <td class="money">$674.99</td>
+                    <td class="money" style="color: var(--green);">-$0.05</td>
+                    <td>WEX</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 18, 2026</td>
+                    <td><span class="badge badge-blue">T-101</span></td>
+                    <td>John Smith</td>
+                    <td>Wawa - Wilmington, DE</td>
+                    <td><strong>DE</strong></td>
+                    <td>Diesel</td>
+                    <td>209.1</td>
+                    <td class="money">$3.46</td>
+                    <td class="money">$723.49</td>
+                    <td class="money" style="color: var(--green);">-$0.06</td>
+                    <td>WEX</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 18, 2026</td>
+                    <td><span class="badge badge-green">T-102</span></td>
+                    <td>Maria Garcia</td>
+                    <td>BP - Miami, FL</td>
+                    <td><strong>FL</strong></td>
+                    <td>DEF</td>
+                    <td>29.3</td>
+                    <td class="money">$3.19</td>
+                    <td class="money">$93.47</td>
+                    <td class="money">$0.00</td>
+                    <td>Comdata</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 17, 2026</td>
+                    <td><span class="badge badge-purple">T-103</span></td>
+                    <td>David Chen</td>
+                    <td>Sheetz - Albany, NY</td>
+                    <td><strong>NY</strong></td>
+                    <td>Diesel</td>
+                    <td>217.8</td>
+                    <td class="money">$3.71</td>
+                    <td class="money">$808.04</td>
+                    <td class="money" style="color: var(--green);">-$0.02</td>
+                    <td>EFS</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 17, 2026</td>
+                    <td><span class="badge badge-amber">T-104</span></td>
+                    <td>Sarah Johnson</td>
+                    <td>Pilot - Norfolk, VA</td>
+                    <td><strong>VA</strong></td>
+                    <td>Diesel</td>
+                    <td>204.5</td>
+                    <td class="money">$3.51</td>
+                    <td class="money">$717.80</td>
+                    <td class="money" style="color: var(--green);">-$0.04</td>
+                    <td>WEX</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 16, 2026</td>
+                    <td><span class="badge badge-blue">T-101</span></td>
+                    <td>John Smith</td>
+                    <td>TA - Reading, PA</td>
+                    <td><strong>PA</strong></td>
+                    <td>Diesel</td>
+                    <td>211.9</td>
+                    <td class="money">$3.40</td>
+                    <td class="money">$720.46</td>
+                    <td class="money" style="color: var(--green);">-$0.05</td>
+                    <td>WEX</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 16, 2026</td>
+                    <td><span class="badge badge-green">T-102</span></td>
+                    <td>Maria Garcia</td>
+                    <td>Flying J - Macon, GA</td>
+                    <td><strong>GA</strong></td>
+                    <td>Diesel</td>
+                    <td>206.4</td>
+                    <td class="money">$3.39</td>
+                    <td class="money">$699.70</td>
+                    <td class="money" style="color: var(--green);">-$0.06</td>
+                    <td>Comdata</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="padding: 16px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+              <div style="color: var(--text-secondary); font-size: 13px;">
+                Showing 1-25 of 87 records
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;" disabled>
+                  <i data-lucide="chevron-left" class="ico-sm"></i>
+                  Previous
+                </button>
+                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;">
+                  Next
+                  <i data-lucide="chevron-right" class="ico-sm"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: ANALYTICS -->
+        <div id="analytics-tab" class="tab-content">
+          <!-- Monthly Fuel Spend Chart -->
+          <div class="bar-chart-container">
+            <h3 class="bar-chart-title">Monthly Fuel Spend</h3>
+            <div class="bar-chart">
+              <div class="bar-wrapper">
+                <div class="bar-value">$8,200</div>
+                <div class="bar" style="height: 60%;"></div>
+                <div class="bar-label">Jul '25</div>
+              </div>
+              <div class="bar-wrapper">
+                <div class="bar-value">$9,100</div>
+                <div class="bar" style="height: 66%;"></div>
+                <div class="bar-label">Aug '25</div>
+              </div>
+              <div class="bar-wrapper">
+                <div class="bar-value">$8,800</div>
+                <div class="bar" style="height: 64%;"></div>
+                <div class="bar-label">Sep '25</div>
+              </div>
+              <div class="bar-wrapper">
+                <div class="bar-value">$9,400</div>
+                <div class="bar" style="height: 68%;"></div>
+                <div class="bar-label">Oct '25</div>
+              </div>
+              <div class="bar-wrapper">
+                <div class="bar-value">$10,200</div>
+                <div class="bar" style="height: 74%;"></div>
+                <div class="bar-label">Nov '25</div>
+              </div>
+              <div class="bar-wrapper">
+                <div class="bar-value">$11,400</div>
+                <div class="bar" style="height: 83%;"></div>
+                <div class="bar-label">Dec '25</div>
+              </div>
+              <div class="bar-wrapper">
+                <div class="bar-value">$11,650</div>
+                <div class="bar" style="height: 85%;"></div>
+                <div class="bar-label">Jan '26</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- State Distribution Table -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Fuel Purchases by State</h3>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>State</th>
+                    <th>Gallons</th>
+                    <th>Amount</th>
+                    <th>% of Total</th>
+                    <th>Avg PPG</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>New Jersey</strong></td>
+                    <td>4,200 gal</td>
+                    <td class="money">$14,700.00</td>
+                    <td>21.5%</td>
+                    <td class="money">$3.50</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Florida</strong></td>
+                    <td>3,800 gal</td>
+                    <td class="money">$13,680.00</td>
+                    <td>20.0%</td>
+                    <td class="money">$3.60</td>
+                  </tr>
+                  <tr>
+                    <td><strong>New York</strong></td>
+                    <td>3,100 gal</td>
+                    <td class="money">$11,470.00</td>
+                    <td>16.8%</td>
+                    <td class="money">$3.70</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Pennsylvania</strong></td>
+                    <td>2,400 gal</td>
+                    <td class="money">$8,160.00</td>
+                    <td>11.9%</td>
+                    <td class="money">$3.40</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Georgia</strong></td>
+                    <td>1,800 gal</td>
+                    <td class="money">$6,120.00</td>
+                    <td>9.0%</td>
+                    <td class="money">$3.40</td>
+                  </tr>
+                  <tr>
+                    <td><strong>South Carolina</strong></td>
+                    <td>1,200 gal</td>
+                    <td class="money">$4,080.00</td>
+                    <td>6.0%</td>
+                    <td class="money">$3.40</td>
+                  </tr>
+                  <tr>
+                    <td><strong>North Carolina</strong></td>
+                    <td>1,100 gal</td>
+                    <td class="money">$3,740.00</td>
+                    <td>5.5%</td>
+                    <td class="money">$3.40</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Virginia</strong></td>
+                    <td>820 gal</td>
+                    <td class="money">$2,870.00</td>
+                    <td>4.2%</td>
+                    <td class="money">$3.50</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr style="font-weight: 700;">
+                    <td>Total</td>
+                    <td>18,420 gal</td>
+                    <td class="money">$64,820.00</td>
+                    <td>100.0%</td>
+                    <td class="money">$3.52</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <!-- Product Split Cards -->
+          <div class="product-split">
+            <div class="product-card" style="border-left-color: var(--green);">
+              <h4>Diesel</h4>
+              <div class="product-value">18,420 gal</div>
+              <div class="product-detail">$64,470.00 • 94.2% of spend</div>
+            </div>
+            <div class="product-card" style="border-left-color: var(--blue);">
+              <h4>DEF</h4>
+              <div class="product-value">1,240 gal</div>
+              <div class="product-detail">$3,880.00 • 5.8% of spend</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: EFFICIENCY -->
+        <div id="efficiency-tab" class="tab-content">
+          <!-- Efficiency Metric Cards -->
+          <div class="efficiency-grid">
+            <div class="efficiency-card border-blue">
+              <div class="efficiency-label">
+                <i data-lucide="truck" style="width: 14px; height: 14px; display: inline;"></i>
+                Miles Traveled
+              </div>
+              <div class="efficiency-value">245,680 mi</div>
+              <div class="efficiency-meta">Source: Samsara GPS</div>
+            </div>
+
+            <div class="efficiency-card border-green">
+              <div class="efficiency-label">
+                <i data-lucide="fuel" style="width: 14px; height: 14px; display: inline;"></i>
+                Fleet MPG
+              </div>
+              <div class="efficiency-value" style="color: var(--green);">6.42 MPG</div>
+              <div class="efficiency-trend" style="color: var(--green);">↑ 3% vs last quarter</div>
+            </div>
+
+            <div class="efficiency-card border-amber">
+              <div class="efficiency-label">
+                <i data-lucide="dollar-sign" style="width: 14px; height: 14px; display: inline;"></i>
+                Cost Per Mile
+              </div>
+              <div class="efficiency-value mono">$0.28/mi</div>
+              <div class="efficiency-meta">Fuel cost only</div>
+            </div>
+
+            <div class="efficiency-card border-blue">
+              <div class="efficiency-label">
+                <i data-lucide="droplet" style="width: 14px; height: 14px; display: inline;"></i>
+                Fill-Ups
+              </div>
+              <div class="efficiency-value">87</div>
+              <div class="efficiency-trend">Avg 6.2 per truck/month</div>
+            </div>
+
+            <div class="efficiency-card border-purple">
+              <div class="efficiency-label">
+                <i data-lucide="gauge" style="width: 14px; height: 14px; display: inline;"></i>
+                Avg Gal/Fill-Up
+              </div>
+              <div class="efficiency-value">211.7 gal</div>
+              <div class="efficiency-trend">Per fill-up average</div>
+            </div>
+
+            <div class="efficiency-card border-green">
+              <div class="efficiency-label">
+                <i data-lucide="tag" style="width: 14px; height: 14px; display: inline;"></i>
+                Avg Discount/Gal
+              </div>
+              <div class="efficiency-value mono" style="color: var(--green);">$0.04/gal</div>
+              <div class="efficiency-trend">Fleet card savings</div>
+            </div>
+          </div>
+
+          <!-- Per-Truck Efficiency Table -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Truck Efficiency Breakdown</h3>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Truck</th>
+                    <th>Miles (Samsara)</th>
+                    <th>Gallons</th>
+                    <th>MPG</th>
+                    <th>Cost/Mile</th>
+                    <th>Fill-Ups</th>
+                    <th>Avg Gal/Fill</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="badge badge-blue">T-101</span></td>
+                    <td>68,200 mi</td>
+                    <td>5,120 gal</td>
+                    <td style="color: var(--amber); font-weight: 600;">6.21 MPG</td>
+                    <td class="money">$0.29</td>
+                    <td>24</td>
+                    <td>213.3</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge badge-green">T-102</span></td>
+                    <td>62,400 mi</td>
+                    <td>4,680 gal</td>
+                    <td style="color: var(--green); font-weight: 600;">6.54 MPG</td>
+                    <td class="money">$0.27</td>
+                    <td>22</td>
+                    <td>212.7</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge badge-purple">T-103</span></td>
+                    <td>59,800 mi</td>
+                    <td>4,420 gal</td>
+                    <td style="color: var(--green); font-weight: 600;">6.48 MPG</td>
+                    <td class="money">$0.27</td>
+                    <td>21</td>
+                    <td>210.5</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge badge-amber">T-104</span></td>
+                    <td>55,280 mi</td>
+                    <td>4,200 gal</td>
+                    <td style="color: var(--amber); font-weight: 600;">6.38 MPG</td>
+                    <td class="money">$0.28</td>
+                    <td>20</td>
+                    <td>210.0</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: PRICE ANALYSIS -->
+        <div id="price-tab" class="tab-content">
+          <!-- Average Price Trend -->
+          <div class="price-trend-container">
+            <h3 style="margin: 0 0 20px; font-size: 16px; font-weight: 700; color: var(--text-primary);">Avg Price Per Gallon Trend</h3>
+
+            <div class="price-bar-row">
+              <div class="price-bar-label">Aug '25</div>
+              <div class="price-bar-track">
+                <div class="price-bar-fill" style="width: 40%;">
+                  <span class="price-bar-value">$3.42</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="price-bar-row">
+              <div class="price-bar-label">Sep '25</div>
+              <div class="price-bar-track">
+                <div class="price-bar-fill" style="width: 27%;">
+                  <span class="price-bar-value">$3.38</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="price-bar-row">
+              <div class="price-bar-label">Oct '25</div>
+              <div class="price-bar-track">
+                <div class="price-bar-fill" style="width: 50%;">
+                  <span class="price-bar-value">$3.45</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="price-bar-row">
+              <div class="price-bar-label">Nov '25</div>
+              <div class="price-bar-track">
+                <div class="price-bar-fill" style="width: 73%;">
+                  <span class="price-bar-value">$3.52</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="price-bar-row">
+              <div class="price-bar-label">Dec '25</div>
+              <div class="price-bar-track">
+                <div class="price-bar-fill" style="width: 93%;">
+                  <span class="price-bar-value">$3.58</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="price-bar-row">
+              <div class="price-bar-label">Jan '26</div>
+              <div class="price-bar-track">
+                <div class="price-bar-fill" style="width: 67%;">
+                  <span class="price-bar-value">$3.50</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fleet Average Info Box -->
+          <div style="background: var(--bg-elevated); padding: 14px 18px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 20px; text-align: center;">
+            <span style="font-size: 13px; color: var(--text-secondary);">Fleet Average: </span>
+            <span style="font-size: 18px; font-weight: 700; color: var(--text-primary); font-family: 'Courier New', monospace;">$3.50/gal</span>
+          </div>
+
+          <!-- Price by State Table -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Current Avg Price by State</h3>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>State</th>
+                    <th>Avg $/Gal</th>
+                    <th>vs Fleet Avg</th>
+                    <th>Last Purchase</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>New Jersey</strong></td>
+                    <td class="money">$3.50</td>
+                    <td style="color: var(--text-secondary);">+$0.00</td>
+                    <td>Jan 28, 2026</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Florida</strong></td>
+                    <td class="money">$3.60</td>
+                    <td style="color: var(--red); font-weight: 600;">+$0.10</td>
+                    <td>Jan 26, 2026</td>
+                  </tr>
+                  <tr>
+                    <td><strong>New York</strong></td>
+                    <td class="money">$3.70</td>
+                    <td style="color: var(--red); font-weight: 600;">+$0.20</td>
+                    <td>Jan 25, 2026</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Pennsylvania</strong></td>
+                    <td class="money">$3.40</td>
+                    <td style="color: var(--green); font-weight: 600;">-$0.10</td>
+                    <td>Jan 24, 2026</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Georgia</strong></td>
+                    <td class="money">$3.40</td>
+                    <td style="color: var(--green); font-weight: 600;">-$0.10</td>
+                    <td>Jan 22, 2026</td>
+                  </tr>
+                  <tr>
+                    <td><strong>South Carolina</strong></td>
+                    <td class="money">$3.40</td>
+                    <td style="color: var(--green); font-weight: 600;">-$0.10</td>
+                    <td>Jan 20, 2026</td>
+                  </tr>
+                  <tr>
+                    <td><strong>North Carolina</strong></td>
+                    <td class="money">$3.40</td>
+                    <td style="color: var(--green); font-weight: 600;">-$0.10</td>
+                    <td>Jan 18, 2026</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Virginia</strong></td>
+                    <td class="money">$3.50</td>
+                    <td style="color: var(--text-secondary);">+$0.00</td>
+                    <td>Jan 15, 2026</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- IFTA Tax Adjustment Section -->
+          <div class="ifta-card">
+            <h4>IFTA Tax Impact by State</h4>
+            <div class="table-wrapper">
+              <table style="font-size: 13px;">
+                <thead>
+                  <tr>
+                    <th>State</th>
+                    <th>IFTA Rate</th>
+                    <th>Tax/Gallon After Adj</th>
+                    <th>Effective $/Gal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>New Jersey</strong></td>
+                    <td class="money">$0.0450</td>
+                    <td class="money">$0.0450</td>
+                    <td class="money">$3.55</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Florida</strong></td>
+                    <td class="money">$0.0362</td>
+                    <td class="money">$0.0362</td>
+                    <td class="money">$3.64</td>
+                  </tr>
+                  <tr>
+                    <td><strong>New York</strong></td>
+                    <td class="money">$0.0800</td>
+                    <td class="money">$0.0800</td>
+                    <td class="money">$3.78</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Pennsylvania</strong></td>
+                    <td class="money">$0.0741</td>
+                    <td class="money">$0.0741</td>
+                    <td class="money">$3.47</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Georgia</strong></td>
+                    <td class="money">$0.0313</td>
+                    <td class="money">$0.0313</td>
+                    <td class="money">$3.43</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="ifta-footer">
+              <a href="ifta.html" class="ifta-link">View Full IFTA Report →</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- TRUCK DRILL-DOWN SECTION (hidden by default) -->
+        <!-- Drill-down: toggled visible when user clicks a truck filter -->
+        <div class="drill-down-section">
+          <button class="back-button">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+            Back to All Trucks
+          </button>
+
+          <h2 style="margin: 0 0 20px; font-size: 24px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
+            <span class="badge badge-blue" style="font-size: 16px; padding: 6px 12px;">T-101</span>
+            Fuel Details
+          </h2>
+
+          <!-- Filtered Stat Cards for T-101 -->
+          <div class="stat-grid">
+            <div class="fuel-stat-card border-green">
+              <div class="fuel-stat-label">
+                <i data-lucide="fuel" style="width: 16px; height: 16px;"></i>
+                Total Diesel
+              </div>
+              <div class="fuel-stat-value">5,120 gal</div>
+            </div>
+
+            <div class="fuel-stat-card border-red">
+              <div class="fuel-stat-label">
+                <i data-lucide="dollar-sign" style="width: 16px; height: 16px;"></i>
+                Diesel Cost
+              </div>
+              <div class="fuel-stat-value mono">$17,920.00</div>
+            </div>
+
+            <div class="fuel-stat-card border-amber">
+              <div class="fuel-stat-label">
+                <i data-lucide="tag" style="width: 16px; height: 16px;"></i>
+                Avg $/Gallon
+              </div>
+              <div class="fuel-stat-value mono">$3.50</div>
+            </div>
+
+            <div class="fuel-stat-card border-blue">
+              <div class="fuel-stat-label">
+                <i data-lucide="droplet" style="width: 16px; height: 16px;"></i>
+                Fill-Ups
+              </div>
+              <div class="fuel-stat-value">24</div>
+            </div>
+
+            <div class="fuel-stat-card border-green">
+              <div class="fuel-stat-label">
+                <i data-lucide="gauge" style="width: 16px; height: 16px;"></i>
+                MPG
+              </div>
+              <div class="fuel-stat-value">6.21</div>
+            </div>
+
+            <div class="fuel-stat-card border-purple">
+              <div class="fuel-stat-label">
+                <i data-lucide="truck" style="width: 16px; height: 16px;"></i>
+                Miles (Samsara)
+              </div>
+              <div class="fuel-stat-value">68,200 mi</div>
+            </div>
+          </div>
+
+          <!-- Filtered Transaction Table (T-101 only) -->
+          <div class="card">
+            <div class="card-header">
+              <h3>T-101 Fuel Records</h3>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Driver</th>
+                    <th>Location</th>
+                    <th>State</th>
+                    <th>Product</th>
+                    <th>Gallons</th>
+                    <th>PPG</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Jan 28, 2026</td>
+                    <td>John Smith</td>
+                    <td>Pilot - Carlisle, PA</td>
+                    <td><strong>PA</strong></td>
+                    <td>Diesel</td>
+                    <td>215.3</td>
+                    <td class="money">$3.42</td>
+                    <td class="money">$736.33</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 26, 2026</td>
+                    <td>John Smith</td>
+                    <td>Sheetz - Allentown, PA</td>
+                    <td><strong>PA</strong></td>
+                    <td>DEF</td>
+                    <td>28.5</td>
+                    <td class="money">$2.95</td>
+                    <td class="money">$84.08</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 24, 2026</td>
+                    <td>John Smith</td>
+                    <td>Wawa - Philadelphia, PA</td>
+                    <td><strong>PA</strong></td>
+                    <td>Diesel</td>
+                    <td>203.7</td>
+                    <td class="money">$3.38</td>
+                    <td class="money">$688.51</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 22, 2026</td>
+                    <td>John Smith</td>
+                    <td>TA - Harrisburg, PA</td>
+                    <td><strong>PA</strong></td>
+                    <td>Diesel</td>
+                    <td>216.4</td>
+                    <td class="money">$3.43</td>
+                    <td class="money">$742.25</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 20, 2026</td>
+                    <td>John Smith</td>
+                    <td>Flying J - Lancaster, PA</td>
+                    <td><strong>PA</strong></td>
+                    <td>DEF</td>
+                    <td>27.8</td>
+                    <td class="money">$2.89</td>
+                    <td class="money">$80.34</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 18, 2026</td>
+                    <td>John Smith</td>
+                    <td>Wawa - Wilmington, DE</td>
+                    <td><strong>DE</strong></td>
+                    <td>Diesel</td>
+                    <td>209.1</td>
+                    <td class="money">$3.46</td>
+                    <td class="money">$723.49</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 16, 2026</td>
+                    <td>John Smith</td>
+                    <td>TA - Reading, PA</td>
+                    <td><strong>PA</strong></td>
+                    <td>Diesel</td>
+                    <td>211.9</td>
+                    <td class="money">$3.40</td>
+                    <td class="money">$720.46</td>
+                  </tr>
+                  <tr>
+                    <td>Jan 14, 2026</td>
+                    <td>John Smith</td>
+                    <td>BP - York, PA</td>
+                    <td><strong>PA</strong></td>
+                    <td>Diesel</td>
+                    <td>207.8</td>
+                    <td class="money">$3.41</td>
+                    <td class="money">$708.60</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    themeToggle.addEventListener('click', function() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('tms-theme', next);
+      // Update icon
+      themeIcon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
+      lucide.createIcons();
+    });
+
+    // Sidebar toggle (collapse/expand)
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    sidebarToggle.addEventListener('click', function() {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('sidebar-collapsed');
+      // Update toggle icon
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+      lucide.createIcons();
+    });
+
+    // Mobile hamburger
+    const hamburger = document.getElementById('hamburger');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (hamburger) {
+      hamburger.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('active');
+      });
+    }
+
+    if (sidebarOverlay) {
+      sidebarOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      });
+    }
+
+    // Responsive: show hamburger on mobile
+    function handleResize() {
+      if (window.innerWidth <= 768) {
+        hamburger.style.display = 'flex';
+      } else {
+        hamburger.style.display = 'none';
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    // Tab switching
+    function switchTab(tabName) {
+      // Hide all tabs
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      // Show selected tab
+      document.getElementById(tabName + '-tab').classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>
