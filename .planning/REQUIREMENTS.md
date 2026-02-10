@@ -1,0 +1,134 @@
+# Requirements: Horizon Star TMS — v1.2
+
+**Defined:** 2026-02-10
+**Core Value:** Dispatchers can efficiently manage the full lifecycle of vehicle transport orders in a single system.
+
+## v1.2 Requirements
+
+Requirements for applying the approved v1.1 UI redesign mockups to the production index.html. Visual-only — no layout changes, no behavior changes.
+
+### Design System Foundation
+
+- [ ] **DSF-01**: Production design-system.css contains all CSS tokens from shared.css (colors, typography, spacing, shadows, borders)
+- [ ] **DSF-02**: Dark theme variables applied via `body.dark-theme` class matching mockup dark theme
+- [ ] **DSF-03**: Light theme variables applied as `:root` default matching mockup light theme
+- [ ] **DSF-04**: Theme toggle switch functional in production (persists across page refresh)
+- [ ] **DSF-05**: Bridge aliases map old variable names to new design tokens (backward compat for any unmigrated styles)
+- [ ] **DSF-06**: All hardcoded hex colors in index.html replaced with CSS variable references
+
+### Global Components
+
+- [ ] **GLC-01**: Sidebar styled to match mockup (colors, hover states, active indicator, icons) — production nav order preserved
+- [ ] **GLC-02**: Top header/toolbar styled to match mockup (search bar, user menu, notifications)
+- [ ] **GLC-03**: Modal dialogs styled to match mockup (overlay, card, header, footer, close button)
+- [ ] **GLC-04**: Toast notifications styled to match mockup (success/error/warning/info variants)
+- [ ] **GLC-05**: Data tables styled to match mockup (header row, striped rows, hover, borders)
+- [ ] **GLC-06**: Form inputs styled to match mockup (text fields, selects, checkboxes, date pickers)
+- [ ] **GLC-07**: Buttons styled to match mockup (primary, secondary, danger, ghost variants)
+- [ ] **GLC-08**: Badges and status pills styled to match mockup (color-coded status indicators)
+- [ ] **GLC-09**: Cards and panels styled to match mockup (background, border, shadow, padding)
+- [ ] **GLC-10**: Pagination controls styled to match mockup
+
+### Core Dispatch Pages
+
+- [ ] **DSP-01**: Dashboard page visually matches dashboard.html mockup
+- [ ] **DSP-02**: Load Board page visually matches load-board.html mockup
+- [ ] **DSP-03**: Trips list page visually matches trips.html mockup
+- [ ] **DSP-04**: Trip Detail page visually matches trip-detail.html mockup
+- [ ] **DSP-05**: Orders list page visually matches orders.html mockup
+- [ ] **DSP-06**: Order Detail page visually matches order-detail.html mockup
+
+### People & Fleet Pages
+
+- [ ] **PPL-01**: Drivers page visually matches drivers.html mockup
+- [ ] **PPL-02**: Local Drivers page visually matches local-drivers.html mockup
+- [ ] **PPL-03**: Trucks page visually matches trucks.html mockup
+- [ ] **PPL-04**: Brokers page visually matches brokers.html mockup
+- [ ] **PPL-05**: Dispatchers page visually matches dispatchers.html mockup
+
+### Financial Pages
+
+- [ ] **FIN-01**: Payroll page visually matches payroll.html mockup (including modals)
+- [ ] **FIN-02**: Billing page visually matches billing.html mockup (including aging view)
+- [ ] **FIN-03**: Financials page visually matches financials.html mockup (all tabs)
+- [ ] **FIN-04**: Trip Profitability page visually matches trip-profitability.html mockup
+
+### Operations & Admin Pages
+
+- [ ] **OPS-01**: Fuel page visually matches fuel.html mockup (including analytics tabs)
+- [ ] **OPS-02**: IFTA page visually matches ifta.html mockup (including tax tables)
+- [ ] **OPS-03**: Compliance page visually matches compliance.html mockup (all sub-tabs)
+- [ ] **OPS-04**: Maintenance page visually matches maintenance.html mockup
+- [ ] **OPS-05**: Tasks page visually matches tasks.html mockup
+- [ ] **OPS-06**: Settings page visually matches settings.html mockup
+- [ ] **OPS-07**: Activity Log page visually matches activity-log.html mockup
+- [ ] **OPS-08**: Team Chat page visually matches team-chat.html mockup
+
+## Future Requirements
+
+- Mobile-responsive layout adjustments (v1.3+)
+- Print stylesheet updates to match new design (v1.3+)
+- Chrome Extension UI alignment with new design system (v1.3+)
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Layout/structural changes | v1.2 is visual-only — same DOM structure, same page sections |
+| New features or functionality | No JS logic changes during redesign |
+| Sidebar nav reordering | Production nav order confirmed as-is |
+| iOS app changes | Web TMS only for this milestone |
+| New pages or sections | Only restyle existing pages |
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| DSF-01 | — | Pending |
+| DSF-02 | — | Pending |
+| DSF-03 | — | Pending |
+| DSF-04 | — | Pending |
+| DSF-05 | — | Pending |
+| DSF-06 | — | Pending |
+| GLC-01 | — | Pending |
+| GLC-02 | — | Pending |
+| GLC-03 | — | Pending |
+| GLC-04 | — | Pending |
+| GLC-05 | — | Pending |
+| GLC-06 | — | Pending |
+| GLC-07 | — | Pending |
+| GLC-08 | — | Pending |
+| GLC-09 | — | Pending |
+| GLC-10 | — | Pending |
+| DSP-01 | — | Pending |
+| DSP-02 | — | Pending |
+| DSP-03 | — | Pending |
+| DSP-04 | — | Pending |
+| DSP-05 | — | Pending |
+| DSP-06 | — | Pending |
+| PPL-01 | — | Pending |
+| PPL-02 | — | Pending |
+| PPL-03 | — | Pending |
+| PPL-04 | — | Pending |
+| PPL-05 | — | Pending |
+| FIN-01 | — | Pending |
+| FIN-02 | — | Pending |
+| FIN-03 | — | Pending |
+| FIN-04 | — | Pending |
+| OPS-01 | — | Pending |
+| OPS-02 | — | Pending |
+| OPS-03 | — | Pending |
+| OPS-04 | — | Pending |
+| OPS-05 | — | Pending |
+| OPS-06 | — | Pending |
+| OPS-07 | — | Pending |
+| OPS-08 | — | Pending |
+
+**Coverage:**
+- v1.2 requirements: 37 total
+- Mapped to phases: 0
+- Unmapped: 37 (roadmap pending)
+
+---
+*Requirements defined: 2026-02-10*
+*Last updated: 2026-02-10 after initial definition*
