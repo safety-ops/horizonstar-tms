@@ -9,25 +9,25 @@ Requirements for applying the approved v1.1 UI redesign mockups to the productio
 
 ### Design System Foundation
 
-- [ ] **DSF-01**: Production design-system.css contains all CSS tokens from shared.css (colors, typography, spacing, shadows, borders)
-- [ ] **DSF-02**: Dark theme variables applied via `body.dark-theme` class matching mockup dark theme
-- [ ] **DSF-03**: Light theme variables applied as `:root` default matching mockup light theme
-- [ ] **DSF-04**: Theme toggle switch functional in production (persists across page refresh)
-- [ ] **DSF-05**: Bridge aliases map old variable names to new design tokens (backward compat for any unmigrated styles)
-- [ ] **DSF-06**: All hardcoded hex colors in index.html replaced with CSS variable references
+- [x] **DSF-01**: Production design-system.css contains all CSS tokens from shared.css (colors, typography, spacing, shadows, borders)
+- [x] **DSF-02**: Dark theme variables applied via `body.dark-theme` class matching mockup dark theme
+- [x] **DSF-03**: Light theme variables applied as `:root` default matching mockup light theme
+- [x] **DSF-04**: Theme toggle switch functional in production (persists across page refresh)
+- [x] **DSF-05**: Bridge aliases map old variable names to new design tokens (backward compat for any unmigrated styles)
+- [x] **DSF-06**: All hardcoded hex colors in index.html replaced with CSS variable references
 
 ### Global Components
 
-- [ ] **GLC-01**: Sidebar styled to match mockup (colors, hover states, active indicator, icons) — production nav order preserved
-- [ ] **GLC-02**: Top header/toolbar styled to match mockup (search bar, user menu, notifications)
-- [ ] **GLC-03**: Modal dialogs styled to match mockup (overlay, card, header, footer, close button)
-- [ ] **GLC-04**: Toast notifications styled to match mockup (success/error/warning/info variants)
-- [ ] **GLC-05**: Data tables styled to match mockup (header row, striped rows, hover, borders)
-- [ ] **GLC-06**: Form inputs styled to match mockup (text fields, selects, checkboxes, date pickers)
-- [ ] **GLC-07**: Buttons styled to match mockup (primary, secondary, danger, ghost variants)
-- [ ] **GLC-08**: Badges and status pills styled to match mockup (color-coded status indicators)
-- [ ] **GLC-09**: Cards and panels styled to match mockup (background, border, shadow, padding)
-- [ ] **GLC-10**: Pagination controls styled to match mockup
+- [x] **GLC-01**: Sidebar styled to match mockup (colors, hover states, active indicator, icons) — production nav order preserved
+- [x] **GLC-02**: Top header/toolbar styled to match mockup (search bar, user menu, notifications)
+- [x] **GLC-03**: Modal dialogs styled to match mockup (overlay, card, header, footer, close button)
+- [x] **GLC-04**: Toast notifications styled to match mockup (success/error/warning/info variants)
+- [x] **GLC-05**: Data tables styled to match mockup (header row, striped rows, hover, borders)
+- [x] **GLC-06**: Form inputs styled to match mockup (text fields, selects, checkboxes, date pickers)
+- [x] **GLC-07**: Buttons styled to match mockup (primary, secondary, danger, ghost variants)
+- [x] **GLC-08**: Badges and status pills styled to match mockup (color-coded status indicators)
+- [x] **GLC-09**: Cards and panels styled to match mockup (background, border, shadow, padding)
+- [x] **GLC-10**: Pagination controls styled to match mockup
 
 ### Core Dispatch Pages
 
@@ -84,22 +84,22 @@ Requirements for applying the approved v1.1 UI redesign mockups to the productio
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DSF-01 | Phase 11 | Pending |
-| DSF-02 | Phase 11 | Pending |
-| DSF-03 | Phase 11 | Pending |
-| DSF-04 | Phase 11 | Pending |
-| DSF-05 | Phase 11 | Pending |
-| DSF-06 | Phase 11 | Pending |
-| GLC-01 | Phase 11 | Pending |
-| GLC-02 | Phase 11 | Pending |
-| GLC-03 | Phase 11 | Pending |
-| GLC-04 | Phase 11 | Pending |
-| GLC-05 | Phase 11 | Pending |
-| GLC-06 | Phase 11 | Pending |
-| GLC-07 | Phase 11 | Pending |
-| GLC-08 | Phase 11 | Pending |
-| GLC-09 | Phase 11 | Pending |
-| GLC-10 | Phase 11 | Pending |
+| DSF-01 | Phase 11 | Complete |
+| DSF-02 | Phase 11 | Complete |
+| DSF-03 | Phase 11 | Complete |
+| DSF-04 | Phase 11 | Complete |
+| DSF-05 | Phase 11 | Complete |
+| DSF-06 | Phase 11 | Complete |
+| GLC-01 | Phase 11 | Complete |
+| GLC-02 | Phase 11 | Complete |
+| GLC-03 | Phase 11 | Complete |
+| GLC-04 | Phase 11 | Complete |
+| GLC-05 | Phase 11 | Complete |
+| GLC-06 | Phase 11 | Complete |
+| GLC-07 | Phase 11 | Complete |
+| GLC-08 | Phase 11 | Complete |
+| GLC-09 | Phase 11 | Complete |
+| GLC-10 | Phase 11 | Complete |
 | DSP-01 | Phase 12 | Pending |
 | DSP-02 | Phase 12 | Pending |
 | DSP-03 | Phase 12 | Pending |
@@ -138,4 +138,4 @@ Requirements for applying the approved v1.1 UI redesign mockups to the productio
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-10 after roadmap creation (100% coverage achieved)*
+*Last updated: 2026-02-10 — Phase 11 requirements marked Complete (16/16)*

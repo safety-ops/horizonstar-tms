@@ -73,7 +73,7 @@ Plans:
 - [x] 11-03-PLAN.md — Replace hex colors in JS render functions (lines 8050-22000)
 - [x] 11-04-PLAN.md — Replace hex colors in JS render functions (lines 22001-38085)
 - [x] 11-05-PLAN.md — Final audit + visual verification checkpoint
-- [ ] 11-06-PLAN.md — Gap closure: remaining hex colors + nav class mismatch fix
+- [x] 11-06-PLAN.md — Gap closure: remaining hex colors + nav class mismatch fix
 
 ---
 
@@ -170,7 +170,7 @@ Phases execute in numeric order: 11 → 12 → 13 → 14 → 15
 | 8. People & Fleet Mockup | v1.1 | 3/3 | Complete | 2026-02-10 |
 | 9. Financial Pages Mockup | v1.1 | 4/4 | Complete | 2026-02-10 |
 | 10. Operations & Admin Mockup | v1.1 | 8/8 | Complete | 2026-02-10 |
-| 11. Design System Foundation | v1.2 | 0/5 | Planned | - |
+| 11. Design System Foundation | v1.2 | 6/6 | Complete | 2026-02-10 |
 | 12. Core Dispatch Pages | v1.2 | 0/TBD | Not started | - |
 | 13. People & Fleet Pages | v1.2 | 0/TBD | Not started | - |
 | 14. Financial Pages | v1.2 | 0/TBD | Not started | - |
@@ -179,4 +179,4 @@ Phases execute in numeric order: 11 → 12 → 13 → 14 → 15
 ---
 
 **Roadmap created**: 2026-02-10
-**Last updated**: 2026-02-10 (initial v1.2 roadmap)
+**Last updated**: 2026-02-10 (Phase 11 complete)
