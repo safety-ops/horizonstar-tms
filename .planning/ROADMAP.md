@@ -152,6 +152,14 @@ Plans:
 
 **Depends on:** Phase 6 (shared CSS)
 
+**Plans:** 4 plans
+
+Plans:
+- [ ] 10-01-PLAN.md — Fuel Tracking (4 analytics tabs, Samsara integration, drill-down) + IFTA (state mileage, tax calculations)
+- [ ] 10-02-PLAN.md — Compliance Hub (7 sub-tabs: Dashboard, Tasks, Driver Files, Truck Files, Company Files, Tickets, Accidents)
+- [ ] 10-03-PLAN.md — Maintenance (records table with type badges) + Tasks (stat filters, priority-based task cards)
+- [ ] 10-04-PLAN.md — Settings (4 integration cards) + Activity Log (filterable table, detail modal) + Team Chat (messages, @ mentions)
+
 **Output:**
 - `mockups/web-tms-redesign/fuel.html`
 - `mockups/web-tms-redesign/ifta.html`
