@@ -15074,26 +15074,26 @@
       const m = document.createElement('div'); 
       m.className = 'modal-overlay'; 
       m.onclick = e => { if (e.target === m) m.remove(); };
-      m.innerHTML = '<div class="modal" style="max-width:800px;max-height:95vh;display:flex;flex-direction:column"><div class="modal-header" style="background:#8b5cf6;color:white"><h3 style="margin:0">📥 Import Load from Rate Confirmation</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()" style="color:white">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1;padding:20px">' +
+      m.innerHTML = '<div class="modal" style="max-width:800px;max-height:95vh;display:flex;flex-direction:column"><div class="modal-header" style="background:var(--purple);color:white"><h3 style="margin:0">📥 Import Load from Rate Confirmation</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()" style="color:white">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1;padding:20px">' +
         
         // Step 1: Paste Rate Confirmation
         '<div id="importStep1">' +
-        '<div style="background:#f3e8ff;padding:16px;border-radius:8px;margin-bottom:16px">' +
-        '<div style="font-weight:600;color:#7c3aed;margin-bottom:8px">Step 1: Paste Rate Confirmation</div>' +
-        '<div style="color:#6b7280;font-size:13px">Copy the text from your rate confirmation email or document and paste it below. AI will extract all vehicle and order information.</div></div>' +
+        '<div style="background:var(--purple-dim);padding:16px;border-radius:8px;margin-bottom:16px">' +
+        '<div style="font-weight:600;color:var(--purple);margin-bottom:8px">Step 1: Paste Rate Confirmation</div>' +
+        '<div style="color:var(--text-secondary);font-size:13px">Copy the text from your rate confirmation email or document and paste it below. AI will extract all vehicle and order information.</div></div>' +
         '<div class="form-group"><textarea id="importRateText" rows="10" placeholder="Paste rate confirmation text here...\n\nExample:\nOrder #12345\nBroker: ABC Transport\n2024 BMW X5\nPickup: New York, NY\nDelivery: Los Angeles, CA\nRate: $1,200\n..." style="resize:vertical;width:100%;font-family:monospace;font-size:13px"></textarea></div>' +
-        '<button class="btn" style="background:#8b5cf6;color:white;width:100%" onclick="extractLoadInfo()">🤖 Extract Information</button>' +
+        '<button class="btn" style="background:var(--purple);color:white;width:100%" onclick="extractLoadInfo()">🤖 Extract Information</button>' +
         '</div>' +
         
         // Step 2: Preview & Category (hidden initially)
         '<div id="importStep2" style="display:none">' +
-        '<div style="background:#d1fae5;padding:16px;border-radius:8px;margin-bottom:16px">' +
-        '<div style="font-weight:600;color:#059669;margin-bottom:8px">✅ Step 2: Review & Assign Category</div>' +
-        '<div style="color:#6b7280;font-size:13px">Review the extracted information, select the correct category, and adjust any fields if needed.</div></div>' +
+        '<div style="background:var(--green-dim);padding:16px;border-radius:8px;margin-bottom:16px">' +
+        '<div style="font-weight:600;color:var(--green);margin-bottom:8px">✅ Step 2: Review & Assign Category</div>' +
+        '<div style="color:var(--text-secondary);font-size:13px">Review the extracted information, select the correct category, and adjust any fields if needed.</div></div>' +
         
         // Category Selection
         '<div style="background:var(--amber-dim);padding:16px;border-radius:8px;margin-bottom:16px">' +
-        '<div class="form-row"><div class="form-group" style="margin-bottom:0"><label style="font-weight:600">📁 Category *</label><select id="importCategory" onchange="toggleImportSubcategory()" style="border:2px solid #f59e0b;font-weight:600">' + loadBoardCategories.map(cat => '<option value="' + cat.id + '">' + cat.name + '</option>').join('') + '</select></div>' +
+        '<div class="form-row"><div class="form-group" style="margin-bottom:0"><label style="font-weight:600">📁 Category *</label><select id="importCategory" onchange="toggleImportSubcategory()" style="border:2px solid var(--amber);font-weight:600">' + loadBoardCategories.map(cat => '<option value="' + cat.id + '">' + cat.name + '</option>').join('') + '</select></div>' +
         '<div class="form-group" style="margin-bottom:0" id="importSubGroup"><label style="font-weight:600">Sub-Category</label><select id="importSubCategory"></select></div></div></div>' +
         
         // Extracted Info Preview
@@ -15121,7 +15121,7 @@
         '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Phone</label><input type="text" id="importPickupPhone" style="font-size:14px"></div>' +
         '<div class="form-group" style="margin-bottom:0"><label style="font-size:12px">Date</label><input type="date" id="importPickupDate" style="font-size:14px"></div></div>' +
         
-        '<div style="background:#d1fae5;padding:12px;border-radius:8px;margin-bottom:12px">' +
+        '<div style="background:var(--green-dim);padding:12px;border-radius:8px;margin-bottom:12px">' +
         '<label style="font-weight:600;display:block;margin-bottom:8px">🏁 Delivery</label>' +
         '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">City, State</label><input type="text" id="importDestination" style="font-size:14px"></div>' +
         '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Phone</label><input type="text" id="importDeliveryPhone" style="font-size:14px"></div>' +
@@ -15145,7 +15145,7 @@
         '<button class="btn btn-secondary" style="margin-top:12px" onclick="document.getElementById(\'importStep1\').style.display=\'block\';document.getElementById(\'importStep2\').style.display=\'none\'">← Back to Edit Text</button>' +
         '</div>' +
         
-        '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn" style="background:#8b5cf6;color:white" id="importSaveBtn" onclick="saveImportedLoad()" disabled>Import to Future Cars</button></div></div>';
+        '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn" style="background:var(--purple);color:white" id="importSaveBtn" onclick="saveImportedLoad()" disabled>Import to Future Cars</button></div></div>';
       document.body.appendChild(m);
       toggleImportSubcategory();
     }
@@ -15346,8 +15346,8 @@ ${rateText}`
         
         // Assignment type tabs (only show for Home to NY)
         (isHomeToNY ? '<div style="display:flex;gap:8px;margin-bottom:16px">' +
-        '<button id="assignTypeTrip" onclick="toggleAssignType(\'trip\')" style="flex:1;padding:12px;border:2px solid #3b82f6;background:var(--blue);color:white;border-radius:8px;font-weight:600;cursor:pointer">🚛 Assign to Trip</button>' +
-        '<button id="assignTypeLocal" onclick="toggleAssignType(\'local\')" style="flex:1;padding:12px;border:2px solid #8b5cf6;background:var(--bg-card);color:#8b5cf6;border-radius:8px;font-weight:600;cursor:pointer">🚗 Assign to Local Driver</button>' +
+        '<button id="assignTypeTrip" onclick="toggleAssignType(\'trip\')" style="flex:1;padding:12px;border:2px solid var(--blue);background:var(--blue);color:white;border-radius:8px;font-weight:600;cursor:pointer">🚛 Assign to Trip</button>' +
+        '<button id="assignTypeLocal" onclick="toggleAssignType(\'local\')" style="flex:1;padding:12px;border:2px solid var(--purple);background:var(--bg-card);color:var(--purple);border-radius:8px;font-weight:600;cursor:pointer">🚗 Assign to Local Driver</button>' +
         '</div>' : '') +
         
         // Trip selection (shown by default)
@@ -15391,18 +15391,18 @@ ${rateText}`
       const assignBtn = document.getElementById('assignBtn');
       
       if (type === 'trip') {
-        tripBtn.style.background = '#3b82f6';
+        tripBtn.style.background = 'var(--blue)';
         tripBtn.style.color = 'white';
         localBtn.style.background = 'white';
-        localBtn.style.color = '#8b5cf6';
+        localBtn.style.color = 'var(--purple)';
         tripSection.style.display = 'block';
         localSection.style.display = 'none';
         assignBtn.textContent = 'Assign to Trip';
         assignBtn.onclick = () => assignOrderToTrip(parseInt(assignBtn.closest('.modal').querySelector('[onclick*="assignOrderToTrip"]')?.getAttribute('onclick')?.match(/\d+/)?.[0]));
       } else {
         tripBtn.style.background = 'white';
-        tripBtn.style.color = '#3b82f6';
-        localBtn.style.background = '#8b5cf6';
+        tripBtn.style.color = 'var(--blue)';
+        localBtn.style.background = 'var(--purple)';
         localBtn.style.color = 'white';
         tripSection.style.display = 'none';
         localSection.style.display = 'block';
@@ -15546,7 +15546,7 @@ ${rateText}`
         const inactiveColor = 'var(--text-secondary)';
         const inactiveBorder = 'var(--border)';
         const badgeBg = isActive ? 'rgba(255,255,255,0.2)' : 'var(--bg-elevated)';
-        return '<button class="truck-tab" onclick="selectedTruckTab=' + t.id + ';renderTrips(document.getElementById(\'main-content\'))" style="padding:10px 16px;border:2px solid ' + (isActive ? '#1e40af' : inactiveBorder) + ';cursor:pointer;font-weight:600;border-radius:8px;margin:4px;transition:all 0.2s;background:' + (isActive ? '#1e40af' : inactiveBg) + ';color:' + (isActive ? 'white' : inactiveColor) + '">🚛 ' + t.truck_number + ' <span style="background:' + badgeBg + ';padding:2px 8px;border-radius:12px;font-size:12px;margin-left:4px">' + tripCount + '</span></button>';
+        return '<button class="truck-tab" onclick="selectedTruckTab=' + t.id + ';renderTrips(document.getElementById(\'main-content\'))" style="padding:10px 16px;border:2px solid ' + (isActive ? 'var(--blue)' : inactiveBorder) + ';cursor:pointer;font-weight:600;border-radius:8px;margin:4px;transition:all 0.2s;background:' + (isActive ? 'var(--blue)' : inactiveBg) + ';color:' + (isActive ? 'white' : inactiveColor) + '">🚛 ' + t.truck_number + ' <span style="background:' + badgeBg + ';padding:2px 8px;border-radius:12px;font-size:12px;margin-left:4px">' + tripCount + '</span></button>';
       }).join('');
       
       // Build trip rows
@@ -15568,7 +15568,7 @@ ${rateText}`
       ).join('');
 
       // Status filter tabs
-      const statusTabStyle = (isActive) => 'padding:8px 16px;border:none;cursor:pointer;font-weight:600;border-radius:6px;transition:all 0.2s;background:' + (isActive ? '#1e40af' : 'var(--bg-card-hover)') + ';color:' + (isActive ? 'white' : 'var(--text-secondary)');
+      const statusTabStyle = (isActive) => 'padding:8px 16px;border:none;cursor:pointer;font-weight:600;border-radius:6px;transition:all 0.2s;background:' + (isActive ? 'var(--blue)' : 'var(--bg-card-hover)') + ';color:' + (isActive ? 'white' : 'var(--text-secondary)');
       const statusTabs = '<div style="display:flex;gap:8px;margin-bottom:16px">' +
         '<button onclick="tripStatusFilter=\'active\';renderTrips(document.getElementById(\'main-content\'))" style="' + statusTabStyle(tripStatusFilter === 'active') + '">Active <span style="background:' + (tripStatusFilter === 'active' ? 'rgba(255,255,255,0.2)' : 'var(--bg-elevated)') + ';padding:2px 8px;border-radius:12px;font-size:12px;margin-left:4px">' + activeCount + '</span></button>' +
         '<button onclick="tripStatusFilter=\'completed\';renderTrips(document.getElementById(\'main-content\'))" style="' + statusTabStyle(tripStatusFilter === 'completed') + '">Completed <span style="background:' + (tripStatusFilter === 'completed' ? 'rgba(255,255,255,0.2)' : 'var(--bg-elevated)') + ';padding:2px 8px;border-radius:12px;font-size:12px;margin-left:4px">' + completedCount + '</span></button>' +
@@ -15711,12 +15711,12 @@ ${rateText}`
 
     // Vehicle directions for trips
     const vehicleDirections = [
-      { id: 'HOME_TO_CA', label: 'HOME TO CA', color: '#22c55e' },
-      { id: 'CA_TO_HOME', label: 'CA TO HOME', color: '#22c55e' },
-      { id: 'HOME_TO_FL', label: 'HOME TO FL', color: '#3b82f6' },
-      { id: 'FL_TO_HOME', label: 'FL TO HOME', color: '#3b82f6' },
-      { id: 'FL_TO_CA', label: 'FL TO CA', color: '#f59e0b' },
-      { id: 'CA_TO_FL', label: 'CA TO FL', color: '#f59e0b' }
+      { id: 'HOME_TO_CA', label: 'HOME TO CA', color: 'var(--green)' },
+      { id: 'CA_TO_HOME', label: 'CA TO HOME', color: 'var(--green)' },
+      { id: 'HOME_TO_FL', label: 'HOME TO FL', color: 'var(--blue)' },
+      { id: 'FL_TO_HOME', label: 'FL TO HOME', color: 'var(--blue)' },
+      { id: 'FL_TO_CA', label: 'FL TO CA', color: 'var(--amber)' },
+      { id: 'CA_TO_FL', label: 'CA TO FL', color: 'var(--amber)' }
     ];
 
     // Auto-detect vehicle direction based on origin/destination
@@ -16182,7 +16182,7 @@ ${rateText}`
             const isCashPayment = ['COD', 'COP', 'LOCAL_COD'].includes(o.payment_type);
             const isCollected = o.driver_paid_status === 'PAID';
             const collectedBadge = isCashPayment ? (isCollected ? '<span class="badge" style="background:var(--green);color:white;margin-left:4px" title="Driver collected $' + (o.driver_paid_amount || 0) + ' via ' + (o.driver_paid_method || 'N/A') + '">✓ $' + (o.driver_paid_amount || 0) + '</span>' : '<span class="badge" style="background:var(--amber);color:white;margin-left:4px">⏳ Pending</span>') : '';
-            return '<tr><td><strong>' + o.order_number + '</strong></td><td>' + (o.broker_name || '-') + '</td><td>' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + '</td><td title="' + (o.pickup_full_address || o.origin || '') + '">' + (o.origin || '-') + '</td><td>' + pickupPhoneDisplay + '</td><td title="' + (o.delivery_full_address || o.destination || '') + '">' + (o.destination || '-') + '</td><td>' + deliveryPhoneDisplay + '</td><td>' + (o.pickup_date ? formatDate(o.pickup_date) : '-') + '</td><td>' + (o.dropoff_date ? formatDate(o.dropoff_date) : '-') + '</td><td><span class="badge badge-blue">' + (o.payment_type || '-') + '</span>' + collectedBadge + '</td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee || 0) + '</td><td class="money">' + formatMoney(o.revenue) + '</td><td class="sticky-col"><div class="actions">' + (o.dispatcher_notes ? '<button class="action-btn" style="background:var(--amber-dim);color:var(--amber)" title="' + o.dispatcher_notes.replace(/"/g, '&quot;') + '">📝</button>' : '') + '<button class="action-btn" style="background:#e0e7ff;color:#4338ca" onclick="openOrderDetailPage(' + o.id + ')">View</button><button class="action-btn edit" onclick="openEditVehicle(' + o.id + ',' + id + ')">Edit</button><button class="action-btn delete" onclick="removeOrder(' + o.id + ',' + id + ')">Del</button></div></td></tr>' + noteHtml;
+            return '<tr><td><strong>' + o.order_number + '</strong></td><td>' + (o.broker_name || '-') + '</td><td>' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + '</td><td title="' + (o.pickup_full_address || o.origin || '') + '">' + (o.origin || '-') + '</td><td>' + pickupPhoneDisplay + '</td><td title="' + (o.delivery_full_address || o.destination || '') + '">' + (o.destination || '-') + '</td><td>' + deliveryPhoneDisplay + '</td><td>' + (o.pickup_date ? formatDate(o.pickup_date) : '-') + '</td><td>' + (o.dropoff_date ? formatDate(o.dropoff_date) : '-') + '</td><td><span class="badge badge-blue">' + (o.payment_type || '-') + '</span>' + collectedBadge + '</td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee || 0) + '</td><td class="money">' + formatMoney(o.revenue) + '</td><td class="sticky-col"><div class="actions">' + (o.dispatcher_notes ? '<button class="action-btn" style="background:var(--amber-dim);color:var(--amber)" title="' + o.dispatcher_notes.replace(/"/g, '&quot;') + '">📝</button>' : '') + '<button class="action-btn" style="background:var(--blue-dim);color:var(--purple)" onclick="openOrderDetailPage(' + o.id + ')">View</button><button class="action-btn edit" onclick="openEditVehicle(' + o.id + ',' + id + ')">Edit</button><button class="action-btn delete" onclick="removeOrder(' + o.id + ',' + id + ')">Del</button></div></td></tr>' + noteHtml;
           }).join('') +
           '<tr style="background:var(--bg-app);font-weight:600"><td colspan="10" style="text-align:right">Subtotal:</td><td class="money negative">' + formatMoney(dirBrokerFee) + '</td><td class="money negative">' + formatMoney(dirLocalFee) + '</td><td class="money">' + formatMoney(dirRevenue) + '</td><td class="sticky-col"></td></tr>' +
           '</tbody></table></div>';
@@ -16195,8 +16195,8 @@ ${rateText}`
         const unassignedLocalFee = unassignedOrders.reduce((s, o) => s + parseFloat(o.local_fee || 0), 0);
         const unassignedCleanRevenue = unassignedRevenue - unassignedBrokerFee - unassignedLocalFee;
         
-        vehicleSections += '<div style="background:#6b7280;color:white;padding:12px 16px;font-weight:700;margin-top:16px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><span>UNASSIGNED DIRECTION (' + unassignedOrders.length + ' cars)</span><span>Revenue: ' + formatMoney(unassignedRevenue) + ' | Clean Revenue: ' + formatMoney(unassignedCleanRevenue) + '</span></div>' +
-          '<div class="table-wrapper" style="border:2px solid #6b7280;border-top:none;border-radius:0 0 8px 8px"><table><thead><tr><th>Order</th><th>Broker</th><th>Vehicle</th><th>Origin</th><th>📞P</th><th>Destination</th><th>📞D</th><th>Pick-Up</th><th>Delivery</th><th>Payment</th><th>Broker Fee</th><th>Local Fee</th><th>Revenue</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
+        vehicleSections += '<div style="background:var(--text-secondary);color:white;padding:12px 16px;font-weight:700;margin-top:16px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><span>UNASSIGNED DIRECTION (' + unassignedOrders.length + ' cars)</span><span>Revenue: ' + formatMoney(unassignedRevenue) + ' | Clean Revenue: ' + formatMoney(unassignedCleanRevenue) + '</span></div>' +
+          '<div class="table-wrapper" style="border:2px solid var(--text-secondary);border-top:none;border-radius:0 0 8px 8px"><table><thead><tr><th>Order</th><th>Broker</th><th>Vehicle</th><th>Origin</th><th>📞P</th><th>Destination</th><th>📞D</th><th>Pick-Up</th><th>Delivery</th><th>Payment</th><th>Broker Fee</th><th>Local Fee</th><th>Revenue</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
           unassignedOrders.map(o => {
             const noteHtml = o.dispatcher_notes ? '<tr style="background:var(--amber-dim)"><td colspan="14" style="padding:8px 16px;font-size:13px"><span style="font-weight:600;color:var(--amber)">📝 Note:</span> ' + o.dispatcher_notes + '</td></tr>' : '';
             const pickupPhoneDisplay = o.pickup_phone ? '<a href="tel:' + o.pickup_phone + '" style="color:var(--blue)" title="' + o.pickup_phone + '">📞</a>' : '-';
@@ -16205,7 +16205,7 @@ ${rateText}`
             const isCashPayment = ['COD', 'COP', 'LOCAL_COD'].includes(o.payment_type);
             const isCollected = o.driver_paid_status === 'PAID';
             const collectedBadge = isCashPayment ? (isCollected ? '<span class="badge" style="background:var(--green);color:white;margin-left:4px" title="Driver collected $' + (o.driver_paid_amount || 0) + ' via ' + (o.driver_paid_method || 'N/A') + '">✓ $' + (o.driver_paid_amount || 0) + '</span>' : '<span class="badge" style="background:var(--amber);color:white;margin-left:4px">⏳ Pending</span>') : '';
-            return '<tr><td><strong>' + o.order_number + '</strong></td><td>' + (o.broker_name || '-') + '</td><td>' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + '</td><td title="' + (o.pickup_full_address || o.origin || '') + '">' + (o.origin || '-') + '</td><td>' + pickupPhoneDisplay + '</td><td title="' + (o.delivery_full_address || o.destination || '') + '">' + (o.destination || '-') + '</td><td>' + deliveryPhoneDisplay + '</td><td>' + (o.pickup_date ? formatDate(o.pickup_date) : '-') + '</td><td>' + (o.dropoff_date ? formatDate(o.dropoff_date) : '-') + '</td><td><span class="badge badge-blue">' + (o.payment_type || '-') + '</span>' + collectedBadge + '</td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee || 0) + '</td><td class="money">' + formatMoney(o.revenue) + '</td><td class="sticky-col"><div class="actions">' + (o.dispatcher_notes ? '<button class="action-btn" style="background:var(--amber-dim);color:var(--amber)" title="' + o.dispatcher_notes.replace(/"/g, '&quot;') + '">📝</button>' : '') + '<button class="action-btn" style="background:#e0e7ff;color:#4338ca" onclick="openOrderDetailPage(' + o.id + ')">View</button><button class="action-btn edit" onclick="openEditVehicle(' + o.id + ',' + id + ')">Edit</button><button class="action-btn delete" onclick="removeOrder(' + o.id + ',' + id + ')">Del</button></div></td></tr>' + noteHtml;
+            return '<tr><td><strong>' + o.order_number + '</strong></td><td>' + (o.broker_name || '-') + '</td><td>' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + '</td><td title="' + (o.pickup_full_address || o.origin || '') + '">' + (o.origin || '-') + '</td><td>' + pickupPhoneDisplay + '</td><td title="' + (o.delivery_full_address || o.destination || '') + '">' + (o.destination || '-') + '</td><td>' + deliveryPhoneDisplay + '</td><td>' + (o.pickup_date ? formatDate(o.pickup_date) : '-') + '</td><td>' + (o.dropoff_date ? formatDate(o.dropoff_date) : '-') + '</td><td><span class="badge badge-blue">' + (o.payment_type || '-') + '</span>' + collectedBadge + '</td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee || 0) + '</td><td class="money">' + formatMoney(o.revenue) + '</td><td class="sticky-col"><div class="actions">' + (o.dispatcher_notes ? '<button class="action-btn" style="background:var(--amber-dim);color:var(--amber)" title="' + o.dispatcher_notes.replace(/"/g, '&quot;') + '">📝</button>' : '') + '<button class="action-btn" style="background:var(--blue-dim);color:var(--purple)" onclick="openOrderDetailPage(' + o.id + ')">View</button><button class="action-btn edit" onclick="openEditVehicle(' + o.id + ',' + id + ')">Edit</button><button class="action-btn delete" onclick="removeOrder(' + o.id + ',' + id + ')">Del</button></div></td></tr>' + noteHtml;
           }).join('') +
           '</tbody></table></div>';
       }
@@ -16231,12 +16231,12 @@ ${rateText}`
               </div>
               <div style="text-align:center;background:var(--bg-secondary);padding:12px 16px;border-radius:12px;min-width:100px">
                 <div style="font-size:10px;color:var(--text-muted);font-weight:600">CURRENT PPC</div>
-                <div style="font-size:24px;font-weight:800;color:${pricingGuidance.currentPPC >= pricingGuidance.pricing.target ? '#22c55e' : '#f59e0b'}">${formatMoney(pricingGuidance.currentPPC)}</div>
+                <div style="font-size:24px;font-weight:800;color:${pricingGuidance.currentPPC >= pricingGuidance.pricing.target ? 'var(--green)' : 'var(--amber)'}">${formatMoney(pricingGuidance.currentPPC)}</div>
                 <div style="font-size:11px;color:var(--text-muted)">avg per car</div>
               </div>
               <div style="text-align:center;background:var(--bg-secondary);padding:12px 16px;border-radius:12px;min-width:100px">
                 <div style="font-size:10px;color:var(--text-muted);font-weight:600">TRIP PROFIT</div>
-                <div style="font-size:24px;font-weight:800;color:${pricingGuidance.currentProfit >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(pricingGuidance.currentProfit)}</div>
+                <div style="font-size:24px;font-weight:800;color:${pricingGuidance.currentProfit >= 0 ? 'var(--green)' : 'var(--red)'}">${formatMoney(pricingGuidance.currentProfit)}</div>
                 <div style="font-size:11px;color:var(--text-muted)">current</div>
               </div>
             </div>
@@ -16246,24 +16246,24 @@ ${rateText}`
             <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:12px">💰 DISPATCHER PRICING GUIDANCE</div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">
               <div style="background:var(--red-dim);padding:12px;border-radius:8px;text-align:center">
-                <div style="font-size:10px;color:#991b1b;font-weight:600">MINIMUM PPC</div>
+                <div style="font-size:10px;color:var(--red);font-weight:600">MINIMUM PPC</div>
                 <div style="font-size:20px;font-weight:800;color:var(--red)">${formatMoney(pricingGuidance.pricing.minimum)}</div>
-                <div style="font-size:10px;color:#991b1b">Break-even</div>
+                <div style="font-size:10px;color:var(--red)">Break-even</div>
               </div>
-              <div style="background:var(--green-dim);padding:12px;border-radius:8px;text-align:center;border:2px solid #22c55e">
-                <div style="font-size:10px;color:#166534;font-weight:600">TARGET PPC</div>
+              <div style="background:var(--green-dim);padding:12px;border-radius:8px;text-align:center;border:2px solid var(--green)">
+                <div style="font-size:10px;color:var(--primary-800);font-weight:600">TARGET PPC</div>
                 <div style="font-size:20px;font-weight:800;color:var(--green)">${formatMoney(pricingGuidance.pricing.target)}</div>
-                <div style="font-size:10px;color:#166534">Profitable</div>
+                <div style="font-size:10px;color:var(--primary-800)">Profitable</div>
               </div>
               <div style="background:var(--blue-dim);padding:12px;border-radius:8px;text-align:center">
-                <div style="font-size:10px;color:#1e40af;font-weight:600">MARKET AVG</div>
+                <div style="font-size:10px;color:var(--blue);font-weight:600">MARKET AVG</div>
                 <div style="font-size:20px;font-weight:800;color:var(--blue)">${formatMoney(pricingGuidance.pricing.marketAvg)}</div>
-                <div style="font-size:10px;color:#1e40af">Historical</div>
+                <div style="font-size:10px;color:var(--blue)">Historical</div>
               </div>
               ${pricingGuidance.remainingSlots > 0 ? `
               <div style="background:var(--amber-dim);padding:12px;border-radius:8px;text-align:center">
                 <div style="font-size:10px;color:var(--amber);font-weight:600">NEED FOR REMAINING</div>
-                <div style="font-size:20px;font-weight:800;color:#d97706">${formatMoney(pricingGuidance.pricing.recommendedForRemaining)}</div>
+                <div style="font-size:20px;font-weight:800;color:var(--amber)">${formatMoney(pricingGuidance.pricing.recommendedForRemaining)}</div>
                 <div style="font-size:10px;color:var(--amber)">${pricingGuidance.remainingSlots} cars @ this price</div>
               </div>
               ` : ''}
@@ -16279,7 +16279,7 @@ ${rateText}`
       const c = document.getElementById('main-content');
       c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><button class="btn btn-secondary" onclick="renderTrips(document.getElementById(\'main-content\'))">← Back</button><h2>' + t.trip_number + '</h2><span class="badge ' + getBadge(t.status) + '">' + t.status + '</span>' + (t.status === 'COMPLETED' ? '<span style="color:var(--green);font-weight:600">✓ Trip Completed</span>' : (t.status === 'AT_TERMINAL' ? '<button class="btn btn-primary" style="background:var(--green)" onclick="markTripCompleted(' + id + ')">✓ Mark Completed</button>' : '<button class="btn btn-primary" style="background:var(--amber)" onclick="markTripAtTerminal(' + id + ')">🏢 Mark At Terminal</button><button class="btn btn-primary" style="background:var(--green)" onclick="markTripCompleted(' + id + ')">✓ Mark Completed</button>')) + '</div><div style="display:flex;gap:12px"><button class="btn btn-primary" onclick="openAddVehicle(' + id + ')">+ Add Vehicle</button><button class="btn btn-secondary" onclick="openAddExpense(' + id + ')">+ Expense</button><button class="btn btn-secondary" onclick="openTripMap(' + id + ')">🗺️ Trip Map</button></div></div>' +
         
-        '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px"><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Date</div><div class="value" style="font-size:16px">' + formatDate(t.trip_date) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:150px;padding:12px 16px;background:#f3e8ff;cursor:pointer" onclick="openTripModal(' + id + ')"><div class="label">📅 Pay Period ✏️</div><div class="value" style="font-size:12px;color:#7c3aed">' + payPeriodText + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px;cursor:pointer" onclick="openAssignDriver(' + id + ')"><div class="label">Driver ✏️</div><div class="value" style="font-size:14px">' + (d ? d.first_name + ' ' + d.last_name : 'Not Assigned') + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:80px;padding:12px 16px;cursor:pointer" onclick="openAssignTruck(' + id + ')"><div class="label">Truck ✏️</div><div class="value" style="font-size:16px">' + (tr ? '#' + tr.truck_number : '-') + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:70px;padding:12px 16px"><div class="label">Cars</div><div class="value" style="font-size:16px">' + orders.length + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Broker Fees</div><div class="value" style="font-size:14px;color:var(--red)">' + formatMoney(f.brokerFee) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Local Fees</div><div class="value" style="font-size:14px;color:var(--red)">' + formatMoney(f.localFees) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Revenue</div><div class="value" style="font-size:14px">' + formatMoney(f.loadRevenue) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;background:var(--blue-dim)"><div class="label">Clean Revenue</div><div class="value" style="font-size:14px;color:#1d4ed8">' + formatMoney(cleanRevenue) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;background:var(--amber-dim);border:2px solid #f59e0b"><div class="label">Driver Cut (' + (t.driver_cut_percent || 32) + '%)</div><div class="value" style="font-size:14px;color:#b45309">' + formatMoney(f.driverCut) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px;background:' + (f.netProfit >= 0 ? '#d1fae5' : '#fee2e2') + '"><div class="label">Net Profit</div><div class="value" style="font-size:14px">' + formatMoney(f.netProfit) + '</div></div></div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px"><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Date</div><div class="value" style="font-size:16px">' + formatDate(t.trip_date) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:150px;padding:12px 16px;background:var(--purple-dim);cursor:pointer" onclick="openTripModal(' + id + ')"><div class="label">📅 Pay Period ✏️</div><div class="value" style="font-size:12px;color:var(--purple)">' + payPeriodText + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px;cursor:pointer" onclick="openAssignDriver(' + id + ')"><div class="label">Driver ✏️</div><div class="value" style="font-size:14px">' + (d ? d.first_name + ' ' + d.last_name : 'Not Assigned') + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:80px;padding:12px 16px;cursor:pointer" onclick="openAssignTruck(' + id + ')"><div class="label">Truck ✏️</div><div class="value" style="font-size:16px">' + (tr ? '#' + tr.truck_number : '-') + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:70px;padding:12px 16px"><div class="label">Cars</div><div class="value" style="font-size:16px">' + orders.length + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Broker Fees</div><div class="value" style="font-size:14px;color:var(--red)">' + formatMoney(f.brokerFee) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Local Fees</div><div class="value" style="font-size:14px;color:var(--red)">' + formatMoney(f.localFees) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Revenue</div><div class="value" style="font-size:14px">' + formatMoney(f.loadRevenue) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;background:var(--blue-dim)"><div class="label">Clean Revenue</div><div class="value" style="font-size:14px;color:var(--blue)">' + formatMoney(cleanRevenue) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;background:var(--amber-dim);border:2px solid var(--amber)"><div class="label">Driver Cut (' + (t.driver_cut_percent || 32) + '%)</div><div class="value" style="font-size:14px;color:var(--amber)">' + formatMoney(f.driverCut) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px;background:' + (f.netProfit >= 0 ? 'var(--green-dim)' : 'var(--red-dim)') + '"><div class="label">Net Profit</div><div class="value" style="font-size:14px">' + formatMoney(f.netProfit) + '</div></div></div>' +
         
         pricingWidget +
         
@@ -16289,7 +16289,7 @@ ${rateText}`
         
         '<div class="card"><div class="card-header"><h3>💸 Expenses (' + expenses.length + ')</h3><button class="btn btn-primary btn-sm" onclick="openAddExpense(' + id + ')">+ Add Expense</button></div>' + (expenses.length === 0 ? '<div style="padding:40px;text-align:center">No expenses yet. Click "+ Add Expense" to record expenses.</div>' : '<div class="table-wrapper"><table><thead><tr><th>Category</th><th>Description</th><th>Amount</th><th>Actions</th></tr></thead><tbody>' + expenses.map(e => '<tr><td><span class="badge badge-blue">' + e.category + '</span></td><td>' + (e.description || '-') + '</td><td class="money negative">' + formatMoney(e.amount) + '</td><td><button class="action-btn delete" onclick="deleteExpense(' + e.id + ',' + id + ')">Delete</button></td></tr>').join('') + '</tbody></table></div>') + '</div>' +
         
-        '<div class="card"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3>🛣️ Trip Miles</h3><button class="btn btn-secondary btn-sm" onclick="openEditMiles(' + id + ')">✏️ Edit Miles</button></div><div style="padding:20px;display:flex;align-items:center;gap:20px"><div style="font-size:32px;font-weight:700;color:#1e40af">' + (t.miles || 0).toLocaleString() + '</div><div style="color:var(--text-muted)">miles</div></div></div>';
+        '<div class="card"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3>🛣️ Trip Miles</h3><button class="btn btn-secondary btn-sm" onclick="openEditMiles(' + id + ')">✏️ Edit Miles</button></div><div style="padding:20px;display:flex;align-items:center;gap:20px"><div style="font-size:32px;font-weight:700;color:var(--blue)">' + (t.miles || 0).toLocaleString() + '</div><div style="color:var(--text-muted)">miles</div></div></div>';
     }
 
     function openEditMiles(tripId) {
@@ -16382,7 +16382,7 @@ ${rateText}`
     function renderSequenceList(stops) {
       return stops.map((stop, index) => {
         const bgColor = stop.type === 'PICKUP' ? 'rgba(34,197,94,0.15)' : 'rgba(249,115,22,0.15)';
-        const borderColor = stop.type === 'PICKUP' ? '#22c55e' : '#f97316';
+        const borderColor = stop.type === 'PICKUP' ? 'var(--green)' : 'var(--amber)';
         const typeLabel = stop.type === 'PICKUP' ? '📦 PICKUP' : '🏁 DELIVERY';
 
         return '<div class="sequence-item" data-order-id="' + stop.orderId + '" data-type="' + stop.type + '" ' +
@@ -16463,7 +16463,7 @@ ${rateText}`
       items.forEach(item => {
         const orderId = item.dataset.orderId;
         if (errors.includes(orderId)) {
-          item.style.boxShadow = '0 0 0 2px #ef4444';
+          item.style.boxShadow = '0 0 0 2px var(--red)';
         } else {
           item.style.boxShadow = 'none';
         }
@@ -16715,9 +16715,9 @@ ${rateText}`
       
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
       m.innerHTML = '<div class="modal" style="max-width:750px;max-height:90vh;display:flex;flex-direction:column"><div class="modal-header"><h3>Add Vehicle</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
-        '<div class="form-group"><label>Vehicle Direction *</label><select id="orderDirection" style="border:2px solid #22c55e;font-weight:600">' + directionOptions + '</select></div>' +
+        '<div class="form-group"><label>Vehicle Direction *</label><select id="orderDirection" style="border:2px solid var(--green);font-weight:600">' + directionOptions + '</select></div>' +
         '<div class="form-row"><div class="form-group"><label>Order #</label><input id="orderNum" value="ORD-' + Date.now().toString().slice(-4) + '"></div><div class="form-group" style="position:relative"><label>Broker</label><input type="text" id="orderBrokerInput" placeholder="Start typing broker..." autocomplete="off"><input type="hidden" id="orderBrokerId"></div></div>' +
-        '<div id="newBrokerSection" style="display:none;background:var(--green-dim);padding:12px;border-radius:8px;margin-bottom:12px;border:1px solid #bbf7d0"><div class="form-group" style="margin-bottom:0"><label>New Broker Name *</label><input id="newBrokerName" placeholder="Enter broker name"></div></div>' +
+        '<div id="newBrokerSection" style="display:none;background:var(--green-dim);padding:12px;border-radius:8px;margin-bottom:12px;border:1px solid var(--green-dim)"><div class="form-group" style="margin-bottom:0"><label>New Broker Name *</label><input id="newBrokerName" placeholder="Enter broker name"></div></div>' +
         
         // Vehicle Info Section with separate Year, Make, Model
         '<div style="background:var(--bg-app);padding:12px;border-radius:8px;margin-bottom:16px">' +
@@ -16742,7 +16742,7 @@ ${rateText}`
         '<div class="form-group" style="margin-bottom:0;margin-top:8px;position:relative"><label>Full Address</label><input type="text" id="pickupFullAddress" placeholder="Start typing full address..." autocomplete="off"></div></div>' +
         
         // Delivery Section (Destination + Address + Phone)
-        '<div style="background:#d1fae5;padding:12px;border-radius:8px;margin-bottom:12px">' +
+        '<div style="background:var(--green-dim);padding:12px;border-radius:8px;margin-bottom:12px">' +
         '<label style="font-weight:600;display:block;margin-bottom:8px">🏁 DELIVERY</label>' +
         '<div class="form-row" style="gap:12px">' +
         '<div class="form-group" style="margin-bottom:0;flex:1;position:relative"><label>City/State</label><input type="text" id="orderDest" placeholder="Start typing city..." autocomplete="off"></div>' +
@@ -16755,12 +16755,12 @@ ${rateText}`
         '<div style="background:var(--amber-dim);padding:12px;border-radius:8px;margin-bottom:16px"><label style="font-weight:600;margin-bottom:8px;display:block">💰 Payment (Total for ALL vehicles)</label>' +
         '<div class="form-row" style="gap:12px"><div class="form-group" style="margin-bottom:0"><label>Total Revenue $</label><input type="number" id="orderRev" onchange="updatePaymentSplit()"></div>' +
         '<div class="form-group" style="margin-bottom:0"><label>Payment Type</label><select id="orderPay" onchange="toggleSplitPayment();togglePaymentTerms()"><option value="BILL">BILL (Invoice)</option><option value="COD">COD (Cash on Delivery)</option><option value="COP">COP (Cash on Pickup)</option><option value="LOCAL_COD">LOCAL_COD (Local Driver)</option><option value="CHECK">CHECK</option><option value="SPLIT">SPLIT (Multiple)</option></select></div></div>' +
-        '<div id="paymentTermsSection" style="margin-top:12px;padding-top:12px;border-top:1px dashed #f59e0b">' +
+        '<div id="paymentTermsSection" style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--amber)">' +
         '<div class="form-row" style="grid-template-columns:1fr 1fr 1fr;gap:12px">' +
         '<div class="form-group" style="margin-bottom:0"><label>Payment Terms</label><select id="orderPaymentTerms" onchange="updateOrderDueDate()"><option value="QUICK_PAY">Quick Pay (3 days)</option><option value="NET7">NET 7</option><option value="NET10">NET 10</option><option value="NET15">NET 15</option><option value="NET30" selected>NET 30</option><option value="NET45">NET 45</option><option value="NET60">NET 60</option><option value="CUSTOM">Custom</option></select></div>' +
         '<div class="form-group" style="margin-bottom:0" id="customTermsGroup" style="display:none"><label>Custom Days</label><input type="number" id="orderCustomDays" min="1" max="365" placeholder="Days" onchange="updateOrderDueDate()"></div>' +
         '<div class="form-group" style="margin-bottom:0"><label>Due Date</label><input type="date" id="orderDueDate" readonly style="background:var(--bg-card-hover)"></div></div></div>' +
-        '<div id="splitPaymentSection" style="display:none;margin-top:12px;padding-top:12px;border-top:1px dashed #f59e0b">' +
+        '<div id="splitPaymentSection" style="display:none;margin-top:12px;padding-top:12px;border-top:1px dashed var(--amber)">' +
         '<div class="form-row" style="grid-template-columns:1fr 1fr 1fr;gap:12px">' +
         '<div class="form-group" style="margin-bottom:0"><label>COD/COP Amount $</label><input type="number" id="splitCodAmount" value="0" onchange="updateSplitBill()"></div>' +
         '<div class="form-group" style="margin-bottom:0"><label>Bill Amount $</label><input type="number" id="splitBillAmount" value="0" readonly style="background:var(--bg-card-hover)"></div>' +
@@ -16853,7 +16853,7 @@ ${rateText}`
         }).join('');
         
         if (showNew) {
-          dropdown.innerHTML += '<div style="padding:10px 12px;cursor:pointer;background:var(--green-dim);color:var(--green);font-weight:600;font-size:14px" onmouseover="this.style.background=\'#dcfce7\'" onmouseout="this.style.background=\'#f0fdf4\'" onclick="showNewBrokerField()">+ Add New Broker: "' + input.value + '"</div>';
+          dropdown.innerHTML += '<div style="padding:10px 12px;cursor:pointer;background:var(--green-dim);color:var(--green);font-weight:600;font-size:14px" onmouseover="this.style.background=\'var(--green-dim)\'" onmouseout="this.style.background=\'var(--green-dim)\'" onclick="showNewBrokerField()">+ Add New Broker: "' + input.value + '"</div>';
         }
         
         dropdown.style.display = 'block';
@@ -17105,11 +17105,11 @@ ${rateText}`
       
       section.style.display = 'block';
       
-      container.innerHTML = '<div style="background:#e0e7ff;padding:8px 12px;border-radius:6px;margin-bottom:8px;font-weight:600;font-size:13px;color:#4338ca">📦 Vehicles in this order: ' + vehicleList.length + '</div>' +
+      container.innerHTML = '<div style="background:var(--blue-dim);padding:8px 12px;border-radius:6px;margin-bottom:8px;font-weight:600;font-size:13px;color:var(--purple)">📦 Vehicles in this order: ' + vehicleList.length + '</div>' +
         vehicleList.map((v, i) => {
         return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg-card);border-radius:6px;margin-bottom:6px;border:1px solid var(--border)">' +
           '<div style="display:flex;align-items:center;gap:10px">' +
-          '<span style="background:#6366f1;color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:11px">' + (i + 1) + '</span>' +
+          '<span style="background:var(--purple);color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:11px">' + (i + 1) + '</span>' +
           '<span style="font-size:13px"><strong>' + v.year + ' ' + v.makeModel + '</strong></span></div>' +
           '<button onclick="removeVehicleFromList(' + i + ')" style="background:var(--red-dim);color:var(--red);border:none;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:11px">✕</button></div>';
       }).join('');
@@ -17402,9 +17402,9 @@ ${rateText}`
         '<select id="editOrderDispatcher"><option value="">Select Dispatcher</option>' + appData.dispatchers.map(d => '<option value="' + d.id + '"' + (o.dispatcher_id === d.id ? ' selected' : '') + '>' + d.name + '</option>').join('') + '</select>' :
         '<input type="text" value="' + (currentDispatcher ? currentDispatcher.name : '-') + '" readonly style="background:var(--bg-card-hover);cursor:not-allowed"><input type="hidden" id="editOrderDispatcher" value="' + (o.dispatcher_id || '') + '">';
       m.innerHTML = '<div class="modal" style="max-width:700px;max-height:90vh;display:flex;flex-direction:column"><div class="modal-header"><h3>Edit Vehicle</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
-        '<div class="form-group"><label>Vehicle Direction *</label><select id="editOrderDirection" style="border:2px solid #22c55e;font-weight:600">' + directionOptions + '</select></div>' +
+        '<div class="form-group"><label>Vehicle Direction *</label><select id="editOrderDirection" style="border:2px solid var(--green);font-weight:600">' + directionOptions + '</select></div>' +
         '<div class="form-row"><div class="form-group"><label>Order #</label><input id="editOrderNum" value="' + o.order_number + '"></div><div class="form-group"><label>Broker</label><select id="editOrderBroker"><option value="">Select Broker</option>' + brokerOptions + '<option value="__NEW__">+ Add New Broker</option></select></div></div>' +
-        '<div id="editNewBrokerSection" style="display:none;background:var(--green-dim);padding:12px;border-radius:8px;margin-bottom:12px;border:1px solid #bbf7d0"><div class="form-group" style="margin-bottom:0"><label>New Broker Name *</label><input id="editNewBrokerName" placeholder="Enter broker name"></div></div>' +
+        '<div id="editNewBrokerSection" style="display:none;background:var(--green-dim);padding:12px;border-radius:8px;margin-bottom:12px;border:1px solid var(--green-dim)"><div class="form-group" style="margin-bottom:0"><label>New Broker Name *</label><input id="editNewBrokerName" placeholder="Enter broker name"></div></div>' +
         '<div class="form-row"><div class="form-group"><label>Year</label><input type="number" id="editVehYear" value="' + o.vehicle_year + '"></div><div class="form-group"><label>Make</label><input id="editVehMake" value="' + o.vehicle_make + '"></div></div>' +
         '<div class="form-group"><label>Model</label><input id="editVehModel" value="' + o.vehicle_model + '"></div>' +
         
@@ -17419,7 +17419,7 @@ ${rateText}`
         '<div class="form-group" style="margin-bottom:0;margin-top:8px;position:relative"><label>Full Address</label><input type="text" id="editPickupFullAddress" value="' + (o.pickup_full_address || '') + '" placeholder="Full street address" autocomplete="off"></div></div>' +
         
         // Delivery Section
-        '<div style="background:#d1fae5;padding:12px;border-radius:8px;margin-bottom:12px">' +
+        '<div style="background:var(--green-dim);padding:12px;border-radius:8px;margin-bottom:12px">' +
         '<label style="font-weight:600;display:block;margin-bottom:8px">🏁 DELIVERY</label>' +
         '<div class="form-row" style="gap:12px">' +
         '<div class="form-group" style="margin-bottom:0;flex:1;position:relative"><label>City/State</label><input type="text" id="editOrderDest" value="' + (o.destination || '') + '" placeholder="City, State" autocomplete="off"></div>' +
@@ -17703,7 +17703,7 @@ ${rateText}`
         '<option value="' + y + '"' + (ordersYear === y ? ' selected' : '') + '>' + y + '</option>'
       ).join('');
 
-      c.innerHTML = '<div class="header"><h2>Vehicles / Orders</h2><div style="display:flex;align-items:center;gap:12px"><div style="display:flex;align-items:center;gap:8px;background:var(--bg-app);padding:8px 12px;border-radius:6px"><label style="font-weight:600;color:var(--text-secondary);font-size:13px">Year:</label><select onchange="ordersYear=parseInt(this.value);renderOrders(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px">' + ordersYearOptions + '</select></div><button class="btn btn-secondary" onclick="exportOrders()">📥 Export</button><button class="btn" style="background:#8b5cf6;color:white" onclick="openCreateNewLoad()">📄 AI Import</button><button class="btn btn-primary" onclick="openOrderModal()">+ New Order</button><button class="btn btn-secondary" id="bulkDeleteBtn" style="display:none;background:var(--red-dim);color:var(--red);border-color:#fecaca" onclick="bulkDeleteOrders()">🗑️ Delete Selected (<span id="selectedCount">0</span>)</button></div></div>' +
+      c.innerHTML = '<div class="header"><h2>Vehicles / Orders</h2><div style="display:flex;align-items:center;gap:12px"><div style="display:flex;align-items:center;gap:8px;background:var(--bg-app);padding:8px 12px;border-radius:6px"><label style="font-weight:600;color:var(--text-secondary);font-size:13px">Year:</label><select onchange="ordersYear=parseInt(this.value);renderOrders(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px">' + ordersYearOptions + '</select></div><button class="btn btn-secondary" onclick="exportOrders()">📥 Export</button><button class="btn" style="background:var(--purple);color:white" onclick="openCreateNewLoad()">📄 AI Import</button><button class="btn btn-primary" onclick="openOrderModal()">+ New Order</button><button class="btn btn-secondary" id="bulkDeleteBtn" style="display:none;background:var(--red-dim);color:var(--red);border-color:var(--red-dim)" onclick="bulkDeleteOrders()">🗑️ Delete Selected (<span id="selectedCount">0</span>)</button></div></div>' +
 
         // Search and Filters
         '<div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap;align-items:center;background:var(--bg-app);padding:16px;border-radius:8px">' +
@@ -17724,8 +17724,8 @@ ${rateText}`
           const driverName = driver ? driver.first_name.charAt(0) + '. ' + driver.last_name : '-';
           const phoneInfo = (o.pickup_phone || o.delivery_phone) ? '<span title="P: ' + (o.pickup_phone || '-') + '&#10;D: ' + (o.delivery_phone || '-') + '" style="cursor:help">📞</span>' : '-';
           const noteHtml = o.dispatcher_notes ? '<tr style="background:var(--amber-dim)"><td></td><td colspan="17" style="padding:8px 16px;font-size:13px"><span style="font-weight:600;color:var(--amber)">📝 Note:</span> ' + o.dispatcher_notes + '</td></tr>' : '';
-          const assignBtn = t ? '<button class="action-btn" style="background:var(--red-dim);color:var(--red)" onclick="unassignOrderFromTrip(' + o.id + ')" title="Unassign from trip">✕</button>' : '<button class="action-btn" style="background:var(--blue-dim);color:#1d4ed8" onclick="openAssignToTrip(' + o.id + ')" title="Assign to trip">+🚛</button>';
-          return '<tr><td><input type="checkbox" class="order-checkbox" data-id="' + o.id + '" onchange="toggleOrderSelection(' + o.id + ')"></td><td><strong>' + o.order_number + '</strong></td><td>' + (t ? '<span class="badge badge-purple">' + t.trip_number + '</span>' : '<span style="color:var(--text-muted)">Unassigned</span>') + '</td><td>' + (driver ? '<span class="badge badge-green">' + driverName + '</span>' : '<span style="color:var(--text-muted)">-</span>') + '</td><td>' + (o.broker_name || '-') + '</td><td>' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + '</td><td title="' + (o.pickup_full_address || o.origin || '') + '">' + (o.origin || '-') + '</td><td title="' + (o.delivery_full_address || o.destination || '') + '">' + (o.destination || '-') + '</td><td>' + phoneInfo + '</td><td>' + (o.pickup_date ? formatDate(o.pickup_date) : '-') + '</td><td>' + (o.dropoff_date ? formatDate(o.dropoff_date) : '-') + '</td><td><span class="badge badge-blue">' + (o.payment_type || '-') + '</span></td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee || 0) + '</td><td class="money">' + formatMoney(o.revenue) + '</td><td><span class="badge ' + getBadge(o.status) + '">' + o.status + '</span></td><td class="sticky-col"><div class="actions">' + assignBtn + (o.dispatcher_notes ? '<button class="action-btn" style="background:var(--amber-dim);color:var(--amber)" title="' + o.dispatcher_notes.replace(/"/g, '&quot;') + '">📝</button>' : '') + '<button class="action-btn" style="background:#e0e7ff;color:#4338ca" onclick="openOrderDetailPage(' + o.id + ')">View</button><button class="action-btn edit" onclick="openOrderModal(' + o.id + ')">Edit</button><button class="action-btn delete" onclick="deleteOrder(' + o.id + ')">Del</button></div></td></tr>' + noteHtml; 
+          const assignBtn = t ? '<button class="action-btn" style="background:var(--red-dim);color:var(--red)" onclick="unassignOrderFromTrip(' + o.id + ')" title="Unassign from trip">✕</button>' : '<button class="action-btn" style="background:var(--blue-dim);color:var(--blue)" onclick="openAssignToTrip(' + o.id + ')" title="Assign to trip">+🚛</button>';
+          return '<tr><td><input type="checkbox" class="order-checkbox" data-id="' + o.id + '" onchange="toggleOrderSelection(' + o.id + ')"></td><td><strong>' + o.order_number + '</strong></td><td>' + (t ? '<span class="badge badge-purple">' + t.trip_number + '</span>' : '<span style="color:var(--text-muted)">Unassigned</span>') + '</td><td>' + (driver ? '<span class="badge badge-green">' + driverName + '</span>' : '<span style="color:var(--text-muted)">-</span>') + '</td><td>' + (o.broker_name || '-') + '</td><td>' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + '</td><td title="' + (o.pickup_full_address || o.origin || '') + '">' + (o.origin || '-') + '</td><td title="' + (o.delivery_full_address || o.destination || '') + '">' + (o.destination || '-') + '</td><td>' + phoneInfo + '</td><td>' + (o.pickup_date ? formatDate(o.pickup_date) : '-') + '</td><td>' + (o.dropoff_date ? formatDate(o.dropoff_date) : '-') + '</td><td><span class="badge badge-blue">' + (o.payment_type || '-') + '</span></td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee || 0) + '</td><td class="money">' + formatMoney(o.revenue) + '</td><td><span class="badge ' + getBadge(o.status) + '">' + o.status + '</span></td><td class="sticky-col"><div class="actions">' + assignBtn + (o.dispatcher_notes ? '<button class="action-btn" style="background:var(--amber-dim);color:var(--amber)" title="' + o.dispatcher_notes.replace(/"/g, '&quot;') + '">📝</button>' : '') + '<button class="action-btn" style="background:var(--blue-dim);color:var(--purple)" onclick="openOrderDetailPage(' + o.id + ')">View</button><button class="action-btn edit" onclick="openOrderModal(' + o.id + ')">Edit</button><button class="action-btn delete" onclick="deleteOrder(' + o.id + ')">Del</button></div></td></tr>' + noteHtml; 
         }).join('')) + 
         '</tbody></table></div></div>';
     }
@@ -17862,7 +17862,7 @@ ${rateText}`
         });
       });
       
-      const alertsHtml = alerts.length > 0 ? '<div style="background:var(--red-dim);border:1px solid #fecaca;border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--red)">⚠️ Document Expiration Alerts</strong><div style="margin-top:12px">' + alerts.map(a => '<div style="padding:8px;background:var(--bg-card);border-radius:4px;margin-top:8px;display:flex;justify-content:space-between;align-items:center"><span><strong>' + a.driver + '</strong> - ' + a.doc + '</span><span class="badge ' + (a.expired ? 'badge-red' : 'badge-amber') + '">' + (a.expired ? 'EXPIRED ' + a.days + ' days ago' : a.days === 0 ? 'EXPIRES TODAY' : 'Expires in ' + a.days + ' days') + '</span></div>').join('') + '</div></div>' : '';
+      const alertsHtml = alerts.length > 0 ? '<div style="background:var(--red-dim);border:1px solid var(--red-dim);border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--red)">⚠️ Document Expiration Alerts</strong><div style="margin-top:12px">' + alerts.map(a => '<div style="padding:8px;background:var(--bg-card);border-radius:4px;margin-top:8px;display:flex;justify-content:space-between;align-items:center"><span><strong>' + a.driver + '</strong> - ' + a.doc + '</span><span class="badge ' + (a.expired ? 'badge-red' : 'badge-amber') + '">' + (a.expired ? 'EXPIRED ' + a.days + ' days ago' : a.days === 0 ? 'EXPIRES TODAY' : 'Expires in ' + a.days + ' days') + '</span></div>').join('') + '</div></div>' : '';
       
       c.innerHTML = '<div class="header"><h2>👥 Drivers</h2><div style="display:flex;gap:8px"><button class="btn btn-primary" onclick="openDriverModal()">+ New Driver</button><button class="btn btn-primary" style="background:var(--amber)" onclick="openDriverModal(null, \'OWNER_OP\')">+ Add Owner-OP</button></div></div>' + alertsHtml + '<div class="drivers-grid">' + (appData.drivers.length === 0 ? '<div style="text-align:center;padding:60px;grid-column:1/-1">No drivers yet</div>' : appData.drivers.map(d => { 
         const trips = appData.trips.filter(t => t.driver_id === d.id); 
@@ -17879,7 +17879,7 @@ ${rateText}`
         const isOwnerOp = d.driver_type === 'OWNER_OP';
         const percentLabel = isOwnerOp ? (d.dispatch_fee_percent || 0) + '% dispatch fee' : (d.cut_percent || 32) + '% cut';
         const typeBadge = isOwnerOp ? '<span class="badge" style="background:var(--amber);color:white;font-size:10px;margin-left:8px">Owner-OP</span>' : '';
-        return '<div class="driver-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:16px"><div class="driver-avatar">' + d.first_name[0] + d.last_name[0] + '</div><div><h4 style="margin:0">' + d.first_name + ' ' + d.last_name + typeBadge + '</h4><p style="color:var(--text-muted);font-size:12px;margin:0">' + percentLabel + '</p></div><span class="badge ' + getBadge(d.status) + '" style="margin-left:auto">' + d.status + '</span></div><p style="color:var(--text-muted);font-size:13px">📞 ' + d.phone + '</p>' + (d.email ? '<p style="color:var(--text-muted);font-size:13px">📧 ' + d.email + '</p>' : '') + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><span style="font-size:11px;background:var(--blue-dim);color:#1d4ed8;padding:4px 8px;border-radius:4px">📁 ' + qualFiles + ' Qual</span><span style="font-size:11px;background:#f3e8ff;color:#7c3aed;padding:4px 8px;border-radius:4px">🔒 ' + persFiles + ' Pers</span>' + (expiredCount > 0 ? '<span style="font-size:11px;background:var(--red-dim);color:var(--red);padding:4px 8px;border-radius:4px">⚠️ ' + expiredCount + ' Exp</span>' : '') + (openTickets > 0 ? '<span style="font-size:11px;background:var(--amber-dim);color:#d97706;padding:4px 8px;border-radius:4px">🎫 ' + openTickets + '</span>' : '') + (openViolations > 0 ? '<span style="font-size:11px;background:#fce7f3;color:#be185d;padding:4px 8px;border-radius:4px">⚠️ ' + openViolations + '</span>' : '') + (openClaims > 0 ? '<span style="font-size:11px;background:#fed7aa;color:#c2410c;padding:4px 8px;border-radius:4px">💥 ' + openClaims + '</span>' : '') + '</div><div style="display:flex;justify-content:space-between;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)"><div><div style="font-size:18px;font-weight:700">' + trips.length + '</div><div style="font-size:11px;color:var(--text-muted)">Trips</div></div><div><div style="font-size:18px;font-weight:700;color:var(--green)">' + formatMoney(earn) + '</div><div style="font-size:11px;color:var(--text-muted)">Earnings</div></div><div class="actions"><button class="action-btn view" onclick="viewDriverProfile(' + d.id + ')">View</button><button class="action-btn edit" onclick="openDriverModal(' + d.id + ')">Edit</button><button class="action-btn delete" onclick="deleteDriver(' + d.id + ')">Del</button></div></div></div>'; 
+        return '<div class="driver-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:16px"><div class="driver-avatar">' + d.first_name[0] + d.last_name[0] + '</div><div><h4 style="margin:0">' + d.first_name + ' ' + d.last_name + typeBadge + '</h4><p style="color:var(--text-muted);font-size:12px;margin:0">' + percentLabel + '</p></div><span class="badge ' + getBadge(d.status) + '" style="margin-left:auto">' + d.status + '</span></div><p style="color:var(--text-muted);font-size:13px">📞 ' + d.phone + '</p>' + (d.email ? '<p style="color:var(--text-muted);font-size:13px">📧 ' + d.email + '</p>' : '') + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><span style="font-size:11px;background:var(--blue-dim);color:var(--blue);padding:4px 8px;border-radius:4px">📁 ' + qualFiles + ' Qual</span><span style="font-size:11px;background:var(--purple-dim);color:var(--purple);padding:4px 8px;border-radius:4px">🔒 ' + persFiles + ' Pers</span>' + (expiredCount > 0 ? '<span style="font-size:11px;background:var(--red-dim);color:var(--red);padding:4px 8px;border-radius:4px">⚠️ ' + expiredCount + ' Exp</span>' : '') + (openTickets > 0 ? '<span style="font-size:11px;background:var(--amber-dim);color:var(--amber);padding:4px 8px;border-radius:4px">🎫 ' + openTickets + '</span>' : '') + (openViolations > 0 ? '<span style="font-size:11px;background:var(--purple-dim);color:var(--purple);padding:4px 8px;border-radius:4px">⚠️ ' + openViolations + '</span>' : '') + (openClaims > 0 ? '<span style="font-size:11px;background:var(--amber-dim);color:var(--amber);padding:4px 8px;border-radius:4px">💥 ' + openClaims + '</span>' : '') + '</div><div style="display:flex;justify-content:space-between;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)"><div><div style="font-size:18px;font-weight:700">' + trips.length + '</div><div style="font-size:11px;color:var(--text-muted)">Trips</div></div><div><div style="font-size:18px;font-weight:700;color:var(--green)">' + formatMoney(earn) + '</div><div style="font-size:11px;color:var(--text-muted)">Earnings</div></div><div class="actions"><button class="action-btn view" onclick="viewDriverProfile(' + d.id + ')">View</button><button class="action-btn edit" onclick="openDriverModal(' + d.id + ')">Edit</button><button class="action-btn delete" onclick="deleteDriver(' + d.id + ')">Del</button></div></div></div>'; 
       }).join('')) + '</div>';
     }
 
@@ -17937,10 +17937,10 @@ ${rateText}`
       c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px"><button class="btn btn-secondary" onclick="renderDrivers(document.getElementById(\'main-content\'))">← Back</button><div class="driver-avatar" style="width:50px;height:50px;font-size:20px">' + d.first_name[0] + d.last_name[0] + '</div><div><h2 style="margin:0">' + d.first_name + ' ' + d.last_name + '</h2><p style="margin:0;color:var(--text-muted)">' + d.phone + (d.email ? ' | ' + d.email : '') + '</p></div><span class="badge ' + getBadge(d.status) + '">' + d.status + '</span></div><button class="btn btn-primary" onclick="openDriverModal(' + driverId + ')">✏️ Edit Driver</button></div>' +
         
         // Stats
-        '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px"><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Driver Cut</div><div class="value">' + d.cut_percent + '%</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Total Trips</div><div class="value">' + trips.length + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px;background:#d1fae5"><div class="label">Total Earnings</div><div class="value" style="color:#059669">' + formatMoney(earn) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px"><div class="label">Qualification Files</div><div class="value">' + qualFiles.length + '/10</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Personal Files</div><div class="value">' + persFiles.length + '/3</div></div><div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px;background:var(--blue-dim)"><div class="label">Custom Folders</div><div class="value" style="color:#1d4ed8">' + customFolders.length + '</div></div></div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px"><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Driver Cut</div><div class="value">' + d.cut_percent + '%</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Total Trips</div><div class="value">' + trips.length + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px;background:var(--green-dim)"><div class="label">Total Earnings</div><div class="value" style="color:var(--green)">' + formatMoney(earn) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px"><div class="label">Qualification Files</div><div class="value">' + qualFiles.length + '/10</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Personal Files</div><div class="value">' + persFiles.length + '/3</div></div><div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px;background:var(--blue-dim)"><div class="label">Custom Folders</div><div class="value" style="color:var(--blue)">' + customFolders.length + '</div></div></div>' +
         
         // Qualification Files Section
-        '<div class="card" style="margin-bottom:24px"><div class="card-header" style="background:#1e40af;color:white;border-radius:8px 8px 0 0"><h3 style="margin:0">📁 Driver Qualification Files (DQ Files)</h3></div><div class="table-wrapper"><table><thead><tr><th>Document Type</th><th>Status</th><th>Expiration</th><th>Uploaded</th><th>Actions</th></tr></thead><tbody>' +
+        '<div class="card" style="margin-bottom:24px"><div class="card-header" style="background:var(--blue);color:white;border-radius:8px 8px 0 0"><h3 style="margin:0">📁 Driver Qualification Files (DQ Files)</h3></div><div class="table-wrapper"><table><thead><tr><th>Document Type</th><th>Status</th><th>Expiration</th><th>Uploaded</th><th>Actions</th></tr></thead><tbody>' +
         qualFileTypes.map(ft => {
           const file = qualFiles.find(f => f.file_type === ft.type);
           return '<tr><td><strong>' + formatFileType(ft.type) + '</strong></td><td>' + (file ? '<span class="badge badge-green">✓ Uploaded</span>' : '<span class="badge badge-gray">Missing</span>') + '</td><td>' + (ft.hasExpiry ? (file ? getExpiryBadge(file) : '<span style="color:var(--text-muted)">-</span>') : '<span style="color:var(--text-muted)">N/A</span>') + '</td><td>' + (file ? formatDate(file.created_at) : '-') + '</td><td><div class="actions">' + (file ? '<button class="action-btn view" onclick="viewFile(' + file.id + ')">View</button><button class="action-btn delete" onclick="deleteDriverFile(' + file.id + ',' + driverId + ')">Del</button>' : '<button class="action-btn edit" onclick="openUploadFileModal(' + driverId + ',\'' + ft.type + '\',\'QUALIFICATION\',' + ft.hasExpiry + ')">Upload</button>') + '</div></td></tr>';
@@ -17948,7 +17948,7 @@ ${rateText}`
         '</tbody></table></div></div>' +
         
         // Personal Files Section
-        '<div class="card" style="margin-bottom:24px"><div class="card-header" style="background:#7c3aed;color:white;border-radius:8px 8px 0 0"><h3 style="margin:0">🔒 Driver Personal Files</h3></div><div class="table-wrapper"><table><thead><tr><th>Document Type</th><th>Status</th><th>Uploaded</th><th>Actions</th></tr></thead><tbody>' +
+        '<div class="card" style="margin-bottom:24px"><div class="card-header" style="background:var(--purple);color:white;border-radius:8px 8px 0 0"><h3 style="margin:0">🔒 Driver Personal Files</h3></div><div class="table-wrapper"><table><thead><tr><th>Document Type</th><th>Status</th><th>Uploaded</th><th>Actions</th></tr></thead><tbody>' +
         persFileTypes.map(ft => {
           const file = persFiles.find(f => f.file_type === ft);
           return '<tr><td><strong>' + formatFileType(ft) + '</strong></td><td>' + (file ? '<span class="badge badge-green">✓ Uploaded</span>' : '<span class="badge badge-gray">Missing</span>') + '</td><td>' + (file ? formatDate(file.created_at) : '-') + '</td><td><div class="actions">' + (file ? '<button class="action-btn view" onclick="viewFile(' + file.id + ')">View</button><button class="action-btn delete" onclick="deleteDriverFile(' + file.id + ',' + driverId + ')">Del</button>' : '<button class="action-btn edit" onclick="openUploadFileModal(' + driverId + ',\'' + ft + '\',\'PERSONAL\',false)">Upload</button>') + '</div></td></tr>';
@@ -17956,12 +17956,12 @@ ${rateText}`
         '</tbody></table></div></div>' +
         
         // Custom Folders Section
-        '<div class="card"><div class="card-header" style="background:#0891b2;color:white;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">📂 Custom Folders</h3><button class="btn" style="background:var(--bg-card);color:#0891b2;padding:6px 12px;font-size:13px" onclick="openCustomFolderModal(' + driverId + ',\'driver\')">+ New Folder</button></div>' +
+        '<div class="card"><div class="card-header" style="background:var(--blue);color:white;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">📂 Custom Folders</h3><button class="btn" style="background:var(--bg-card);color:var(--blue);padding:6px 12px;font-size:13px" onclick="openCustomFolderModal(' + driverId + ',\'driver\')">+ New Folder</button></div>' +
         (customFolders.length === 0 ? '<div style="padding:40px;text-align:center;color:var(--text-muted)">No custom folders yet. Click "+ New Folder" to create one.</div>' :
         '<div style="padding:16px">' +
         customFolders.map(folder => {
           const folderFiles = customFiles.filter(f => (f.folder_name || 'Uncategorized') === folder);
-          return '<div style="margin-bottom:16px;border:1px solid #e5e7eb;border-radius:8px"><div style="background:#f0f9ff;padding:12px 16px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><strong>📁 ' + folder + ' (' + folderFiles.length + ' files)</strong><button class="action-btn edit" onclick="openCustomFileUpload(' + driverId + ',\'' + folder.replace(/'/g, "\\'") + '\',\'driver\')">+ Add File</button></div>' +
+          return '<div style="margin-bottom:16px;border:1px solid var(--bg-elevated);border-radius:8px"><div style="background:var(--blue-dim);padding:12px 16px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><strong>📁 ' + folder + ' (' + folderFiles.length + ' files)</strong><button class="action-btn edit" onclick="openCustomFileUpload(' + driverId + ',\'' + folder.replace(/'/g, "\\'") + '\',\'driver\')">+ Add File</button></div>' +
             '<div class="table-wrapper"><table><thead><tr><th>File Name</th><th>Type</th><th>Uploaded</th><th>Notes</th><th>Actions</th></tr></thead><tbody>' +
             folderFiles.map(f => '<tr><td>' + f.file_name + '</td><td>' + (f.file_type || '-') + '</td><td>' + formatDate(f.created_at) + '</td><td>' + (f.notes || '-') + '</td><td><div class="actions"><button class="action-btn view" onclick="viewFile(' + f.id + ')">View</button><button class="action-btn delete" onclick="deleteDriverFile(' + f.id + ',' + driverId + ')">Del</button></div></td></tr>').join('') +
             '</tbody></table></div></div>';
@@ -17983,12 +17983,12 @@ ${rateText}`
       const driverFaultPaid = driverClaims.filter(c => c.fault_party === 'DRIVER' && c.status === 'SETTLED')
         .reduce((s, c) => s + parseFloat(c.settlement_amount || c.claim_amount || 0), 0);
       
-      return '<div class="card" style="margin-top:24px"><div class="card-header" style="background:#dc2626;color:white;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">🎫 Compliance Record</h3><div style="display:flex;gap:8px"><button class="btn" style="background:var(--bg-card);color:var(--red);padding:6px 12px;font-size:13px" onclick="openTicketModal(null,' + driverId + ')">+ Ticket</button><button class="btn" style="background:var(--bg-card);color:#8b5cf6;padding:6px 12px;font-size:13px" onclick="openViolationModal(null,' + driverId + ')">+ Violation</button><button class="btn" style="background:var(--bg-card);color:var(--amber);padding:6px 12px;font-size:13px" onclick="openClaimModalForDriver(' + driverId + ')">+ Claim</button></div></div>' +
+      return '<div class="card" style="margin-top:24px"><div class="card-header" style="background:var(--red);color:white;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">🎫 Compliance Record</h3><div style="display:flex;gap:8px"><button class="btn" style="background:var(--bg-card);color:var(--red);padding:6px 12px;font-size:13px" onclick="openTicketModal(null,' + driverId + ')">+ Ticket</button><button class="btn" style="background:var(--bg-card);color:var(--purple);padding:6px 12px;font-size:13px" onclick="openViolationModal(null,' + driverId + ')">+ Violation</button><button class="btn" style="background:var(--bg-card);color:var(--amber);padding:6px 12px;font-size:13px" onclick="openClaimModalForDriver(' + driverId + ')">+ Claim</button></div></div>' +
         
         // Summary badges
         '<div style="padding:16px;background:var(--bg-darker);display:flex;gap:16px;flex-wrap:wrap">' +
         '<div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600">Tickets:</span><span class="badge badge-red">' + openTickets + ' Open</span><span class="badge badge-green">' + (driverTickets.length - openTickets) + ' Closed</span></div>' +
-        '<div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600">Violations:</span><span class="badge" style="background:#8b5cf6;color:white">' + openViolations + ' Open</span><span class="badge badge-blue">' + (driverViolations.length - openViolations) + ' Closed</span></div>' +
+        '<div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600">Violations:</span><span class="badge" style="background:var(--purple);color:white">' + openViolations + ' Open</span><span class="badge badge-blue">' + (driverViolations.length - openViolations) + ' Closed</span></div>' +
         '<div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600">Claims:</span><span class="badge badge-amber">' + openClaims + ' Open</span><span class="badge badge-gray">' + (driverClaims.length - openClaims) + ' Closed</span></div>' +
         (driverFaultPaid > 0 ? '<div style="display:flex;align-items:center;gap:8px;margin-left:auto"><span class="badge badge-red" style="font-size:12px">💰 Driver Fault Paid: ' + formatMoney(driverFaultPaid) + '</span></div>' : '') +
         '</div>' +
@@ -18206,7 +18206,7 @@ ${rateText}`
       const states = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'];
       const stateOpts = states.map(s => '<option value="' + s + '"' + (d?.cdl_state === s ? ' selected' : '') + '>' + s + '</option>').join('');
       const modalTitle = d ? 'Edit' : (isOwnerOp ? 'New Owner-Operator' : 'New Company Driver');
-      const headerColor = isOwnerOp ? 'background:var(--amber-dim);border-bottom:3px solid #f59e0b' : '';
+      const headerColor = isOwnerOp ? 'background:var(--amber-dim);border-bottom:3px solid var(--amber)' : '';
 
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
       m.innerHTML = '<div class="modal" style="max-width:700px"><div class="modal-header" style="' + headerColor + '"><h3>' + modalTitle + (isOwnerOp ? ' <span class="badge" style="background:var(--amber);color:white;font-size:12px">Owner-OP</span>' : '') + '</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body" style="max-height:75vh;overflow-y:auto">' +
@@ -18223,7 +18223,7 @@ ${rateText}`
         '<div class="form-row"><div class="form-group"><label>Hire Date</label><input type="date" id="dHireDate" value="' + (d?.hire_date || '') + '"></div><div class="form-group"><label>Termination Date</label><input type="date" id="dTermDate" value="' + (d?.termination_date || '') + '"></div></div>' +
         '<div class="form-row">' +
         (isOwnerOp
-          ? '<div class="form-group"><label style="color:#b45309;font-weight:600">Dispatch Fee %</label><input type="number" id="dDispatchFee" value="' + (d?.dispatch_fee_percent || 5) + '" step="0.5" style="border-color:var(--amber)"><small style="color:var(--amber)">% charged to owner-operator (your profit)</small></div>'
+          ? '<div class="form-group"><label style="color:var(--amber);font-weight:600">Dispatch Fee %</label><input type="number" id="dDispatchFee" value="' + (d?.dispatch_fee_percent || 5) + '" step="0.5" style="border-color:var(--amber)"><small style="color:var(--amber)">% charged to owner-operator (your profit)</small></div>'
           : '<div class="form-group"><label>Cut %</label><input type="number" id="dCut" value="' + (d?.cut_percent || 32) + '" step="0.5"><small style="color:var(--text-muted)">% driver receives from clean revenue</small></div>'
         ) +
         '<div class="form-group"><label>Status</label><select id="dStatus"><option value="ACTIVE"' + (d?.status === 'ACTIVE' ? ' selected' : '') + '>ACTIVE</option><option value="INACTIVE"' + (d?.status === 'INACTIVE' ? ' selected' : '') + '>INACTIVE</option><option value="ON_LEAVE"' + (d?.status === 'ON_LEAVE' ? ' selected' : '') + '>ON LEAVE</option><option value="TERMINATED"' + (d?.status === 'TERMINATED' ? ' selected' : '') + '>TERMINATED</option></select></div></div>' +
@@ -18602,10 +18602,10 @@ ${rateText}`
         // Stats
         '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px">' +
         '<div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px"><div class="label">Local Drivers</div><div class="value">' + (appData.local_drivers || []).length + '</div></div>' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px;background:var(--blue-dim)"><div class="label">Pending Pickup</div><div class="value" style="color:#1d4ed8">' + pendingLocalPickup.length + '</div></div>' +
+        '<div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px;background:var(--blue-dim)"><div class="label">Pending Pickup</div><div class="value" style="color:var(--blue)">' + pendingLocalPickup.length + '</div></div>' +
         '<div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px;background:var(--amber-dim)"><div class="label">Pending Delivery</div><div class="value" style="color:var(--amber)">' + pendingLocalDelivery.length + '</div></div>' +
         '<div class="stat-card" style="flex:0 0 auto;min-width:130px;padding:12px 16px"><div class="label">Total Pending Fees</div><div class="value" style="color:var(--red)">' + formatMoney(totalPendingDeliveryFees + totalPendingPickupFees) + '</div></div>' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:140px;padding:12px 16px;background:#d1fae5"><div class="label">Total Delivery Revenue</div><div class="value" style="color:#059669">' + formatMoney(totalPendingDeliveryRevenue) + '</div></div>' +
+        '<div class="stat-card" style="flex:0 0 auto;min-width:140px;padding:12px 16px;background:var(--green-dim)"><div class="label">Total Delivery Revenue</div><div class="value" style="color:var(--green)">' + formatMoney(totalPendingDeliveryRevenue) + '</div></div>' +
         '</div>' +
         
         // Local Drivers List
@@ -18618,43 +18618,43 @@ ${rateText}`
         
         // Pending Local Pickup (from Load Board NY to Home)
         '<div class="card" style="margin-bottom:24px"><div class="card-header" style="background:var(--blue);color:white;border-radius:8px 8px 0 0"><h3 style="margin:0">🟡 Pending Local Pickup (' + pendingLocalPickup.length + ')</h3></div>' +
-        '<div style="padding:12px;background:var(--blue-dim);border-bottom:1px solid #93c5fd;font-size:13px;color:#1d4ed8">Cars from <strong>Load Board → NY to Home</strong> that need pickup from NY/NJ to terminal. <span style="margin-left:12px">🔵 Pending | 🟠 Scheduled | 🟡 Confirmed | 🟢 Ready | 🔴 Issue</span></div>' +
+        '<div style="padding:12px;background:var(--blue-dim);border-bottom:1px solid var(--blue-dim);font-size:13px;color:var(--blue)">Cars from <strong>Load Board → NY to Home</strong> that need pickup from NY/NJ to terminal. <span style="margin-left:12px">🔵 Pending | 🟠 Scheduled | 🟡 Confirmed | 🟢 Ready | 🔴 Issue</span></div>' +
         (pendingLocalPickup.length === 0 ? '<div style="padding:40px;text-align:center;color:var(--text-muted)">No cars pending local pickup</div>' :
         '<div class="table-wrapper"><table><thead><tr><th>Status</th><th>Order</th><th>Broker</th><th>Vehicle</th><th>Origin</th><th>📞P</th><th>Destination</th><th>Pick-Up</th><th>Delivery</th><th>Payment</th><th>Broker Fee</th><th>Local Fee</th><th>Revenue</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
         pendingLocalPickup.map(o => {
           const confirmStatus = o.local_confirmation_status || 'pending';
-          const rowColors = { pending: '#dbeafe', scheduled: '#ffedd5', confirmed: '#fef9c3', ready: '#dcfce7', issue: '#fee2e2' };
+          const rowColors = { pending: 'var(--blue-dim)', scheduled: 'var(--amber-dim)', confirmed: 'var(--amber-dim)', ready: 'var(--green-dim)', issue: 'var(--red-dim)' };
           const statusIcons = { pending: '🔵', scheduled: '🟠', confirmed: '🟡', ready: '🟢', issue: '🔴' };
-          const rowColor = rowColors[confirmStatus] || '#dbeafe';
+          const rowColor = rowColors[confirmStatus] || 'var(--blue-dim)';
           const statusIcon = statusIcons[confirmStatus] || '🔵';
           const pickupPhoneDisplay = o.pickup_phone ? '<a href="tel:' + o.pickup_phone + '" style="color:var(--blue)" title="' + o.pickup_phone + '">📞</a>' : '-';
           const noteBtn = o.local_notes ? 
-            '<button class="action-btn" style="background:#a855f7;color:white" onclick="openLocalNote(' + o.id + ')" title="' + o.local_notes.replace(/"/g, '&quot;').replace(/\n/g, ' ') + '">📝</button>' : 
-            '<button class="action-btn" style="background:#e9d5ff;color:#7c3aed" onclick="openLocalNote(' + o.id + ')" title="Add note">📝+</button>';
-          const noteHtml = o.local_notes ? '<tr style="background:#f3e8ff"><td colspan="14" style="padding:8px 16px;font-size:13px"><span style="font-weight:600;color:#7c3aed">📝 Local Note:</span> ' + o.local_notes + '</td></tr>' : '';
-          return '<tr style="background:' + rowColor + '"><td style="text-align:center"><button onclick="cycleConfirmationStatus(' + o.id + ')" style="background:none;border:none;font-size:18px;cursor:pointer" title="Click to change status">' + statusIcon + '</button></td><td><strong>' + o.order_number + '</strong></td><td>' + (o.broker_name || '-') + '</td><td>' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + '</td><td title="' + (o.pickup_full_address || o.origin || '') + '">' + (o.origin || '-') + '</td><td>' + pickupPhoneDisplay + '</td><td title="' + (o.delivery_full_address || o.destination || '') + '">' + (o.destination || '-') + '</td><td>' + (o.pickup_date ? formatDate(o.pickup_date) : '-') + '</td><td>' + (o.dropoff_date ? formatDate(o.dropoff_date) : '-') + '</td><td><span class="badge badge-blue">' + (o.payment_type || '-') + '</span></td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee || 0) + '</td><td class="money">' + formatMoney(o.revenue || 0) + '</td><td class="sticky-col"><div class="actions">' + noteBtn + '<button class="action-btn" style="background:var(--green);color:white" onclick="openAssignLocalDriver(' + o.id + ',\'pickup\')">Assign</button><button class="action-btn" style="background:#6b7280;color:white" onclick="markNotForLocalDelivery(' + o.id + ')">Not Local</button></div></td></tr>' + noteHtml;
+            '<button class="action-btn" style="background:var(--purple);color:white" onclick="openLocalNote(' + o.id + ')" title="' + o.local_notes.replace(/"/g, '&quot;').replace(/\n/g, ' ') + '">📝</button>' : 
+            '<button class="action-btn" style="background:var(--purple-dim);color:var(--purple)" onclick="openLocalNote(' + o.id + ')" title="Add note">📝+</button>';
+          const noteHtml = o.local_notes ? '<tr style="background:var(--purple-dim)"><td colspan="14" style="padding:8px 16px;font-size:13px"><span style="font-weight:600;color:var(--purple)">📝 Local Note:</span> ' + o.local_notes + '</td></tr>' : '';
+          return '<tr style="background:' + rowColor + '"><td style="text-align:center"><button onclick="cycleConfirmationStatus(' + o.id + ')" style="background:none;border:none;font-size:18px;cursor:pointer" title="Click to change status">' + statusIcon + '</button></td><td><strong>' + o.order_number + '</strong></td><td>' + (o.broker_name || '-') + '</td><td>' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + '</td><td title="' + (o.pickup_full_address || o.origin || '') + '">' + (o.origin || '-') + '</td><td>' + pickupPhoneDisplay + '</td><td title="' + (o.delivery_full_address || o.destination || '') + '">' + (o.destination || '-') + '</td><td>' + (o.pickup_date ? formatDate(o.pickup_date) : '-') + '</td><td>' + (o.dropoff_date ? formatDate(o.dropoff_date) : '-') + '</td><td><span class="badge badge-blue">' + (o.payment_type || '-') + '</span></td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee || 0) + '</td><td class="money">' + formatMoney(o.revenue || 0) + '</td><td class="sticky-col"><div class="actions">' + noteBtn + '<button class="action-btn" style="background:var(--green);color:white" onclick="openAssignLocalDriver(' + o.id + ',\'pickup\')">Assign</button><button class="action-btn" style="background:var(--text-secondary);color:white" onclick="markNotForLocalDelivery(' + o.id + ')">Not Local</button></div></td></tr>' + noteHtml;
         }).join('') +
         '</tbody></table></div>') +
         '</div>' +
         
         // Pending Local Delivery (from completed trips)
         '<div class="card"><div class="card-header" style="background:var(--amber);color:white;border-radius:8px 8px 0 0"><h3 style="margin:0">📦 Pending Local Delivery (' + pendingLocalDelivery.length + ')</h3></div>' +
-        '<div style="padding:12px;background:var(--amber-dim);border-bottom:1px solid #fde68a;font-size:13px;color:var(--amber)">Cars from <strong>COMPLETED</strong> trips with destinations in <strong>NY, NJ, or PA</strong>. <span style="margin-left:12px">🔵 Pending | 🟠 Scheduled | 🟡 Confirmed | 🟢 Ready | 🔴 Issue</span></div>' +
+        '<div style="padding:12px;background:var(--amber-dim);border-bottom:1px solid var(--amber-dim);font-size:13px;color:var(--amber)">Cars from <strong>COMPLETED</strong> trips with destinations in <strong>NY, NJ, or PA</strong>. <span style="margin-left:12px">🔵 Pending | 🟠 Scheduled | 🟡 Confirmed | 🟢 Ready | 🔴 Issue</span></div>' +
         (pendingLocalDelivery.length === 0 ? '<div style="padding:40px;text-align:center;color:var(--text-muted)">No orders pending local delivery</div>' :
         '<div class="table-wrapper"><table><thead><tr><th>Status</th><th>Order</th><th>Broker</th><th>Vehicle</th><th>Origin</th><th>Destination</th><th>📞D</th><th>Pick-Up</th><th>Delivery</th><th>Payment</th><th>Broker Fee</th><th>Local Fee</th><th>Revenue</th><th>Trip</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
         pendingLocalDelivery.map(o => {
           const trip = appData.trips.find(t => t.id === o.trip_id);
           const confirmStatus = o.local_confirmation_status || 'pending';
-          const rowColors = { pending: '#dbeafe', scheduled: '#ffedd5', confirmed: '#fef9c3', ready: '#dcfce7', issue: '#fee2e2' };
+          const rowColors = { pending: 'var(--blue-dim)', scheduled: 'var(--amber-dim)', confirmed: 'var(--amber-dim)', ready: 'var(--green-dim)', issue: 'var(--red-dim)' };
           const statusIcons = { pending: '🔵', scheduled: '🟠', confirmed: '🟡', ready: '🟢', issue: '🔴' };
-          const rowColor = rowColors[confirmStatus] || '#dbeafe';
+          const rowColor = rowColors[confirmStatus] || 'var(--blue-dim)';
           const statusIcon = statusIcons[confirmStatus] || '🔵';
           const deliveryPhoneDisplay = o.delivery_phone ? '<a href="tel:' + o.delivery_phone + '" style="color:var(--green)" title="' + o.delivery_phone + '">📞</a>' : '-';
           const noteBtn = o.local_notes ? 
-            '<button class="action-btn" style="background:#a855f7;color:white" onclick="openLocalNote(' + o.id + ')" title="' + o.local_notes.replace(/"/g, '&quot;').replace(/\n/g, ' ') + '">📝</button>' : 
-            '<button class="action-btn" style="background:#e9d5ff;color:#7c3aed" onclick="openLocalNote(' + o.id + ')" title="Add note">📝+</button>';
-          const noteHtml = o.local_notes ? '<tr style="background:#f3e8ff"><td colspan="15" style="padding:8px 16px;font-size:13px"><span style="font-weight:600;color:#7c3aed">📝 Local Note:</span> ' + o.local_notes + '</td></tr>' : '';
-          return '<tr style="background:' + rowColor + '"><td style="text-align:center"><button onclick="cycleConfirmationStatus(' + o.id + ')" style="background:none;border:none;font-size:18px;cursor:pointer" title="Click to change status">' + statusIcon + '</button></td><td><strong>' + o.order_number + '</strong></td><td>' + (o.broker_name || '-') + '</td><td>' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + '</td><td title="' + (o.pickup_full_address || o.origin || '') + '">' + (o.origin || '-') + '</td><td title="' + (o.delivery_full_address || o.destination || '') + '">' + o.destination + '</td><td>' + deliveryPhoneDisplay + '</td><td>' + (o.pickup_date ? formatDate(o.pickup_date) : '-') + '</td><td>' + (o.dropoff_date ? formatDate(o.dropoff_date) : '-') + '</td><td><span class="badge badge-blue">' + (o.payment_type || '-') + '</span></td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee) + '</td><td class="money">' + formatMoney(o.revenue || 0) + '</td><td>' + (trip ? trip.trip_number : '-') + '</td><td class="sticky-col"><div class="actions">' + noteBtn + '<button class="action-btn" style="background:var(--green);color:white" onclick="openAssignLocalDriver(' + o.id + ',\'delivery\')">Assign</button><button class="action-btn" style="background:#6b7280;color:white" onclick="markNotForLocalDelivery(' + o.id + ')">Not Local</button></div></td></tr>' + noteHtml;
+            '<button class="action-btn" style="background:var(--purple);color:white" onclick="openLocalNote(' + o.id + ')" title="' + o.local_notes.replace(/"/g, '&quot;').replace(/\n/g, ' ') + '">📝</button>' : 
+            '<button class="action-btn" style="background:var(--purple-dim);color:var(--purple)" onclick="openLocalNote(' + o.id + ')" title="Add note">📝+</button>';
+          const noteHtml = o.local_notes ? '<tr style="background:var(--purple-dim)"><td colspan="15" style="padding:8px 16px;font-size:13px"><span style="font-weight:600;color:var(--purple)">📝 Local Note:</span> ' + o.local_notes + '</td></tr>' : '';
+          return '<tr style="background:' + rowColor + '"><td style="text-align:center"><button onclick="cycleConfirmationStatus(' + o.id + ')" style="background:none;border:none;font-size:18px;cursor:pointer" title="Click to change status">' + statusIcon + '</button></td><td><strong>' + o.order_number + '</strong></td><td>' + (o.broker_name || '-') + '</td><td>' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + '</td><td title="' + (o.pickup_full_address || o.origin || '') + '">' + (o.origin || '-') + '</td><td title="' + (o.delivery_full_address || o.destination || '') + '">' + o.destination + '</td><td>' + deliveryPhoneDisplay + '</td><td>' + (o.pickup_date ? formatDate(o.pickup_date) : '-') + '</td><td>' + (o.dropoff_date ? formatDate(o.dropoff_date) : '-') + '</td><td><span class="badge badge-blue">' + (o.payment_type || '-') + '</span></td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee) + '</td><td class="money">' + formatMoney(o.revenue || 0) + '</td><td>' + (trip ? trip.trip_number : '-') + '</td><td class="sticky-col"><div class="actions">' + noteBtn + '<button class="action-btn" style="background:var(--green);color:white" onclick="openAssignLocalDriver(' + o.id + ',\'delivery\')">Assign</button><button class="action-btn" style="background:var(--text-secondary);color:white" onclick="markNotForLocalDelivery(' + o.id + ')">Not Local</button></div></td></tr>' + noteHtml;
         }).join('') +
         '</tbody></table></div>') +
         '</div>';
@@ -18752,15 +18752,15 @@ ${rateText}`
       const m = document.createElement('div'); 
       m.className = 'modal-overlay'; 
       m.onclick = e => { if (e.target === m) m.remove(); };
-      m.innerHTML = '<div class="modal" style="max-width:500px"><div class="modal-header" style="background:#a855f7;color:white"><h3 style="margin:0">📝 Local Note</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()" style="color:white">×</button></div><div class="modal-body">' +
-        '<div style="background:#f3e8ff;padding:12px;border-radius:8px;margin-bottom:16px">' +
+      m.innerHTML = '<div class="modal" style="max-width:500px"><div class="modal-header" style="background:var(--purple);color:white"><h3 style="margin:0">📝 Local Note</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()" style="color:white">×</button></div><div class="modal-body">' +
+        '<div style="background:var(--purple-dim);padding:12px;border-radius:8px;margin-bottom:16px">' +
         '<strong>' + o.order_number + '</strong> - ' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + 
-        '<br><span style="color:#7c3aed">' + (o.origin || '-') + ' → ' + (o.destination || '-') + '</span></div>' +
+        '<br><span style="color:var(--purple)">' + (o.origin || '-') + ' → ' + (o.destination || '-') + '</span></div>' +
         '<div class="form-group"><label>Note</label><textarea id="localNoteText" rows="4" placeholder="Add note about this vehicle..." style="resize:vertical;width:100%">' + (o.local_notes || '') + '</textarea></div>' +
         '</div><div class="modal-footer">' +
-        (o.local_notes ? '<button class="btn" style="background:var(--red-dim);color:var(--red);border:1px solid #fecaca;margin-right:auto" onclick="clearLocalNote(' + orderId + ')">Clear Note</button>' : '') +
+        (o.local_notes ? '<button class="btn" style="background:var(--red-dim);color:var(--red);border:1px solid var(--red-dim);margin-right:auto" onclick="clearLocalNote(' + orderId + ')">Clear Note</button>' : '') +
         '<button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>' +
-        '<button class="btn" style="background:#a855f7;color:white" onclick="saveLocalNote(' + orderId + ')">Save Note</button></div></div>';
+        '<button class="btn" style="background:var(--purple);color:white" onclick="saveLocalNote(' + orderId + ')">Save Note</button></div></div>';
       document.body.appendChild(m);
       
       // Focus on textarea
@@ -18876,7 +18876,7 @@ ${rateText}`
       
       const getTypeBadge = (type) => {
         if (type === 'TO_TERMINAL') return '<span class="badge" style="background:var(--amber-dim);color:var(--amber)">🟡 Pickup</span>';
-        if (type === 'FROM_TERMINAL') return '<span class="badge" style="background:#e5e7eb;color:#374151">🔘 Delivery</span>';
+        if (type === 'FROM_TERMINAL') return '<span class="badge" style="background:var(--bg-elevated);color:var(--text-secondary)">🔘 Delivery</span>';
         return '<span class="badge badge-gray">-</span>';
       };
       
@@ -18889,8 +18889,8 @@ ${rateText}`
         '<div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Completed</div><div class="value" style="color:var(--green)">' + completedOrders.length + '</div></div>' +
         '<div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Pending</div><div class="value" style="color:var(--amber)">' + pendingOrders.length + '</div></div>' +
         '<div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px;background:var(--amber-dim)"><div class="label">🟡 Pickups</div><div class="value">' + toTerminalOrders.length + '</div></div>' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;background:#e5e7eb"><div class="label">🔘 Deliveries</div><div class="value">' + fromTerminalOrders.length + '</div></div>' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px;background:#d1fae5"><div class="label">Total Earnings</div><div class="value" style="color:#059669">' + formatMoney(totalEarnings) + '</div></div>' +
+        '<div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;background:var(--bg-elevated)"><div class="label">🔘 Deliveries</div><div class="value">' + fromTerminalOrders.length + '</div></div>' +
+        '<div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px;background:var(--green-dim)"><div class="label">Total Earnings</div><div class="value" style="color:var(--green)">' + formatMoney(totalEarnings) + '</div></div>' +
         '</div>' +
         
         // Driver Info
@@ -18907,16 +18907,16 @@ ${rateText}`
         '<div class="table-wrapper"><table><thead><tr><th>Status</th><th>Order</th><th>Broker</th><th>Vehicle</th><th>Origin</th><th>📞P</th><th>Destination</th><th>📞D</th><th>Type</th><th>Broker Fee</th><th>Local Fee</th><th>Revenue</th><th>Delivery</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
         driverOrders.map(o => {
           const confirmStatus = o.local_confirmation_status || 'pending';
-          const rowColors = { pending: '#dbeafe', scheduled: '#ffedd5', confirmed: '#fef9c3', ready: '#dcfce7', issue: '#fee2e2' };
+          const rowColors = { pending: 'var(--blue-dim)', scheduled: 'var(--amber-dim)', confirmed: 'var(--amber-dim)', ready: 'var(--green-dim)', issue: 'var(--red-dim)' };
           const statusIcons = { pending: '🔵', scheduled: '🟠', confirmed: '🟡', ready: '🟢', issue: '🔴' };
-          const rowColor = rowColors[confirmStatus] || '#dbeafe';
+          const rowColor = rowColors[confirmStatus] || 'var(--blue-dim)';
           const statusIcon = statusIcons[confirmStatus] || '🔵';
           const pickupPhoneDisplay = o.pickup_phone ? '<a href="tel:' + o.pickup_phone + '" style="color:var(--blue)" title="' + o.pickup_phone + '">📞</a>' : '-';
           const deliveryPhoneDisplay = o.delivery_phone ? '<a href="tel:' + o.delivery_phone + '" style="color:var(--green)" title="' + o.delivery_phone + '">📞</a>' : '-';
           const noteBtn = o.local_notes ? 
-            '<button class="action-btn" style="background:#a855f7;color:white" onclick="openLocalNoteFromDriver(' + o.id + ',' + localDriverId + ')" title="' + o.local_notes.replace(/"/g, '&quot;').replace(/\n/g, ' ') + '">📝</button>' : 
-            '<button class="action-btn" style="background:#e9d5ff;color:#7c3aed" onclick="openLocalNoteFromDriver(' + o.id + ',' + localDriverId + ')" title="Add note">📝+</button>';
-          const noteHtml = o.local_notes ? '<tr style="background:#f3e8ff"><td colspan="14" style="padding:8px 16px;font-size:13px"><span style="font-weight:600;color:#7c3aed">📝 Local Note:</span> ' + o.local_notes + '</td></tr>' : '';
+            '<button class="action-btn" style="background:var(--purple);color:white" onclick="openLocalNoteFromDriver(' + o.id + ',' + localDriverId + ')" title="' + o.local_notes.replace(/"/g, '&quot;').replace(/\n/g, ' ') + '">📝</button>' : 
+            '<button class="action-btn" style="background:var(--purple-dim);color:var(--purple)" onclick="openLocalNoteFromDriver(' + o.id + ',' + localDriverId + ')" title="Add note">📝+</button>';
+          const noteHtml = o.local_notes ? '<tr style="background:var(--purple-dim)"><td colspan="14" style="padding:8px 16px;font-size:13px"><span style="font-weight:600;color:var(--purple)">📝 Local Note:</span> ' + o.local_notes + '</td></tr>' : '';
           return '<tr style="background:' + rowColor + '"><td style="text-align:center"><button onclick="cycleConfirmationStatusFromDriver(' + o.id + ',' + localDriverId + ')" style="background:none;border:none;font-size:18px;cursor:pointer" title="Click to change status">' + statusIcon + '</button></td><td><strong>' + o.order_number + '</strong>' + (o.trip_id ? ' <span class="badge badge-blue" style="font-size:10px">On Trip</span>' : '') + '</td><td>' + (o.broker_name || '-') + '</td><td>' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + '</td><td title="' + (o.pickup_full_address || o.origin || '') + '">' + (o.origin || '-') + '</td><td>' + pickupPhoneDisplay + '</td><td title="' + (o.delivery_full_address || o.destination || '') + '">' + (o.destination || '-') + '</td><td>' + deliveryPhoneDisplay + '</td><td>' + getTypeBadge(o.local_delivery_type) + '</td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee || 0) + '</td><td class="money">' + formatMoney(o.revenue || 0) + '</td><td><span class="badge ' + (o.local_delivery_status === 'DELIVERED' ? 'badge-green' : o.local_delivery_status === 'UNASSIGNED' ? 'badge-gray' : 'badge-amber') + '">' + (o.local_delivery_status || 'ASSIGNED') + '</span></td><td class="sticky-col"><div class="actions">' + noteBtn + (o.local_delivery_status !== 'DELIVERED' && o.local_delivery_status !== 'UNASSIGNED' ? '<button class="action-btn edit" style="background:var(--green);color:white" onclick="markLocalDelivered(' + o.id + ',' + localDriverId + ')">✓</button>' : '') + (o.local_delivery_status !== 'UNASSIGNED' ? '<button class="action-btn delete" onclick="unassignLocalDriver(' + o.id + ',' + localDriverId + ')">✗</button>' : '') + '</div></td></tr>' + noteHtml;
         }).join('') +
         '</tbody></table></div>') +
@@ -18973,15 +18973,15 @@ ${rateText}`
       const m = document.createElement('div'); 
       m.className = 'modal-overlay'; 
       m.onclick = e => { if (e.target === m) m.remove(); };
-      m.innerHTML = '<div class="modal" style="max-width:500px"><div class="modal-header" style="background:#a855f7;color:white"><h3 style="margin:0">📝 Local Note</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()" style="color:white">×</button></div><div class="modal-body">' +
-        '<div style="background:#f3e8ff;padding:12px;border-radius:8px;margin-bottom:16px">' +
+      m.innerHTML = '<div class="modal" style="max-width:500px"><div class="modal-header" style="background:var(--purple);color:white"><h3 style="margin:0">📝 Local Note</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()" style="color:white">×</button></div><div class="modal-body">' +
+        '<div style="background:var(--purple-dim);padding:12px;border-radius:8px;margin-bottom:16px">' +
         '<strong>' + o.order_number + '</strong> - ' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + 
-        '<br><span style="color:#7c3aed">' + (o.origin || '-') + ' → ' + (o.destination || '-') + '</span></div>' +
+        '<br><span style="color:var(--purple)">' + (o.origin || '-') + ' → ' + (o.destination || '-') + '</span></div>' +
         '<div class="form-group"><label>Note</label><textarea id="localNoteText" rows="4" placeholder="Add note about this vehicle..." style="resize:vertical;width:100%">' + (o.local_notes || '') + '</textarea></div>' +
         '</div><div class="modal-footer">' +
-        (o.local_notes ? '<button class="btn" style="background:var(--red-dim);color:var(--red);border:1px solid #fecaca;margin-right:auto" onclick="clearLocalNoteFromDriver(' + orderId + ',' + localDriverId + ')">Clear Note</button>' : '') +
+        (o.local_notes ? '<button class="btn" style="background:var(--red-dim);color:var(--red);border:1px solid var(--red-dim);margin-right:auto" onclick="clearLocalNoteFromDriver(' + orderId + ',' + localDriverId + ')">Clear Note</button>' : '') +
         '<button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>' +
-        '<button class="btn" style="background:#a855f7;color:white" onclick="saveLocalNoteFromDriver(' + orderId + ',' + localDriverId + ')">Save Note</button></div></div>';
+        '<button class="btn" style="background:var(--purple);color:white" onclick="saveLocalNoteFromDriver(' + orderId + ',' + localDriverId + ')">Save Note</button></div></div>';
       document.body.appendChild(m);
       setTimeout(() => document.getElementById('localNoteText')?.focus(), 100);
     }
@@ -19082,10 +19082,10 @@ ${rateText}`
       const avgFeePercent = totalBrokersRevenue > 0 ? (totalBrokersFees / totalBrokersRevenue * 100) : 0;
       
       const getScoreColor = (score) => {
-        if (score >= 80) return '#16a34a';
-        if (score >= 60) return '#2563eb';
-        if (score >= 40) return '#f59e0b';
-        return '#dc2626';
+        if (score >= 80) return 'var(--green)';
+        if (score >= 60) return 'var(--blue)';
+        if (score >= 40) return 'var(--amber)';
+        return 'var(--red)';
       };
       
       const getScoreLabel = (score) => {
@@ -19097,26 +19097,26 @@ ${rateText}`
       
       const getActivityStatus = (days) => {
         if (days === null) return { label: 'No orders', color: 'var(--text-muted)', bg: 'var(--bg-card-hover)' };
-        if (days <= 7) return { label: 'Active', color: '#16a34a', bg: '#dcfce7' };
-        if (days <= 30) return { label: 'Recent', color: '#2563eb', bg: '#dbeafe' };
-        if (days <= 90) return { label: 'Inactive', color: '#f59e0b', bg: '#fef3c7' };
-        return { label: 'Dormant', color: '#dc2626', bg: '#fee2e2' };
+        if (days <= 7) return { label: 'Active', color: 'var(--green)', bg: 'var(--green-dim)' };
+        if (days <= 30) return { label: 'Recent', color: 'var(--blue)', bg: 'var(--blue-dim)' };
+        if (days <= 90) return { label: 'Inactive', color: 'var(--amber)', bg: 'var(--amber-dim)' };
+        return { label: 'Dormant', color: 'var(--red)', bg: 'var(--red-dim)' };
       };
       
       c.innerHTML = '<div class="header"><h2>🏢 Brokers</h2><div style="display:flex;gap:12px"><button class="btn btn-primary" onclick="openBrokerModal()">+ New Broker</button></div></div>' +
         
         // Summary Cards
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px">' +
-        '<div style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;padding:20px;border-radius:12px;text-align:center">' +
+        '<div style="background:linear-gradient(135deg,var(--blue),var(--blue));color:white;padding:20px;border-radius:12px;text-align:center">' +
         '<div style="font-size:12px;opacity:0.9">Total Brokers</div>' +
         '<div style="font-size:32px;font-weight:800">' + brokerStats.length + '</div></div>' +
-        '<div style="background:linear-gradient(135deg,var(--green),#059669);color:white;padding:20px;border-radius:12px;text-align:center">' +
+        '<div style="background:linear-gradient(135deg,var(--green),var(--green));color:white;padding:20px;border-radius:12px;text-align:center">' +
         '<div style="font-size:12px;opacity:0.9">Total Revenue</div>' +
         '<div style="font-size:24px;font-weight:800">' + formatMoney(totalBrokersRevenue) + '</div></div>' +
-        '<div style="background:linear-gradient(135deg,#f59e0b,#d97706);color:white;padding:20px;border-radius:12px;text-align:center">' +
+        '<div style="background:linear-gradient(135deg,var(--amber),var(--amber));color:white;padding:20px;border-radius:12px;text-align:center">' +
         '<div style="font-size:12px;opacity:0.9">Avg Fee %</div>' +
         '<div style="font-size:32px;font-weight:800">' + avgFeePercent.toFixed(1) + '%</div></div>' +
-        '<div style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:white;padding:20px;border-radius:12px;text-align:center">' +
+        '<div style="background:linear-gradient(135deg,var(--purple),var(--purple));color:white;padding:20px;border-radius:12px;text-align:center">' +
         '<div style="font-size:12px;opacity:0.9">Est. Total Profit</div>' +
         '<div style="font-size:24px;font-weight:800">' + formatMoney(totalBrokersProfit) + '</div></div>' +
         '</div>' +
@@ -19132,7 +19132,7 @@ ${rateText}`
           
           return '<div class="card" style="padding:0;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s" onmouseover="this.style.transform=\'translateY(-4px)\';this.style.boxShadow=\'0 8px 25px rgba(0,0,0,0.15)\'" onmouseout="this.style.transform=\'none\';this.style.boxShadow=\'var(--shadow)\'">' +
             // Header
-            '<div style="background:linear-gradient(135deg,#1e293b,#334155);color:white;padding:16px 20px;display:flex;justify-content:space-between;align-items:center">' +
+            '<div style="background:linear-gradient(135deg,var(--bg-elevated),var(--bg-elevated));color:white;padding:16px 20px;display:flex;justify-content:space-between;align-items:center">' +
             '<div style="display:flex;align-items:center;gap:12px">' +
             (rankBadge ? '<span style="font-size:24px">' + rankBadge + '</span>' : '') +
             '<div><div style="font-size:18px;font-weight:700">' + b.name + '</div>' +
@@ -19156,29 +19156,29 @@ ${rateText}`
             
             // Avg Rate
             '<div style="background:var(--blue-dim);padding:12px;border-radius:8px">' +
-            '<div style="font-size:10px;color:#1d4ed8;text-transform:uppercase;letter-spacing:0.5px">Avg Rate/Load</div>' +
-            '<div style="font-size:20px;font-weight:700;color:#1e40af">' + formatMoney(b.avgRevenue) + '</div></div>' +
+            '<div style="font-size:10px;color:var(--blue);text-transform:uppercase;letter-spacing:0.5px">Avg Rate/Load</div>' +
+            '<div style="font-size:20px;font-weight:700;color:var(--blue)">' + formatMoney(b.avgRevenue) + '</div></div>' +
             
             // Avg Fee
             '<div style="background:var(--amber-dim);padding:12px;border-radius:8px">' +
-            '<div style="font-size:10px;color:#b45309;text-transform:uppercase;letter-spacing:0.5px">Avg Fee</div>' +
-            '<div style="font-size:20px;font-weight:700;color:#d97706">' + formatMoney(b.avgBrokerFee) + ' <span style="font-size:12px;font-weight:500">(' + b.feePercent.toFixed(1) + '%)</span></div></div>' +
+            '<div style="font-size:10px;color:var(--amber);text-transform:uppercase;letter-spacing:0.5px">Avg Fee</div>' +
+            '<div style="font-size:20px;font-weight:700;color:var(--amber)">' + formatMoney(b.avgBrokerFee) + ' <span style="font-size:12px;font-weight:500">(' + b.feePercent.toFixed(1) + '%)</span></div></div>' +
             
             // Profit/Load
-            '<div style="background:' + (b.profitPerLoad >= 0 ? '#dcfce7' : '#fee2e2') + ';padding:12px;border-radius:8px">' +
-            '<div style="font-size:10px;color:' + (b.profitPerLoad >= 0 ? '#16a34a' : '#dc2626') + ';text-transform:uppercase;letter-spacing:0.5px">Est. Profit/Load</div>' +
-            '<div style="font-size:20px;font-weight:700;color:' + (b.profitPerLoad >= 0 ? '#15803d' : '#dc2626') + '">' + formatMoney(b.profitPerLoad) + '</div></div>' +
+            '<div style="background:' + (b.profitPerLoad >= 0 ? 'var(--green-dim)' : 'var(--red-dim)') + ';padding:12px;border-radius:8px">' +
+            '<div style="font-size:10px;color:' + (b.profitPerLoad >= 0 ? 'var(--green)' : 'var(--red)') + ';text-transform:uppercase;letter-spacing:0.5px">Est. Profit/Load</div>' +
+            '<div style="font-size:20px;font-weight:700;color:' + (b.profitPerLoad >= 0 ? 'var(--primary-700)' : 'var(--red)') + '">' + formatMoney(b.profitPerLoad) + '</div></div>' +
             
             // Total Revenue
             '<div style="background:var(--bg-card-hover);padding:12px;border-radius:8px">' +
             '<div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px">Total Revenue</div>' +
-            '<div style="font-size:20px;font-weight:700;color:#334155">' + formatMoney(b.totalRevenue) + '</div></div>' +
+            '<div style="font-size:20px;font-weight:700;color:var(--bg-elevated)">' + formatMoney(b.totalRevenue) + '</div></div>' +
             
             '</div>' +
             
             // Additional Stats Row
             '<div style="display:flex;justify-content:space-between;padding:12px 0;border-top:1px solid var(--border);font-size:12px;color:var(--text-muted)">' +
-            '<div><span>📊 Loads/Month:</span> <strong style="color:#334155">' + b.ordersPerMonth.toFixed(1) + '</strong></div>' +
+            '<div><span>📊 Loads/Month:</span> <strong style="color:var(--bg-elevated)">' + b.ordersPerMonth.toFixed(1) + '</strong></div>' +
             '<div><span>💰 Total Fees:</span> <strong style="color:var(--amber)">' + formatMoney(b.totalBrokerFee) + '</strong></div>' +
             '</div>' +
             
@@ -19399,31 +19399,31 @@ ${rateText}`
         '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Period</label><select id="dispRankPeriod" onchange="dispRankPeriod=this.value;renderDispatcherRanking(document.getElementById(\'main-content\'))"><option value="all"' + (dispRankPeriod === 'all' ? ' selected' : '') + '>All Time</option><option value="month"' + (dispRankPeriod === 'month' ? ' selected' : '') + '>Monthly</option><option value="q1"' + (dispRankPeriod === 'q1' ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="q2"' + (dispRankPeriod === 'q2' ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="q3"' + (dispRankPeriod === 'q3' ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="q4"' + (dispRankPeriod === 'q4' ? ' selected' : '') + '>Q4 (Oct-Dec)</option><option value="year"' + (dispRankPeriod === 'year' ? ' selected' : '') + '>Full Year</option></select></div>' +
         (dispRankPeriod === 'month' ? '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Month</label><select id="dispRankMonth" onchange="dispRankMonth=parseInt(this.value);renderDispatcherRanking(document.getElementById(\'main-content\'))">' + months.slice(1).map((m, i) => '<option value="' + (i+1) + '"' + (dispRankMonth === i+1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select></div>' : '') +
         (dispRankPeriod !== 'all' ? '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select id="dispRankYear" onchange="dispRankYear=parseInt(this.value);renderDispatcherRanking(document.getElementById(\'main-content\'))"><option value="2024"' + (dispRankYear === 2024 ? ' selected' : '') + '>2024</option><option value="2025"' + (dispRankYear === 2025 ? ' selected' : '') + '>2025</option><option value="2026"' + (dispRankYear === 2026 ? ' selected' : '') + '>2026</option><option value="2027"' + (dispRankYear === 2027 ? ' selected' : '') + '>2027</option></select></div>' : '') +
-        '<div style="margin-left:auto;font-size:18px;font-weight:700;color:#1e40af">📅 ' + getDispRankPeriodLabel() + '</div></div></div>' +
+        '<div style="margin-left:auto;font-size:18px;font-weight:700;color:var(--blue)">📅 ' + getDispRankPeriodLabel() + '</div></div></div>' +
         
         // Summary stats
         '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px">' +
         '<div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px"><div class="label">Total Dispatchers</div><div class="value">' + appData.dispatchers.length + '</div></div>' +
         '<div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px"><div class="label">Total Cars Booked</div><div class="value">' + totalCars + '</div></div>' +
         '<div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px"><div class="label">Total Revenue</div><div class="value">' + formatMoney(totalRevenue) + '</div></div>' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3)"><div class="label">Clean Revenue</div><div class="value" style="color:#60a5fa">' + formatMoney(totalCleanRevenue) + '</div></div>' +
+        '<div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3)"><div class="label">Clean Revenue</div><div class="value" style="color:var(--blue)">' + formatMoney(totalCleanRevenue) + '</div></div>' +
         '<div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Avg Price/Car</div><div class="value">' + formatMoney(avgPriceOverall) + '</div></div>' +
         '</div>' +
         
         // Top & Bottom performers cards
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-bottom:24px">' +
         '<div class="card" style="padding:20px;border-left:4px solid var(--green)">' +
-        '<div style="display:flex;align-items:center;gap:12px"><span style="font-size:32px">🏆</span><div><div style="font-size:12px;color:#9ca3af">TOP PERFORMER</div><div style="font-size:24px;font-weight:700;color:#4ade80">' + (topDispatcher?.name || '-') + '</div></div></div>' +
+        '<div style="display:flex;align-items:center;gap:12px"><span style="font-size:32px">🏆</span><div><div style="font-size:12px;color:var(--text-muted)">TOP PERFORMER</div><div style="font-size:24px;font-weight:700;color:var(--primary-400)">' + (topDispatcher?.name || '-') + '</div></div></div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">' +
-        '<div style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:#4ade80">Cars</div><div style="font-size:20px;font-weight:700;color:#4ade80">' + (topDispatcher?.cars || 0) + '</div></div>' +
-        '<div style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:#4ade80">Revenue</div><div style="font-size:20px;font-weight:700;color:#4ade80">' + formatMoney(topDispatcher?.revenue || 0) + '</div></div>' +
+        '<div style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--primary-400)">Cars</div><div style="font-size:20px;font-weight:700;color:var(--primary-400)">' + (topDispatcher?.cars || 0) + '</div></div>' +
+        '<div style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--primary-400)">Revenue</div><div style="font-size:20px;font-weight:700;color:var(--primary-400)">' + formatMoney(topDispatcher?.revenue || 0) + '</div></div>' +
         '</div></div>' +
         
-        '<div class="card" style="padding:20px;border-left:4px solid #f59e0b">' +
-        '<div style="display:flex;align-items:center;gap:12px"><span style="font-size:32px">📈</span><div><div style="font-size:12px;color:#9ca3af">NEEDS IMPROVEMENT</div><div style="font-size:24px;font-weight:700;color:#fbbf24">' + (bottomDispatcher?.name || '-') + '</div></div></div>' +
+        '<div class="card" style="padding:20px;border-left:4px solid var(--amber)">' +
+        '<div style="display:flex;align-items:center;gap:12px"><span style="font-size:32px">📈</span><div><div style="font-size:12px;color:var(--text-muted)">NEEDS IMPROVEMENT</div><div style="font-size:24px;font-weight:700;color:var(--amber)">' + (bottomDispatcher?.name || '-') + '</div></div></div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">' +
-        '<div style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:#fbbf24">Cars</div><div style="font-size:20px;font-weight:700;color:#fbbf24">' + (bottomDispatcher?.cars || 0) + '</div></div>' +
-        '<div style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:#fbbf24">Revenue</div><div style="font-size:20px;font-weight:700;color:#fbbf24">' + formatMoney(bottomDispatcher?.revenue || 0) + '</div></div>' +
+        '<div style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--amber)">Cars</div><div style="font-size:20px;font-weight:700;color:var(--amber)">' + (bottomDispatcher?.cars || 0) + '</div></div>' +
+        '<div style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--amber)">Revenue</div><div style="font-size:20px;font-weight:700;color:var(--amber)">' + formatMoney(bottomDispatcher?.revenue || 0) + '</div></div>' +
         '</div></div>' +
         '</div>' +
         
@@ -19435,16 +19435,16 @@ ${rateText}`
           '<td style="text-align:center">' + getMedal(i) + '</td>' +
           '<td><strong>' + d.name + '</strong><span style="color:var(--text-muted);margin-left:8px;font-size:12px">' + d.code + '</span></td>' +
           '<td style="text-align:center;font-weight:600">' + d.cars + '</td>' +
-          '<td>' + getProgressBar(d.cars, maxCars, '#3b82f6') + '</td>' +
+          '<td>' + getProgressBar(d.cars, maxCars, 'var(--blue)') + '</td>' +
           '<td style="text-align:right" class="money">' + formatMoney(d.revenue) + '</td>' +
           '<td>' + getProgressBar(d.revenue, maxRevenue, 'var(--green)') + '</td>' +
           '<td style="text-align:right" class="money negative">' + formatMoney(d.brokerFees) + '</td>' +
           '<td style="text-align:right" class="money negative">' + formatMoney(d.localFees) + '</td>' +
-          '<td style="text-align:right;font-weight:600;color:#1d4ed8">' + formatMoney(d.cleanRevenue) + '</td>' +
+          '<td style="text-align:right;font-weight:600;color:var(--blue)">' + formatMoney(d.cleanRevenue) + '</td>' +
           '<td style="text-align:right">' + formatMoney(d.avgPricePerCar) + '</td>' +
           '</tr>'
         ).join('')) +
-        '<tr style="background:rgba(255,255,255,0.05);font-weight:700"><td colspan="2" style="text-align:right">TOTALS:</td><td style="text-align:center">' + totalCars + '</td><td></td><td style="text-align:right">' + formatMoney(totalRevenue) + '</td><td></td><td style="text-align:right;color:#f87171">' + formatMoney(dispArray.reduce((s,d) => s + d.brokerFees, 0)) + '</td><td style="text-align:right;color:#f87171">' + formatMoney(dispArray.reduce((s,d) => s + d.localFees, 0)) + '</td><td style="text-align:right;color:#60a5fa">' + formatMoney(totalCleanRevenue) + '</td><td style="text-align:right">' + formatMoney(avgPriceOverall) + '</td></tr>' +
+        '<tr style="background:rgba(255,255,255,0.05);font-weight:700"><td colspan="2" style="text-align:right">TOTALS:</td><td style="text-align:center">' + totalCars + '</td><td></td><td style="text-align:right">' + formatMoney(totalRevenue) + '</td><td></td><td style="text-align:right;color:var(--red)">' + formatMoney(dispArray.reduce((s,d) => s + d.brokerFees, 0)) + '</td><td style="text-align:right;color:var(--red)">' + formatMoney(dispArray.reduce((s,d) => s + d.localFees, 0)) + '</td><td style="text-align:right;color:var(--blue)">' + formatMoney(totalCleanRevenue) + '</td><td style="text-align:right">' + formatMoney(avgPriceOverall) + '</td></tr>' +
         '</tbody></table></div></div>' +
         
         // Visual comparison cards
@@ -19458,7 +19458,7 @@ ${rateText}`
           value: d.cars,
           label: d.cars + ' cars',
           percent: maxCars > 0 ? (d.cars / maxCars * 100) : 0,
-          color: '#3b82f6'
+          color: 'var(--blue)'
         }))) + '</div>' +
         
         // Revenue leaderboard
@@ -19719,7 +19719,7 @@ ${rateText}`
       headerContent += '<button class="btn btn-primary" onclick="openFuelUploadModal()">📤 Fuel Report</button>';
       headerContent += '<button class="btn" onclick="openFleetMileageModal()" style="background:var(--blue);color:white;border:none">🚛 Samsara Mileage</button>';
       if (filteredTxns.length > 0 && !selectedFuelTruck) {
-        headerContent += '<button class="btn btn-secondary" style="background:var(--red-dim);color:var(--red);border-color:#fecaca" onclick="deletePeriodFuelData()">🗑️ Delete Period Data</button>';
+        headerContent += '<button class="btn btn-secondary" style="background:var(--red-dim);color:var(--red);border-color:var(--red-dim)" onclick="deletePeriodFuelData()">🗑️ Delete Period Data</button>';
       }
       headerContent += '</div></div>';
       
@@ -19731,7 +19731,7 @@ ${rateText}`
         '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Period</label><select id="fuelPeriod" onchange="fuelPeriod=this.value;renderFuelTracking(document.getElementById(\'main-content\'))"><option value="month"' + (fuelPeriod === 'month' ? ' selected' : '') + '>Monthly</option><option value="q1"' + (fuelPeriod === 'q1' ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="q2"' + (fuelPeriod === 'q2' ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="q3"' + (fuelPeriod === 'q3' ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="q4"' + (fuelPeriod === 'q4' ? ' selected' : '') + '>Q4 (Oct-Dec)</option><option value="year"' + (fuelPeriod === 'year' ? ' selected' : '') + '>Full Year</option></select></div>' +
         (fuelPeriod === 'month' ? '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Month</label><select id="fuelMonth" onchange="fuelMonth=parseInt(this.value);renderFuelTracking(document.getElementById(\'main-content\'))">' + months.slice(1).map((m, i) => '<option value="' + (i+1) + '"' + (fuelMonth === i+1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select></div>' : '') +
         '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select id="fuelYear" onchange="fuelYear=parseInt(this.value);renderFuelTracking(document.getElementById(\'main-content\'))"><option value="2024"' + (fuelYear === 2024 ? ' selected' : '') + '>2024</option><option value="2025"' + (fuelYear === 2025 ? ' selected' : '') + '>2025</option><option value="2026"' + (fuelYear === 2026 ? ' selected' : '') + '>2026</option><option value="2027"' + (fuelYear === 2027 ? ' selected' : '') + '>2027</option></select></div>' +
-        '<div style="margin-left:auto;font-size:18px;font-weight:700;color:#1e40af">📅 ' + getFuelPeriodLabel() + '</div></div>' +
+        '<div style="margin-left:auto;font-size:18px;font-weight:700;color:var(--blue)">📅 ' + getFuelPeriodLabel() + '</div></div>' +
         
         // Filter row
         '<div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;padding-top:16px;border-top:1px solid var(--border)">' +
@@ -19760,36 +19760,36 @@ ${rateText}`
         (fuelAnalyticsTab === 'overview' ? (
         // Fleet Mileage Status Card (if data uploaded)
         (fleetMileageData.length > 0 ?
-        '<div class="card" style="margin-bottom:20px;padding:16px;background:linear-gradient(135deg,#dbeafe 0%,#e0f2fe 100%);border:1px solid #93c5fd">' +
+        '<div class="card" style="margin-bottom:20px;padding:16px;background:linear-gradient(135deg,var(--blue-dim) 0%,var(--blue-dim) 100%);border:1px solid var(--blue-dim)">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">' +
         '<div>' +
-        '<div style="font-size:14px;font-weight:700;color:#1d4ed8;margin-bottom:4px">📡 Samsara Fleet Mileage Loaded</div>' +
-        '<div style="font-size:13px;color:#1e40af">' + fleetMileageData.length + ' trucks • ' + fleetMileageData.reduce((s,t) => s + t.distance, 0).toLocaleString(undefined, {maximumFractionDigits: 0}) + ' total miles</div>' +
+        '<div style="font-size:14px;font-weight:700;color:var(--blue);margin-bottom:4px">📡 Samsara Fleet Mileage Loaded</div>' +
+        '<div style="font-size:13px;color:var(--blue)">' + fleetMileageData.length + ' trucks • ' + fleetMileageData.reduce((s,t) => s + t.distance, 0).toLocaleString(undefined, {maximumFractionDigits: 0}) + ' total miles</div>' +
         '<div style="font-size:11px;color:var(--blue);margin-top:2px">Period: ' + fleetMileagePeriod.start + ' to ' + fleetMileagePeriod.end + '</div>' +
         '</div>' +
-        '<button onclick="clearFleetMileage()" class="btn btn-secondary" style="background:var(--red-dim);color:var(--red);border-color:#fecaca;padding:6px 12px;font-size:12px">🗑️ Clear</button>' +
+        '<button onclick="clearFleetMileage()" class="btn btn-secondary" style="background:var(--red-dim);color:var(--red);border-color:var(--red-dim);padding:6px 12px;font-size:12px">🗑️ Clear</button>' +
         '</div></div>' : '') +
 
         // PRIMARY STATS CARDS - OVERVIEW TAB
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px">' +
-        '<div class="stat-card" style="padding:16px;border-left:4px solid #f59e0b"><div class="label">Total Diesel</div><div class="value" style="font-size:20px">' + totalDieselGal.toFixed(1) + ' gal</div></div>' +
-        '<div class="stat-card" style="padding:16px;border-left:4px solid #dc2626"><div class="label">Diesel Cost</div><div class="value" style="font-size:20px;color:var(--red)">' + formatMoney(totalDieselCost) + '</div></div>' +
-        '<div class="stat-card" style="padding:16px;border-left:4px solid #6366f1"><div class="label">Avg $/Gallon</div><div class="value" style="font-size:20px">' + formatMoney(avgPricePerGal) + '</div></div>' +
-        '<div class="stat-card" style="padding:16px;border-left:4px solid var(--green);background:#d1fae5"><div class="label">Total Savings</div><div class="value" style="font-size:20px;color:#059669">' + formatMoney(totalSavings) + '</div></div>' +
-        '<div class="stat-card" style="padding:16px;border-left:4px solid #0ea5e9"><div class="label">Total DEF</div><div class="value" style="font-size:20px">' + totalDefGal.toFixed(1) + ' gal</div></div>' +
-        '<div class="stat-card" style="padding:16px;border-left:4px solid #64748b;background:var(--red-dim)"><div class="label">Total Cost</div><div class="value" style="font-size:20px;color:var(--red)">' + formatMoney(totalCost) + '</div></div>' +
+        '<div class="stat-card" style="padding:16px;border-left:4px solid var(--amber)"><div class="label">Total Diesel</div><div class="value" style="font-size:20px">' + totalDieselGal.toFixed(1) + ' gal</div></div>' +
+        '<div class="stat-card" style="padding:16px;border-left:4px solid var(--red)"><div class="label">Diesel Cost</div><div class="value" style="font-size:20px;color:var(--red)">' + formatMoney(totalDieselCost) + '</div></div>' +
+        '<div class="stat-card" style="padding:16px;border-left:4px solid var(--purple)"><div class="label">Avg $/Gallon</div><div class="value" style="font-size:20px">' + formatMoney(avgPricePerGal) + '</div></div>' +
+        '<div class="stat-card" style="padding:16px;border-left:4px solid var(--green);background:var(--green-dim)"><div class="label">Total Savings</div><div class="value" style="font-size:20px;color:var(--green)">' + formatMoney(totalSavings) + '</div></div>' +
+        '<div class="stat-card" style="padding:16px;border-left:4px solid var(--blue)"><div class="label">Total DEF</div><div class="value" style="font-size:20px">' + totalDefGal.toFixed(1) + ' gal</div></div>' +
+        '<div class="stat-card" style="padding:16px;border-left:4px solid var(--text-secondary);background:var(--red-dim)"><div class="label">Total Cost</div><div class="value" style="font-size:20px;color:var(--red)">' + formatMoney(totalCost) + '</div></div>' +
         '</div>' +
         
         // Efficiency metrics
         '<div class="card" style="margin-bottom:24px;padding:20px">' +
-        '<h3 style="margin-bottom:16px;color:#8b5cf6;border-bottom:2px solid #8b5cf6;padding-bottom:8px">📊 EFFICIENCY METRICS</h3>' +
+        '<h3 style="margin-bottom:16px;color:var(--purple);border-bottom:2px solid var(--purple);padding-bottom:8px">📊 EFFICIENCY METRICS</h3>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px">' +
-        '<div style="background:' + (milesSource === 'samsara' ? '#dbeafe' : '#f8fafc') + ';padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:var(--text-muted)">Miles Traveled</div><div style="font-size:24px;font-weight:700">' + periodMiles.toLocaleString() + '</div>' + (milesSource === 'samsara' ? '<div style="font-size:10px;color:#1d4ed8;margin-top:4px">📡 Samsara</div>' : '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">📝 Trip Data</div>') + '</div>' +
-        '<div style="background:' + (mpg >= 6 ? '#d1fae5' : mpg >= 5 ? '#fef3c7' : '#fee2e2') + ';padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:var(--text-muted)">Fuel Economy (MPG)</div><div style="font-size:24px;font-weight:700;color:' + (mpg >= 6 ? '#059669' : mpg >= 5 ? '#d97706' : '#dc2626') + '">' + mpg.toFixed(2) + '</div></div>' +
+        '<div style="background:' + (milesSource === 'samsara' ? 'var(--blue-dim)' : 'var(--bg-app)') + ';padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:var(--text-muted)">Miles Traveled</div><div style="font-size:24px;font-weight:700">' + periodMiles.toLocaleString() + '</div>' + (milesSource === 'samsara' ? '<div style="font-size:10px;color:var(--blue);margin-top:4px">📡 Samsara</div>' : '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">📝 Trip Data</div>') + '</div>' +
+        '<div style="background:' + (mpg >= 6 ? 'var(--green-dim)' : mpg >= 5 ? 'var(--amber-dim)' : 'var(--red-dim)') + ';padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:var(--text-muted)">Fuel Economy (MPG)</div><div style="font-size:24px;font-weight:700;color:' + (mpg >= 6 ? 'var(--green)' : mpg >= 5 ? 'var(--amber)' : 'var(--red)') + '">' + mpg.toFixed(2) + '</div></div>' +
         '<div style="background:var(--bg-app);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:var(--text-muted)">Cost Per Mile</div><div style="font-size:24px;font-weight:700;color:var(--red)">' + formatMoney(costPerMile) + '</div></div>' +
         '<div style="background:var(--bg-app);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:var(--text-muted)">Fill-Ups</div><div style="font-size:24px;font-weight:700">' + fillUps + '</div></div>' +
         '<div style="background:var(--bg-app);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:var(--text-muted)">Avg Gal/Fill-Up</div><div style="font-size:24px;font-weight:700">' + avgGallonsPerFillUp.toFixed(1) + '</div></div>' +
-        '<div style="background:var(--blue-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#1d4ed8">Avg Discount/Gal</div><div style="font-size:24px;font-weight:700;color:#1d4ed8">' + avgDiscountPerGal.toFixed(1) + '¢</div></div>' +
+        '<div style="background:var(--blue-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:var(--blue)">Avg Discount/Gal</div><div style="font-size:24px;font-weight:700;color:var(--blue)">' + avgDiscountPerGal.toFixed(1) + '¢</div></div>' +
         '</div></div>' +
         
         // Two column layout for insights
@@ -19803,7 +19803,7 @@ ${rateText}`
           '<tr style="cursor:pointer" onclick="selectedFuelTruck=\'' + tn + '\';renderFuelTracking(document.getElementById(\'main-content\'))">' +
           '<td><strong style="color:var(--blue)">#' + tn + '</strong></td>' +
           '<td>' + truckStats[tn].diesel.toFixed(0) + ' gal</td>' +
-          '<td style="color:' + (truckStats[tn].mpg >= 6 ? '#059669' : truckStats[tn].mpg >= 5 ? '#d97706' : '#dc2626') + ';font-weight:600">' + truckStats[tn].mpg.toFixed(2) + '</td>' +
+          '<td style="color:' + (truckStats[tn].mpg >= 6 ? 'var(--green)' : truckStats[tn].mpg >= 5 ? 'var(--amber)' : 'var(--red)') + ';font-weight:600">' + truckStats[tn].mpg.toFixed(2) + '</td>' +
           '<td class="money">' + formatMoney(truckStats[tn].costPerMile) + '</td>' +
           '<td class="money">' + formatMoney(truckStats[tn].cost) + '</td>' +
           '</tr>'
@@ -19908,7 +19908,7 @@ ${rateText}`
         
         // Forecast Card
         '<div class="card"><div class="card-header"><h3>🔮 Fuel Forecast</h3></div><div style="padding:20px">' +
-        '<div style="background:linear-gradient(135deg,#1e3a5f,#164e63);padding:20px;border-radius:12px;color:white;margin-bottom:16px">' +
+        '<div style="background:linear-gradient(135deg,var(--blue),var(--blue));padding:20px;border-radius:12px;color:white;margin-bottom:16px">' +
         '<div style="font-size:13px;opacity:0.8;margin-bottom:4px">Projected Next Month</div>' +
         '<div style="font-size:28px;font-weight:700">' + formatMoney(projectedMonthlyCost) + '</div>' +
         '<div style="font-size:13px;opacity:0.8;margin-top:8px">' + projectedMonthlyGallons.toFixed(0) + ' gallons estimated</div>' +
@@ -19935,7 +19935,7 @@ ${rateText}`
           const data = byDay[d] || { count: 0 };
           const maxCount = Math.max.apply(null, Object.values(byDay).map(function(x) { return x.count || 0; }));
           const height = maxCount > 0 ? (data.count / maxCount) * 60 : 0;
-          return '<div style="flex:1;text-align:center"><div style="height:60px;display:flex;align-items:flex-end;justify-content:center"><div style="background:' + (d === 0 || d === 6 ? '#f59e0b' : '#22c55e') + ';width:80%;height:' + height + 'px;border-radius:4px 4px 0 0;min-height:4px"></div></div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">' + dayStats[d] + '</div><div style="font-size:12px;font-weight:600">' + data.count + '</div></div>';
+          return '<div style="flex:1;text-align:center"><div style="height:60px;display:flex;align-items:flex-end;justify-content:center"><div style="background:' + (d === 0 || d === 6 ? 'var(--amber)' : 'var(--green)') + ';width:80%;height:' + height + 'px;border-radius:4px 4px 0 0;min-height:4px"></div></div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">' + dayStats[d] + '</div><div style="font-size:12px;font-weight:600">' + data.count + '</div></div>';
         }).join('') +
         '</div>' +
         '<div style="margin-top:16px;font-size:13px;color:var(--text-muted)">💡 ' + ((byDay[0]?.count || 0) > (byDay[1]?.count || 0) ? 'Consider weekday fill-ups for potential savings' : 'Good job avoiding weekend fill-ups!') + '</div>' +
@@ -19943,15 +19943,15 @@ ${rateText}`
         
         // Anomaly Detection
         '<div class="card"><div class="card-header"><h3>🚨 Anomaly Detection</h3></div><div style="padding:20px">' +
-        (anomalies.length === 0 ? '<div style="background:var(--green-dim);padding:20px;border-radius:8px;text-align:center"><div style="font-size:24px">✅</div><div style="color:#166534;font-weight:600;margin-top:8px">All trucks performing normally</div><div style="font-size:13px;color:#15803d">Average MPG: ' + avgMPG.toFixed(2) + '</div></div>' :
+        (anomalies.length === 0 ? '<div style="background:var(--green-dim);padding:20px;border-radius:8px;text-align:center"><div style="font-size:24px">✅</div><div style="color:var(--primary-800);font-weight:600;margin-top:8px">All trucks performing normally</div><div style="font-size:13px;color:var(--primary-700)">Average MPG: ' + avgMPG.toFixed(2) + '</div></div>' :
         anomalies.map(function(item) {
           const tn = item[0], data = item[1];
           const diff = ((data.mpg - avgMPG) / avgMPG * 100);
           const isLow = diff < 0;
-          return '<div style="display:flex;gap:12px;padding:12px;background:' + (isLow ? '#fee2e2' : '#dcfce7') + ';border-radius:8px;margin-bottom:8px">' +
+          return '<div style="display:flex;gap:12px;padding:12px;background:' + (isLow ? 'var(--red-dim)' : 'var(--green-dim)') + ';border-radius:8px;margin-bottom:8px">' +
             '<span style="font-size:20px">' + (isLow ? '⚠️' : '🌟') + '</span>' +
-            '<div><div style="font-weight:600;color:' + (isLow ? '#991b1b' : '#166534') + '">Truck #' + tn + '</div>' +
-            '<div style="font-size:12px;color:' + (isLow ? '#b91c1c' : '#15803d') + '">MPG: ' + data.mpg.toFixed(2) + ' (' + (diff > 0 ? '+' : '') + diff.toFixed(0) + '% vs avg)</div>' +
+            '<div><div style="font-weight:600;color:' + (isLow ? 'var(--red)' : 'var(--primary-800)') + '">Truck #' + tn + '</div>' +
+            '<div style="font-size:12px;color:' + (isLow ? 'var(--red)' : 'var(--primary-700)') + '">MPG: ' + data.mpg.toFixed(2) + ' (' + (diff > 0 ? '+' : '') + diff.toFixed(0) + '% vs avg)</div>' +
             (isLow ? '<div style="font-size:11px;color:var(--red);margin-top:4px">Check tire pressure, air filter, or driving habits</div>' : '') +
             '</div></div>';
         }).join('')) +
@@ -19994,14 +19994,14 @@ ${rateText}`
         // Efficiency Summary
         '<div class="card"><div class="card-header"><h3>⚡ Efficiency Summary</h3></div><div style="padding:20px">' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">' +
-        '<div style="background:' + (avgMPG >= 6 ? '#dcfce7' : avgMPG >= 5 ? '#fef3c7' : '#fee2e2') + ';padding:20px;border-radius:12px;text-align:center">' +
+        '<div style="background:' + (avgMPG >= 6 ? 'var(--green-dim)' : avgMPG >= 5 ? 'var(--amber-dim)' : 'var(--red-dim)') + ';padding:20px;border-radius:12px;text-align:center">' +
         '<div style="font-size:12px;color:var(--text-muted)">Fleet Average MPG</div>' +
-        '<div style="font-size:36px;font-weight:700;color:' + (avgMPG >= 6 ? '#059669' : avgMPG >= 5 ? '#d97706' : '#dc2626') + '">' + avgMPG.toFixed(2) + '</div>' +
+        '<div style="font-size:36px;font-weight:700;color:' + (avgMPG >= 6 ? 'var(--green)' : avgMPG >= 5 ? 'var(--amber)' : 'var(--red)') + '">' + avgMPG.toFixed(2) + '</div>' +
         '<div style="font-size:12px;color:var(--text-muted);margin-top:4px">' + (avgMPG >= 6 ? '🌟 Excellent' : avgMPG >= 5 ? '👍 Good' : '⚠️ Needs Work') + '</div>' +
         '</div>' +
         '<div style="background:var(--blue-dim);padding:20px;border-radius:12px;text-align:center">' +
-        '<div style="font-size:12px;color:#1d4ed8">Potential Monthly Savings</div>' +
-        '<div style="font-size:36px;font-weight:700;color:#1d4ed8">' + formatMoney(potentialSavings) + '</div>' +
+        '<div style="font-size:12px;color:var(--blue)">Potential Monthly Savings</div>' +
+        '<div style="font-size:36px;font-weight:700;color:var(--blue)">' + formatMoney(potentialSavings) + '</div>' +
         '<div style="font-size:12px;color:var(--text-muted);margin-top:4px">If all trucks matched best performer</div>' +
         '</div>' +
         '</div>' +
@@ -20018,10 +20018,10 @@ ${rateText}`
           return '<div style="margin-bottom:16px">' +
             '<div style="display:flex;justify-content:space-between;margin-bottom:4px">' +
             '<span style="font-weight:600">' + medal + ' Truck #' + tn + '</span>' +
-            '<span style="font-weight:700;color:' + (data.mpg >= 6 ? '#059669' : data.mpg >= 5 ? '#d97706' : '#dc2626') + '">' + data.mpg.toFixed(2) + ' MPG</span>' +
+            '<span style="font-weight:700;color:' + (data.mpg >= 6 ? 'var(--green)' : data.mpg >= 5 ? 'var(--amber)' : 'var(--red)') + '">' + data.mpg.toFixed(2) + ' MPG</span>' +
             '</div>' +
             '<div style="background:var(--bg-card);height:24px;border-radius:4px;overflow:hidden">' +
-            '<div style="background:' + (data.mpg >= 6 ? '#22c55e' : data.mpg >= 5 ? '#f59e0b' : '#ef4444') + ';height:100%;width:' + barWidth + '%;display:flex;align-items:center;justify-content:flex-end;padding-right:8px">' +
+            '<div style="background:' + (data.mpg >= 6 ? 'var(--green)' : data.mpg >= 5 ? 'var(--amber)' : 'var(--red)') + ';height:100%;width:' + barWidth + '%;display:flex;align-items:center;justify-content:flex-end;padding-right:8px">' +
             '<span style="font-size:11px;color:white;font-weight:600">' + data.miles.toLocaleString() + ' mi</span>' +
             '</div></div></div>';
         }).join('')) +
@@ -20086,30 +20086,30 @@ ${rateText}`
         
         // Price Alerts
         (priceAlerts.length > 0 ? '<div class="card" style="grid-column:1/-1"><div style="padding:16px">' +
-        priceAlerts.map(function(a) { return '<div style="display:flex;gap:12px;padding:12px;background:' + (a.type === 'warning' ? '#fee2e2' : a.type === 'good' ? '#dcfce7' : '#dbeafe') + ';border-radius:8px;margin-bottom:8px">' +
+        priceAlerts.map(function(a) { return '<div style="display:flex;gap:12px;padding:12px;background:' + (a.type === 'warning' ? 'var(--red-dim)' : a.type === 'good' ? 'var(--green-dim)' : 'var(--blue-dim)') + ';border-radius:8px;margin-bottom:8px">' +
           '<span style="font-size:20px">' + (a.type === 'warning' ? '⚠️' : a.type === 'good' ? '✅' : '💡') + '</span>' +
-          '<div style="font-weight:600;color:' + (a.type === 'warning' ? '#991b1b' : a.type === 'good' ? '#166534' : '#1d4ed8') + '">' + a.msg + '</div></div>'; }).join('') +
+          '<div style="font-weight:600;color:' + (a.type === 'warning' ? 'var(--red)' : a.type === 'good' ? 'var(--primary-800)' : 'var(--blue)') + '">' + a.msg + '</div></div>'; }).join('') +
         '</div></div>' : '') +
 
         // IFTA Smart Pick hero card
-        (cheapestState ? '<div class="card" style="grid-column:1/-1;border:2px solid #22c55e;background:linear-gradient(135deg,#f0fdf4,#dcfce7)">' +
+        (cheapestState ? '<div class="card" style="grid-column:1/-1;border:2px solid var(--green);background:linear-gradient(135deg,var(--green-dim),var(--green-dim))">' +
         '<div style="padding:20px">' +
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">' +
         '<span style="font-size:24px">⛽</span>' +
-        '<div><div style="font-size:18px;font-weight:700;color:#166534">IFTA Smart Pick</div>' +
-        '<div style="font-size:12px;color:#15803d">Best value after IFTA tax adjustment</div></div></div>' +
+        '<div><div style="font-size:18px;font-weight:700;color:var(--primary-800)">IFTA Smart Pick</div>' +
+        '<div style="font-size:12px;color:var(--primary-700)">Best value after IFTA tax adjustment</div></div></div>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px">' +
-        '<div style="text-align:center"><div style="font-size:11px;color:#15803d;font-weight:600">WINNING STATE</div>' +
-        '<div style="font-size:32px;font-weight:800;color:#059669">' + cheapestState.state + '</div></div>' +
-        '<div style="text-align:center"><div style="font-size:11px;color:#15803d;font-weight:600">PUMP PRICE</div>' +
-        '<div style="font-size:20px;font-weight:700;color:#166534">' + formatMoney(cheapestState.avgPrice) + '</div></div>' +
-        '<div style="text-align:center"><div style="font-size:11px;color:#15803d;font-weight:600">IFTA TAX RATE</div>' +
-        '<div style="font-size:20px;font-weight:700;color:#166534">-' + formatMoney(cheapestState.taxRate) + '</div></div>' +
-        '<div style="text-align:center"><div style="font-size:11px;color:#15803d;font-weight:600">EFFECTIVE COST</div>' +
-        '<div style="font-size:20px;font-weight:700;color:#059669">' + formatMoney(cheapestState.effectiveCost) + '</div></div>' +
+        '<div style="text-align:center"><div style="font-size:11px;color:var(--primary-700);font-weight:600">WINNING STATE</div>' +
+        '<div style="font-size:32px;font-weight:800;color:var(--green)">' + cheapestState.state + '</div></div>' +
+        '<div style="text-align:center"><div style="font-size:11px;color:var(--primary-700);font-weight:600">PUMP PRICE</div>' +
+        '<div style="font-size:20px;font-weight:700;color:var(--primary-800)">' + formatMoney(cheapestState.avgPrice) + '</div></div>' +
+        '<div style="text-align:center"><div style="font-size:11px;color:var(--primary-700);font-weight:600">IFTA TAX RATE</div>' +
+        '<div style="font-size:20px;font-weight:700;color:var(--primary-800)">-' + formatMoney(cheapestState.taxRate) + '</div></div>' +
+        '<div style="text-align:center"><div style="font-size:11px;color:var(--primary-700);font-weight:600">EFFECTIVE COST</div>' +
+        '<div style="font-size:20px;font-weight:700;color:var(--green)">' + formatMoney(cheapestState.effectiveCost) + '</div></div>' +
         (expensiveState && cheapestState.state !== expensiveState.state ?
-        '<div style="text-align:center"><div style="font-size:11px;color:#15803d;font-weight:600">SAVES VS ' + expensiveState.state + '</div>' +
-        '<div style="font-size:20px;font-weight:700;color:#059669">' + ((expensiveState.effectiveCost - cheapestState.effectiveCost) * 100).toFixed(0) + '¢/gal</div></div>' : '') +
+        '<div style="text-align:center"><div style="font-size:11px;color:var(--primary-700);font-weight:600">SAVES VS ' + expensiveState.state + '</div>' +
+        '<div style="font-size:20px;font-weight:700;color:var(--green)">' + ((expensiveState.effectiveCost - cheapestState.effectiveCost) * 100).toFixed(0) + '¢/gal</div></div>' : '') +
         '</div></div></div>' : '') +
 
         // Price Summary
@@ -20120,17 +20120,17 @@ ${rateText}`
         '<div style="font-size:24px;font-weight:700">' + formatMoney(avgPrice) + '</div>' +
         '<div style="font-size:11px;color:var(--text-muted)">per gallon</div></div>' +
         (cheapestState ? '<div style="background:var(--green-dim);padding:16px;border-radius:8px;text-align:center">' +
-        '<div style="font-size:11px;color:#166534">Cheapest (IFTA-Adjusted)</div>' +
-        '<div style="font-size:24px;font-weight:700;color:#059669">' + cheapestState.state + '</div>' +
-        '<div style="font-size:13px;font-weight:600;color:#059669">' + formatMoney(cheapestState.effectiveCost) + '/gal eff.</div>' +
-        '<div style="font-size:11px;color:#166534">pump: ' + formatMoney(cheapestState.avgPrice) + '/gal</div></div>' : '') +
+        '<div style="font-size:11px;color:var(--primary-800)">Cheapest (IFTA-Adjusted)</div>' +
+        '<div style="font-size:24px;font-weight:700;color:var(--green)">' + cheapestState.state + '</div>' +
+        '<div style="font-size:13px;font-weight:600;color:var(--green)">' + formatMoney(cheapestState.effectiveCost) + '/gal eff.</div>' +
+        '<div style="font-size:11px;color:var(--primary-800)">pump: ' + formatMoney(cheapestState.avgPrice) + '/gal</div></div>' : '') +
         (expensiveState ? '<div style="background:var(--red-dim);padding:16px;border-radius:8px;text-align:center">' +
-        '<div style="font-size:11px;color:#991b1b">Most Expensive (IFTA-Adjusted)</div>' +
+        '<div style="font-size:11px;color:var(--red)">Most Expensive (IFTA-Adjusted)</div>' +
         '<div style="font-size:24px;font-weight:700;color:var(--red)">' + expensiveState.state + '</div>' +
         '<div style="font-size:13px;font-weight:600;color:var(--red)">' + formatMoney(expensiveState.effectiveCost) + '/gal eff.</div>' +
-        '<div style="font-size:11px;color:#991b1b">pump: ' + formatMoney(expensiveState.avgPrice) + '/gal</div></div>' : '') +
+        '<div style="font-size:11px;color:var(--red)">pump: ' + formatMoney(expensiveState.avgPrice) + '/gal</div></div>' : '') +
         '</div>' +
-        '<div style="font-size:13px;color:var(--text-muted)">Recent trend: <strong style="color:' + (priceTrend > 0 ? '#dc2626' : '#059669') + '">' + (priceTrend > 0 ? '↑' : '↓') + ' ' + formatMoney(Math.abs(priceTrend)) + '/gal</strong></div>' +
+        '<div style="font-size:13px;color:var(--text-muted)">Recent trend: <strong style="color:' + (priceTrend > 0 ? 'var(--red)' : 'var(--green)') + '">' + (priceTrend > 0 ? '↑' : '↓') + ' ' + formatMoney(Math.abs(priceTrend)) + '/gal</strong></div>' +
         '</div></div>' +
         
         // Price by State
@@ -20140,12 +20140,12 @@ ${rateText}`
           const isLowest = i === 0;
           const isHighest = i === statePrices.length - 1 && statePrices.length > 1;
           const maxEffective = expensiveState ? expensiveState.effectiveCost : s.effectiveCost;
-          return '<div style="display:flex;align-items:center;gap:12px;padding:12px;background:' + (isLowest ? '#dcfce7' : isHighest ? '#fee2e2' : 'var(--bg-darker)') + ';border-radius:8px;margin-bottom:8px">' +
+          return '<div style="display:flex;align-items:center;gap:12px;padding:12px;background:' + (isLowest ? 'var(--green-dim)' : isHighest ? 'var(--red-dim)' : 'var(--bg-darker)') + ';border-radius:8px;margin-bottom:8px">' +
             '<div style="font-size:20px;font-weight:700;width:50px">' + s.state + '</div>' +
             '<div style="flex:1"><div style="background:var(--bg-card);height:20px;border-radius:4px;overflow:hidden">' +
-            '<div style="background:' + (isLowest ? '#22c55e' : isHighest ? '#ef4444' : '#3b82f6') + ';height:100%;width:' + (maxEffective > 0 ? s.effectiveCost / maxEffective * 100 : 100) + '%"></div></div></div>' +
+            '<div style="background:' + (isLowest ? 'var(--green)' : isHighest ? 'var(--red)' : 'var(--blue)') + ';height:100%;width:' + (maxEffective > 0 ? s.effectiveCost / maxEffective * 100 : 100) + '%"></div></div></div>' +
             '<div style="text-align:right;min-width:140px">' +
-            '<div style="font-weight:700;color:' + (isLowest ? '#059669' : isHighest ? '#dc2626' : 'inherit') + '">' + formatMoney(s.effectiveCost) + ' <span style="font-size:10px;font-weight:600;opacity:0.7">eff.</span></div>' +
+            '<div style="font-weight:700;color:' + (isLowest ? 'var(--green)' : isHighest ? 'var(--red)' : 'inherit') + '">' + formatMoney(s.effectiveCost) + ' <span style="font-size:10px;font-weight:600;opacity:0.7">eff.</span></div>' +
             '<div style="font-size:11px;color:var(--text-muted)">' + formatMoney(s.avgPrice) + ' pump | ' + formatMoney(s.taxRate) + ' tax</div></div></div>';
         }).join('')) +
         '</div></div>' +
@@ -20161,7 +20161,7 @@ ${rateText}`
             '<div><div style="font-weight:600">' + t.city + ', ' + t.state + '</div><div style="font-size:11px;color:var(--text-muted)">' + formatDate(t.transaction_date) + ' • Truck #' + t.truck_number + '</div></div>' +
             '<div style="text-align:right"><div style="font-weight:700">' + formatMoney(effectivePrice) + '/gal <span style="font-size:10px;font-weight:600;opacity:0.7">eff.</span></div>' +
             '<div style="font-size:11px;color:var(--text-muted)">' + formatMoney(pricePerGal) + ' pump - ' + formatMoney(txnTaxRate) + ' tax</div>' +
-            '<div style="font-size:11px;color:' + (diff <= 0 ? '#059669' : '#dc2626') + '">' + (diff <= 0 ? '↓' : '↑') + formatMoney(Math.abs(diff)) + ' vs avg</div></div></div>';
+            '<div style="font-size:11px;color:' + (diff <= 0 ? 'var(--green)' : 'var(--red)') + '">' + (diff <= 0 ? '↓' : '↑') + formatMoney(Math.abs(diff)) + ' vs avg</div></div></div>';
         }).join('') +
         '</div></div>' +
         
@@ -20208,7 +20208,7 @@ ${rateText}`
     function openFuelUploadModal() {
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
       m.innerHTML = '<div class="modal" style="max-width:500px"><div class="modal-header"><h3>📤 Upload Fuel Report</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body">' +
-        '<div style="background:var(--blue-dim);padding:16px;border-radius:8px;margin-bottom:16px"><strong style="color:#1d4ed8">Supported Formats:</strong><p style="color:#1e40af;margin-top:8px;font-size:14px">• <strong>CSV</strong> (Recommended) - More reliable<br>• <strong>PDF</strong> - Love\'s / TA Transaction Reports</p></div>' +
+        '<div style="background:var(--blue-dim);padding:16px;border-radius:8px;margin-bottom:16px"><strong style="color:var(--blue)">Supported Formats:</strong><p style="color:var(--blue);margin-top:8px;font-size:14px">• <strong>CSV</strong> (Recommended) - More reliable<br>• <strong>PDF</strong> - Love\'s / TA Transaction Reports</p></div>' +
         '<div class="form-group"><label>Select File (CSV or PDF)</label><input type="file" id="fuelFile" accept=".csv,.pdf"></div>' +
         '<div id="fuelParsePreview" style="display:none;margin-top:16px;max-height:300px;overflow-y:auto"></div>' +
         '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="parseFuelFile()">🔍 Parse File</button><button class="btn btn-primary" id="saveFuelBtn" style="display:none;background:var(--green)" onclick="saveFuelTransactions()">💾 Save Transactions</button></div></div>';
@@ -20408,7 +20408,7 @@ ${rateText}`
         const totalCost = parsedFuelData.reduce((s, t) => s + t.amount, 0);
         
         preview.style.display = 'block';
-        preview.innerHTML = '<div style="background:#d1fae5;padding:12px;border-radius:8px;margin-bottom:12px"><strong style="color:#059669">✓ Found ' + parsedFuelData.length + ' transactions</strong><br><span style="font-size:12px">ULSD: ' + totalUlsdGal.toFixed(2) + ' gal | DEF: ' + totalDefGal.toFixed(2) + ' gal | Total: $' + totalCost.toFixed(2) + '</span></div>' +
+        preview.innerHTML = '<div style="background:var(--green-dim);padding:12px;border-radius:8px;margin-bottom:12px"><strong style="color:var(--green)">✓ Found ' + parsedFuelData.length + ' transactions</strong><br><span style="font-size:12px">ULSD: ' + totalUlsdGal.toFixed(2) + ' gal | DEF: ' + totalDefGal.toFixed(2) + ' gal | Total: $' + totalCost.toFixed(2) + '</span></div>' +
           '<table style="width:100%;font-size:12px"><thead><tr><th>Date</th><th>Truck</th><th>State</th><th>Product</th><th>Gallons</th><th>Amount</th></tr></thead><tbody>' +
           parsedFuelData.filter(t => t.product !== 'Txn Fee').slice(0, 10).map(t => '<tr><td>' + t.transaction_date + '</td><td>#' + t.truck_number + '</td><td><strong>' + t.state + '</strong></td><td>' + t.product + '</td><td>' + t.gallons.toFixed(2) + '</td><td>$' + t.amount.toFixed(2) + '</td></tr>').join('') +
           (parsedFuelData.filter(t => t.product !== 'Txn Fee').length > 10 ? '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">... and ' + (parsedFuelData.filter(t => t.product !== 'Txn Fee').length - 10) + ' more</td></tr>' : '') +
@@ -20868,7 +20868,7 @@ ${rateText}`
       
       const netTax = totalTaxOwed - totalTaxCredit;
       
-      c.innerHTML = '<div class="header"><h2>📑 IFTA Report</h2><div style="display:flex;gap:12px"><button class="btn btn-primary" onclick="openIFTAUploadModal()">📤 Upload Samsara Mileage</button>' + (iftaMileageData.length > 0 ? '<button class="btn btn-secondary" style="background:var(--red-dim);color:var(--red);border-color:#fecaca" onclick="clearIFTAMileage()">🗑️ Clear Mileage Data</button>' : '') + '</div></div>' +
+      c.innerHTML = '<div class="header"><h2>📑 IFTA Report</h2><div style="display:flex;gap:12px"><button class="btn btn-primary" onclick="openIFTAUploadModal()">📤 Upload Samsara Mileage</button>' + (iftaMileageData.length > 0 ? '<button class="btn btn-secondary" style="background:var(--red-dim);color:var(--red);border-color:var(--red-dim)" onclick="clearIFTAMileage()">🗑️ Clear Mileage Data</button>' : '') + '</div></div>' +
         
         // Quarter selector
         '<div class="card" style="padding:16px;margin-bottom:24px"><div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">' +
@@ -20877,15 +20877,15 @@ ${rateText}`
         '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Fleet MPG</label><div style="display:flex;gap:8px;align-items:center"><input type="number" step="0.1" value="' + fleetMPG + '" style="width:80px" onchange="fleetMPG=parseFloat(this.value)||6;renderIFTA(document.getElementById(\'main-content\'))">' +
         (hasCalcData ? '<button class="btn btn-secondary" style="padding:6px 10px;font-size:12px" onclick="fleetMPG=' + calculatedMPG.toFixed(2) + ';renderIFTA(document.getElementById(\'main-content\'))" title="Use calculated MPG from your ' + milesSource + ' miles and fuel data">Use ' + calculatedMPG.toFixed(2) + '</button>' : '') +
         '</div></div>' +
-        '<div style="margin-left:auto;font-size:18px;font-weight:700;color:#1e40af">📅 ' + qRange.label + ' ' + iftaYear + '</div></div>' +
+        '<div style="margin-left:auto;font-size:18px;font-weight:700;color:var(--blue)">📅 ' + qRange.label + ' ' + iftaYear + '</div></div>' +
 
         // Auto MPG Info Box
-        (hasCalcData ? '<div style="background:var(--blue-dim);border:1px solid #3b82f6;border-radius:6px;padding:12px;margin-top:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">' +
-        '<span style="font-size:14px;color:#1e40af">📊 <strong>Auto-Calculated MPG:</strong> ' + calculatedMPG.toFixed(2) + ' MPG</span>' +
+        (hasCalcData ? '<div style="background:var(--blue-dim);border:1px solid var(--blue);border-radius:6px;padding:12px;margin-top:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">' +
+        '<span style="font-size:14px;color:var(--blue)">📊 <strong>Auto-Calculated MPG:</strong> ' + calculatedMPG.toFixed(2) + ' MPG</span>' +
         '<span style="font-size:12px;color:var(--blue)">(' + milesForMPG.toLocaleString() + ' ' + milesSource + ' miles ÷ ' + totalFuelGallons.toFixed(1) + ' gallons = ' + calculatedMPG.toFixed(2) + ' MPG)</span>' +
-        (Math.abs(calculatedMPG - fleetMPG) > 0.5 ? '<span style="font-size:12px;color:var(--red);background:var(--red-dim);padding:4px 8px;border-radius:4px">⚠️ Differs from current setting by ' + Math.abs(calculatedMPG - fleetMPG).toFixed(2) + ' MPG</span>' : '<span style="font-size:12px;color:#059669">✓ Close to current setting</span>') +
+        (Math.abs(calculatedMPG - fleetMPG) > 0.5 ? '<span style="font-size:12px;color:var(--red);background:var(--red-dim);padding:4px 8px;border-radius:4px">⚠️ Differs from current setting by ' + Math.abs(calculatedMPG - fleetMPG).toFixed(2) + ' MPG</span>' : '<span style="font-size:12px;color:var(--green)">✓ Close to current setting</span>') +
         '</div>' :
-        '<div style="background:var(--amber-dim);border:1px solid #f59e0b;border-radius:6px;padding:12px;margin-top:12px">' +
+        '<div style="background:var(--amber-dim);border:1px solid var(--amber);border-radius:6px;padding:12px;margin-top:12px">' +
         '<span style="font-size:13px;color:var(--amber)">💡 <strong>Tip:</strong> Upload IFTA mileage or add trip miles and fuel transactions to auto-calculate your actual fleet MPG.</span></div>') +
         '</div>' +
         
@@ -20896,15 +20896,15 @@ ${rateText}`
         '<div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px"><div class="label">Taxable Gallons</div><div class="value">' + totalTaxableGallons.toFixed(2) + '</div></div>' +
         '<div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px"><div class="label">Fuel Purchased</div><div class="value">' + totalFuelGallons.toFixed(2) + ' gal</div></div>' +
         '<div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px;background:var(--red-dim)"><div class="label">Tax Owed</div><div class="value" style="color:var(--red)">' + formatMoney(totalTaxOwed) + '</div></div>' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px;background:#d1fae5"><div class="label">Tax Credit</div><div class="value" style="color:#059669">' + formatMoney(totalTaxCredit) + '</div></div>' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;background:' + (netTax >= 0 ? '#fee2e2' : '#d1fae5') + '"><div class="label">Net Tax Due</div><div class="value" style="color:' + (netTax >= 0 ? '#dc2626' : '#059669') + ';font-size:20px">' + (netTax >= 0 ? '' : '-') + formatMoney(Math.abs(netTax)) + '</div></div>' +
+        '<div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px;background:var(--green-dim)"><div class="label">Tax Credit</div><div class="value" style="color:var(--green)">' + formatMoney(totalTaxCredit) + '</div></div>' +
+        '<div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;background:' + (netTax >= 0 ? 'var(--red-dim)' : 'var(--green-dim)') + '"><div class="label">Net Tax Due</div><div class="value" style="color:' + (netTax >= 0 ? 'var(--red)' : 'var(--green)') + ';font-size:20px">' + (netTax >= 0 ? '' : '-') + formatMoney(Math.abs(netTax)) + '</div></div>' +
         '</div>' +
         
         // Instructions if no mileage data
         (iftaMileageData.length === 0 ? 
-          '<div style="background:var(--amber-dim);border:1px solid #f59e0b;border-radius:8px;padding:24px;margin-bottom:24px;text-align:center">' +
+          '<div style="background:var(--amber-dim);border:1px solid var(--amber);border-radius:8px;padding:24px;margin-bottom:24px;text-align:center">' +
           '<h3 style="color:var(--amber);margin:0 0 12px 0">📤 Upload Samsara Mileage Report</h3>' +
-          '<p style="color:#a16207;margin:0">Click the button above to upload your Samsara IFTA CSV file with mileage by state.</p>' +
+          '<p style="color:var(--amber);margin:0">Click the button above to upload your Samsara IFTA CSV file with mileage by state.</p>' +
           '</div>' : '') +
         
         // Fuel by State (from fuel tracking)
@@ -20917,15 +20917,15 @@ ${rateText}`
         // IFTA Calculation Table
         (iftaMileageData.length > 0 ?
           '<div class="card"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3>📊 IFTA Calculation by Jurisdiction</h3><button class="btn btn-secondary" onclick="exportIFTA()">📥 Export CSV</button></div><div class="table-wrapper"><table><thead><tr><th>State</th><th>Miles</th><th>% of Miles</th><th>Taxable Gal</th><th>Fuel Purchased</th><th>Net Taxable</th><th>Tax Rate</th><th>Tax Due</th></tr></thead><tbody>' +
-          iftaResults.map(r => '<tr><td><strong>' + r.state + '</strong></td><td>' + r.miles.toLocaleString(undefined, {maximumFractionDigits: 0}) + '</td><td>' + r.percentOfMiles.toFixed(2) + '%</td><td>' + r.taxableGallons.toFixed(2) + '</td><td>' + r.fuelPurchased.toFixed(2) + '</td><td style="color:' + (r.netTaxableGallons >= 0 ? '#dc2626' : '#059669') + '">' + r.netTaxableGallons.toFixed(2) + '</td><td>$' + r.taxRate.toFixed(4) + '</td><td class="money" style="color:' + (r.taxDue >= 0 ? '#dc2626' : '#059669') + '">' + (r.taxDue >= 0 ? '' : '-') + formatMoney(Math.abs(r.taxDue)) + '</td></tr>').join('') +
-          '<tr style="background:var(--bg-card-hover);font-weight:700"><td>TOTAL</td><td>' + totalMiles.toLocaleString(undefined, {maximumFractionDigits: 0}) + '</td><td>100%</td><td>' + totalTaxableGallons.toFixed(2) + '</td><td>' + totalFuelGallons.toFixed(2) + '</td><td>' + (totalTaxableGallons - totalFuelGallons).toFixed(2) + '</td><td>-</td><td style="color:' + (netTax >= 0 ? '#dc2626' : '#059669') + '">' + (netTax >= 0 ? '' : '-') + formatMoney(Math.abs(netTax)) + '</td></tr>' +
+          iftaResults.map(r => '<tr><td><strong>' + r.state + '</strong></td><td>' + r.miles.toLocaleString(undefined, {maximumFractionDigits: 0}) + '</td><td>' + r.percentOfMiles.toFixed(2) + '%</td><td>' + r.taxableGallons.toFixed(2) + '</td><td>' + r.fuelPurchased.toFixed(2) + '</td><td style="color:' + (r.netTaxableGallons >= 0 ? 'var(--red)' : 'var(--green)') + '">' + r.netTaxableGallons.toFixed(2) + '</td><td>$' + r.taxRate.toFixed(4) + '</td><td class="money" style="color:' + (r.taxDue >= 0 ? 'var(--red)' : 'var(--green)') + '">' + (r.taxDue >= 0 ? '' : '-') + formatMoney(Math.abs(r.taxDue)) + '</td></tr>').join('') +
+          '<tr style="background:var(--bg-card-hover);font-weight:700"><td>TOTAL</td><td>' + totalMiles.toLocaleString(undefined, {maximumFractionDigits: 0}) + '</td><td>100%</td><td>' + totalTaxableGallons.toFixed(2) + '</td><td>' + totalFuelGallons.toFixed(2) + '</td><td>' + (totalTaxableGallons - totalFuelGallons).toFixed(2) + '</td><td>-</td><td style="color:' + (netTax >= 0 ? 'var(--red)' : 'var(--green)') + '">' + (netTax >= 0 ? '' : '-') + formatMoney(Math.abs(netTax)) + '</td></tr>' +
           '</tbody></table></div></div>' : '');
     }
 
     function openIFTAUploadModal() {
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
       m.innerHTML = '<div class="modal" style="max-width:500px"><div class="modal-header"><h3>📤 Upload Samsara IFTA Mileage</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body">' +
-        '<div style="background:var(--blue-dim);padding:16px;border-radius:8px;margin-bottom:16px"><strong style="color:#1d4ed8">Supported Format:</strong><p style="color:#1e40af;margin-top:8px;font-size:14px">Samsara IFTA CSV export with columns: Jurisdiction, Fuel Type, Taxable Miles, Total Miles</p></div>' +
+        '<div style="background:var(--blue-dim);padding:16px;border-radius:8px;margin-bottom:16px"><strong style="color:var(--blue)">Supported Format:</strong><p style="color:var(--blue);margin-top:8px;font-size:14px">Samsara IFTA CSV export with columns: Jurisdiction, Fuel Type, Taxable Miles, Total Miles</p></div>' +
         '<div class="form-group"><label>Select CSV File</label><input type="file" id="iftaCsvFile" accept=".csv"></div>' +
         '<div id="iftaParsePreview" style="display:none;margin-top:16px;max-height:300px;overflow-y:auto"></div>' +
         '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="parseIFTACsv()">🔍 Parse CSV</button></div></div>';
@@ -21001,19 +21001,19 @@ ${rateText}`
 
         // Option 1: Fetch from Samsara API
         (samsaraKey ?
-          '<div style="background:linear-gradient(135deg,#dcfce7,#d1fae5);padding:20px;border-radius:12px;margin-bottom:16px;border:1px solid #86efac">' +
+          '<div style="background:linear-gradient(135deg,var(--green-dim),var(--green-dim));padding:20px;border-radius:12px;margin-bottom:16px;border:1px solid var(--green)">' +
           '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">' +
           '<span style="font-size:24px">🔄</span>' +
-          '<div><strong style="color:#166534;font-size:16px">Fetch from Samsara API</strong><br>' +
-          '<span style="color:#15803d;font-size:13px">Automatically pull mileage data for selected period</span></div>' +
+          '<div><strong style="color:var(--primary-800);font-size:16px">Fetch from Samsara API</strong><br>' +
+          '<span style="color:var(--primary-700);font-size:13px">Automatically pull mileage data for selected period</span></div>' +
           '</div>' +
           '<button class="btn" style="background:var(--green);color:white;border:none;width:100%;padding:12px;font-weight:600" onclick="fetchAndSaveFleetMileage(document.getElementById(\'fleetMileageStart\').value, document.getElementById(\'fleetMileageEnd\').value)">🔄 Fetch Mileage from Samsara</button>' +
           '<div id="samsaraFetchStatus" style="margin-top:12px"></div>' +
           '</div>'
         :
-          '<div style="background:var(--amber-dim);padding:16px;border-radius:12px;margin-bottom:16px;border:1px solid #fcd34d">' +
+          '<div style="background:var(--amber-dim);padding:16px;border-radius:12px;margin-bottom:16px;border:1px solid var(--amber)">' +
           '<strong style="color:var(--amber)">⚠️ Samsara Not Connected</strong>' +
-          '<p style="color:#a16207;margin-top:8px;font-size:14px">Connect your Samsara API in Settings to enable automatic mileage fetch.</p>' +
+          '<p style="color:var(--amber);margin-top:8px;font-size:14px">Connect your Samsara API in Settings to enable automatic mileage fetch.</p>' +
           '</div>'
         ) +
 
@@ -21030,12 +21030,12 @@ ${rateText}`
         '</div>' +
 
         // Current data display
-        (fleetMileageData.length > 0 ? '<div style="background:var(--blue-dim);padding:16px;border-radius:12px;margin-top:16px;border:1px solid #93c5fd">' +
+        (fleetMileageData.length > 0 ? '<div style="background:var(--blue-dim);padding:16px;border-radius:12px;margin-top:16px;border:1px solid var(--blue-dim)">' +
           '<div style="display:flex;justify-content:space-between;align-items:center">' +
-          '<div><strong style="color:#1d4ed8">📊 Current Data Loaded</strong><br>' +
+          '<div><strong style="color:var(--blue)">📊 Current Data Loaded</strong><br>' +
           '<span style="color:var(--blue);font-size:14px">' + fleetMileageData.length + ' trucks • ' + fleetMileageData.reduce((s,t) => s + parseFloat(t.distance || 0), 0).toLocaleString(undefined, {maximumFractionDigits: 0}) + ' total miles</span><br>' +
           '<span style="color:var(--blue);font-size:12px">Period: ' + (fleetMileagePeriod.start || 'N/A') + ' to ' + (fleetMileagePeriod.end || 'N/A') + '</span></div>' +
-          '<button class="btn" style="background:var(--red-dim);color:var(--red);border-color:#fecaca" onclick="clearFleetMileage()">🗑️ Clear</button>' +
+          '<button class="btn" style="background:var(--red-dim);color:var(--red);border-color:var(--red-dim)" onclick="clearFleetMileage()">🗑️ Clear</button>' +
           '</div></div>' : '') +
 
         '</div><div class="modal-footer">' +
@@ -21268,7 +21268,7 @@ ${rateText}`
       const urgentTasks = tasks.filter(t => t.priority === 'URGENT' && t.status !== 'COMPLETED').length;
       
       const getPriorityBadge = (p) => {
-        if (p === 'URGENT') return '<span class="badge" style="background:#dc2626;color:white">🔥 URGENT</span>';
+        if (p === 'URGENT') return '<span class="badge" style="background:var(--red);color:white">🔥 URGENT</span>';
         if (p === 'HIGH') return '<span class="badge" style="background:var(--amber);color:white">HIGH</span>';
         if (p === 'NORMAL') return '<span class="badge badge-blue">NORMAL</span>';
         return '<span class="badge badge-gray">LOW</span>';
@@ -21286,10 +21286,10 @@ ${rateText}`
         
         // Stats cards
         '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px">' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px;cursor:pointer;' + (taskFilter === 'all' ? 'border:2px solid #3b82f6' : '') + '" onclick="taskFilter=\'all\';renderTasks(document.getElementById(\'main-content\'))"><div class="label">Pending Tasks</div><div class="value">' + totalPending + '</div></div>' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;cursor:pointer;background:var(--blue-dim);' + (taskFilter === 'today' ? 'border:2px solid #3b82f6' : '') + '" onclick="taskFilter=\'today\';renderTasks(document.getElementById(\'main-content\'))"><div class="label">Due Today</div><div class="value" style="color:var(--blue)">' + todayTasks + '</div></div>' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px;cursor:pointer;background:var(--red-dim);' + (taskFilter === 'overdue' ? 'border:2px solid #dc2626' : '') + '" onclick="taskFilter=\'overdue\';renderTasks(document.getElementById(\'main-content\'))"><div class="label">Overdue</div><div class="value" style="color:var(--red)">' + overdueTasks + '</div></div>' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px;cursor:pointer;background:var(--amber-dim);' + (taskFilter === 'urgent' ? 'border:2px solid #f59e0b' : '') + '" onclick="taskFilter=\'urgent\';renderTasks(document.getElementById(\'main-content\'))"><div class="label">🔥 Urgent</div><div class="value" style="color:#d97706">' + urgentTasks + '</div></div>' +
+        '<div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px;cursor:pointer;' + (taskFilter === 'all' ? 'border:2px solid var(--blue)' : '') + '" onclick="taskFilter=\'all\';renderTasks(document.getElementById(\'main-content\'))"><div class="label">Pending Tasks</div><div class="value">' + totalPending + '</div></div>' +
+        '<div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;cursor:pointer;background:var(--blue-dim);' + (taskFilter === 'today' ? 'border:2px solid var(--blue)' : '') + '" onclick="taskFilter=\'today\';renderTasks(document.getElementById(\'main-content\'))"><div class="label">Due Today</div><div class="value" style="color:var(--blue)">' + todayTasks + '</div></div>' +
+        '<div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px;cursor:pointer;background:var(--red-dim);' + (taskFilter === 'overdue' ? 'border:2px solid var(--red)' : '') + '" onclick="taskFilter=\'overdue\';renderTasks(document.getElementById(\'main-content\'))"><div class="label">Overdue</div><div class="value" style="color:var(--red)">' + overdueTasks + '</div></div>' +
+        '<div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px;cursor:pointer;background:var(--amber-dim);' + (taskFilter === 'urgent' ? 'border:2px solid var(--amber)' : '') + '" onclick="taskFilter=\'urgent\';renderTasks(document.getElementById(\'main-content\'))"><div class="label">🔥 Urgent</div><div class="value" style="color:var(--amber)">' + urgentTasks + '</div></div>' +
         '</div>' +
         
         // Filter tabs
@@ -21297,7 +21297,7 @@ ${rateText}`
         '<button class="btn ' + (taskFilter === 'all' ? 'btn-primary' : 'btn-secondary') + '" onclick="taskFilter=\'all\';renderTasks(document.getElementById(\'main-content\'))">All Pending</button>' +
         '<button class="btn ' + (taskFilter === 'today' ? 'btn-primary' : 'btn-secondary') + '" onclick="taskFilter=\'today\';renderTasks(document.getElementById(\'main-content\'))">Today</button>' +
         '<button class="btn ' + (taskFilter === 'upcoming' ? 'btn-primary' : 'btn-secondary') + '" onclick="taskFilter=\'upcoming\';renderTasks(document.getElementById(\'main-content\'))">Upcoming</button>' +
-        '<button class="btn ' + (taskFilter === 'overdue' ? 'btn-primary' : 'btn-secondary') + '" style="' + (taskFilter === 'overdue' ? '' : 'background:var(--red-dim);color:var(--red);border-color:#fecaca') + '" onclick="taskFilter=\'overdue\';renderTasks(document.getElementById(\'main-content\'))">Overdue</button>' +
+        '<button class="btn ' + (taskFilter === 'overdue' ? 'btn-primary' : 'btn-secondary') + '" style="' + (taskFilter === 'overdue' ? '' : 'background:var(--red-dim);color:var(--red);border-color:var(--red-dim)') + '" onclick="taskFilter=\'overdue\';renderTasks(document.getElementById(\'main-content\'))">Overdue</button>' +
         '<button class="btn ' + (taskFilter === 'completed' ? 'btn-primary' : 'btn-secondary') + '" onclick="taskFilter=\'completed\';renderTasks(document.getElementById(\'main-content\'))">Completed</button>' +
         '</div>' +
         
@@ -21308,10 +21308,10 @@ ${rateText}`
         filteredTasks.map(t => {
           const assignee = appData.dispatchers.find(d => d.id === t.assigned_to);
           const creator = appData.users.find(u => u.id === t.created_by);
-          const overdueStyle = isOverdue(t.due_date, t.status) ? 'border-left:4px solid #dc2626;background:var(--red-dim)' : '';
-          const urgentStyle = t.priority === 'URGENT' && t.status !== 'COMPLETED' ? 'border-left:4px solid #f59e0b;background:var(--amber-dim)' : '';
+          const overdueStyle = isOverdue(t.due_date, t.status) ? 'border-left:4px solid var(--red);background:var(--red-dim)' : '';
+          const urgentStyle = t.priority === 'URGENT' && t.status !== 'COMPLETED' ? 'border-left:4px solid var(--amber);background:var(--amber-dim)' : '';
           
-          return '<div style="padding:16px;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:12px;' + (overdueStyle || urgentStyle) + '">' +
+          return '<div style="padding:16px;border:1px solid var(--bg-elevated);border-radius:8px;margin-bottom:12px;' + (overdueStyle || urgentStyle) + '">' +
             '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">' +
             '<div style="flex:1">' +
             '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">' +
@@ -21420,13 +21420,13 @@ ${rateText}`
 
       // Tab buttons
       const tabs = [
-        { id: 'dashboard', label: '📊 Dashboard', color: '#3b82f6' },
-        { id: 'tasks', label: '📋 Compliance Tasks', color: '#8b5cf6' },
-        { id: 'driver_files', label: '👤 Driver Files', color: '#1e40af' },
-        { id: 'truck_files', label: '🚚 Truck Files', color: '#0891b2' },
-        { id: 'company_files', label: '🏢 Company Files', color: '#059669' },
-        { id: 'driver_compliance', label: '🎫 Tickets/Violations', color: '#dc2626' },
-        { id: 'accidents', label: '🚨 Accident Registry', color: '#f59e0b' }
+        { id: 'dashboard', label: '📊 Dashboard', color: 'var(--blue)' },
+        { id: 'tasks', label: '📋 Compliance Tasks', color: 'var(--purple)' },
+        { id: 'driver_files', label: '👤 Driver Files', color: 'var(--blue)' },
+        { id: 'truck_files', label: '🚚 Truck Files', color: 'var(--blue)' },
+        { id: 'company_files', label: '🏢 Company Files', color: 'var(--green)' },
+        { id: 'driver_compliance', label: '🎫 Tickets/Violations', color: 'var(--red)' },
+        { id: 'accidents', label: '🚨 Accident Registry', color: 'var(--amber)' }
       ];
       
       const tabsHtml = '<div style="display:flex;gap:4px;margin-bottom:20px;flex-wrap:wrap">' +
@@ -21539,11 +21539,11 @@ ${rateText}`
       const upcomingCompTasks = compTasks.filter(t => t.next_due_date && new Date(t.next_due_date) >= today && new Date(t.next_due_date) <= new Date(next30Days))
         .map(t => ({ task: t.task_name, due: t.next_due_date }));
       
-      c.innerHTML = '<div class="card" style="margin-bottom:24px;background:linear-gradient(135deg,#1e40af,#3b82f6);color:white;padding:24px"><h3 style="margin:0 0 16px">📊 Compliance Report</h3>' +
+      c.innerHTML = '<div class="card" style="margin-bottom:24px;background:linear-gradient(135deg,var(--blue),var(--blue));color:white;padding:24px"><h3 style="margin:0 0 16px">📊 Compliance Report</h3>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">' +
         '<div style="background:rgba(255,255,255,0.15);padding:20px;border-radius:12px;text-align:center"><div style="font-size:14px;opacity:0.9">Open Tickets</div><div style="font-size:36px;font-weight:700">' + openTickets + '</div></div>' +
         '<div style="background:rgba(255,255,255,0.15);padding:20px;border-radius:12px;text-align:center"><div style="font-size:14px;opacity:0.9">Open Claims</div><div style="font-size:36px;font-weight:700">' + openClaims + '</div></div>' +
-        '<div style="background:rgba(255,255,255,0.15);padding:20px;border-radius:12px;text-align:center"><div style="font-size:14px;opacity:0.9">Days Without Accidents</div><div style="font-size:36px;font-weight:700;color:#4ade80">' + daysWithoutAccident + '</div></div>' +
+        '<div style="background:rgba(255,255,255,0.15);padding:20px;border-radius:12px;text-align:center"><div style="font-size:14px;opacity:0.9">Days Without Accidents</div><div style="font-size:36px;font-weight:700;color:var(--primary-400)">' + daysWithoutAccident + '</div></div>' +
         '</div></div>' +
         
         // Grid of upcoming items
@@ -21558,7 +21558,7 @@ ${rateText}`
         // Birthdays
         '<div class="card"><div class="card-header"><h4 style="margin:0">🎂 Birthdays (Next 7 Days)</h4></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
         (birthdays.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px">No birthdays this week</div>' :
-        birthdays.map(b => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + b.driver + '</strong></div><div style="font-size:12px;color:#ec4899">' + formatDate(b.date) + '</div></div>').join('')) +
+        birthdays.map(b => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + b.driver + '</strong></div><div style="font-size:12px;color:var(--purple)">' + formatDate(b.date) + '</div></div>').join('')) +
         '</div></div>' +
         
         // Vehicle Tasks
@@ -21581,7 +21581,7 @@ ${rateText}`
           });
           return '<div class="card"><div class="card-header"><h4 style="margin:0">🏢 Company Files (Next 7 Days)</h4></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
             (companyFileTasks.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px">No files expiring</div>' :
-            companyFileTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + t.doc + '</strong></div><div style="font-size:12px;color:' + (t.days < 0 ? '#dc2626' : '#059669') + '">' + (t.days < 0 ? 'EXPIRED' : formatDate(t.due)) + '</div></div>').join('')) +
+            companyFileTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + t.doc + '</strong></div><div style="font-size:12px;color:' + (t.days < 0 ? 'var(--red)' : 'var(--green)') + '">' + (t.days < 0 ? 'EXPIRED' : formatDate(t.due)) + '</div></div>').join('')) +
             '</div></div>';
         })() +
 
@@ -21594,7 +21594,7 @@ ${rateText}`
         // Compliance Tasks
         '<div class="card"><div class="card-header"><h4 style="margin:0">📋 Compliance Tasks (Next 30 Days)</h4></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
         (upcomingCompTasks.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px">No tasks found</div>' :
-        upcomingCompTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + t.task + '</strong></div><div style="font-size:12px;color:#8b5cf6">' + formatDate(t.due) + '</div></div>').join('')) +
+        upcomingCompTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + t.task + '</strong></div><div style="font-size:12px;color:var(--purple)">' + formatDate(t.due) + '</div></div>').join('')) +
         '</div></div>' +
         
         '</div>';
@@ -21646,7 +21646,7 @@ ${rateText}`
       const iftaDates = getIFTADueDates();
       const nextIFTA = iftaDates.find(d => d.due >= today) || iftaDates[0];
       
-      c.innerHTML = '<div class="card" style="margin-bottom:24px;background:var(--blue-dim);padding:16px;border:1px solid #3b82f6"><strong>📅 Next IFTA Filing:</strong> ' + nextIFTA.quarter + ' (' + nextIFTA.period + ') - Due: <strong>' + formatDate(nextIFTA.due) + '</strong></div>' +
+      c.innerHTML = '<div class="card" style="margin-bottom:24px;background:var(--blue-dim);padding:16px;border:1px solid var(--blue)"><strong>📅 Next IFTA Filing:</strong> ' + nextIFTA.quarter + ' (' + nextIFTA.period + ') - Due: <strong>' + formatDate(nextIFTA.due) + '</strong></div>' +
         
         '<div class="card" style="margin-bottom:24px"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3>📋 Compliance Tasks</h3><button class="btn btn-primary" onclick="openComplianceTaskModal()">+ Add Task</button></div>' +
         '<div class="table-wrapper"><table><thead><tr><th>Task</th><th>Frequency</th><th>Last Completed</th><th>Next Due</th><th>Status</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
@@ -21778,7 +21778,7 @@ ${rateText}`
         });
       });
       
-      const alertsHtml = alerts.length > 0 ? '<div style="background:var(--red-dim);border:1px solid #fecaca;border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--red)">⚠️ Expiring Soon (' + alerts.length + ')</strong><div style="margin-top:8px">' + alerts.slice(0, 5).map(a => '<span class="badge badge-amber" style="margin:4px">' + a.name + ' - ' + a.doc + ' (' + (a.days < 0 ? 'EXPIRED' : a.days + 'd') + ')</span>').join('') + '</div></div>' : '';
+      const alertsHtml = alerts.length > 0 ? '<div style="background:var(--red-dim);border:1px solid var(--red-dim);border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--red)">⚠️ Expiring Soon (' + alerts.length + ')</strong><div style="margin-top:8px">' + alerts.slice(0, 5).map(a => '<span class="badge badge-amber" style="margin:4px">' + a.name + ' - ' + a.doc + ' (' + (a.days < 0 ? 'EXPIRED' : a.days + 'd') + ')</span>').join('') + '</div></div>' : '';
       
       c.innerHTML = alertsHtml +
         '<div class="card"><div class="table-wrapper"><table><thead><tr><th>Driver</th><th>CDL</th><th>Medical Card</th><th>MVR</th><th>PSP Report</th><th>Other</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
@@ -21875,7 +21875,7 @@ ${rateText}`
       const customFiles = files.filter(f => f.category === 'CUSTOM');
       const customFolders = [...new Set(customFiles.map(f => f.folder_name).filter(Boolean))];
 
-      const alertsHtml = alerts.length > 0 ? '<div style="background:var(--red-dim);border:1px solid #fecaca;border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--red)">⚠️ Expiring Soon (' + alerts.length + ')</strong><div style="margin-top:8px">' + alerts.slice(0, 5).map(a => '<span class="badge badge-amber" style="margin:4px">' + a.doc + ' (' + (a.days < 0 ? 'EXPIRED' : a.days + 'd') + ')</span>').join('') + '</div></div>' : '';
+      const alertsHtml = alerts.length > 0 ? '<div style="background:var(--red-dim);border:1px solid var(--red-dim);border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--red)">⚠️ Expiring Soon (' + alerts.length + ')</strong><div style="margin-top:8px">' + alerts.slice(0, 5).map(a => '<span class="badge badge-amber" style="margin:4px">' + a.doc + ' (' + (a.days < 0 ? 'EXPIRED' : a.days + 'd') + ')</span>').join('') + '</div></div>' : '';
 
       // Build file status rows
       const getFileStatus = (fileType) => {
