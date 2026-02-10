@@ -43,17 +43,17 @@
 
 ### Operations Pages (OPS)
 
-- [ ] **OPS-01**: Fuel Tracking mockup with fuel card transactions
-- [ ] **OPS-02**: IFTA mockup with mileage breakdown by state
-- [ ] **OPS-03**: Compliance mockup with driver files, expiration alerts
-- [ ] **OPS-04**: Maintenance mockup with maintenance records
+- [x] **OPS-01**: Fuel Tracking mockup with fuel card transactions
+- [x] **OPS-02**: IFTA mockup with mileage breakdown by state
+- [x] **OPS-03**: Compliance mockup with driver files, expiration alerts
+- [x] **OPS-04**: Maintenance mockup with maintenance records
 
 ### Admin Pages (ADMIN)
 
-- [ ] **ADMIN-01**: Tasks mockup with task board/list
-- [ ] **ADMIN-02**: Settings mockup with user management
-- [ ] **ADMIN-03**: Activity Log mockup with filterable log entries
-- [ ] **ADMIN-04**: Team Chat mockup with message list
+- [x] **ADMIN-01**: Tasks mockup with task board/list
+- [x] **ADMIN-02**: Settings mockup with user management
+- [x] **ADMIN-03**: Activity Log mockup with filterable log entries
+- [x] **ADMIN-04**: Team Chat mockup with message list
 
 ## Out of Scope
 
@@ -93,14 +93,14 @@
 | FIN-02 | Phase 9 | Complete |
 | FIN-03 | Phase 9 | Complete |
 | FIN-04 | Phase 9 | Complete |
-| OPS-01 | Phase 10 | Pending |
-| OPS-02 | Phase 10 | Pending |
-| OPS-03 | Phase 10 | Pending |
-| OPS-04 | Phase 10 | Pending |
-| ADMIN-01 | Phase 10 | Pending |
-| ADMIN-02 | Phase 10 | Pending |
-| ADMIN-03 | Phase 10 | Pending |
-| ADMIN-04 | Phase 10 | Pending |
+| OPS-01 | Phase 10 | Complete |
+| OPS-02 | Phase 10 | Complete |
+| OPS-03 | Phase 10 | Complete |
+| OPS-04 | Phase 10 | Complete |
+| ADMIN-01 | Phase 10 | Complete |
+| ADMIN-02 | Phase 10 | Complete |
+| ADMIN-03 | Phase 10 | Complete |
+| ADMIN-04 | Phase 10 | Complete |
 
 **Coverage:**
 - v1 requirements: 31 total
