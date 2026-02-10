@@ -14352,7 +14352,7 @@
         
         // Left column - Other Metrics
         '<div class="card" style="padding:20px">' +
-        '<h3 style="margin-bottom:16px;color:var(--blue);border-bottom:2px solid var(--blue);padding-bottom:8px">📈 OTHER METRICS</h3>' +
+        '<h3 class="section-title blue">📈 OTHER METRICS</h3>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:var(--text-sm)">' +
         '<div><span style="color:var(--text-muted)"># of Trucks in Service</span></div><div style="text-align:right;font-weight:600">' + appData.trucks.filter(t => t.status === 'ACTIVE').length + '</div>' +
         '<div><span style="color:var(--text-muted)">Total Miles Traveled</span></div><div style="text-align:right;font-weight:600">' + totalMiles.toLocaleString() + '</div>' +
@@ -14375,7 +14375,7 @@
         
         // Right column - Direct Trip Expenses Breakdown
         '<div class="card" style="padding:20px">' +
-        '<h3 style="margin-bottom:16px;color:var(--red);border-bottom:2px solid var(--red);padding-bottom:8px">💸 DIRECT TRIP EXPENSES</h3>' +
+        '<h3 class="section-title red">💸 DIRECT TRIP EXPENSES</h3>' +
         '<div style="display:flex;flex-direction:column;gap:12px">' +
         '<div style="display:flex;justify-content:space-between;align-items:center"><span>Broker Fees</span><span style="font-weight:600;color:var(--red)">' + formatMoney(totalBrokerFees) + '</span></div>' +
         '<div style="background:var(--red-dim);height:8px;border-radius:4px"><div style="background:var(--red);height:100%;border-radius:4px;width:' + (totalRev > 0 ? (totalBrokerFees/totalRev*100) : 0) + '%"></div></div>' +
@@ -14392,7 +14392,7 @@
 
         // Fuel Tracking Comparison Card
         '<div class="card" style="padding:20px;margin-bottom:20px">' +
-        '<h3 style="margin-bottom:16px;color:var(--amber);border-bottom:2px solid var(--amber);padding-bottom:8px">⛽ FUEL TRACKING</h3>' +
+        '<h3 class="section-title amber">⛽ FUEL TRACKING</h3>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">' +
         '<div style="background:var(--amber-dim);padding:var(--spacing-4);border-radius:var(--radius);border-left:4px solid var(--amber)">' +
         '<div style="font-size:12px;color:var(--amber);margin-bottom:4px">Trip-Level Fuel Expenses</div>' +
@@ -14413,7 +14413,7 @@
         
         // KPIs
         '<div class="card" style="padding:20px">' +
-        '<h3 style="margin-bottom:16px;color:var(--purple);border-bottom:2px solid var(--purple);padding-bottom:8px">📊 KEY PERFORMANCE INDICATORS</h3>' +
+        '<h3 class="section-title purple">📊 KEY PERFORMANCE INDICATORS</h3>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
         '<div style="background:var(--bg-app);padding:var(--spacing-3);border-radius:var(--radius);text-align:center"><div style="font-size:var(--text-xs);color:var(--text-muted)">Revenue/Mile</div><div style="font-size:var(--text-lg);font-weight:var(--weight-bold);color:var(--text-primary)">$' + revenuePerMile + '</div></div>' +
         '<div style="background:var(--bg-app);padding:var(--spacing-3);border-radius:var(--radius);text-align:center"><div style="font-size:var(--text-xs);color:var(--text-muted)">Profit/Mile</div><div style="font-size:var(--text-lg);font-weight:var(--weight-bold);color:' + (profitPerMile >= 0 ? 'var(--green)' : 'var(--red)') + '">$' + profitPerMile + '</div></div>' +
@@ -14426,7 +14426,7 @@
         
         // Truck & Dispatcher Performance
         '<div class="card" style="padding:20px">' +
-        '<h3 style="margin-bottom:16px;color:var(--green);border-bottom:2px solid var(--green);padding-bottom:8px">🏆 TOP PERFORMERS</h3>' +
+        '<h3 class="section-title green">🏆 TOP PERFORMERS</h3>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
         '<div style="background:var(--green-dim);padding:var(--spacing-4);border-radius:var(--radius);text-align:center"><div style="font-size:11px;color:var(--green)">Top Earner Truck</div><div style="font-size:var(--text-2xl);font-weight:var(--weight-bold);color:var(--green)">#' + (topTruck ? appData.trucks.find(t => t.id == topTruck)?.truck_number || '-' : '-') + '</div><div style="font-size:var(--text-sm);color:var(--green)">' + (topTruck ? formatMoney(truckPerf[topTruck].profit) : '-') + '</div></div>' +
         '<div style="background:var(--red-dim);padding:var(--spacing-4);border-radius:var(--radius);text-align:center"><div style="font-size:11px;color:var(--red)">Lowest Earner Truck</div><div style="font-size:var(--text-2xl);font-weight:var(--weight-bold);color:var(--red)">#' + (bottomTruck ? appData.trucks.find(t => t.id == bottomTruck)?.truck_number || '-' : '-') + '</div><div style="font-size:var(--text-sm);color:var(--red)">' + (bottomTruck ? formatMoney(truckPerf[bottomTruck].profit) : '-') + '</div></div>' +
@@ -14438,7 +14438,7 @@
         
         // Fourth row - Payment Collections
         '<div class="card" style="padding:20px;margin-bottom:20px">' +
-        '<h3 style="margin-bottom:16px;color:var(--blue);border-bottom:2px solid var(--blue);padding-bottom:8px">💵 PAYMENT COLLECTION</h3>' +
+        '<h3 class="section-title blue">💵 PAYMENT COLLECTION</h3>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px">' +
         '<div style="background:var(--green-dim);padding:var(--spacing-4);border-radius:var(--radius);text-align:center"><div style="font-size:var(--text-xs);color:var(--green)">COD Collected</div><div style="font-size:var(--text-xl);font-weight:var(--weight-bold);color:var(--green)">' + formatMoney(codAmount) + '</div></div>' +
         '<div style="background:var(--green-dim);padding:var(--spacing-4);border-radius:var(--radius);text-align:center"><div style="font-size:12px;color:var(--primary-700)">COP Collected</div><div style="font-size:var(--text-xl);font-weight:var(--weight-bold);color:var(--primary-700)">' + formatMoney(copAmount) + '</div></div>' +
