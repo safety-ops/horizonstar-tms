@@ -43,7 +43,22 @@ Dispatchers can efficiently manage the full lifecycle of vehicle transport order
 
 <!-- Current scope. Building toward these. -->
 
-(None yet — define with next milestone)
+- [ ] Apply v1.1 design system (CSS variables, tokens, component styles) to production index.html
+- [ ] Dark/light theme toggle working in production
+- [ ] Every page visually matches approved mockups (colors, typography, spacing, shadows, borders)
+- [ ] No layout changes — same page structure, sections, element positions
+- [ ] No behavior changes — all JS logic, functionality, and features identical
+- [ ] Production sidebar nav order preserved exactly
+
+## Current Milestone: v1.2 — Apply UI Redesign to Production
+
+**Goal:** Apply the approved v1.1 mockup designs to the live production index.html — purely visual changes, no layout or behavior modifications.
+
+**Target features:**
+- Production design system (CSS variables from shared.css → variables.css/base.css)
+- Dark/light theme toggle in production
+- All pages restyled: dashboard, dispatch, people & fleet, financials, operations & admin
+- Component styles: cards, tables, buttons, modals, forms, badges, nav
 
 ## Shipped Milestones
 
@@ -92,7 +107,8 @@ Dispatchers can efficiently manage the full lifecycle of vehicle transport order
 | Dark theme default | Consistency with iOS, reduces eye strain | ✓ Good |
 | Pure CSS variables, no preprocessor | Simple mockups, no build step | ✓ Good |
 | UI-ONLY constraint for redesign | No functionality changes during visual redesign | ✓ Good — clean separation |
-| Sidebar nav from production | Mockup sidebar differs; use production order when applying | — Pending |
+| Sidebar nav from production | Mockup sidebar differs; use production order when applying | ✓ Good — confirmed for v1.2 |
+| No layout changes in v1.2 | Apply visual design only, keep DOM structure identical | — Pending |
 
 ---
-*Last updated: 2026-02-10 after v1.1 milestone shipped*
+*Last updated: 2026-02-10 after v1.2 milestone started*
