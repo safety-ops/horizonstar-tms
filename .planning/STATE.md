@@ -72,6 +72,9 @@ Recent decisions affecting v1.2:
 - Order Detail inspection photos (12-06): 2x2 grid layout is the ONE user-approved DOM restructure in Phase 12
 - Photo grid pattern (12-06): 4 visible max with "+N more" overlay, aspect-ratio 4/3, inline grid styles
 - Phase 12 complete: All 6 core dispatch pages restyled (Dashboard, Load Board, Trips, Trip Detail, Orders, Order Detail)
+- Spacing token fix: Corrected 225 instances of --spacing-* → --space-* to match design-system.css definitions
+- Added half-step spacing tokens: --space-0-5 (2px), --space-1-5 (6px), --space-2-5 (10px), --space-3-5 (14px), --space-10 (40px)
+- Phase 12 verified: 4/4 must-haves passed after gap closure
 
 ### Known Issues
 - Production index.html is ~38K lines — changes must be carefully targeted per renderXxx() function
@@ -90,4 +93,4 @@ Resume file: None
 
 ---
 
-**Next action**: Phase 12 complete ✅ (all 6 plans executed and documented)! Proceed to Phase 13 - UI Deep Pages
+**Next action**: `/gsd:discuss-phase 13` to start Phase 13 (People & Fleet Pages)

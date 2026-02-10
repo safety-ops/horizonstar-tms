@@ -31,12 +31,12 @@ Requirements for applying the approved v1.1 UI redesign mockups to the productio
 
 ### Core Dispatch Pages
 
-- [ ] **DSP-01**: Dashboard page visually matches dashboard.html mockup
-- [ ] **DSP-02**: Load Board page visually matches load-board.html mockup
-- [ ] **DSP-03**: Trips list page visually matches trips.html mockup
-- [ ] **DSP-04**: Trip Detail page visually matches trip-detail.html mockup
-- [ ] **DSP-05**: Orders list page visually matches orders.html mockup
-- [ ] **DSP-06**: Order Detail page visually matches order-detail.html mockup
+- [x] **DSP-01**: Dashboard page visually matches dashboard.html mockup
+- [x] **DSP-02**: Load Board page visually matches load-board.html mockup
+- [x] **DSP-03**: Trips list page visually matches trips.html mockup
+- [x] **DSP-04**: Trip Detail page visually matches trip-detail.html mockup
+- [x] **DSP-05**: Orders list page visually matches orders.html mockup
+- [x] **DSP-06**: Order Detail page visually matches order-detail.html mockup
 
 ### People & Fleet Pages
 
@@ -100,12 +100,12 @@ Requirements for applying the approved v1.1 UI redesign mockups to the productio
 | GLC-08 | Phase 11 | Complete |
 | GLC-09 | Phase 11 | Complete |
 | GLC-10 | Phase 11 | Complete |
-| DSP-01 | Phase 12 | Pending |
-| DSP-02 | Phase 12 | Pending |
-| DSP-03 | Phase 12 | Pending |
-| DSP-04 | Phase 12 | Pending |
-| DSP-05 | Phase 12 | Pending |
-| DSP-06 | Phase 12 | Pending |
+| DSP-01 | Phase 12 | Complete |
+| DSP-02 | Phase 12 | Complete |
+| DSP-03 | Phase 12 | Complete |
+| DSP-04 | Phase 12 | Complete |
+| DSP-05 | Phase 12 | Complete |
+| DSP-06 | Phase 12 | Complete |
 | PPL-01 | Phase 13 | Pending |
 | PPL-02 | Phase 13 | Pending |
 | PPL-03 | Phase 13 | Pending |
@@ -138,4 +138,4 @@ Requirements for applying the approved v1.1 UI redesign mockups to the productio
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-10 — Phase 11 requirements marked Complete (16/16)*
+*Last updated: 2026-02-10 — Phase 12 requirements marked Complete (DSP-01 through DSP-06)*
