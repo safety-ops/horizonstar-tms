@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon Star TMS — Activity Log</title>
+
+  <!-- FART prevention: set theme before CSS loads -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('tms-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared.css">
+
+  <style>
+    /* Activity Log page-specific styles */
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card-small {
+      background: var(--bg-card);
+      padding: 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      transition: transform 0.2s;
+    }
+
+    .stat-card-small:hover {
+      transform: translateY(-2px);
+    }
+
+    .stat-card-small.border-green {
+      border-left: 4px solid var(--green);
+    }
+
+    .stat-card-small.border-blue {
+      border-left: 4px solid var(--blue);
+    }
+
+    .stat-card-small.border-purple {
+      border-left: 4px solid var(--purple);
+    }
+
+    .stat-card-small.border-amber {
+      border-left: 4px solid var(--amber);
+    }
+
+    .stat-card-small .stat-icon {
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .stat-card-small .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .stat-card-small .stat-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .filter-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      background: var(--bg-elevated);
+      padding: 16px;
+      border-radius: var(--radius-md);
+      margin-bottom: 24px;
+    }
+
+    .filter-row select,
+    .filter-row input[type="date"] {
+      padding: 8px 12px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-size: 14px;
+      min-width: 160px;
+    }
+
+    .filter-row select:focus,
+    .filter-row input[type="date"]:focus {
+      outline: none;
+      border-color: var(--blue);
+    }
+
+    .filter-row label {
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .activity-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .activity-table thead {
+      background: var(--bg-elevated);
+    }
+
+    .activity-table th {
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-secondary);
+      border-bottom: 2px solid var(--border-default);
+    }
+
+    .activity-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+    }
+
+    .activity-table tbody tr:hover {
+      background: var(--bg-elevated);
+    }
+
+    .activity-table .icon-col {
+      width: 40px;
+      text-align: center;
+      font-size: 20px;
+    }
+
+    .activity-table .details-col {
+      max-width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .activity-table .details-col:hover {
+      color: var(--blue);
+      text-decoration: underline;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 24px;
+      padding: 16px 0;
+    }
+
+    .pagination-info {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .pagination-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .pagination-controls button {
+      padding: 8px 12px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .pagination-controls button:hover:not(:disabled) {
+      background: var(--bg-elevated);
+      border-color: var(--blue);
+    }
+
+    .pagination-controls button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .pagination-controls button.active {
+      background: var(--blue);
+      color: white;
+      border-color: var(--blue);
+    }
+
+    /* Detail Modal */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: var(--radius-sm);
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+    }
+
+    .modal-body {
+      padding: 24px;
+    }
+
+    .modal-field {
+      margin-bottom: 20px;
+    }
+
+    .modal-field:last-child {
+      margin-bottom: 0;
+    }
+
+    .modal-field-label {
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: 13px;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .modal-field-value {
+      color: var(--text-primary);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .modal-field-value code {
+      background: var(--bg-elevated);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'SF Mono', 'Monaco', monospace;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <i data-lucide="truck"></i>
+        </div>
+        <span class="sidebar-logo-text">Horizon Star</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- MAIN Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Main</div>
+          <a class="nav-item" data-page="dashboard">
+            <i data-lucide="layout-dashboard" class="nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+          </a>
+          <a class="nav-item" data-page="trips">
+            <i data-lucide="map" class="nav-icon"></i>
+            <span class="nav-label">Trips</span>
+          </a>
+          <a class="nav-item" data-page="messages">
+            <i data-lucide="message-square" class="nav-icon"></i>
+            <span class="nav-label">Messages</span>
+          </a>
+          <a class="nav-item" data-page="trailers">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trailers</span>
+          </a>
+          <a class="nav-item" data-page="load-board">
+            <i data-lucide="package" class="nav-icon"></i>
+            <span class="nav-label">Load Board</span>
+          </a>
+          <a class="nav-item" data-page="inspections">
+            <i data-lucide="clipboard-list" class="nav-icon"></i>
+            <span class="nav-label">Inspections</span>
+          </a>
+          <a class="nav-item" data-page="tasks">
+            <i data-lucide="check-square" class="nav-icon"></i>
+            <span class="nav-label">Tasks</span>
+          </a>
+        </div>
+
+        <!-- FLEET Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Fleet</div>
+          <a class="nav-item" data-page="drivers">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Drivers</span>
+          </a>
+          <a class="nav-item" data-page="trucks">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trucks</span>
+          </a>
+          <a class="nav-item" data-page="local-drivers">
+            <i data-lucide="user" class="nav-icon"></i>
+            <span class="nav-label">Local Drivers</span>
+          </a>
+        </div>
+
+        <!-- PARTNERS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Partners</div>
+          <a class="nav-item" data-page="brokers">
+            <i data-lucide="briefcase" class="nav-icon"></i>
+            <span class="nav-label">Brokers</span>
+          </a>
+          <a class="nav-item" data-page="dealers">
+            <i data-lucide="building" class="nav-icon"></i>
+            <span class="nav-label">Dealers</span>
+          </a>
+          <a class="nav-item" data-page="dispatchers">
+            <i data-lucide="phone" class="nav-icon"></i>
+            <span class="nav-label">Dispatchers</span>
+          </a>
+          <a class="nav-item" data-page="dispatcher-ranking">
+            <i data-lucide="star" class="nav-icon"></i>
+            <span class="nav-label">Dispatcher Ranking</span>
+          </a>
+        </div>
+
+        <!-- FINANCIALS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Financials</div>
+          <a class="nav-item" data-page="financials">
+            <i data-lucide="dollar-sign" class="nav-icon"></i>
+            <span class="nav-label">Financials</span>
+          </a>
+          <a class="nav-item" data-page="billing">
+            <i data-lucide="file-text" class="nav-icon"></i>
+            <span class="nav-label">Billing</span>
+          </a>
+          <a class="nav-item" data-page="trip-profitability">
+            <i data-lucide="trending-up" class="nav-icon"></i>
+            <span class="nav-label">Trip Profitability</span>
+          </a>
+          <a class="nav-item" data-page="payroll">
+            <i data-lucide="credit-card" class="nav-icon"></i>
+            <span class="nav-label">Payroll</span>
+          </a>
+          <a class="nav-item" data-page="fuel">
+            <i data-lucide="droplet" class="nav-icon"></i>
+            <span class="nav-label">Fuel</span>
+          </a>
+          <a class="nav-item" data-page="ifta">
+            <i data-lucide="file" class="nav-icon"></i>
+            <span class="nav-label">IFTA</span>
+          </a>
+          <a class="nav-item" data-page="reports">
+            <i data-lucide="bar-chart-2" class="nav-icon"></i>
+            <span class="nav-label">Reports</span>
+          </a>
+          <a class="nav-item" data-page="ai-advisor">
+            <i data-lucide="brain" class="nav-icon"></i>
+            <span class="nav-label">AI Advisor</span>
+          </a>
+        </div>
+
+        <!-- OPERATIONS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Operations</div>
+          <a class="nav-item" data-page="maintenance">
+            <i data-lucide="wrench" class="nav-icon"></i>
+            <span class="nav-label">Maintenance</span>
+          </a>
+          <a class="nav-item" data-page="compliance">
+            <i data-lucide="shield-check" class="nav-icon"></i>
+            <span class="nav-label">Compliance</span>
+          </a>
+          <a class="nav-item" data-page="applications">
+            <i data-lucide="file-plus" class="nav-icon"></i>
+            <span class="nav-label">Applications</span>
+          </a>
+        </div>
+
+        <!-- SETTINGS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Settings</div>
+          <a class="nav-item" data-page="settings">
+            <i data-lucide="settings" class="nav-icon"></i>
+            <span class="nav-label">Settings</span>
+          </a>
+          <a class="nav-item" data-page="users">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Users</span>
+          </a>
+          <a class="nav-item active" data-page="activity-log">
+            <i data-lucide="activity" class="nav-icon"></i>
+            <span class="nav-label">Activity Log</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-toggle" id="sidebarToggle">
+        <i data-lucide="panel-left-close" class="nav-icon" id="toggleIcon"></i>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger" style="display:none;">
+            <i data-lucide="menu"></i>
+          </button>
+          <h1 class="header-title">Activity Log</h1>
+        </div>
+
+        <div class="header-search">
+          <i data-lucide="search" class="ico-sm"></i>
+          <input type="text" placeholder="Search orders, trips, drivers...">
+        </div>
+
+        <div class="header-right">
+          <button class="btn btn-secondary">
+            <i data-lucide="download" class="ico-sm"></i>
+            Export
+          </button>
+          <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+            <i data-lucide="moon" class="ico" id="themeIcon"></i>
+          </button>
+          <div class="header-avatar">JD</div>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Page Header -->
+        <div style="margin-bottom: 32px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <i data-lucide="activity" style="width: 28px; height: 28px; color: var(--blue);"></i>
+            <h2 style="margin: 0; font-size: 24px; font-weight: 700; color: var(--text-primary);">Activity Log</h2>
+          </div>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="stat-row">
+          <div class="stat-card-small border-green">
+            <div class="stat-icon">
+              <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div class="stat-value">14</div>
+            <div class="stat-label">Actions today</div>
+          </div>
+
+          <div class="stat-card-small border-blue">
+            <div class="stat-icon">
+              <i data-lucide="bar-chart-2" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div class="stat-value">87</div>
+            <div class="stat-label">Actions this week</div>
+          </div>
+
+          <div class="stat-card-small border-purple">
+            <div class="stat-icon">
+              <i data-lucide="users" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div class="stat-value">4</div>
+            <div class="stat-label">Active users</div>
+          </div>
+
+          <div class="stat-card-small border-amber">
+            <div class="stat-icon">
+              <i data-lucide="database" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div class="stat-value">2,481</div>
+            <div class="stat-label">All time</div>
+          </div>
+        </div>
+
+        <!-- Filter Row -->
+        <div class="filter-row">
+          <label>Action:</label>
+          <select>
+            <option value="all">All Actions</option>
+            <option value="created">Created</option>
+            <option value="updated">Updated</option>
+            <option value="deleted">Deleted</option>
+            <option value="login">Login</option>
+            <option value="logout">Logout</option>
+            <option value="exported">Exported</option>
+            <option value="imported">Imported</option>
+            <option value="status_change">Status Change</option>
+          </select>
+
+          <label>User:</label>
+          <select>
+            <option value="all">All Users</option>
+            <option value="admin">Admin (You)</option>
+            <option value="john">John Smith</option>
+            <option value="maria">Maria Garcia</option>
+            <option value="david">David Chen</option>
+          </select>
+
+          <label>Date From:</label>
+          <input type="date" value="2026-01-01">
+
+          <label>Date To:</label>
+          <input type="date" value="2026-01-28">
+
+          <button class="btn btn-primary btn-sm">Apply</button>
+          <button class="btn btn-outline btn-sm">Clear</button>
+        </div>
+
+        <!-- Activity Log Table -->
+        <div class="card">
+          <div class="table-wrapper">
+            <table class="activity-table">
+              <thead>
+                <tr>
+                  <th class="icon-col">Icon</th>
+                  <th>Date/Time</th>
+                  <th>User</th>
+                  <th>Action</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="icon-col">⛽</td>
+                  <td>Jan 28, 10:42 AM</td>
+                  <td>Admin</td>
+                  <td><span class="badge badge-green">Created</span></td>
+                  <td class="details-col">New fuel record added for T-101 — Pilot #2847, 185 gal, $647.50</td>
+                </tr>
+                <tr>
+                  <td class="icon-col">📦</td>
+                  <td>Jan 28, 10:38 AM</td>
+                  <td>Admin</td>
+                  <td><span class="badge badge-blue">Updated</span></td>
+                  <td class="details-col">Order #ORD-2026-0892 status changed: Dispatched → In Transit</td>
+                </tr>
+                <tr>
+                  <td class="icon-col">🔐</td>
+                  <td>Jan 28, 9:15 AM</td>
+                  <td>Admin</td>
+                  <td><span class="badge badge-purple">Login</span></td>
+                  <td class="details-col">Admin logged in from 192.168.1.100</td>
+                </tr>
+                <tr>
+                  <td class="icon-col">🚛</td>
+                  <td>Jan 28, 8:50 AM</td>
+                  <td>John Smith</td>
+                  <td><span class="badge badge-blue">Status Change</span></td>
+                  <td class="details-col">Trip T-2026-0042 marked as Completed</td>
+                </tr>
+                <tr>
+                  <td class="icon-col">📊</td>
+                  <td>Jan 27, 4:30 PM</td>
+                  <td>Admin</td>
+                  <td><span class="badge badge-amber">Exported</span></td>
+                  <td class="details-col">Payroll report exported — Q4 2025</td>
+                </tr>
+                <tr>
+                  <td class="icon-col">📸</td>
+                  <td>Jan 27, 3:45 PM</td>
+                  <td>Maria Garcia</td>
+                  <td><span class="badge badge-blue">Updated</span></td>
+                  <td class="details-col">Inspection photos uploaded for Order #ORD-2026-0890</td>
+                </tr>
+                <tr>
+                  <td class="icon-col">🗺️</td>
+                  <td>Jan 27, 2:20 PM</td>
+                  <td>Admin</td>
+                  <td><span class="badge badge-green">Created</span></td>
+                  <td class="details-col">New trip T-2026-0043 created — NY to FL, 6 cars</td>
+                </tr>
+                <tr>
+                  <td class="icon-col">✅</td>
+                  <td>Jan 27, 1:10 PM</td>
+                  <td>David Chen</td>
+                  <td><span class="badge badge-blue">Status Change</span></td>
+                  <td class="details-col">Order #ORD-2026-0888 marked as Delivered</td>
+                </tr>
+                <tr>
+                  <td class="icon-col">💰</td>
+                  <td>Jan 27, 11:30 AM</td>
+                  <td>Admin</td>
+                  <td><span class="badge badge-blue">Updated</span></td>
+                  <td class="details-col">Driver pay adjusted for John Smith — Trip T-2026-0040</td>
+                </tr>
+                <tr>
+                  <td class="icon-col">🔧</td>
+                  <td>Jan 27, 10:00 AM</td>
+                  <td>Admin</td>
+                  <td><span class="badge badge-green">Created</span></td>
+                  <td class="details-col">New maintenance record — T-103 turbo actuator, $2,450</td>
+                </tr>
+                <tr>
+                  <td class="icon-col">🔐</td>
+                  <td>Jan 27, 9:30 AM</td>
+                  <td>Admin</td>
+                  <td><span class="badge badge-purple">Login</span></td>
+                  <td class="details-col">Admin logged in from 192.168.1.100</td>
+                </tr>
+                <tr>
+                  <td class="icon-col">🗑️</td>
+                  <td>Jan 26, 5:15 PM</td>
+                  <td>Admin</td>
+                  <td><span class="badge badge-red">Deleted</span></td>
+                  <td class="details-col">Duplicate fuel record removed — T-102, Jan 25</td>
+                </tr>
+                <tr>
+                  <td class="icon-col">📄</td>
+                  <td>Jan 26, 4:00 PM</td>
+                  <td>Maria Garcia</td>
+                  <td><span class="badge badge-blue">Updated</span></td>
+                  <td class="details-col">Order #ORD-2026-0886 — BOL uploaded</td>
+                </tr>
+                <tr>
+                  <td class="icon-col">📝</td>
+                  <td>Jan 26, 3:30 PM</td>
+                  <td>Admin</td>
+                  <td><span class="badge badge-green">Created</span></td>
+                  <td class="details-col">New task: Schedule DOT Inspection T-101</td>
+                </tr>
+                <tr>
+                  <td class="icon-col">🚛</td>
+                  <td>Jan 26, 2:45 PM</td>
+                  <td>John Smith</td>
+                  <td><span class="badge badge-blue">Status Change</span></td>
+                  <td class="details-col">Trip T-2026-0041 — Loading at Terminal</td>
+                </tr>
+                <tr>
+                  <td class="icon-col">💵</td>
+                  <td>Jan 26, 1:00 PM</td>
+                  <td>Admin</td>
+                  <td><span class="badge badge-blue">Updated</span></td>
+                  <td class="details-col">Broker fee adjusted for Central Dispatch load #CD-48271</td>
+                </tr>
+                <tr>
+                  <td class="icon-col">📋</td>
+                  <td>Jan 26, 11:15 AM</td>
+                  <td>David Chen</td>
+                  <td><span class="badge badge-green">Created</span></td>
+                  <td class="details-col">Inspection report submitted — Order #ORD-2026-0884</td>
+                </tr>
+                <tr>
+                  <td class="icon-col">📊</td>
+                  <td>Jan 26, 10:30 AM</td>
+                  <td>Admin</td>
+                  <td><span class="badge badge-amber">Exported</span></td>
+                  <td class="details-col">Invoice batch exported — 12 invoices</td>
+                </tr>
+                <tr>
+                  <td class="icon-col">🔐</td>
+                  <td>Jan 26, 9:00 AM</td>
+                  <td>Admin</td>
+                  <td><span class="badge badge-purple">Login</span></td>
+                  <td class="details-col">Admin logged in from 192.168.1.100</td>
+                </tr>
+                <tr>
+                  <td class="icon-col">🔓</td>
+                  <td>Jan 25, 6:00 PM</td>
+                  <td>Admin</td>
+                  <td><span class="badge badge-gray">Logout</span></td>
+                  <td class="details-col">Admin session ended</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="pagination">
+            <div class="pagination-info">
+              Showing 1-20 of 2,481 records
+            </div>
+            <div class="pagination-controls">
+              <button disabled>Previous</button>
+              <button class="active">1</button>
+              <button>2</button>
+              <button>3</button>
+              <button>...</button>
+              <button>125</button>
+              <button>Next</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detail Modal (rendered inline as mockup demo) -->
+        <div style="margin-top: 40px;">
+          <h3 style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
+            Detail Modal Preview (click on any detail row to see this)
+          </h3>
+          <div class="modal-backdrop">
+            <div class="modal-card">
+              <div class="modal-header">
+                <h3>Activity Detail</h3>
+                <button class="modal-close">
+                  <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+                </button>
+              </div>
+              <div class="modal-body">
+                <div class="modal-field">
+                  <span class="modal-field-label">Action</span>
+                  <div class="modal-field-value">
+                    <span class="badge badge-green">Created</span>
+                  </div>
+                </div>
+                <div class="modal-field">
+                  <span class="modal-field-label">Date/Time</span>
+                  <div class="modal-field-value">January 28, 2026 at 10:42 AM</div>
+                </div>
+                <div class="modal-field">
+                  <span class="modal-field-label">User</span>
+                  <div class="modal-field-value">Admin</div>
+                </div>
+                <div class="modal-field">
+                  <span class="modal-field-label">IP Address</span>
+                  <div class="modal-field-value"><code>192.168.1.100</code></div>
+                </div>
+                <div class="modal-field">
+                  <span class="modal-field-label">Resource</span>
+                  <div class="modal-field-value">Fuel Record</div>
+                </div>
+                <div class="modal-field">
+                  <span class="modal-field-label">Resource ID</span>
+                  <div class="modal-field-value"><code>FUEL-2026-0087</code></div>
+                </div>
+                <div class="modal-field">
+                  <span class="modal-field-label">Description</span>
+                  <div class="modal-field-value">
+                    New fuel record added for T-101 at Pilot Travel Center #2847. 185 gallons of diesel at $3.50/gal. Total: $647.50. Card: WEX ending 4821.
+                  </div>
+                </div>
+                <div class="modal-field">
+                  <span class="modal-field-label">Previous Value</span>
+                  <div class="modal-field-value" style="color: var(--text-muted);">— (new record)</div>
+                </div>
+                <div class="modal-field">
+                  <span class="modal-field-label">New Value</span>
+                  <div class="modal-field-value"><code>185 gal, $647.50, Pilot #2847</code></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    themeToggle.addEventListener('click', function() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('tms-theme', next);
+      // Update icon
+      themeIcon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
+      lucide.createIcons();
+    });
+
+    // Sidebar toggle (collapse/expand)
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    sidebarToggle.addEventListener('click', function() {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('sidebar-collapsed');
+      // Update toggle icon
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+      lucide.createIcons();
+    });
+
+    // Mobile hamburger
+    const hamburger = document.getElementById('hamburger');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (hamburger) {
+      hamburger.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('active');
+      });
+    }
+
+    if (sidebarOverlay) {
+      sidebarOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      });
+    }
+
+    // Responsive: show hamburger on mobile
+    function handleResize() {
+      if (window.innerWidth <= 768) {
+        hamburger.style.display = 'flex';
+      } else {
+        hamburger.style.display = 'none';
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+  </script>
+</body>
+</html>
