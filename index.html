@@ -20351,10 +20351,12 @@ ${rateText}`
       const statePrices = Object.entries(stateStats)
         .map(function(item) {
           const state = item[0], data = item[1];
-          return { state: state, avgPrice: data.gallons > 0 ? data.cost / data.gallons : 0, gallons: data.gallons, cost: data.cost };
+          const avg = data.gallons > 0 ? data.cost / data.gallons : 0;
+          const taxRate = iftaTaxRates[state] || 0;
+          return { state: state, avgPrice: avg, gallons: data.gallons, cost: data.cost, taxRate: taxRate, effectiveCost: avg - taxRate };
         })
         .filter(function(s) { return s.avgPrice > 0; })
-        .sort(function(a, b) { return a.avgPrice - b.avgPrice; });
+        .sort(function(a, b) { return a.effectiveCost - b.effectiveCost; });
       
       const cheapestState = statePrices[0];
       const expensiveState = statePrices[statePrices.length - 1];
@@ -20367,13 +20369,21 @@ ${rateText}`
       // Price alerts
       const priceAlerts = [];
       if (cheapestState && expensiveState && cheapestState.state !== expensiveState.state) {
-        const savings = (expensiveState.avgPrice - cheapestState.avgPrice) * 100;
+        const savings = (expensiveState.effectiveCost - cheapestState.effectiveCost) * 100;
         if (savings > 10) {
-          priceAlerts.push({ type: 'tip', msg: 'Save ' + savings.toFixed(0) + '¢/gal by filling in ' + cheapestState.state + ' instead of ' + expensiveState.state });
+          priceAlerts.push({ type: 'tip', msg: 'Save ' + savings.toFixed(0) + '¢/gal (IFTA-adjusted) by filling in ' + cheapestState.state + ' instead of ' + expensiveState.state });
         }
       }
       if (Math.abs(priceTrend) > 0.10) {
         priceAlerts.push({ type: priceTrend > 0 ? 'warning' : 'good', msg: 'Prices ' + (priceTrend > 0 ? 'up' : 'down') + ' ' + Math.abs(priceTrend * 100).toFixed(0) + '¢/gal recently' });
+      }
+      // IFTA flip alert: when cheapest by effective cost has higher pump price than cheapest by pump price
+      if (statePrices.length > 1) {
+        const cheapestByPump = statePrices.slice().sort(function(a, b) { return a.avgPrice - b.avgPrice; })[0];
+        if (cheapestByPump.state !== cheapestState.state) {
+          const flipSavings = (cheapestByPump.effectiveCost - cheapestState.effectiveCost) * 100;
+          priceAlerts.push({ type: 'tip', msg: cheapestState.state + ' has higher pump price but is ' + flipSavings.toFixed(0) + '¢/gal cheaper after IFTA vs ' + cheapestByPump.state });
+        }
       }
       
       return '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:20px">' +
@@ -20384,7 +20394,28 @@ ${rateText}`
           '<span style="font-size:20px">' + (a.type === 'warning' ? '⚠️' : a.type === 'good' ? '✅' : '💡') + '</span>' +
           '<div style="font-weight:600;color:' + (a.type === 'warning' ? '#991b1b' : a.type === 'good' ? '#166534' : '#1d4ed8') + '">' + a.msg + '</div></div>'; }).join('') +
         '</div></div>' : '') +
-        
+
+        // IFTA Smart Pick hero card
+        (cheapestState ? '<div class="card" style="grid-column:1/-1;border:2px solid #22c55e;background:linear-gradient(135deg,#f0fdf4,#dcfce7)">' +
+        '<div style="padding:20px">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">' +
+        '<span style="font-size:24px">⛽</span>' +
+        '<div><div style="font-size:18px;font-weight:700;color:#166534">IFTA Smart Pick</div>' +
+        '<div style="font-size:12px;color:#15803d">Best value after IFTA tax adjustment</div></div></div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px">' +
+        '<div style="text-align:center"><div style="font-size:11px;color:#15803d;font-weight:600">WINNING STATE</div>' +
+        '<div style="font-size:32px;font-weight:800;color:#059669">' + cheapestState.state + '</div></div>' +
+        '<div style="text-align:center"><div style="font-size:11px;color:#15803d;font-weight:600">PUMP PRICE</div>' +
+        '<div style="font-size:20px;font-weight:700;color:#166534">' + formatMoney(cheapestState.avgPrice) + '</div></div>' +
+        '<div style="text-align:center"><div style="font-size:11px;color:#15803d;font-weight:600">IFTA TAX RATE</div>' +
+        '<div style="font-size:20px;font-weight:700;color:#166534">-' + formatMoney(cheapestState.taxRate) + '</div></div>' +
+        '<div style="text-align:center"><div style="font-size:11px;color:#15803d;font-weight:600">EFFECTIVE COST</div>' +
+        '<div style="font-size:20px;font-weight:700;color:#059669">' + formatMoney(cheapestState.effectiveCost) + '</div></div>' +
+        (expensiveState && cheapestState.state !== expensiveState.state ?
+        '<div style="text-align:center"><div style="font-size:11px;color:#15803d;font-weight:600">SAVES VS ' + expensiveState.state + '</div>' +
+        '<div style="font-size:20px;font-weight:700;color:#059669">' + ((expensiveState.effectiveCost - cheapestState.effectiveCost) * 100).toFixed(0) + '¢/gal</div></div>' : '') +
+        '</div></div></div>' : '') +
+
         // Price Summary
         '<div class="card"><div class="card-header"><h3>💰 Price Summary</h3></div><div style="padding:20px">' +
         '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">' +
@@ -20393,30 +20424,33 @@ ${rateText}`
         '<div style="font-size:24px;font-weight:700">' + formatMoney(avgPrice) + '</div>' +
         '<div style="font-size:11px;color:var(--text-muted)">per gallon</div></div>' +
         (cheapestState ? '<div style="background:#dcfce7;padding:16px;border-radius:8px;text-align:center">' +
-        '<div style="font-size:11px;color:#166534">Cheapest State</div>' +
+        '<div style="font-size:11px;color:#166534">Cheapest (IFTA-Adjusted)</div>' +
         '<div style="font-size:24px;font-weight:700;color:#059669">' + cheapestState.state + '</div>' +
-        '<div style="font-size:13px;color:#166534">' + formatMoney(cheapestState.avgPrice) + '/gal</div></div>' : '') +
+        '<div style="font-size:13px;font-weight:600;color:#059669">' + formatMoney(cheapestState.effectiveCost) + '/gal eff.</div>' +
+        '<div style="font-size:11px;color:#166534">pump: ' + formatMoney(cheapestState.avgPrice) + '/gal</div></div>' : '') +
         (expensiveState ? '<div style="background:#fee2e2;padding:16px;border-radius:8px;text-align:center">' +
-        '<div style="font-size:11px;color:#991b1b">Most Expensive</div>' +
+        '<div style="font-size:11px;color:#991b1b">Most Expensive (IFTA-Adjusted)</div>' +
         '<div style="font-size:24px;font-weight:700;color:#dc2626">' + expensiveState.state + '</div>' +
-        '<div style="font-size:13px;color:#991b1b">' + formatMoney(expensiveState.avgPrice) + '/gal</div></div>' : '') +
+        '<div style="font-size:13px;font-weight:600;color:#dc2626">' + formatMoney(expensiveState.effectiveCost) + '/gal eff.</div>' +
+        '<div style="font-size:11px;color:#991b1b">pump: ' + formatMoney(expensiveState.avgPrice) + '/gal</div></div>' : '') +
         '</div>' +
         '<div style="font-size:13px;color:var(--text-muted)">Recent trend: <strong style="color:' + (priceTrend > 0 ? '#dc2626' : '#059669') + '">' + (priceTrend > 0 ? '↑' : '↓') + ' ' + formatMoney(Math.abs(priceTrend)) + '/gal</strong></div>' +
         '</div></div>' +
         
         // Price by State
-        '<div class="card"><div class="card-header"><h3>🗺️ Price by State</h3></div><div style="padding:20px">' +
+        '<div class="card"><div class="card-header"><h3>🗺️ Price by State (IFTA-Adjusted)</h3></div><div style="padding:20px">' +
         (statePrices.length === 0 ? '<div style="text-align:center;padding:20px;color:var(--text-muted)">No state data</div>' :
         statePrices.map(function(s, i) {
           const isLowest = i === 0;
           const isHighest = i === statePrices.length - 1 && statePrices.length > 1;
+          const maxEffective = expensiveState ? expensiveState.effectiveCost : s.effectiveCost;
           return '<div style="display:flex;align-items:center;gap:12px;padding:12px;background:' + (isLowest ? '#dcfce7' : isHighest ? '#fee2e2' : 'var(--bg-darker)') + ';border-radius:8px;margin-bottom:8px">' +
             '<div style="font-size:20px;font-weight:700;width:50px">' + s.state + '</div>' +
             '<div style="flex:1"><div style="background:var(--bg-card);height:20px;border-radius:4px;overflow:hidden">' +
-            '<div style="background:' + (isLowest ? '#22c55e' : isHighest ? '#ef4444' : '#3b82f6') + ';height:100%;width:' + (s.avgPrice / (expensiveState ? expensiveState.avgPrice : s.avgPrice) * 100) + '%"></div></div></div>' +
-            '<div style="text-align:right;min-width:80px">' +
-            '<div style="font-weight:700;color:' + (isLowest ? '#059669' : isHighest ? '#dc2626' : 'inherit') + '">' + formatMoney(s.avgPrice) + '</div>' +
-            '<div style="font-size:11px;color:var(--text-muted)">' + s.gallons.toFixed(0) + ' gal</div></div></div>';
+            '<div style="background:' + (isLowest ? '#22c55e' : isHighest ? '#ef4444' : '#3b82f6') + ';height:100%;width:' + (maxEffective > 0 ? s.effectiveCost / maxEffective * 100 : 100) + '%"></div></div></div>' +
+            '<div style="text-align:right;min-width:140px">' +
+            '<div style="font-weight:700;color:' + (isLowest ? '#059669' : isHighest ? '#dc2626' : 'inherit') + '">' + formatMoney(s.effectiveCost) + ' <span style="font-size:10px;font-weight:600;opacity:0.7">eff.</span></div>' +
+            '<div style="font-size:11px;color:var(--text-muted)">' + formatMoney(s.avgPrice) + ' pump | ' + formatMoney(s.taxRate) + ' tax</div></div></div>';
         }).join('')) +
         '</div></div>' +
         
@@ -20424,10 +20458,13 @@ ${rateText}`
         '<div class="card"><div class="card-header"><h3>📋 Recent Fill-ups</h3></div><div style="padding:20px;max-height:400px;overflow-y:auto">' +
         recentTxns.slice(0, 10).map(function(t) {
           const pricePerGal = parseFloat(t.gallons) > 0 ? parseFloat(t.amount) / parseFloat(t.gallons) : 0;
-          const diff = pricePerGal - avgPrice;
+          const txnTaxRate = iftaTaxRates[t.state] || 0;
+          const effectivePrice = pricePerGal - txnTaxRate;
+          const diff = effectivePrice - avgPrice;
           return '<div style="display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid var(--border)">' +
             '<div><div style="font-weight:600">' + t.city + ', ' + t.state + '</div><div style="font-size:11px;color:var(--text-muted)">' + formatDate(t.transaction_date) + ' • Truck #' + t.truck_number + '</div></div>' +
-            '<div style="text-align:right"><div style="font-weight:700">' + formatMoney(pricePerGal) + '/gal</div>' +
+            '<div style="text-align:right"><div style="font-weight:700">' + formatMoney(effectivePrice) + '/gal <span style="font-size:10px;font-weight:600;opacity:0.7">eff.</span></div>' +
+            '<div style="font-size:11px;color:var(--text-muted)">' + formatMoney(pricePerGal) + ' pump - ' + formatMoney(txnTaxRate) + ' tax</div>' +
             '<div style="font-size:11px;color:' + (diff <= 0 ? '#059669' : '#dc2626') + '">' + (diff <= 0 ? '↓' : '↑') + formatMoney(Math.abs(diff)) + ' vs avg</div></div></div>';
         }).join('') +
         '</div></div>' +
