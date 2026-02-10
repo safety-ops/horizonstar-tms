@@ -18511,6 +18511,16 @@ ${rateText}`
       const stateOpts = states.map(s => '<option value="' + s + '"' + (d?.cdl_state === s ? ' selected' : '') + '>' + s + '</option>').join('');
       const modalTitle = d ? 'Edit' : (isOwnerOp ? 'New Owner-Operator' : 'New Company Driver');
       const headerColor = isOwnerOp ? 'background:#fef3c7;border-bottom:3px solid #f59e0b' : '';
+      const hasAuthLink = !!(d?.auth_user_id);
+      const authStatusText = hasAuthLink ? 'Linked to auth user' : 'Not linked yet';
+      const authStatusColor = hasAuthLink ? '#059669' : '#64748b';
+      const canCreateAccountNow = !!id;
+      const createAccountLabel = !canCreateAccountNow
+        ? 'Save Driver First'
+        : (hasAuthLink ? 'Re-link Driver Account' : 'Create Driver Account');
+      const createAccountHint = canCreateAccountNow
+        ? 'Requires a valid driver email.'
+        : 'Create account is available after first save.';
 
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
       m.innerHTML = '<div class="modal" style="max-width:700px"><div class="modal-header" style="' + headerColor + '"><h3>' + modalTitle + (isOwnerOp ? ' <span class="badge" style="background:#f59e0b;color:white;font-size:12px">Owner-OP</span>' : '') + '</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body" style="max-height:75vh;overflow-y:auto">' +
@@ -18535,6 +18545,8 @@ ${rateText}`
         // Driver App Access Section
         '<h4 style="margin:20px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)">📱 Driver App Access</h4>' +
         '<div class="form-row"><div class="form-group"><label>App PIN (6 digits)</label><input type="text" id="dPinCode" value="' + (d?.pin_code || '') + '" placeholder="123456" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,\'\').slice(0,6)"><small style="color:#64748b">Driver uses this PIN to log into the mobile app</small></div><div class="form-group"><label>&nbsp;</label><button type="button" class="btn btn-secondary" onclick="document.getElementById(\'dPinCode\').value = String(Math.floor(100000 + Math.random() * 900000))">Generate PIN</button></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Email Code Login</label><label style="display:flex;align-items:center;gap:8px;margin-top:8px"><input type="checkbox" id="dEnableEmailAuth" ' + ((d?.auth_user_id || d?.email) ? 'checked' : '') + '> Enable email verification code login</label><small style="color:#64748b">Driver enters email, receives a code, then logs in with that code.</small></div><div class="form-group"><label>Auth Link</label><div id="dAuthLinkStatus" style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-darker);font-size:12px;color:' + authStatusColor + ';font-weight:600">' + authStatusText + '</div><small style="color:#64748b">Shows whether this driver is linked to Supabase Auth.</small></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Account Actions</label><button type="button" class="btn btn-secondary" id="dCreateAuthAccountBtn" ' + (canCreateAccountNow ? '' : 'disabled') + ' onclick="createDriverAuthFromModal(' + (id || 0) + ')">' + createAccountLabel + '</button><small style="color:#64748b">Creates or links the driver app account for email-code login.</small></div><div class="form-group"><label>Action Status</label><div id="dCreateAuthAccountMeta" style="padding:10px 12px;border:1px dashed var(--border);border-radius:8px;font-size:12px;color:#64748b">' + createAccountHint + '</div></div></div>' +
 
         // CDL Section
         '<h4 style="margin:20px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)">🪪 CDL Information</h4>' +
@@ -18555,16 +18567,142 @@ ${rateText}`
 
         '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveDriver(' + id + ')">Save</button></div></div>';
       document.body.appendChild(m);
+
+      const emailInput = document.getElementById('dEmail');
+      const createBtn = document.getElementById('dCreateAuthAccountBtn');
+      const createMeta = document.getElementById('dCreateAuthAccountMeta');
+      if (emailInput && createBtn && canCreateAccountNow) {
+        const updateCreateButtonState = () => {
+          const value = (emailInput.value || '').trim().toLowerCase();
+          const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+          createBtn.disabled = !valid;
+          if (!valid) {
+            createMeta.textContent = 'Enter a valid email to enable account creation.';
+          } else if (hasAuthLink) {
+            createMeta.textContent = 'Ready to re-link account using current email.';
+          } else {
+            createMeta.textContent = 'Ready to create and link driver account.';
+          }
+        };
+        emailInput.addEventListener('input', updateCreateButtonState);
+        updateCreateButtonState();
+      }
+    }
+
+    function setDriverAuthLinkStatus(isLinked) {
+      const statusEl = document.getElementById('dAuthLinkStatus');
+      if (!statusEl) return;
+      statusEl.textContent = isLinked ? 'Linked to auth user' : 'Not linked yet';
+      statusEl.style.color = isLinked ? '#059669' : '#64748b';
+      statusEl.style.fontWeight = '600';
+    }
+
+    async function provisionDriverAuthAccount(driverId, email) {
+      const normalizedEmail = (email || '').trim().toLowerCase();
+      if (!normalizedEmail) {
+        throw new Error('Driver email is required to enable email code login.');
+      }
+
+      const { data, error } = await sb.functions.invoke('provision-driver-auth', {
+        body: {
+          driver_id: driverId,
+          email: normalizedEmail
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to sync driver auth account.');
+      }
+
+      if (!data || data.success !== true || !data.auth_user_id) {
+        throw new Error((data && data.error) || 'Failed to sync driver auth account.');
+      }
+
+      return data;
+    }
+
+    async function createDriverAuthFromModal(driverId) {
+      if (!driverId) {
+        showToast('Save driver first, then create account.', 'error');
+        return;
+      }
+
+      const emailInput = document.getElementById('dEmail');
+      const email = (emailInput?.value || '').trim().toLowerCase();
+      if (!email) {
+        showToast('Driver email is required to create account.', 'error');
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showToast('Please enter a valid email address.', 'error');
+        return;
+      }
+
+      const button = document.getElementById('dCreateAuthAccountBtn');
+      const meta = document.getElementById('dCreateAuthAccountMeta');
+      const enableEmailAuth = document.getElementById('dEnableEmailAuth');
+
+      if (enableEmailAuth) enableEmailAuth.checked = true;
+      if (button) {
+        button.disabled = true;
+        button.dataset.originalText = button.textContent;
+        button.textContent = 'Creating...';
+      }
+      if (meta) meta.textContent = 'Syncing account with Supabase Auth...';
+
+      try {
+        const authData = await provisionDriverAuthAccount(driverId, email);
+        setDriverAuthLinkStatus(true);
+        if (meta) {
+          meta.textContent = authData.created
+            ? 'Account created and linked successfully.'
+            : 'Existing account linked successfully.';
+        }
+
+        const driver = appData.drivers.find(x => x.id === driverId);
+        if (driver) {
+          driver.email = email;
+          driver.auth_user_id = authData.auth_user_id;
+        }
+
+        await logActivity('DRIVER_AUTH_LINKED', {
+          driver_id: driverId,
+          email: email,
+          created: !!authData.created
+        });
+
+        showToast(authData.created
+          ? 'Driver account created and linked.'
+          : 'Driver account linked.');
+      } catch (error) {
+        const message = error?.message || 'Failed to create driver account.';
+        if (meta) meta.textContent = message;
+        showToast(message, 'error');
+      } finally {
+        if (button) {
+          const updatedLabel = 'Re-link Driver Account';
+          button.textContent = updatedLabel;
+          button.disabled = false;
+        }
+      }
     }
 
     async function saveDriver(id) {
       const driverType = document.getElementById('dDriverType').value;
       const isOwnerOp = driverType === 'OWNER_OP';
+      const existingDriver = id ? appData.drivers.find(x => x.id === id) : null;
+      const firstName = document.getElementById('dFirst').value.trim();
+      const lastName = document.getElementById('dLast').value.trim();
+      const phone = document.getElementById('dPhone').value.trim();
+      const email = (document.getElementById('dEmail').value || '').trim().toLowerCase();
+      const pinCode = (document.getElementById('dPinCode').value || '').trim();
+      const enableEmailAuth = document.getElementById('dEnableEmailAuth')?.checked === true;
+
       const data = {
-        first_name: document.getElementById('dFirst').value,
-        last_name: document.getElementById('dLast').value,
-        phone: document.getElementById('dPhone').value,
-        email: document.getElementById('dEmail').value || null,
+        first_name: firstName,
+        last_name: lastName,
+        phone: phone || null,
+        email: email || null,
         date_of_birth: document.getElementById('dDOB').value || null,
         ssn_ein: document.getElementById('dSSN').value || null,
         hire_date: document.getElementById('dHireDate').value || null,
@@ -18587,17 +18725,90 @@ ${rateText}`
         pay_to_city: document.getElementById('dPayToCity').value || null,
         pay_to_state: document.getElementById('dPayToState').value || null,
         pay_to_zip: document.getElementById('dPayToZip').value || null,
-        pin_code: document.getElementById('dPinCode').value || null
+        pin_code: pinCode || null
       };
+
+      if (!firstName || !lastName) {
+        showToast('First name and last name are required.', 'error');
+        return;
+      }
+
+      if (pinCode && !/^\d{6}$/.test(pinCode)) {
+        showToast('PIN must be exactly 6 digits.', 'error');
+        return;
+      }
+
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showToast('Please enter a valid email address.', 'error');
+        return;
+      }
+
+      if (enableEmailAuth && !email) {
+        showToast('Email is required when email code login is enabled.', 'error');
+        return;
+      }
+
+      if (email) {
+        const duplicateEmail = appData.drivers.find(driver =>
+          driver.id !== id &&
+          driver.email &&
+          driver.email.toLowerCase() === email
+        );
+        if (duplicateEmail) {
+          showToast('Another driver already uses this email.', 'error');
+          return;
+        }
+      }
+
+      if (pinCode) {
+        const duplicatePin = appData.drivers.find(driver =>
+          driver.id !== id &&
+          driver.pin_code === pinCode
+        );
+        if (duplicatePin) {
+          showToast('Another driver already uses this PIN.', 'error');
+          return;
+        }
+      }
+
       try { 
+        let savedDriverId = id;
         if (id) { 
           await dbUpdate('drivers', id, data); 
           await logActivity('DRIVER_UPDATED', { driver_id: id, driver_name: data.first_name + ' ' + data.last_name, changes: data });
         } else { 
           const newDriver = await dbInsert('drivers', data); 
+          savedDriverId = newDriver.id;
           await logActivity('DRIVER_CREATED', { driver_id: newDriver.id, driver_name: data.first_name + ' ' + data.last_name, data: data });
-        } 
-        document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(true); renderDrivers(document.getElementById('main-content')); 
+        }
+
+        let saveMessage = 'Saved!';
+        if (enableEmailAuth) {
+          try {
+            const authData = await provisionDriverAuthAccount(savedDriverId, email);
+            saveMessage = authData.created
+              ? 'Saved! Driver email code login account created.'
+              : 'Saved! Driver email code login account linked.'
+            await logActivity('DRIVER_AUTH_LINKED', {
+              driver_id: savedDriverId,
+              driver_name: data.first_name + ' ' + data.last_name,
+              email: email
+            });
+          } catch (authError) {
+            const authMessage = authError?.message || String(authError);
+            saveMessage = 'Driver saved, but auth sync failed: ' + authMessage;
+            showToast(saveMessage, 'warning');
+          }
+        } else if (existingDriver?.auth_user_id && !enableEmailAuth) {
+          saveMessage = 'Saved! Email code login remains linked for this driver.'
+        }
+
+        document.querySelector('.modal-overlay').remove();
+        if (!(enableEmailAuth && saveMessage.includes('auth sync failed'))) {
+          showToast(saveMessage);
+        }
+        await loadAllData(true);
+        renderDrivers(document.getElementById('main-content'));
       } catch (e) { showToast(e.message, 'error'); }
     }
 
