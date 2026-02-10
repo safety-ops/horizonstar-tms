@@ -13212,7 +13212,7 @@
                   <tbody>
                     <tr>
                       <td><strong>${order.vehicle_year || ''} ${order.vehicle_make || ''} ${order.vehicle_model || ''}</strong></td>
-                      <td style="font-family:monospace;font-size:12px;">${order.vehicle_vin || 'N/A'}</td>
+                      <td style="font-family:var(--font-mono);font-size:var(--text-xs);">${order.vehicle_vin || 'N/A'}</td>
                       <td>${order.vehicle_color || '-'}</td>
                       <td style="text-align:right;font-weight:600;">${formatMoney(order.revenue || 0)}</td>
                     </tr>
@@ -14663,34 +14663,34 @@
         
         // Stats
         '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px">' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px"><div class="label">Total Unassigned</div><div class="value">' + unassignedOrders.length + '</div></div>' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px"><div class="label">In ' + currentCat.name + '</div><div class="value">' + categoryCounts[currentCat.id] + '</div></div>' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:140px;padding:12px 16px"><div class="label">Revenue (Displayed)</div><div class="value">' + formatMoney(totalRevenue) + '</div></div>' +
+        '<div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:var(--spacing-3) var(--spacing-4)"><div class="label">Total Unassigned</div><div class="value">' + unassignedOrders.length + '</div></div>' +
+        '<div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:var(--spacing-3) var(--spacing-4)"><div class="label">In ' + currentCat.name + '</div><div class="value">' + categoryCounts[currentCat.id] + '</div></div>' +
+        '<div class="stat-card" style="flex:0 0 auto;min-width:140px;padding:var(--spacing-3) var(--spacing-4)"><div class="label">Revenue (Displayed)</div><div class="value">' + formatMoney(totalRevenue) + '</div></div>' +
         '</div>' +
         
         // Category tabs
         '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">' +
         loadBoardCategories.map(cat => {
           const isActive = cat.id === selectedLoadCategory;
-          return '<button onclick="selectedLoadCategory=\'' + cat.id + '\';selectedLoadSub=null;renderLoadBoard(document.getElementById(\'main-content\'))" style="padding:10px 16px;border:2px solid ' + cat.color + ';background:' + (isActive ? cat.color : 'var(--bg-card)') + ';color:' + (isActive ? 'white' : cat.color) + ';border-radius:8px;cursor:pointer;font-weight:600">' + cat.name + ' (' + categoryCounts[cat.id] + ')</button>';
+          return '<button onclick="selectedLoadCategory=\'' + cat.id + '\';selectedLoadSub=null;renderLoadBoard(document.getElementById(\'main-content\'))" style="padding:var(--spacing-2-5) var(--spacing-4);border:2px solid ' + cat.color + ';background:' + (isActive ? cat.color : 'var(--bg-card)') + ';color:' + (isActive ? 'white' : cat.color) + ';border-radius:var(--radius);cursor:pointer;font-weight:var(--weight-semibold)">' + cat.name + ' (' + categoryCounts[cat.id] + ')</button>';
         }).join('') +
         '</div>' +
         
         // Subcategory tabs (if any)
         (currentCat.subs.length > 0 ? '<div style="display:flex;gap:8px;margin-bottom:16px;padding-left:20px;flex-wrap:wrap">' +
-        '<button onclick="selectedLoadSub=null;renderLoadBoard(document.getElementById(\'main-content\'))" style="padding:6px 12px;border:1px solid var(--border);background:' + (!selectedLoadSub ? 'var(--blue)' : 'var(--bg-card)') + ';color:' + (!selectedLoadSub ? 'white' : 'var(--text-secondary)') + ';border-radius:6px;cursor:pointer;font-size:13px">All</button>' +
+        '<button onclick="selectedLoadSub=null;renderLoadBoard(document.getElementById(\'main-content\'))" style="padding:var(--spacing-1-5) var(--spacing-3);border:1px solid var(--border);background:' + (!selectedLoadSub ? 'var(--blue)' : 'var(--bg-card)') + ';color:' + (!selectedLoadSub ? 'white' : 'var(--text-secondary)') + ';border-radius:var(--radius);cursor:pointer;font-size:var(--text-sm)">All</button>' +
         currentCat.subs.map(sub => {
           const isActive = sub.id === selectedLoadSub;
-          return '<button onclick="selectedLoadSub=\'' + sub.id + '\';renderLoadBoard(document.getElementById(\'main-content\'))" style="padding:6px 12px;border:1px solid var(--border);background:' + (isActive ? 'var(--blue)' : 'var(--bg-card)') + ';color:' + (isActive ? 'white' : 'var(--text-secondary)') + ';border-radius:6px;cursor:pointer;font-size:13px">' + sub.name + ' (' + categoryCounts[sub.id] + ')</button>';
+          return '<button onclick="selectedLoadSub=\'' + sub.id + '\';renderLoadBoard(document.getElementById(\'main-content\'))" style="padding:var(--spacing-1-5) var(--spacing-3);border:1px solid var(--border);background:' + (isActive ? 'var(--blue)' : 'var(--bg-card)') + ';color:' + (isActive ? 'white' : 'var(--text-secondary)') + ';border-radius:var(--radius);cursor:pointer;font-size:var(--text-sm)">' + sub.name + ' (' + categoryCounts[sub.id] + ')</button>';
         }).join('') +
         '</div>' : '') +
         
         // Orders table
-        '<div class="card"><div class="card-header" style="background:' + currentCat.color + ';color:white;border-radius:8px 8px 0 0"><h3 style="margin:0">' + currentCat.name + (selectedLoadSub ? ' → ' + currentCat.subs.find(s => s.id === selectedLoadSub)?.name : '') + '</h3></div>' +
-        (displayOrders.length === 0 ? '<div style="padding:40px;text-align:center;color:var(--text-muted)">No vehicles in this category</div>' :
+        '<div class="card"><div class="card-header" style="background:' + currentCat.color + ';color:white;border-radius:var(--radius) var(--radius) 0 0"><h3 style="margin:0">' + currentCat.name + (selectedLoadSub ? ' → ' + currentCat.subs.find(s => s.id === selectedLoadSub)?.name : '') + '</h3></div>' +
+        (displayOrders.length === 0 ? '<div style="padding:var(--spacing-10);text-align:center;color:var(--text-muted)">No vehicles in this category</div>' :
         '<div class="table-wrapper"><table><thead><tr><th>Order</th><th>Broker</th><th>Vehicle</th><th>Origin</th><th>📞P</th><th>Destination</th><th>📞D</th><th>Pick-Up</th><th>Delivery</th><th>Payment</th><th>Broker Fee</th><th>Local Fee</th><th>Revenue</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
         displayOrders.map(o => {
-          const noteHtml = o.dispatcher_notes ? '<tr style="background:var(--amber-dim)"><td colspan="14" style="padding:8px 16px;font-size:13px"><span style="font-weight:600;color:var(--amber)">📝 Note:</span> ' + o.dispatcher_notes + '</td></tr>' : '';
+          const noteHtml = o.dispatcher_notes ? '<tr style="background:var(--amber-dim)"><td colspan="14" style="padding:var(--spacing-2) var(--spacing-4);font-size:var(--text-sm)"><span style="font-weight:var(--weight-semibold);color:var(--amber)">📝 Note:</span> ' + o.dispatcher_notes + '</td></tr>' : '';
           const pickupPhoneDisplay = o.pickup_phone ? '<a href="tel:' + o.pickup_phone + '" style="color:var(--blue)" title="' + o.pickup_phone + '">📞</a>' : '-';
           const deliveryPhoneDisplay = o.delivery_phone ? '<a href="tel:' + o.delivery_phone + '" style="color:var(--green)" title="' + o.delivery_phone + '">📞</a>' : '-';
           return '<tr><td><strong>' + o.order_number + '</strong></td><td>' + (o.broker_name || '-') + '</td><td>' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + '</td><td title="' + (o.pickup_full_address || o.origin || '') + '">' + (o.origin || '-') + '</td><td>' + pickupPhoneDisplay + '</td><td title="' + (o.delivery_full_address || o.destination || '') + '">' + (o.destination || '-') + '</td><td>' + deliveryPhoneDisplay + '</td><td>' + (o.pickup_date ? formatDate(o.pickup_date) : '-') + '</td><td>' + (o.dropoff_date ? formatDate(o.dropoff_date) : '-') + '</td><td><span class="badge badge-blue">' + (o.payment_type || '-') + '</span></td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee || 0) + '</td><td class="money">' + formatMoney(o.revenue) + '</td><td class="sticky-col"><div class="actions">' + (o.dispatcher_notes ? '<button class="action-btn" style="background:var(--amber-dim);color:var(--amber)" title="' + o.dispatcher_notes.replace(/"/g, '&quot;') + '">📝</button>' : '') + '<button class="action-btn" style="background:var(--blue-dim);color:var(--purple)" onclick="openOrderDetailPage(' + o.id + ')">View</button><button class="action-btn view" onclick="openAssignToTrip(' + o.id + ')">Assign</button><button class="action-btn edit" onclick="openLoadBoardOrder(' + o.id + ')">Edit</button><button class="action-btn delete" onclick="deleteLoadBoardOrder(' + o.id + ')">Del</button></div></td></tr>' + noteHtml;
@@ -16120,7 +16120,7 @@ ${rateText}`
         vehicleSections += '<div style="background:' + dir.color + ';color:white;padding:12px 16px;font-weight:700;margin-top:16px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><span>' + dir.label + ' (' + dirOrders.length + ' cars)</span><span>Revenue: ' + formatMoney(dirRevenue) + ' | Clean Revenue: ' + formatMoney(dirCleanRevenue) + '</span></div>' +
           '<div class="table-wrapper" style="border:2px solid ' + dir.color + ';border-top:none;border-radius:0 0 8px 8px;margin-bottom:8px"><table><thead><tr><th>Order</th><th>Broker</th><th>Vehicle</th><th>Origin</th><th>📞P</th><th>Destination</th><th>📞D</th><th>Pick-Up</th><th>Delivery</th><th>Payment</th><th>Broker Fee</th><th>Local Fee</th><th>Revenue</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
           dirOrders.map(o => {
-            const noteHtml = o.dispatcher_notes ? '<tr style="background:var(--amber-dim)"><td colspan="14" style="padding:8px 16px;font-size:13px"><span style="font-weight:600;color:var(--amber)">📝 Note:</span> ' + o.dispatcher_notes + '</td></tr>' : '';
+            const noteHtml = o.dispatcher_notes ? '<tr style="background:var(--amber-dim)"><td colspan="14" style="padding:var(--spacing-2) var(--spacing-4);font-size:var(--text-sm)"><span style="font-weight:var(--weight-semibold);color:var(--amber)">📝 Note:</span> ' + o.dispatcher_notes + '</td></tr>' : '';
             const pickupPhoneDisplay = o.pickup_phone ? '<a href="tel:' + o.pickup_phone + '" style="color:var(--blue)" title="' + o.pickup_phone + '">📞</a>' : '-';
             const deliveryPhoneDisplay = o.delivery_phone ? '<a href="tel:' + o.delivery_phone + '" style="color:var(--green)" title="' + o.delivery_phone + '">📞</a>' : '-';
             // Payment status with driver collection indicator
@@ -16143,7 +16143,7 @@ ${rateText}`
         vehicleSections += '<div style="background:var(--text-secondary);color:white;padding:12px 16px;font-weight:700;margin-top:16px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><span>UNASSIGNED DIRECTION (' + unassignedOrders.length + ' cars)</span><span>Revenue: ' + formatMoney(unassignedRevenue) + ' | Clean Revenue: ' + formatMoney(unassignedCleanRevenue) + '</span></div>' +
           '<div class="table-wrapper" style="border:2px solid var(--text-secondary);border-top:none;border-radius:0 0 8px 8px"><table><thead><tr><th>Order</th><th>Broker</th><th>Vehicle</th><th>Origin</th><th>📞P</th><th>Destination</th><th>📞D</th><th>Pick-Up</th><th>Delivery</th><th>Payment</th><th>Broker Fee</th><th>Local Fee</th><th>Revenue</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
           unassignedOrders.map(o => {
-            const noteHtml = o.dispatcher_notes ? '<tr style="background:var(--amber-dim)"><td colspan="14" style="padding:8px 16px;font-size:13px"><span style="font-weight:600;color:var(--amber)">📝 Note:</span> ' + o.dispatcher_notes + '</td></tr>' : '';
+            const noteHtml = o.dispatcher_notes ? '<tr style="background:var(--amber-dim)"><td colspan="14" style="padding:var(--spacing-2) var(--spacing-4);font-size:var(--text-sm)"><span style="font-weight:var(--weight-semibold);color:var(--amber)">📝 Note:</span> ' + o.dispatcher_notes + '</td></tr>' : '';
             const pickupPhoneDisplay = o.pickup_phone ? '<a href="tel:' + o.pickup_phone + '" style="color:var(--blue)" title="' + o.pickup_phone + '">📞</a>' : '-';
             const deliveryPhoneDisplay = o.delivery_phone ? '<a href="tel:' + o.delivery_phone + '" style="color:var(--green)" title="' + o.delivery_phone + '">📞</a>' : '-';
             // Payment status with driver collection indicator
@@ -16527,6 +16527,21 @@ ${rateText}`
           updateData.period_end_date = today;
         }
         await dbUpdate('trips', tripId, updateData);
+
+        // Notify driver that trip is completed
+        if (trip?.driver_id) {
+          try {
+            const tripOrders = appData.orders.filter(o => o.trip_id === tripId);
+            await dbInsert('driver_notifications', {
+              driver_id: trip.driver_id,
+              type: 'trip_completed',
+              title: 'Trip Completed',
+              body: `Trip ${trip.trip_number} with ${tripOrders.length} vehicle(s) has been marked as completed`,
+              trip_id: tripId,
+              is_read: false
+            });
+          } catch (e) { /* silent */ }
+        }
 
         // Set not_for_local_delivery on qualifying local delivery orders so they don't appear in Pending Local Deliveries
         const qualifyingOrders = appData.orders.filter(o =>
@@ -17324,6 +17339,20 @@ ${rateText}`
     async function removeOrder(orderId, tripId) {
       if (!confirm('Remove?')) return;
       const order = appData.orders.find(o => o.id === orderId);
+      const trip = appData.trips.find(t => t.id === tripId);
+      if (trip?.driver_id && order) {
+        try {
+          await dbInsert('driver_notifications', {
+            driver_id: trip.driver_id,
+            type: 'order_removed',
+            title: 'Vehicle Removed from Trip',
+            body: `${order.vehicle_year || ''} ${order.vehicle_make || ''} ${order.vehicle_model || ''} removed from trip ${trip.trip_number}`.trim(),
+            order_id: orderId,
+            trip_id: tripId,
+            is_read: false
+          });
+        } catch (e) { /* silent */ }
+      }
       try {
         await dbUpdate('orders', orderId, {
           trip_id: null,
