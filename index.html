@@ -16161,59 +16161,59 @@ ${rateText}`
       // Get pricing guidance for dispatchers
       const pricingGuidance = getDispatcherPricingGuidance(id);
       const pricingWidget = pricingGuidance ? `
-        <div style="background:linear-gradient(135deg,${pricingGuidance.statusColor}15,${pricingGuidance.statusColor}05);border:2px solid ${pricingGuidance.statusColor}40;border-radius:16px;padding:20px;margin-bottom:20px">
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:16px">
+        <div style="background:linear-gradient(135deg,${pricingGuidance.statusColor}15,${pricingGuidance.statusColor}05);border:2px solid ${pricingGuidance.statusColor}40;border-radius:var(--radius-xl);padding:var(--space-5);margin-bottom:var(--space-5)">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--space-4);margin-bottom:var(--space-4)">
             <div>
-              <div style="font-size:12px;color:${pricingGuidance.statusColor};font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Trip Status</div>
-              <div style="font-size:24px;font-weight:800;color:${pricingGuidance.statusColor}">${pricingGuidance.tripStatus.replace('_', ' ')}</div>
-              <div style="font-size:13px;color:var(--text-secondary);margin-top:4px">${pricingGuidance.statusMessage}</div>
+              <div style="font-size:var(--text-xs);color:${pricingGuidance.statusColor};font-weight:var(--weight-semibold);text-transform:uppercase;letter-spacing:0.5px">Trip Status</div>
+              <div style="font-size:var(--text-2xl);font-weight:var(--weight-heavy);color:${pricingGuidance.statusColor}">${pricingGuidance.tripStatus.replace('_', ' ')}</div>
+              <div style="font-size:var(--text-sm);color:var(--text-secondary);margin-top:var(--space-1)">${pricingGuidance.statusMessage}</div>
             </div>
-            <div style="display:flex;gap:16px;flex-wrap:wrap">
-              <div style="text-align:center;background:var(--bg-secondary);padding:12px 16px;border-radius:12px;min-width:100px">
-                <div style="font-size:10px;color:var(--text-muted);font-weight:600">LOADED</div>
-                <div style="font-size:24px;font-weight:800;color:var(--text-primary)">${pricingGuidance.currentCars}/${pricingGuidance.maxCapacity}</div>
+            <div style="display:flex;gap:var(--space-4);flex-wrap:wrap">
+              <div style="text-align:center;background:var(--bg-secondary);padding:var(--space-3) var(--space-4);border-radius:var(--radius-lg);min-width:100px">
+                <div style="font-size:10px;color:var(--text-muted);font-weight:var(--weight-semibold)">LOADED</div>
+                <div style="font-size:var(--text-2xl);font-weight:var(--weight-heavy);color:var(--text-primary)">${pricingGuidance.currentCars}/${pricingGuidance.maxCapacity}</div>
                 <div style="font-size:var(--text-xs);color:var(--text-muted)">${pricingGuidance.remainingSlots} slots left</div>
               </div>
-              <div style="text-align:center;background:var(--bg-secondary);padding:12px 16px;border-radius:12px;min-width:100px">
-                <div style="font-size:10px;color:var(--text-muted);font-weight:600">CURRENT PPC</div>
-                <div style="font-size:24px;font-weight:800;color:${pricingGuidance.currentPPC >= pricingGuidance.pricing.target ? 'var(--green)' : 'var(--amber)'}">${formatMoney(pricingGuidance.currentPPC)}</div>
+              <div style="text-align:center;background:var(--bg-secondary);padding:var(--space-3) var(--space-4);border-radius:var(--radius-lg);min-width:100px">
+                <div style="font-size:10px;color:var(--text-muted);font-weight:var(--weight-semibold)">CURRENT PPC</div>
+                <div style="font-size:var(--text-2xl);font-weight:var(--weight-heavy);color:${pricingGuidance.currentPPC >= pricingGuidance.pricing.target ? 'var(--green)' : 'var(--amber)'}">${formatMoney(pricingGuidance.currentPPC)}</div>
                 <div style="font-size:var(--text-xs);color:var(--text-muted)">avg per car</div>
               </div>
-              <div style="text-align:center;background:var(--bg-secondary);padding:12px 16px;border-radius:12px;min-width:100px">
-                <div style="font-size:10px;color:var(--text-muted);font-weight:600">TRIP PROFIT</div>
-                <div style="font-size:24px;font-weight:800;color:${pricingGuidance.currentProfit >= 0 ? 'var(--green)' : 'var(--red)'}">${formatMoney(pricingGuidance.currentProfit)}</div>
+              <div style="text-align:center;background:var(--bg-secondary);padding:var(--space-3) var(--space-4);border-radius:var(--radius-lg);min-width:100px">
+                <div style="font-size:10px;color:var(--text-muted);font-weight:var(--weight-semibold)">TRIP PROFIT</div>
+                <div style="font-size:var(--text-2xl);font-weight:var(--weight-heavy);color:${pricingGuidance.currentProfit >= 0 ? 'var(--green)' : 'var(--red)'}">${formatMoney(pricingGuidance.currentProfit)}</div>
                 <div style="font-size:var(--text-xs);color:var(--text-muted)">current</div>
               </div>
             </div>
           </div>
           
           <div style="background:var(--bg-secondary);border-radius:var(--radius-lg);padding:var(--spacing-4)">
-            <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:12px">💰 DISPATCHER PRICING GUIDANCE</div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">
+            <div style="font-size:var(--text-sm);font-weight:var(--weight-bold);color:var(--text-primary);margin-bottom:var(--space-3)">💰 DISPATCHER PRICING GUIDANCE</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:var(--space-3)">
               <div style="background:var(--red-dim);padding:var(--spacing-3);border-radius:var(--radius);text-align:center">
-                <div style="font-size:10px;color:var(--red);font-weight:600">MINIMUM PPC</div>
-                <div style="font-size:20px;font-weight:800;color:var(--red)">${formatMoney(pricingGuidance.pricing.minimum)}</div>
+                <div style="font-size:10px;color:var(--red);font-weight:var(--weight-semibold)">MINIMUM PPC</div>
+                <div style="font-size:var(--text-xl);font-weight:var(--weight-heavy);color:var(--red)">${formatMoney(pricingGuidance.pricing.minimum)}</div>
                 <div style="font-size:10px;color:var(--red)">Break-even</div>
               </div>
               <div style="background:var(--green-dim);padding:var(--spacing-3);border-radius:var(--radius);text-align:center;border:2px solid var(--green)">
-                <div style="font-size:10px;color:var(--primary-800);font-weight:600">TARGET PPC</div>
-                <div style="font-size:20px;font-weight:800;color:var(--green)">${formatMoney(pricingGuidance.pricing.target)}</div>
+                <div style="font-size:10px;color:var(--primary-800);font-weight:var(--weight-semibold)">TARGET PPC</div>
+                <div style="font-size:var(--text-xl);font-weight:var(--weight-heavy);color:var(--green)">${formatMoney(pricingGuidance.pricing.target)}</div>
                 <div style="font-size:10px;color:var(--primary-800)">Profitable</div>
               </div>
               <div style="background:var(--blue-dim);padding:var(--spacing-3);border-radius:var(--radius);text-align:center">
-                <div style="font-size:10px;color:var(--blue);font-weight:600">MARKET AVG</div>
-                <div style="font-size:20px;font-weight:800;color:var(--blue)">${formatMoney(pricingGuidance.pricing.marketAvg)}</div>
+                <div style="font-size:10px;color:var(--blue);font-weight:var(--weight-semibold)">MARKET AVG</div>
+                <div style="font-size:var(--text-xl);font-weight:var(--weight-heavy);color:var(--blue)">${formatMoney(pricingGuidance.pricing.marketAvg)}</div>
                 <div style="font-size:10px;color:var(--blue)">Historical</div>
               </div>
               ${pricingGuidance.remainingSlots > 0 ? `
               <div style="background:var(--amber-dim);padding:var(--spacing-3);border-radius:var(--radius);text-align:center">
-                <div style="font-size:10px;color:var(--amber);font-weight:600">NEED FOR REMAINING</div>
-                <div style="font-size:20px;font-weight:800;color:var(--amber)">${formatMoney(pricingGuidance.pricing.recommendedForRemaining)}</div>
+                <div style="font-size:10px;color:var(--amber);font-weight:var(--weight-semibold)">NEED FOR REMAINING</div>
+                <div style="font-size:var(--text-xl);font-weight:var(--weight-heavy);color:var(--amber)">${formatMoney(pricingGuidance.pricing.recommendedForRemaining)}</div>
                 <div style="font-size:10px;color:var(--amber)">${pricingGuidance.remainingSlots} cars @ this price</div>
               </div>
               ` : ''}
             </div>
-            <div style="margin-top:12px;padding:10px;background:var(--bg-tertiary);border-radius:8px;font-size:12px;color:var(--text-secondary)">
+            <div style="margin-top:var(--space-3);padding:10px;background:var(--bg-tertiary);border-radius:var(--radius);font-size:var(--text-xs);color:var(--text-secondary)">
               <strong>💡 Tip:</strong> Fixed cost allocation per trip: ${formatMoney(pricingGuidance.breakEvenInfo.fixedCostAllocation)}. 
               Truck gross ratio: ${(pricingGuidance.breakEvenInfo.truckGrossRatio * 100).toFixed(1)}% of revenue stays after fees and driver cut.
             </div>
