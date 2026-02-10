@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon Star TMS — IFTA</title>
+
+  <!-- FART prevention: set theme before CSS loads -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('tms-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared.css">
+
+  <style>
+    /* Page-specific styles for IFTA */
+
+    /* Quarter selector pills */
+    .quarter-selector-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+      padding: 16px;
+      background: var(--bg-elevated);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .quarter-pills {
+      display: flex;
+      gap: 6px;
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 3px;
+    }
+
+    .quarter-pill {
+      padding: 8px 16px;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .quarter-pill:hover {
+      color: var(--text-primary);
+      background: var(--bg-elevated);
+    }
+
+    .quarter-pill.active {
+      background: var(--green);
+      color: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .year-select-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .year-select-wrapper label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .year-select-wrapper select {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .mpg-input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mpg-input-wrapper label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .mpg-input-wrapper input {
+      width: 80px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Courier New', monospace;
+    }
+
+    /* Auto-calculated MPG info box */
+    .mpg-info-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: rgba(59, 130, 246, 0.08);
+      border: 2px solid var(--blue);
+      border-radius: var(--radius);
+      margin-bottom: 24px;
+    }
+
+    .mpg-info-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .mpg-info-icon {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--blue);
+      border-radius: 8px;
+      color: white;
+    }
+
+    .mpg-info-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .mpg-info-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .mpg-info-subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .verified-badge {
+      padding: 4px 10px;
+      background: var(--green);
+      color: white;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* Summary stat cards */
+    .ifta-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .ifta-stat-card {
+      background: var(--bg-card);
+      padding: 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .ifta-stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .ifta-stat-card.border-blue {
+      border-left: 4px solid var(--blue);
+    }
+
+    .ifta-stat-card.border-green {
+      border-left: 4px solid var(--green);
+    }
+
+    .ifta-stat-card.border-amber {
+      border-left: 4px solid var(--amber);
+    }
+
+    .ifta-stat-card.border-red {
+      border-left: 4px solid var(--red);
+    }
+
+    .ifta-stat-card.emphasis {
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(251, 191, 36, 0.04) 100%);
+      border: 2px solid var(--amber);
+    }
+
+    .ifta-stat-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ifta-stat-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .ifta-stat-value.mono {
+      font-family: 'Courier New', monospace;
+    }
+
+    .ifta-stat-value.green {
+      color: var(--green);
+    }
+
+    .ifta-stat-value.red {
+      color: var(--red);
+    }
+
+    .ifta-stat-value.amber {
+      color: var(--amber);
+    }
+
+    .ifta-stat-value.large {
+      font-size: 26px;
+    }
+
+    /* IFTA calculation table emphasis */
+    .ifta-calc-table {
+      font-size: 14px;
+    }
+
+    .ifta-calc-table th {
+      font-size: 13px;
+    }
+
+    .ifta-calc-table td.positive {
+      color: var(--red);
+      font-weight: 600;
+    }
+
+    .ifta-calc-table td.negative {
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    .ifta-calc-table tbody tr:hover {
+      background: var(--bg-hover);
+    }
+
+    .ifta-calc-table tfoot tr {
+      font-weight: 700;
+      background: var(--bg-elevated);
+      border-top: 2px solid var(--border);
+    }
+
+    /* Tax credit breakdown card */
+    .tax-credit-card {
+      background: var(--bg-card);
+      padding: 20px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--green);
+      margin-top: 24px;
+    }
+
+    .tax-credit-card h4 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0 0 16px 0;
+    }
+
+    /* Net tax summary box */
+    .net-tax-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px;
+      background: rgba(251, 191, 36, 0.08);
+      border: 2px solid var(--amber);
+      border-radius: var(--radius);
+      margin-top: 24px;
+    }
+
+    .net-tax-left h3 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0 0 8px 0;
+    }
+
+    .net-tax-formula {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .net-tax-right {
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--amber);
+      font-family: 'Courier New', monospace;
+    }
+
+    @media (max-width: 768px) {
+      .net-tax-summary {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <i data-lucide="truck"></i>
+        </div>
+        <span class="sidebar-logo-text">Horizon Star</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- MAIN Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Main</div>
+          <a class="nav-item" data-page="dashboard">
+            <i data-lucide="layout-dashboard" class="nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+          </a>
+          <a class="nav-item" data-page="trips">
+            <i data-lucide="map" class="nav-icon"></i>
+            <span class="nav-label">Trips</span>
+          </a>
+          <a class="nav-item" data-page="messages">
+            <i data-lucide="message-square" class="nav-icon"></i>
+            <span class="nav-label">Messages</span>
+          </a>
+          <a class="nav-item" data-page="trailers">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trailers</span>
+          </a>
+          <a class="nav-item" data-page="load-board">
+            <i data-lucide="package" class="nav-icon"></i>
+            <span class="nav-label">Load Board</span>
+          </a>
+          <a class="nav-item" data-page="inspections">
+            <i data-lucide="clipboard-list" class="nav-icon"></i>
+            <span class="nav-label">Inspections</span>
+          </a>
+          <a class="nav-item" data-page="tasks">
+            <i data-lucide="check-square" class="nav-icon"></i>
+            <span class="nav-label">Tasks</span>
+          </a>
+        </div>
+
+        <!-- FLEET Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Fleet</div>
+          <a class="nav-item" data-page="drivers">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Drivers</span>
+          </a>
+          <a class="nav-item" data-page="trucks">
+            <i data-lucide="truck" class="nav-icon"></i>
+            <span class="nav-label">Trucks</span>
+          </a>
+          <a class="nav-item" data-page="local-drivers">
+            <i data-lucide="user" class="nav-icon"></i>
+            <span class="nav-label">Local Drivers</span>
+          </a>
+        </div>
+
+        <!-- PARTNERS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Partners</div>
+          <a class="nav-item" data-page="brokers">
+            <i data-lucide="briefcase" class="nav-icon"></i>
+            <span class="nav-label">Brokers</span>
+          </a>
+          <a class="nav-item" data-page="dealers">
+            <i data-lucide="building" class="nav-icon"></i>
+            <span class="nav-label">Dealers</span>
+          </a>
+          <a class="nav-item" data-page="dispatchers">
+            <i data-lucide="phone" class="nav-icon"></i>
+            <span class="nav-label">Dispatchers</span>
+          </a>
+          <a class="nav-item" data-page="dispatcher-ranking">
+            <i data-lucide="star" class="nav-icon"></i>
+            <span class="nav-label">Dispatcher Ranking</span>
+          </a>
+        </div>
+
+        <!-- FINANCIALS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Financials</div>
+          <a class="nav-item" data-page="financials">
+            <i data-lucide="dollar-sign" class="nav-icon"></i>
+            <span class="nav-label">Financials</span>
+          </a>
+          <a class="nav-item" data-page="billing">
+            <i data-lucide="file-text" class="nav-icon"></i>
+            <span class="nav-label">Billing</span>
+          </a>
+          <a class="nav-item" data-page="trip-profitability">
+            <i data-lucide="trending-up" class="nav-icon"></i>
+            <span class="nav-label">Trip Profitability</span>
+          </a>
+          <a class="nav-item" data-page="payroll">
+            <i data-lucide="credit-card" class="nav-icon"></i>
+            <span class="nav-label">Payroll</span>
+          </a>
+          <a class="nav-item" data-page="fuel">
+            <i data-lucide="droplet" class="nav-icon"></i>
+            <span class="nav-label">Fuel</span>
+          </a>
+          <a class="nav-item active" data-page="ifta">
+            <i data-lucide="file" class="nav-icon"></i>
+            <span class="nav-label">IFTA</span>
+          </a>
+          <a class="nav-item" data-page="reports">
+            <i data-lucide="bar-chart-2" class="nav-icon"></i>
+            <span class="nav-label">Reports</span>
+          </a>
+          <a class="nav-item" data-page="ai-advisor">
+            <i data-lucide="brain" class="nav-icon"></i>
+            <span class="nav-label">AI Advisor</span>
+          </a>
+        </div>
+
+        <!-- OPERATIONS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Operations</div>
+          <a class="nav-item" data-page="maintenance">
+            <i data-lucide="wrench" class="nav-icon"></i>
+            <span class="nav-label">Maintenance</span>
+          </a>
+          <a class="nav-item" data-page="compliance">
+            <i data-lucide="shield-check" class="nav-icon"></i>
+            <span class="nav-label">Compliance</span>
+          </a>
+          <a class="nav-item" data-page="applications">
+            <i data-lucide="file-plus" class="nav-icon"></i>
+            <span class="nav-label">Applications</span>
+          </a>
+        </div>
+
+        <!-- SETTINGS Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Settings</div>
+          <a class="nav-item" data-page="settings">
+            <i data-lucide="settings" class="nav-icon"></i>
+            <span class="nav-label">Settings</span>
+          </a>
+          <a class="nav-item" data-page="users">
+            <i data-lucide="users" class="nav-icon"></i>
+            <span class="nav-label">Users</span>
+          </a>
+          <a class="nav-item" data-page="activity-log">
+            <i data-lucide="activity" class="nav-icon"></i>
+            <span class="nav-label">Activity Log</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-toggle" id="sidebarToggle">
+        <i data-lucide="panel-left-close" class="nav-icon" id="toggleIcon"></i>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger" style="display:none;">
+            <i data-lucide="menu"></i>
+          </button>
+          <h1 class="header-title">IFTA Reporting</h1>
+        </div>
+
+        <div class="header-search">
+          <i data-lucide="search" class="ico-sm"></i>
+          <input type="text" placeholder="Search IFTA records...">
+        </div>
+
+        <div class="header-right">
+          <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+            <i data-lucide="moon" class="ico" id="themeIcon"></i>
+          </button>
+          <div class="header-avatar">JD</div>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Page Header with Actions -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <div>
+            <h2 style="margin: 0; font-size: 26px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
+              <i data-lucide="map-pin" style="width: 28px; height: 28px; color: var(--amber);"></i>
+              IFTA Reporting
+            </h2>
+          </div>
+          <div style="display: flex; gap: 12px;">
+            <button class="btn btn-primary">
+              <i data-lucide="file-text" class="ico-sm"></i>
+              Generate Report
+            </button>
+            <button class="btn btn-secondary">
+              <i data-lucide="download" class="ico-sm"></i>
+              Export CSV
+            </button>
+          </div>
+        </div>
+
+        <!-- Quarter / Year Selector Row -->
+        <div class="quarter-selector-row">
+          <div class="quarter-pills">
+            <button class="quarter-pill active">Q1</button>
+            <button class="quarter-pill">Q2</button>
+            <button class="quarter-pill">Q3</button>
+            <button class="quarter-pill">Q4</button>
+          </div>
+
+          <div class="year-select-wrapper">
+            <label>Year:</label>
+            <select>
+              <option value="2026" selected>2026</option>
+              <option value="2025">2025</option>
+              <option value="2024">2024</option>
+            </select>
+          </div>
+
+          <div class="mpg-input-wrapper">
+            <label>Fleet MPG:</label>
+            <input type="number" value="6.42" step="0.01">
+          </div>
+        </div>
+
+        <!-- Auto-Calculated MPG Info Box -->
+        <div class="mpg-info-banner">
+          <div class="mpg-info-left">
+            <div class="mpg-info-icon">
+              <i data-lucide="calculator" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div class="mpg-info-text">
+              <div class="mpg-info-title">Auto-Calculated MPG: 6.42</div>
+              <div class="mpg-info-subtitle">Based on 245,680 miles / 38,260 gallons (Samsara GPS + Fuel Card data)</div>
+            </div>
+          </div>
+          <div class="verified-badge">Samsara Verified</div>
+        </div>
+
+        <!-- Summary Stat Cards -->
+        <div class="ifta-stat-grid">
+          <div class="ifta-stat-card border-blue">
+            <div class="ifta-stat-label">
+              <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i>
+              Total Miles
+            </div>
+            <div class="ifta-stat-value">245,680</div>
+          </div>
+
+          <div class="ifta-stat-card border-green">
+            <div class="ifta-stat-label">
+              <i data-lucide="fuel" style="width: 14px; height: 14px;"></i>
+              Fleet MPG
+            </div>
+            <div class="ifta-stat-value green">6.42</div>
+          </div>
+
+          <div class="ifta-stat-card border-amber">
+            <div class="ifta-stat-label">
+              <i data-lucide="calculator" style="width: 14px; height: 14px;"></i>
+              Taxable Gallons
+            </div>
+            <div class="ifta-stat-value mono">38,260</div>
+          </div>
+
+          <div class="ifta-stat-card border-blue">
+            <div class="ifta-stat-label">
+              <i data-lucide="droplet" style="width: 14px; height: 14px;"></i>
+              Fuel Purchased
+            </div>
+            <div class="ifta-stat-value">18,420 gal</div>
+          </div>
+
+          <div class="ifta-stat-card border-red">
+            <div class="ifta-stat-label">
+              <i data-lucide="arrow-up" style="width: 14px; height: 14px;"></i>
+              Tax Owed
+            </div>
+            <div class="ifta-stat-value mono red">$4,218.40</div>
+          </div>
+
+          <div class="ifta-stat-card border-green">
+            <div class="ifta-stat-label">
+              <i data-lucide="arrow-down" style="width: 14px; height: 14px;"></i>
+              Tax Credit
+            </div>
+            <div class="ifta-stat-value mono green">$3,642.80</div>
+          </div>
+
+          <div class="ifta-stat-card border-amber emphasis">
+            <div class="ifta-stat-label">
+              <i data-lucide="receipt" style="width: 14px; height: 14px;"></i>
+              Net Tax Due
+            </div>
+            <div class="ifta-stat-value mono amber large">$575.60</div>
+          </div>
+        </div>
+
+        <!-- IFTA Calculation Table -->
+        <div class="card">
+          <div class="card-header">
+            <h3>IFTA Tax Calculation by State</h3>
+          </div>
+          <div class="table-wrapper">
+            <table class="ifta-calc-table">
+              <thead>
+                <tr>
+                  <th>State</th>
+                  <th>Miles</th>
+                  <th>% of Miles</th>
+                  <th>Taxable Gal</th>
+                  <th>Fuel Purchased</th>
+                  <th>Net Taxable</th>
+                  <th>Tax Rate</th>
+                  <th>Tax Due</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>New Jersey</strong></td>
+                  <td>52,400</td>
+                  <td>21.3%</td>
+                  <td>8,163</td>
+                  <td>4,200</td>
+                  <td class="positive">3,963</td>
+                  <td class="money">$0.0450</td>
+                  <td class="money">$178.34</td>
+                </tr>
+                <tr>
+                  <td><strong>Florida</strong></td>
+                  <td>48,200</td>
+                  <td>19.6%</td>
+                  <td>7,509</td>
+                  <td>3,800</td>
+                  <td class="positive">3,709</td>
+                  <td class="money">$0.0362</td>
+                  <td class="money">$134.27</td>
+                </tr>
+                <tr>
+                  <td><strong>New York</strong></td>
+                  <td>38,600</td>
+                  <td>15.7%</td>
+                  <td>6,015</td>
+                  <td>3,100</td>
+                  <td class="positive">2,915</td>
+                  <td class="money">$0.0800</td>
+                  <td class="money">$233.20</td>
+                </tr>
+                <tr>
+                  <td><strong>Pennsylvania</strong></td>
+                  <td>28,400</td>
+                  <td>11.6%</td>
+                  <td>4,424</td>
+                  <td>2,400</td>
+                  <td class="positive">2,024</td>
+                  <td class="money">$0.0741</td>
+                  <td class="money">$149.98</td>
+                </tr>
+                <tr>
+                  <td><strong>Georgia</strong></td>
+                  <td>22,800</td>
+                  <td>9.3%</td>
+                  <td>3,553</td>
+                  <td>1,800</td>
+                  <td class="positive">1,753</td>
+                  <td class="money">$0.0313</td>
+                  <td class="money">$54.87</td>
+                </tr>
+                <tr>
+                  <td><strong>South Carolina</strong></td>
+                  <td>16,200</td>
+                  <td>6.6%</td>
+                  <td>2,524</td>
+                  <td>1,200</td>
+                  <td class="positive">1,324</td>
+                  <td class="money">$0.0200</td>
+                  <td class="money">$26.48</td>
+                </tr>
+                <tr>
+                  <td><strong>North Carolina</strong></td>
+                  <td>14,800</td>
+                  <td>6.0%</td>
+                  <td>2,306</td>
+                  <td>1,100</td>
+                  <td class="positive">1,206</td>
+                  <td class="money">$0.0382</td>
+                  <td class="money">$46.07</td>
+                </tr>
+                <tr>
+                  <td><strong>Virginia</strong></td>
+                  <td>10,400</td>
+                  <td>4.2%</td>
+                  <td>1,620</td>
+                  <td>820</td>
+                  <td class="positive">800</td>
+                  <td class="money">$0.0262</td>
+                  <td class="money">$20.96</td>
+                </tr>
+                <tr>
+                  <td><strong>Maryland</strong></td>
+                  <td>8,200</td>
+                  <td>3.3%</td>
+                  <td>1,278</td>
+                  <td>680</td>
+                  <td class="positive">598</td>
+                  <td class="money">$0.0365</td>
+                  <td class="money">$21.83</td>
+                </tr>
+                <tr>
+                  <td><strong>Delaware</strong></td>
+                  <td>5,680</td>
+                  <td>2.3%</td>
+                  <td>885</td>
+                  <td>420</td>
+                  <td class="positive">465</td>
+                  <td class="money">$0.0220</td>
+                  <td class="money">$10.23</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td><strong>Totals</strong></td>
+                  <td><strong>245,680</strong></td>
+                  <td><strong>100.0%</strong></td>
+                  <td><strong>38,260</strong></td>
+                  <td><strong>18,420</strong></td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td class="money"><strong>$875.60</strong></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- Fuel by State Table -->
+        <div class="card" style="margin-top: 24px;">
+          <div class="card-header">
+            <h3>Fuel Purchases by State</h3>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>State</th>
+                  <th>Gallons Purchased</th>
+                  <th>Avg $/Gal</th>
+                  <th>Total Spent</th>
+                  <th>% of Fleet Fuel</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>New Jersey</strong></td>
+                  <td>4,200 gal</td>
+                  <td class="money">$3.50</td>
+                  <td class="money">$14,700.00</td>
+                  <td>22.8%</td>
+                </tr>
+                <tr>
+                  <td><strong>Florida</strong></td>
+                  <td>3,800 gal</td>
+                  <td class="money">$3.60</td>
+                  <td class="money">$13,680.00</td>
+                  <td>20.6%</td>
+                </tr>
+                <tr>
+                  <td><strong>New York</strong></td>
+                  <td>3,100 gal</td>
+                  <td class="money">$3.70</td>
+                  <td class="money">$11,470.00</td>
+                  <td>16.8%</td>
+                </tr>
+                <tr>
+                  <td><strong>Pennsylvania</strong></td>
+                  <td>2,400 gal</td>
+                  <td class="money">$3.40</td>
+                  <td class="money">$8,160.00</td>
+                  <td>13.0%</td>
+                </tr>
+                <tr>
+                  <td><strong>Georgia</strong></td>
+                  <td>1,800 gal</td>
+                  <td class="money">$3.40</td>
+                  <td class="money">$6,120.00</td>
+                  <td>9.8%</td>
+                </tr>
+                <tr>
+                  <td><strong>South Carolina</strong></td>
+                  <td>1,200 gal</td>
+                  <td class="money">$3.40</td>
+                  <td class="money">$4,080.00</td>
+                  <td>6.5%</td>
+                </tr>
+                <tr>
+                  <td><strong>North Carolina</strong></td>
+                  <td>1,100 gal</td>
+                  <td class="money">$3.40</td>
+                  <td class="money">$3,740.00</td>
+                  <td>6.0%</td>
+                </tr>
+                <tr>
+                  <td><strong>Virginia</strong></td>
+                  <td>820 gal</td>
+                  <td class="money">$3.50</td>
+                  <td class="money">$2,870.00</td>
+                  <td>4.5%</td>
+                </tr>
+                <tr>
+                  <td><strong>Maryland</strong></td>
+                  <td>680 gal</td>
+                  <td class="money">$3.55</td>
+                  <td class="money">$2,414.00</td>
+                  <td>3.7%</td>
+                </tr>
+                <tr>
+                  <td><strong>Delaware</strong></td>
+                  <td>420 gal</td>
+                  <td class="money">$3.45</td>
+                  <td class="money">$1,449.00</td>
+                  <td>2.3%</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr style="font-weight: 700;">
+                  <td>Total</td>
+                  <td>18,420 gal</td>
+                  <td class="money">$3.50</td>
+                  <td class="money">$64,683.00</td>
+                  <td>100.0%</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tax Credit Breakdown -->
+        <div class="tax-credit-card">
+          <h4>Tax Credits</h4>
+          <div class="table-wrapper">
+            <table style="font-size: 13px;">
+              <thead>
+                <tr>
+                  <th>State</th>
+                  <th>Gallons Over-Purchased</th>
+                  <th>Tax Rate</th>
+                  <th>Credit Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>New Jersey</strong></td>
+                  <td style="color: var(--green); font-weight: 600;">3,963</td>
+                  <td class="money">$0.0450</td>
+                  <td class="money" style="color: var(--green); font-weight: 600;">-$178.34</td>
+                </tr>
+                <tr>
+                  <td><strong>Florida</strong></td>
+                  <td style="color: var(--green); font-weight: 600;">3,709</td>
+                  <td class="money">$0.0362</td>
+                  <td class="money" style="color: var(--green); font-weight: 600;">-$134.27</td>
+                </tr>
+                <tr>
+                  <td><strong>New York</strong></td>
+                  <td style="color: var(--green); font-weight: 600;">2,915</td>
+                  <td class="money">$0.0800</td>
+                  <td class="money" style="color: var(--green); font-weight: 600;">-$233.20</td>
+                </tr>
+                <tr>
+                  <td><strong>Pennsylvania</strong></td>
+                  <td style="color: var(--green); font-weight: 600;">2,024</td>
+                  <td class="money">$0.0741</td>
+                  <td class="money" style="color: var(--green); font-weight: 600;">-$149.98</td>
+                </tr>
+                <tr>
+                  <td><strong>Georgia</strong></td>
+                  <td style="color: var(--green); font-weight: 600;">1,753</td>
+                  <td class="money">$0.0313</td>
+                  <td class="money" style="color: var(--green); font-weight: 600;">-$54.87</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr style="font-weight: 700; color: var(--green);">
+                  <td colspan="3" style="text-align: right;">Total Credits:</td>
+                  <td class="money">-$3,642.80</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- Net Tax Summary Box -->
+        <div class="net-tax-summary">
+          <div class="net-tax-left">
+            <h3>Net IFTA Tax Due</h3>
+            <div class="net-tax-formula">
+              Tax Owed: $4,218.40 − Tax Credits: $3,642.80 = Net Due: $575.60
+            </div>
+          </div>
+          <div class="net-tax-right">
+            $575.60
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    themeToggle.addEventListener('click', function() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('tms-theme', next);
+      // Update icon
+      themeIcon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
+      lucide.createIcons();
+    });
+
+    // Sidebar toggle (collapse/expand)
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    sidebarToggle.addEventListener('click', function() {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('sidebar-collapsed');
+      // Update toggle icon
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+      lucide.createIcons();
+    });
+
+    // Mobile hamburger
+    const hamburger = document.getElementById('hamburger');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (hamburger) {
+      hamburger.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('active');
+      });
+    }
+
+    if (sidebarOverlay) {
+      sidebarOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      });
+    }
+
+    // Responsive: show hamburger on mobile
+    function handleResize() {
+      if (window.innerWidth <= 768) {
+        hamburger.style.display = 'flex';
+      } else {
+        hamburger.style.display = 'none';
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+  </script>
+</body>
+</html>
