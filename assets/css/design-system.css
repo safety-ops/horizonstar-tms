@@ -62,14 +62,19 @@
   --radius-xl: 16px;
 
   /* Spacing Scale (4px base) */
+  --space-0-5: 2px;
   --space-1: 4px;
+  --space-1-5: 6px;
   --space-2: 8px;
+  --space-2-5: 10px;
   --space-3: 12px;
+  --space-3-5: 14px;
   --space-4: 16px;
   --space-5: 20px;
   --space-6: 24px;
   --space-7: 28px;
   --space-8: 32px;
+  --space-10: 40px;
 
   /* Transitions */
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
