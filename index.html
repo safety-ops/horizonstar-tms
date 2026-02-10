@@ -9246,7 +9246,7 @@
     // Show error message under a field
     function showFieldError(input, message) {
       clearFieldError(input);
-      input.style.borderColor = '#ef4444';
+      input.style.borderColor = 'var(--red)';
       input.setAttribute('aria-invalid', 'true');
 
       const errorDiv = document.createElement('div');
@@ -10107,20 +10107,20 @@
       
       // Status indicators
       let tripStatus = 'LOADING';
-      let statusColor = '#f59e0b';
+      let statusColor = 'var(--amber)';
       let statusMessage = '';
       
       if (fin.netProfit >= breakEven.fixedCostPerTrip) {
         tripStatus = 'PROFITABLE';
-        statusColor = '#22c55e';
+        statusColor = 'var(--green)';
         statusMessage = `On track for $${fin.netProfit.toFixed(0)} profit`;
       } else if (fin.netProfit >= 0) {
         tripStatus = 'BREAK_EVEN';
-        statusColor = '#3b82f6';
+        statusColor = 'var(--blue)';
         statusMessage = 'Covering direct costs, need more revenue for profit';
       } else {
         tripStatus = 'BELOW_TARGET';
-        statusColor = '#ef4444';
+        statusColor = 'var(--red)';
         statusMessage = `Need $${Math.abs(fin.netProfit).toFixed(0)} more to break even`;
       }
       
@@ -10179,9 +10179,9 @@
       const breakEven = calculateBreakEven({ trips: yearTrips });
 
       // Health score color (current year)
-      const healthColor = efficiency.overallHealthScore >= 80 ? '#22c55e'
-        : efficiency.overallHealthScore >= 60 ? '#f59e0b'
-        : '#ef4444';
+      const healthColor = efficiency.overallHealthScore >= 80 ? 'var(--green)'
+        : efficiency.overallHealthScore >= 60 ? 'var(--amber)'
+        : 'var(--red)';
 
       const healthGrade = efficiency.overallHealthScore >= 90 ? 'A+'
         : efficiency.overallHealthScore >= 80 ? 'A'
@@ -10191,9 +10191,9 @@
         : 'F';
 
       // All-time health score color
-      const allTimeHealthColor = allTimeEfficiency.overallHealthScore >= 80 ? '#22c55e'
-        : allTimeEfficiency.overallHealthScore >= 60 ? '#f59e0b'
-        : '#ef4444';
+      const allTimeHealthColor = allTimeEfficiency.overallHealthScore >= 80 ? 'var(--green)'
+        : allTimeEfficiency.overallHealthScore >= 60 ? 'var(--amber)'
+        : 'var(--red)';
 
       const allTimeHealthGrade = allTimeEfficiency.overallHealthScore >= 90 ? 'A+'
         : allTimeEfficiency.overallHealthScore >= 80 ? 'A'
@@ -10252,7 +10252,7 @@
               <div style="display:flex;gap:12px;flex-wrap:wrap">
                 ${Object.entries(efficiency.scores).map(([key, score]) => `
                   <div style="text-align:center">
-                    <div style="width:50px;height:50px;border-radius:50%;border:3px solid ${score >= 80 ? '#22c55e' : score >= 60 ? '#f59e0b' : '#ef4444'};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:${score >= 80 ? '#22c55e' : score >= 60 ? '#f59e0b' : '#ef4444'}">${score.toFixed(0)}%</div>
+                    <div style="width:50px;height:50px;border-radius:50%;border:3px solid ${score >= 80 ? 'var(--green)' : score >= 60 ? 'var(--amber)' : 'var(--red)'};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:${score >= 80 ? 'var(--green)' : score >= 60 ? 'var(--amber)' : 'var(--red)'}">${score.toFixed(0)}%</div>
                     <div style="font-size:9px;color:var(--text-muted);margin-top:2px;text-transform:uppercase">${key.replace(/([A-Z])/g, ' $1').trim()}</div>
                   </div>
                 `).join('')}
@@ -10272,7 +10272,7 @@
         
         <!-- AI-Powered Optimization Recommendations (moved here) -->
         <div class="card" style="margin-bottom:16px">
-          <div class="card-header" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:white;padding:12px 16px">
+          <div class="card-header" style="background:linear-gradient(135deg,var(--amber),var(--amber));color:white;padding:12px 16px">
             <h3 style="color:white;font-size:14px">💡 AI-Powered Optimization Recommendations</h3>
           </div>
           <div style="padding:14px">
@@ -10282,7 +10282,7 @@
         
         <!-- Key Financial Metrics Row -->
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px">
-          <div class="stat-card" style="border-left:4px solid #22c55e">
+          <div class="stat-card" style="border-left:4px solid var(--green)">
             <div class="stat-icon green">💰</div>
             <div class="stat-content">
               <div class="label">Total Revenue</div>
@@ -10290,7 +10290,7 @@
               <div class="trend up">↑ ${formatMoney(forecast.avgMonthlyRevenue)}/mo avg</div>
             </div>
           </div>
-          <div class="stat-card" style="border-left:4px solid ${efficiency.totalProfit >= 0 ? '#22c55e' : '#ef4444'}">
+          <div class="stat-card" style="border-left:4px solid ${efficiency.totalProfit >= 0 ? 'var(--green)' : 'var(--red)'}">
             <div class="stat-icon ${efficiency.totalProfit >= 0 ? 'green' : 'red'}">📈</div>
             <div class="stat-content">
               <div class="label">Net Profit</div>
@@ -10298,7 +10298,7 @@
               <div class="trend ${efficiency.totalProfit >= 0 ? 'up' : 'down'}">${incomeStatement.netProfitMargin.toFixed(1)}% margin</div>
             </div>
           </div>
-          <div class="stat-card" style="border-left:4px solid #3b82f6">
+          <div class="stat-card" style="border-left:4px solid var(--blue)">
             <div class="stat-icon blue">💵</div>
             <div class="stat-content">
               <div class="label">Cash Position</div>
@@ -10306,11 +10306,11 @@
               <div style="font-size:11px;color:var(--text-muted)">${formatMoney(cashFlow.outstandingReceivables)} outstanding</div>
             </div>
           </div>
-          <div class="stat-card" style="border-left:4px solid #8b5cf6">
-            <div class="stat-icon" style="background:rgba(139,92,246,0.12);color:#8b5cf6">🚛</div>
+          <div class="stat-card" style="border-left:4px solid var(--purple)">
+            <div class="stat-icon" style="background:rgba(139,92,246,0.12);color:var(--purple)">🚛</div>
             <div class="stat-content">
               <div class="label">Profit Per Mile</div>
-              <div class="value" style="color:${efficiency.metrics.profitPerMile >= 0.50 ? '#22c55e' : '#f59e0b'}">${formatMoney(efficiency.metrics.profitPerMile)}</div>
+              <div class="value" style="color:${efficiency.metrics.profitPerMile >= 0.50 ? 'var(--green)' : 'var(--amber)'}">${formatMoney(efficiency.metrics.profitPerMile)}</div>
               <div style="font-size:11px;color:var(--text-muted)">Target: $0.50+</div>
             </div>
           </div>
@@ -10330,7 +10330,7 @@
           const targetVehiclePrice = breakEven.profitablePPC || 0;
           const priceGap = targetVehiclePrice - currentAvgPrice;
           
-          return '<div class="card" style="margin-bottom:24px;background:linear-gradient(135deg,#1e293b,#334155);color:white;overflow:hidden">' +
+          return '<div class="card" style="margin-bottom:24px;background:linear-gradient(135deg,var(--bg-elevated),var(--bg-elevated));color:white;overflow:hidden">' +
             '<div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.1)">' +
             '<div style="display:flex;align-items:center;justify-content:space-between">' +
             '<h3 style="margin:0;color:white;font-size:16px">⚡ Quick View - Company Profitability</h3>' +
@@ -10339,33 +10339,33 @@
             '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0">' +
             '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)">' +
             '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Cost Per Mile</div>' +
-            '<div style="font-size:28px;font-weight:700;color:#f87171">$' + cpm.toFixed(2) + '</div>' +
+            '<div style="font-size:28px;font-weight:700;color:var(--red)">$' + cpm.toFixed(2) + '</div>' +
             '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Operating CPM</div>' +
             '</div>' +
             '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)">' +
             '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Revenue Per Mile</div>' +
-            '<div style="font-size:28px;font-weight:700;color:#4ade80">$' + rpm.toFixed(2) + '</div>' +
+            '<div style="font-size:28px;font-weight:700;color:var(--primary-400)">$' + rpm.toFixed(2) + '</div>' +
             '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Gross RPM</div>' +
             '</div>' +
             '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);background:' + (marginPerMile >= 0 ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)') + '">' +
             '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Margin Per Mile</div>' +
-            '<div style="font-size:28px;font-weight:700;color:' + (marginPerMile >= 0 ? '#4ade80' : '#f87171') + '">$' + marginPerMile.toFixed(2) + '</div>' +
-            '<div style="font-size:10px;color:' + (marginPerMile >= 0 ? '#86efac' : '#fca5a5') + ';margin-top:4px">' + (marginPerMile >= 0 ? '✓ Profitable' : '✗ Losing Money') + '</div>' +
+            '<div style="font-size:28px;font-weight:700;color:' + (marginPerMile >= 0 ? 'var(--primary-400)' : 'var(--red)') + '">$' + marginPerMile.toFixed(2) + '</div>' +
+            '<div style="font-size:10px;color:' + (marginPerMile >= 0 ? 'var(--green)' : 'var(--red)') + ';margin-top:4px">' + (marginPerMile >= 0 ? '✓ Profitable' : '✗ Losing Money') + '</div>' +
             '</div>' +
             '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)">' +
             '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Avg Vehicle Price</div>' +
-            '<div style="font-size:28px;font-weight:700;color:#60a5fa">$' + currentAvgPrice.toFixed(0) + '</div>' +
+            '<div style="font-size:28px;font-weight:700;color:var(--blue)">$' + currentAvgPrice.toFixed(0) + '</div>' +
             '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Current Average</div>' +
             '</div>' +
             '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)">' +
             '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Break-Even Price</div>' +
-            '<div style="font-size:28px;font-weight:700;color:#a78bfa">$' + targetVehiclePrice.toFixed(0) + '</div>' +
+            '<div style="font-size:28px;font-weight:700;color:var(--purple)">$' + targetVehiclePrice.toFixed(0) + '</div>' +
             '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Min per vehicle</div>' +
             '</div>' +
             '<div style="padding:20px;text-align:center;background:' + (priceGap <= 0 ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)') + '">' +
             '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Profit Per Vehicle</div>' +
-            '<div style="font-size:28px;font-weight:700;color:' + (priceGap <= 0 ? '#4ade80' : '#f87171') + '">$' + Math.abs(currentAvgPrice - targetVehiclePrice).toFixed(0) + '</div>' +
-            '<div style="font-size:10px;color:' + (priceGap <= 0 ? '#86efac' : '#fca5a5') + ';margin-top:4px">' + (priceGap <= 0 ? '✓ Profitable' : '✗ Losing $' + Math.abs(priceGap).toFixed(0) + '/car') + '</div>' +
+            '<div style="font-size:28px;font-weight:700;color:' + (priceGap <= 0 ? 'var(--primary-400)' : 'var(--red)') + '">$' + Math.abs(currentAvgPrice - targetVehiclePrice).toFixed(0) + '</div>' +
+            '<div style="font-size:10px;color:' + (priceGap <= 0 ? 'var(--green)' : 'var(--red)') + ';margin-top:4px">' + (priceGap <= 0 ? '✓ Profitable' : '✗ Losing $' + Math.abs(priceGap).toFixed(0) + '/car') + '</div>' +
             '</div>' +
             '</div></div>';
         })()}
@@ -10375,47 +10375,47 @@
           
           <!-- Income Statement Summary -->
           <div class="card">
-            <div class="card-header" style="background:linear-gradient(135deg,#059669,var(--green));color:white">
+            <div class="card-header" style="background:linear-gradient(135deg,var(--green),var(--green));color:white">
               <h3 style="color:white">📋 Income Statement (P&L)</h3>
             </div>
             <div style="padding:20px">
               <table style="width:100%;font-size:14px">
-                <tr style="background:var(--green-dim)"><td colspan="2" style="font-weight:700;color:#166534;padding:10px">REVENUE</td></tr>
+                <tr style="background:var(--green-dim)"><td colspan="2" style="font-weight:700;color:var(--primary-800);padding:10px">REVENUE</td></tr>
                 <tr><td style="padding:8px 10px 8px 24px">Gross Revenue</td><td style="text-align:right;font-weight:600">${formatMoney(incomeStatement.revenue.grossRevenue)}</td></tr>
                 <tr><td style="padding:8px 10px 8px 24px;color:var(--text-muted)">Less: Broker Fees</td><td style="text-align:right;color:var(--red)">(${formatMoney(incomeStatement.revenue.brokerFees)})</td></tr>
                 <tr><td style="padding:8px 10px 8px 24px;color:var(--text-muted)">Less: Local Fees</td><td style="text-align:right;color:var(--amber)">(${formatMoney(incomeStatement.revenue.localFees)})</td></tr>
                 <tr style="border-top:1px solid var(--border)"><td style="padding:10px;font-weight:600">Net Revenue</td><td style="text-align:right;font-weight:700">${formatMoney(incomeStatement.revenue.netRevenue)}</td></tr>
                 
-                <tr style="background:var(--red-dim)"><td colspan="2" style="font-weight:700;color:#991b1b;padding:10px">DIRECT COSTS</td></tr>
+                <tr style="background:var(--red-dim)"><td colspan="2" style="font-weight:700;color:var(--red);padding:10px">DIRECT COSTS</td></tr>
                 <tr><td style="padding:8px 10px 8px 24px">Driver Cut</td><td style="text-align:right">(${formatMoney(incomeStatement.directCosts.driverCut)})</td></tr>
                 <tr><td style="padding:8px 10px 8px 24px">Fuel</td><td style="text-align:right">(${formatMoney(incomeStatement.directCosts.fuelCosts)})</td></tr>
                 <tr><td style="padding:8px 10px 8px 24px">Tolls & Permits</td><td style="text-align:right">(${formatMoney(incomeStatement.directCosts.tollsPermits)})</td></tr>
                 <tr><td style="padding:8px 10px 8px 24px">Other Direct</td><td style="text-align:right">(${formatMoney(incomeStatement.directCosts.otherDirectCosts)})</td></tr>
-                <tr style="background:#bbf7d0"><td style="padding:10px;font-weight:700">GROSS PROFIT</td><td style="text-align:right;font-weight:700;color:#166534">${formatMoney(incomeStatement.grossProfit)} <span style="font-size:12px">(${incomeStatement.grossProfitMargin.toFixed(1)}%)</span></td></tr>
+                <tr style="background:var(--green-dim)"><td style="padding:10px;font-weight:700">GROSS PROFIT</td><td style="text-align:right;font-weight:700;color:var(--primary-800)">${formatMoney(incomeStatement.grossProfit)} <span style="font-size:12px">(${incomeStatement.grossProfitMargin.toFixed(1)}%)</span></td></tr>
                 
                 <tr style="background:var(--amber-dim)"><td colspan="2" style="font-weight:700;color:var(--amber);padding:10px">OPERATING EXPENSES</td></tr>
                 <tr><td style="padding:8px 10px 8px 24px">Fixed Costs</td><td style="text-align:right">(${formatMoney(incomeStatement.operatingExpenses.fixedCosts)})</td></tr>
                 <tr><td style="padding:8px 10px 8px 24px">Maintenance</td><td style="text-align:right">(${formatMoney(incomeStatement.operatingExpenses.maintenanceCosts)})</td></tr>
-                <tr style="background:${incomeStatement.netProfit >= 0 ? '#dcfce7' : '#fee2e2'}"><td style="padding:12px;font-weight:700;font-size:16px">NET PROFIT</td><td style="text-align:right;font-weight:700;font-size:18px;color:${incomeStatement.netProfit >= 0 ? '#166534' : '#dc2626'}">${formatMoney(incomeStatement.netProfit)}</td></tr>
+                <tr style="background:${incomeStatement.netProfit >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'}"><td style="padding:12px;font-weight:700;font-size:16px">NET PROFIT</td><td style="text-align:right;font-weight:700;font-size:18px;color:${incomeStatement.netProfit >= 0 ? 'var(--primary-800)' : 'var(--red)'}">${formatMoney(incomeStatement.netProfit)}</td></tr>
               </table>
             </div>
           </div>
           
           <!-- Cash Flow Summary -->
           <div class="card">
-            <div class="card-header" style="background:linear-gradient(135deg,#1e40af,#3b82f6);color:white">
+            <div class="card-header" style="background:linear-gradient(135deg,var(--blue),var(--blue));color:white">
               <h3 style="color:white">💵 Cash Flow Statement</h3>
             </div>
             <div style="padding:20px">
               <table style="width:100%;font-size:14px">
-                <tr style="background:var(--blue-dim)"><td colspan="2" style="font-weight:700;color:#1e40af;padding:10px">CASH INFLOWS</td></tr>
+                <tr style="background:var(--blue-dim)"><td colspan="2" style="font-weight:700;color:var(--blue);padding:10px">CASH INFLOWS</td></tr>
                 <tr><td style="padding:8px 10px 8px 24px">COD Collected</td><td style="text-align:right;color:var(--green);font-weight:600">+${formatMoney(cashFlow.inflows.codCollected)}</td></tr>
                 <tr><td style="padding:8px 10px 8px 24px">COP Collected</td><td style="text-align:right;color:var(--green);font-weight:600">+${formatMoney(cashFlow.inflows.copCollected)}</td></tr>
                 <tr><td style="padding:8px 10px 8px 24px">Local COD</td><td style="text-align:right;color:var(--green);font-weight:600">+${formatMoney(cashFlow.inflows.localCodCollected)}</td></tr>
                 <tr><td style="padding:8px 10px 8px 24px">Check Payments</td><td style="text-align:right;color:var(--green);font-weight:600">+${formatMoney(cashFlow.inflows.checkPayments)}</td></tr>
                 <tr style="border-top:1px solid var(--border)"><td style="padding:10px;font-weight:600">Total Cash In</td><td style="text-align:right;font-weight:700;color:var(--green)">${formatMoney(cashFlow.inflows.totalCashInflow)}</td></tr>
                 
-                <tr style="background:var(--red-dim)"><td colspan="2" style="font-weight:700;color:#991b1b;padding:10px">CASH OUTFLOWS</td></tr>
+                <tr style="background:var(--red-dim)"><td colspan="2" style="font-weight:700;color:var(--red);padding:10px">CASH OUTFLOWS</td></tr>
                 <tr><td style="padding:8px 10px 8px 24px">Driver Payments</td><td style="text-align:right;color:var(--red)">-${formatMoney(cashFlow.outflows.driverPayments)}</td></tr>
                 <tr><td style="padding:8px 10px 8px 24px">Fuel</td><td style="text-align:right;color:var(--red)">-${formatMoney(cashFlow.outflows.fuelExpenses)}</td></tr>
                 <tr><td style="padding:8px 10px 8px 24px">Tolls & Permits</td><td style="text-align:right;color:var(--red)">-${formatMoney(cashFlow.outflows.tollsPermits)}</td></tr>
@@ -10423,7 +10423,7 @@
                 <tr><td style="padding:8px 10px 8px 24px">Maintenance & Other</td><td style="text-align:right;color:var(--red)">-${formatMoney(cashFlow.outflows.maintenanceExpenses + cashFlow.outflows.otherExpenses)}</td></tr>
                 <tr style="border-top:1px solid var(--border)"><td style="padding:10px;font-weight:600">Total Cash Out</td><td style="text-align:right;font-weight:700;color:var(--red)">${formatMoney(cashFlow.outflows.totalCashOutflow)}</td></tr>
                 
-                <tr style="background:${cashFlow.netCashFlow >= 0 ? '#dcfce7' : '#fee2e2'}"><td style="padding:12px;font-weight:700;font-size:16px">NET CASH FLOW</td><td style="text-align:right;font-weight:700;font-size:18px;color:${cashFlow.netCashFlow >= 0 ? '#166534' : '#dc2626'}">${formatMoney(cashFlow.netCashFlow)}</td></tr>
+                <tr style="background:${cashFlow.netCashFlow >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'}"><td style="padding:12px;font-weight:700;font-size:16px">NET CASH FLOW</td><td style="text-align:right;font-weight:700;font-size:18px;color:${cashFlow.netCashFlow >= 0 ? 'var(--primary-800)' : 'var(--red)'}">${formatMoney(cashFlow.netCashFlow)}</td></tr>
                 <tr><td style="padding:10px;color:var(--text-muted)">Outstanding Receivables</td><td style="text-align:right;font-weight:600;color:var(--amber)">${formatMoney(cashFlow.outstandingReceivables)}</td></tr>
               </table>
             </div>
@@ -10432,7 +10432,7 @@
         
         <!-- Trip Volume & Seasonality -->
         <div class="card" style="margin-bottom:24px">
-          <div class="card-header" style="background:linear-gradient(135deg,#7c3aed,#a855f7);color:white">
+          <div class="card-header" style="background:linear-gradient(135deg,var(--purple),var(--purple));color:white">
             <h3 style="color:white">📅 Trip Volume & Seasonality Analysis</h3>
             <div style="display:flex;gap:12px;align-items:center">
               <span style="font-size:13px;opacity:0.9">Target: 2 trips/truck/month</span>
@@ -10441,19 +10441,19 @@
           <div style="padding:20px">
             <!-- Trip Volume Stats -->
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:24px">
-              <div style="background:#f3e8ff;padding:16px;border-radius:12px;text-align:center">
-                <div style="font-size:11px;color:#7c3aed;font-weight:600">TOTAL TRIPS</div>
-                <div style="font-size:28px;font-weight:800;color:#7c3aed">${tripVolume.totalTrips}</div>
+              <div style="background:var(--purple-dim);padding:16px;border-radius:12px;text-align:center">
+                <div style="font-size:11px;color:var(--purple);font-weight:600">TOTAL TRIPS</div>
+                <div style="font-size:28px;font-weight:800;color:var(--purple)">${tripVolume.totalTrips}</div>
                 <div style="font-size:12px;color:var(--text-muted)">${tripVolume.totalTripValue.toFixed(1)} trip value</div>
               </div>
               <div style="background:var(--blue-dim);padding:16px;border-radius:12px;text-align:center">
-                <div style="font-size:11px;color:#1e40af;font-weight:600">AVG TRIPS/MONTH</div>
-                <div style="font-size:28px;font-weight:800;color:${tripVolume.monthlyAvg >= 2 * efficiency.truckCount ? '#22c55e' : '#f59e0b'}">${tripVolume.monthlyAvg.toFixed(1)}</div>
+                <div style="font-size:11px;color:var(--blue);font-weight:600">AVG TRIPS/MONTH</div>
+                <div style="font-size:28px;font-weight:800;color:${tripVolume.monthlyAvg >= 2 * efficiency.truckCount ? 'var(--green)' : 'var(--amber)'}">${tripVolume.monthlyAvg.toFixed(1)}</div>
                 <div style="font-size:12px;color:var(--text-muted)">Target: ${2 * efficiency.truckCount}/mo</div>
               </div>
               <div style="background:var(--green-dim);padding:16px;border-radius:12px;text-align:center">
-                <div style="font-size:11px;color:#166534;font-weight:600">TRIPS/TRUCK/MONTH</div>
-                <div style="font-size:28px;font-weight:800;color:${efficiency.metrics.tripsPerTruckPerMonth >= 2 ? '#22c55e' : efficiency.metrics.tripsPerTruckPerMonth >= 1.5 ? '#f59e0b' : '#ef4444'}">${efficiency.metrics.tripsPerTruckPerMonth.toFixed(2)}</div>
+                <div style="font-size:11px;color:var(--primary-800);font-weight:600">TRIPS/TRUCK/MONTH</div>
+                <div style="font-size:28px;font-weight:800;color:${efficiency.metrics.tripsPerTruckPerMonth >= 2 ? 'var(--green)' : efficiency.metrics.tripsPerTruckPerMonth >= 1.5 ? 'var(--amber)' : 'var(--red)'}">${efficiency.metrics.tripsPerTruckPerMonth.toFixed(2)}</div>
                 <div style="font-size:12px;color:var(--text-muted)">${efficiency.metrics.tripsPerTruckPerMonth >= 2 ? '✅ On Target' : '⚠️ Below Target'}</div>
               </div>
               <div style="background:var(--amber-dim);padding:16px;border-radius:12px;text-align:center">
@@ -10475,7 +10475,7 @@
                     <div style="display:flex;align-items:center;gap:12px">
                       <div style="width:80px;font-size:13px;font-weight:500;color:var(--text-secondary)">${month}</div>
                       <div style="flex:1;background:var(--bg-tertiary);border-radius:4px;height:24px;overflow:hidden">
-                        <div style="background:${isGoodMonth ? 'linear-gradient(90deg,#22c55e,#16a34a)' : 'linear-gradient(90deg,#f59e0b,#d97706)'};height:100%;width:${barWidth}%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px">
+                        <div style="background:${isGoodMonth ? 'linear-gradient(90deg,var(--green),var(--green))' : 'linear-gradient(90deg,var(--amber),var(--amber))'};height:100%;width:${barWidth}%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px">
                           <span style="font-size:11px;font-weight:600;color:white">${data.tripValue.toFixed(1)}</span>
                         </div>
                       </div>
@@ -10504,7 +10504,7 @@
                     const truckVolume = tripVolume.truckData[truck.id] || { totalTrips: 0, totalTripValue: 0 };
                     const avgPerMonth = tripVolume.monthCount > 0 ? truckVolume.totalTripValue / tripVolume.monthCount : 0;
                     const status = avgPerMonth >= 2 ? 'EXCELLENT' : avgPerMonth >= 1.5 ? 'GOOD' : avgPerMonth >= 1 ? 'FAIR' : 'NEEDS_ATTENTION';
-                    const statusColors = { EXCELLENT: '#22c55e', GOOD: '#3b82f6', FAIR: '#f59e0b', NEEDS_ATTENTION: '#ef4444' };
+                    const statusColors = { EXCELLENT: 'var(--green)', GOOD: 'var(--blue)', FAIR: 'var(--amber)', NEEDS_ATTENTION: 'var(--red)' };
                     return `
                       <tr>
                         <td><strong>#${truck.truck_number}</strong></td>
@@ -10523,23 +10523,23 @@
         
         <!-- Forecasting Section -->
         <div class="card" style="margin-bottom:24px">
-          <div class="card-header" style="background:linear-gradient(135deg,#0891b2,#06b6d4);color:white">
+          <div class="card-header" style="background:linear-gradient(135deg,var(--blue),var(--blue));color:white">
             <h3 style="color:white">🔮 Financial Forecast (Next 6 Months)</h3>
           </div>
           <div style="padding:20px">
             <!-- Forecast Summary -->
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px">
-              <div style="background:#ecfeff;padding:16px;border-radius:12px;text-align:center;border:1px solid #06b6d4">
-                <div style="font-size:11px;color:#0891b2;font-weight:600">PROJECTED REVENUE (6MO)</div>
-                <div style="font-size:24px;font-weight:800;color:#0891b2">${formatMoney(forecast.forecasts.reduce((s,f) => s + f.revenue, 0))}</div>
+              <div style="background:var(--blue-dim);padding:16px;border-radius:12px;text-align:center;border:1px solid var(--blue)">
+                <div style="font-size:11px;color:var(--blue);font-weight:600">PROJECTED REVENUE (6MO)</div>
+                <div style="font-size:24px;font-weight:800;color:var(--blue)">${formatMoney(forecast.forecasts.reduce((s,f) => s + f.revenue, 0))}</div>
               </div>
-              <div style="background:var(--green-dim);padding:16px;border-radius:12px;text-align:center;border:1px solid #22c55e">
+              <div style="background:var(--green-dim);padding:16px;border-radius:12px;text-align:center;border:1px solid var(--green)">
                 <div style="font-size:11px;color:var(--green);font-weight:600">PROJECTED PROFIT (6MO)</div>
                 <div style="font-size:24px;font-weight:800;color:var(--green)">${formatMoney(forecast.forecasts.reduce((s,f) => s + f.profit, 0))}</div>
               </div>
-              <div style="background:#fefce8;padding:16px;border-radius:12px;text-align:center;border:1px solid #eab308">
-                <div style="font-size:11px;color:#ca8a04;font-weight:600">TREND</div>
-                <div style="font-size:24px;font-weight:800;color:${forecast.trend >= 0 ? '#16a34a' : '#ef4444'}">${forecast.trend >= 0 ? '📈' : '📉'} ${forecast.trend >= 0 ? '+' : ''}${formatMoney(forecast.trend)}/mo</div>
+              <div style="background:var(--amber-dim);padding:16px;border-radius:12px;text-align:center;border:1px solid var(--amber)">
+                <div style="font-size:11px;color:var(--amber);font-weight:600">TREND</div>
+                <div style="font-size:24px;font-weight:800;color:${forecast.trend >= 0 ? 'var(--green)' : 'var(--red)'}">${forecast.trend >= 0 ? '📈' : '📉'} ${forecast.trend >= 0 ? '+' : ''}${formatMoney(forecast.trend)}/mo</div>
               </div>
             </div>
             
@@ -10568,7 +10568,7 @@
                       <td>${(f.seasonalFactor * 100).toFixed(0)}%</td>
                       <td>
                         <div style="background:var(--bg-tertiary);border-radius:4px;height:8px;width:60px">
-                          <div style="background:${f.confidence >= 0.7 ? '#22c55e' : '#f59e0b'};height:100%;width:${f.confidence * 100}%;border-radius:4px"></div>
+                          <div style="background:${f.confidence >= 0.7 ? 'var(--green)' : 'var(--amber)'};height:100%;width:${f.confidence * 100}%;border-radius:4px"></div>
                         </div>
                       </td>
                     </tr>
@@ -10582,17 +10582,17 @@
               <div style="font-weight:600;margin-bottom:12px">📊 Annual Projection Scenarios</div>
               <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
                 <div style="background:var(--red-dim);padding:16px;border-radius:12px;text-align:center">
-                  <div style="font-size:12px;color:#991b1b;font-weight:600">CONSERVATIVE (-15%)</div>
+                  <div style="font-size:12px;color:var(--red);font-weight:600">CONSERVATIVE (-15%)</div>
                   <div style="font-size:20px;font-weight:700;color:var(--red);margin-top:8px">${formatMoney(forecast.scenarios.conservative.revenue)}</div>
                   <div style="font-size:14px;color:var(--red)">Profit: ${formatMoney(forecast.scenarios.conservative.profit)}</div>
                 </div>
-                <div style="background:var(--blue-dim);padding:16px;border-radius:12px;text-align:center;border:2px solid #3b82f6">
-                  <div style="font-size:12px;color:#1e40af;font-weight:600">BASE CASE</div>
+                <div style="background:var(--blue-dim);padding:16px;border-radius:12px;text-align:center;border:2px solid var(--blue)">
+                  <div style="font-size:12px;color:var(--blue);font-weight:600">BASE CASE</div>
                   <div style="font-size:20px;font-weight:700;color:var(--blue);margin-top:8px">${formatMoney(forecast.scenarios.base.revenue)}</div>
                   <div style="font-size:14px;color:var(--blue)">Profit: ${formatMoney(forecast.scenarios.base.profit)}</div>
                 </div>
                 <div style="background:var(--green-dim);padding:16px;border-radius:12px;text-align:center">
-                  <div style="font-size:12px;color:#166534;font-weight:600">OPTIMISTIC (+15%)</div>
+                  <div style="font-size:12px;color:var(--primary-800);font-weight:600">OPTIMISTIC (+15%)</div>
                   <div style="font-size:20px;font-weight:700;color:var(--green);margin-top:8px">${formatMoney(forecast.scenarios.optimistic.revenue)}</div>
                   <div style="font-size:14px;color:var(--green)">Profit: ${formatMoney(forecast.scenarios.optimistic.profit)}</div>
                 </div>
@@ -10603,29 +10603,29 @@
         
         <!-- Break-Even & Pricing Guidance -->
         <div class="card" style="margin-bottom:24px">
-          <div class="card-header" style="background:linear-gradient(135deg,#dc2626,#ef4444);color:white">
+          <div class="card-header" style="background:linear-gradient(135deg,var(--red),var(--red));color:white">
             <h3 style="color:white">🎯 Break-Even Analysis & Pricing Targets</h3>
           </div>
           <div style="padding:20px">
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px">
-              <div style="background:var(--red-dim);padding:20px;border-radius:12px;text-align:center;border:2px solid #fecaca">
-                <div style="font-size:12px;color:#991b1b;font-weight:600;margin-bottom:8px">BREAK-EVEN PPC</div>
+              <div style="background:var(--red-dim);padding:20px;border-radius:12px;text-align:center;border:2px solid var(--red-dim)">
+                <div style="font-size:12px;color:var(--red);font-weight:600;margin-bottom:8px">BREAK-EVEN PPC</div>
                 <div style="font-size:32px;font-weight:800;color:var(--red)">${formatMoney(breakEven.breakEvenPPC)}</div>
                 <div style="font-size:12px;color:var(--text-muted);margin-top:8px">Minimum to cover all costs</div>
               </div>
-              <div style="background:var(--green-dim);padding:20px;border-radius:12px;text-align:center;border:2px solid #bbf7d0">
-                <div style="font-size:12px;color:#166534;font-weight:600;margin-bottom:8px">TARGET PPC (PROFITABLE)</div>
+              <div style="background:var(--green-dim);padding:20px;border-radius:12px;text-align:center;border:2px solid var(--green-dim)">
+                <div style="font-size:12px;color:var(--primary-800);font-weight:600;margin-bottom:8px">TARGET PPC (PROFITABLE)</div>
                 <div style="font-size:32px;font-weight:800;color:var(--green)">${formatMoney(breakEven.profitablePPC)}</div>
                 <div style="font-size:12px;color:var(--text-muted);margin-top:8px">15% above break-even</div>
               </div>
-              <div style="background:var(--blue-dim);padding:20px;border-radius:12px;text-align:center;border:2px solid #bfdbfe">
-                <div style="font-size:12px;color:#1e40af;font-weight:600;margin-bottom:8px">CURRENT AVG PPC</div>
+              <div style="background:var(--blue-dim);padding:20px;border-radius:12px;text-align:center;border:2px solid var(--blue-dim)">
+                <div style="font-size:12px;color:var(--blue);font-weight:600;margin-bottom:8px">CURRENT AVG PPC</div>
                 <div style="font-size:32px;font-weight:800;color:var(--blue)">${formatMoney(efficiency.metrics.revenuePerCar)}</div>
                 <div style="font-size:12px;color:var(--text-muted);margin-top:8px">${efficiency.metrics.revenuePerCar >= breakEven.profitablePPC ? '✅ Above target' : '⚠️ Below target'}</div>
               </div>
-              <div style="background:#f3e8ff;padding:20px;border-radius:12px;text-align:center;border:2px solid #e9d5ff">
-                <div style="font-size:12px;color:#7c3aed;font-weight:600;margin-bottom:8px">FIXED COST/TRIP</div>
-                <div style="font-size:32px;font-weight:800;color:#7c3aed">${formatMoney(breakEven.fixedCostPerTrip)}</div>
+              <div style="background:var(--purple-dim);padding:20px;border-radius:12px;text-align:center;border:2px solid var(--purple-dim)">
+                <div style="font-size:12px;color:var(--purple);font-weight:600;margin-bottom:8px">FIXED COST/TRIP</div>
+                <div style="font-size:32px;font-weight:800;color:var(--purple)">${formatMoney(breakEven.fixedCostPerTrip)}</div>
                 <div style="font-size:12px;color:var(--text-muted);margin-top:8px">Overhead allocation</div>
               </div>
             </div>
@@ -10684,7 +10684,7 @@
           description: `Currently averaging ${currentTrips.toFixed(2)} trips/truck/month. Target is 2.0 trips.`,
           action: `Schedule ${additionalTripsNeeded.toFixed(1)} more trips/month across fleet`,
           impact: `Potential additional revenue: ${formatMoney(potentialRevenue)}/month`,
-          color: '#ef4444'
+          color: 'var(--red)'
         });
       }
       
@@ -10701,7 +10701,7 @@
           description: `Current utilization at ${currentUtil.toFixed(1)}% vs 85% target.`,
           action: `Fill ${additionalCars.toFixed(0)} more car slots per period`,
           impact: `Could increase revenue by ${formatMoney(additionalCars * breakEven.profitablePPC)}`,
-          color: '#f59e0b'
+          color: 'var(--amber)'
         });
       }
       
@@ -10717,7 +10717,7 @@
           description: `Current PPC of ${formatMoney(efficiency.metrics.revenuePerCar)} is below target ${formatMoney(breakEven.profitablePPC)}.`,
           action: `Increase average booking price by ${formatMoney(ppcGap)}/car`,
           impact: `Would add ${formatMoney(ppcGap * efficiency.totalCars)} to bottom line`,
-          color: '#ef4444'
+          color: 'var(--red)'
         });
       }
       
@@ -10734,7 +10734,7 @@
           description: `Operating ratio at ${efficiency.metrics.operatingRatio.toFixed(1)}% (target: ≤85%)`,
           action: 'Review fuel efficiency, negotiate better rates with brokers',
           impact: `Potential savings: ${formatMoney(excessCost)}`,
-          color: '#f59e0b'
+          color: 'var(--amber)'
         });
       }
       
@@ -10752,7 +10752,7 @@
           description: `Low-volume periods identified: ${lowSeasonMonths.slice(-3).join(', ')}`,
           action: 'Build cash reserves, consider maintenance scheduling during slow periods',
           impact: 'Maintain profitability during seasonal dips',
-          color: '#3b82f6'
+          color: 'var(--blue)'
         });
       }
       
@@ -10766,7 +10766,7 @@
           description: `Driver cut averaging ${(breakEven.avgDriverCutRatio * 100).toFixed(1)}% of clean gross`,
           action: 'Consider performance-based incentives or adjusted percentage tiers',
           impact: 'Balance driver retention with profitability',
-          color: '#8b5cf6'
+          color: 'var(--purple)'
         });
       }
       
@@ -10780,7 +10780,7 @@
           description: `Health score of ${efficiency.overallHealthScore.toFixed(0)}/100 indicates strong operations`,
           action: 'Continue current practices, consider expansion opportunities',
           impact: 'Maintain competitive advantage',
-          color: '#22c55e'
+          color: 'var(--green)'
         });
       }
       
@@ -10795,7 +10795,7 @@
           description: `${formatMoney(cashFlow.outstandingReceivables)} in unpaid invoices (${((cashFlow.outstandingReceivables / cashFlow.inflows.totalRevenue) * 100).toFixed(0)}% of revenue)`,
           action: 'Follow up on overdue invoices, consider COD for new customers',
           impact: 'Improve cash position and reduce risk',
-          color: '#f59e0b'
+          color: 'var(--amber)'
         });
       }
       
@@ -11036,7 +11036,7 @@
       // Navigation bar
       const navBar = `
         <nav class="login-nav">
-          <button class="login-nav-btn" onclick="renderDriverApplication()" style="background:transparent;border:2px solid #22c55e;color:var(--green)">APPLY TO DRIVE</button>
+          <button class="login-nav-btn" onclick="renderDriverApplication()" style="background:transparent;border:2px solid var(--green);color:var(--green)">APPLY TO DRIVE</button>
           <div class="login-nav-links"></div>
           <div class="login-nav-buttons">
             <button class="login-nav-btn login" onclick="renderLogin()">LOGIN</button>
@@ -11173,7 +11173,7 @@
 
       // Page tabs
       const pageTabs = pageNames.map((name, i) => `
-        <div class="app-tab ${applicationPage === i + 1 ? 'active' : ''}" onclick="goToAppPage(${i + 1})" style="cursor:pointer;padding:8px 12px;font-size:12px;border-bottom:3px solid ${applicationPage === i + 1 ? '#22c55e' : 'transparent'};color:${applicationPage === i + 1 ? '#22c55e' : 'rgba(255,255,255,0.6)'};transition:all 0.2s">
+        <div class="app-tab ${applicationPage === i + 1 ? 'active' : ''}" onclick="goToAppPage(${i + 1})" style="cursor:pointer;padding:8px 12px;font-size:12px;border-bottom:3px solid ${applicationPage === i + 1 ? 'var(--green)' : 'transparent'};color:${applicationPage === i + 1 ? 'var(--green)' : 'rgba(255,255,255,0.6)'};transition:all 0.2s">
           Page ${i + 1}
         </div>
       `).join('');
@@ -11192,7 +11192,7 @@
       }
 
       document.getElementById('app').innerHTML = `
-        <div style="min-height:100vh;background:linear-gradient(135deg,#050a0e 0%,#0a1628 100%);padding:20px">
+        <div style="min-height:100vh;background:linear-gradient(135deg,var(--bg-elevated) 0%,var(--bg-elevated) 100%);padding:20px">
           <nav class="login-nav">
             <div class="login-nav-logo" onclick="renderLogin()" style="cursor:pointer">
               <div class="login-nav-logo-icon">🚛</div>
@@ -11589,7 +11589,7 @@
     function getEmploymentItem(emp, index) {
       const stateOptions = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'].map(s => `<option value="${s}" ${emp.state === s ? 'selected' : ''}>${s}</option>`).join('');
       return `
-        <div class="employment-item" style="border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;background:#fafafa">
+        <div class="employment-item" style="border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;background:var(--bg-app)">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
             <strong style="color:var(--text-primary)">Employer ${index + 1}</strong>
             ${index > 0 ? `<button type="button" onclick="removeEmploymentItem(${index})" style="background:var(--red-dim);color:var(--red);border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px">Remove</button>` : ''}
@@ -11844,7 +11844,7 @@
         <form id="app-form">
           <h2 style="color:var(--text-primary);margin-bottom:24px;font-size:24px">PSP DRIVER DISCLOSURE & AUTHORIZATION</h2>
 
-          <div style="background:var(--amber-dim);border:1px solid #fcd34d;padding:16px;border-radius:8px;margin-bottom:16px;font-size:13px;color:var(--amber)">
+          <div style="background:var(--amber-dim);border:1px solid var(--amber);padding:16px;border-radius:8px;margin-bottom:16px;font-size:13px;color:var(--amber)">
             <strong>THE BELOW DISCLOSURE AND AUTHORIZATION LANGUAGE IS FOR MANDATORY USE BY ALL ACCOUNT HOLDERS IMPORTANT DISCLOSURE REGARDING BACKGROUND REPORTS FROM THE PSP Online Service.</strong>
           </div>
 
@@ -11977,9 +11977,9 @@
             </div>
           </div>
 
-          <div style="background:#d1fae5;padding:20px;border-radius:8px;margin-top:24px;text-align:center">
-            <p style="color:#065f46;font-size:16px;font-weight:600">🎉 You're almost done!</p>
-            <p style="color:#047857;font-size:14px;margin-top:8px">Click "Submit Application" below to complete your application.</p>
+          <div style="background:var(--green-dim);padding:20px;border-radius:8px;margin-top:24px;text-align:center">
+            <p style="color:var(--primary-800);font-size:16px;font-weight:600">🎉 You're almost done!</p>
+            <p style="color:var(--green);font-size:14px;margin-top:8px">Click "Submit Application" below to complete your application.</p>
           </div>
         </form>
       `;
@@ -11991,7 +11991,7 @@
       if (!signatureCanvas) return;
 
       signatureCtx = signatureCanvas.getContext('2d');
-      signatureCtx.strokeStyle = '#1e293b';
+      signatureCtx.strokeStyle = 'var(--bg-elevated)';
       signatureCtx.lineWidth = 2;
       signatureCtx.lineCap = 'round';
 
@@ -12085,7 +12085,7 @@
 
         // Show success message
         document.getElementById('app').innerHTML = `
-          <div style="min-height:100vh;background:linear-gradient(135deg,#050a0e 0%,#0a1628 100%);display:flex;align-items:center;justify-content:center;padding:20px">
+          <div style="min-height:100vh;background:linear-gradient(135deg,var(--bg-elevated) 0%,var(--bg-elevated) 100%);display:flex;align-items:center;justify-content:center;padding:20px">
             <div style="background:var(--bg-card);border-radius:16px;padding:48px;text-align:center;max-width:500px">
               <div style="font-size:64px;margin-bottom:24px">✅</div>
               <h1 style="color:var(--text-primary);margin-bottom:16px">Application Submitted!</h1>
@@ -13468,9 +13468,9 @@
 
     function getDeliveryStatusBadge(status) {
       const statusMap = {
-        'pending': { bg: 'rgba(245,158,11,0.2)', color: '#f59e0b', label: 'Pending' },
-        'picked_up': { bg: 'rgba(59,130,246,0.2)', color: '#3b82f6', label: 'Picked Up' },
-        'delivered': { bg: 'rgba(34,197,94,0.2)', color: '#22c55e', label: 'Delivered' }
+        'pending': { bg: 'rgba(245,158,11,0.2)', color: 'var(--amber)', label: 'Pending' },
+        'picked_up': { bg: 'rgba(59,130,246,0.2)', color: 'var(--blue)', label: 'Picked Up' },
+        'delivered': { bg: 'rgba(34,197,94,0.2)', color: 'var(--green)', label: 'Delivered' }
       };
       const s = statusMap[status] || statusMap['pending'];
       return `<span style="background:${s.bg};color:${s.color};padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600">${s.label}</span>`;
@@ -14320,8 +14320,8 @@
         // Top Stats Row
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:20px">' +
         '<div class="stat-card" style="border-left:4px solid var(--green)"><div class="label">Revenue Generated</div><div class="value">' + formatMoney(totalRev) + '</div></div>' +
-        '<div class="stat-card" style="border-left:4px solid #ef4444"><div class="label">Direct Trip Expenses</div><div class="value">' + formatMoney(totalBrokerFees + totalLocalFees + totalDriverCut + totalExpenses) + '</div></div>' +
-        '<div class="stat-card" style="border-left:4px solid ' + (totalProfit >= 0 ? 'var(--green)' : '#ef4444') + ';background:' + (totalProfit >= 0 ? '#d1fae5' : '#fee2e2') + '"><div class="label">Net Profit</div><div class="value" style="color:' + (totalProfit >= 0 ? '#047857' : '#dc2626') + '">' + formatMoney(totalProfit) + '</div><div style="font-size:12px;color:' + (totalProfit >= 0 ? '#047857' : '#dc2626') + '">' + profitMargin + '% margin</div></div>' +
+        '<div class="stat-card" style="border-left:4px solid var(--red)"><div class="label">Direct Trip Expenses</div><div class="value">' + formatMoney(totalBrokerFees + totalLocalFees + totalDriverCut + totalExpenses) + '</div></div>' +
+        '<div class="stat-card" style="border-left:4px solid ' + (totalProfit >= 0 ? 'var(--green)' : 'var(--red)') + ';background:' + (totalProfit >= 0 ? 'var(--green-dim)' : 'var(--red-dim)') + '"><div class="label">Net Profit</div><div class="value" style="color:' + (totalProfit >= 0 ? 'var(--green)' : 'var(--red)') + '">' + formatMoney(totalProfit) + '</div><div style="font-size:12px;color:' + (totalProfit >= 0 ? 'var(--green)' : 'var(--red)') + '">' + profitMargin + '% margin</div></div>' +
         '</div>' +
         
         // === QUICK VIEW - Company Profitability Metrics ===
@@ -14355,49 +14355,49 @@
           // Warning banner if data incomplete
           const warningBanner = dataQuality < 3 ? 
             '<div style="padding:12px 20px;background:rgba(251,191,36,0.2);border-bottom:1px solid rgba(251,191,36,0.3);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
-            '<span style="color:#fcd34d;font-size:12px">⚠️ ' + (!hasFixedCosts ? 'No fixed costs entered' : !hasTrips ? 'Need more trip data' : 'Missing miles data') + ' - metrics may be inaccurate</span>' +
-            (!hasFixedCosts ? '<button onclick="openSetupWizard()" style="background:#fbbf24;color:#78350f;border:none;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">🧙‍♂️ Setup Wizard</button>' : '') +
+            '<span style="color:var(--amber);font-size:12px">⚠️ ' + (!hasFixedCosts ? 'No fixed costs entered' : !hasTrips ? 'Need more trip data' : 'Missing miles data') + ' - metrics may be inaccurate</span>' +
+            (!hasFixedCosts ? '<button onclick="openSetupWizard()" style="background:var(--amber);color:var(--amber);border:none;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">🧙‍♂️ Setup Wizard</button>' : '') +
             '</div>' : '';
           
-          return '<div class="card" style="margin-bottom:20px;background:linear-gradient(135deg,#1e293b,#334155);color:white;overflow:hidden">' +
+          return '<div class="card" style="margin-bottom:20px;background:linear-gradient(135deg,var(--bg-elevated),var(--bg-elevated));color:white;overflow:hidden">' +
             '<div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.1)">' +
             '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
             '<h3 style="margin:0;color:white;font-size:16px">⚡ Quick View - Company Profitability</h3>' +
             '<div style="display:flex;align-items:center;gap:12px">' +
-            '<span style="background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:12px;font-size:11px">' + totalMiles.toLocaleString() + ' mi ' + (dashboardMilesSource === 'samsara' ? '<span style="color:#93c5fd;font-size:9px">📡</span>' : '') + ' • ' + totalCars + ' cars</span>' +
-            '<button onclick="openSetupWizard()" style="background:rgba(59,130,246,0.3);color:#93c5fd;border:1px solid rgba(59,130,246,0.5);padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer">🧙‍♂️ Setup</button>' +
+            '<span style="background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:12px;font-size:11px">' + totalMiles.toLocaleString() + ' mi ' + (dashboardMilesSource === 'samsara' ? '<span style="color:var(--blue-dim);font-size:9px">📡</span>' : '') + ' • ' + totalCars + ' cars</span>' +
+            '<button onclick="openSetupWizard()" style="background:rgba(59,130,246,0.3);color:var(--blue-dim);border:1px solid rgba(59,130,246,0.5);padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer">🧙‍♂️ Setup</button>' +
             '</div></div></div>' +
             warningBanner +
             '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0">' +
             '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)">' +
             '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Cost Per Mile</div>' +
-            '<div style="font-size:28px;font-weight:700;color:#f87171">$' + cpm.toFixed(2) + '</div>' +
+            '<div style="font-size:28px;font-weight:700;color:var(--red)">$' + cpm.toFixed(2) + '</div>' +
             '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Operating CPM</div>' +
             '</div>' +
             '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)">' +
             '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Revenue Per Mile</div>' +
-            '<div style="font-size:28px;font-weight:700;color:#4ade80">$' + rpm.toFixed(2) + '</div>' +
+            '<div style="font-size:28px;font-weight:700;color:var(--primary-400)">$' + rpm.toFixed(2) + '</div>' +
             '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Gross RPM</div>' +
             '</div>' +
             '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);background:' + (marginPerMile >= 0 ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)') + '">' +
             '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Margin Per Mile</div>' +
-            '<div style="font-size:28px;font-weight:700;color:' + (marginPerMile >= 0 ? '#4ade80' : '#f87171') + '">$' + marginPerMile.toFixed(2) + '</div>' +
-            '<div style="font-size:10px;color:' + (marginPerMile >= 0 ? '#86efac' : '#fca5a5') + ';margin-top:4px">' + (marginPerMile >= 0 ? '✓ Profitable' : '✗ Losing Money') + '</div>' +
+            '<div style="font-size:28px;font-weight:700;color:' + (marginPerMile >= 0 ? 'var(--primary-400)' : 'var(--red)') + '">$' + marginPerMile.toFixed(2) + '</div>' +
+            '<div style="font-size:10px;color:' + (marginPerMile >= 0 ? 'var(--green)' : 'var(--red)') + ';margin-top:4px">' + (marginPerMile >= 0 ? '✓ Profitable' : '✗ Losing Money') + '</div>' +
             '</div>' +
             '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)">' +
             '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Avg Vehicle Price</div>' +
-            '<div style="font-size:28px;font-weight:700;color:#60a5fa">$' + currentAvgPrice.toFixed(0) + '</div>' +
+            '<div style="font-size:28px;font-weight:700;color:var(--blue)">$' + currentAvgPrice.toFixed(0) + '</div>' +
             '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Current Average</div>' +
             '</div>' +
             '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)">' +
             '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Break-Even Price</div>' +
-            '<div style="font-size:28px;font-weight:700;color:#a78bfa">$' + targetVehiclePrice.toFixed(0) + '</div>' +
+            '<div style="font-size:28px;font-weight:700;color:var(--purple)">$' + targetVehiclePrice.toFixed(0) + '</div>' +
             '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Min per vehicle</div>' +
             '</div>' +
             '<div style="padding:20px;text-align:center;background:' + (priceGap <= 0 ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)') + '">' +
             '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Profit Per Vehicle</div>' +
-            '<div style="font-size:28px;font-weight:700;color:' + (priceGap <= 0 ? '#4ade80' : '#f87171') + '">$' + Math.abs(currentAvgPrice - targetVehiclePrice).toFixed(0) + '</div>' +
-            '<div style="font-size:10px;color:' + (priceGap <= 0 ? '#86efac' : '#fca5a5') + ';margin-top:4px">' + (priceGap <= 0 ? '✓ Profitable' : '✗ Losing $' + Math.abs(priceGap).toFixed(0) + '/car') + '</div>' +
+            '<div style="font-size:28px;font-weight:700;color:' + (priceGap <= 0 ? 'var(--primary-400)' : 'var(--red)') + '">$' + Math.abs(currentAvgPrice - targetVehiclePrice).toFixed(0) + '</div>' +
+            '<div style="font-size:10px;color:' + (priceGap <= 0 ? 'var(--green)' : 'var(--red)') + ';margin-top:4px">' + (priceGap <= 0 ? '✓ Profitable' : '✗ Losing $' + Math.abs(priceGap).toFixed(0) + '/car') + '</div>' +
             '</div>' +
             '</div></div>';
         })() +
@@ -14407,7 +14407,7 @@
         
         // Left column - Other Metrics
         '<div class="card" style="padding:20px">' +
-        '<h3 style="margin-bottom:16px;color:#0ea5e9;border-bottom:2px solid #0ea5e9;padding-bottom:8px">📈 OTHER METRICS</h3>' +
+        '<h3 style="margin-bottom:16px;color:var(--blue);border-bottom:2px solid var(--blue);padding-bottom:8px">📈 OTHER METRICS</h3>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:14px">' +
         '<div><span style="color:var(--text-muted)"># of Trucks in Service</span></div><div style="text-align:right;font-weight:600">' + appData.trucks.filter(t => t.status === 'ACTIVE').length + '</div>' +
         '<div><span style="color:var(--text-muted)">Total Miles Traveled</span></div><div style="text-align:right;font-weight:600">' + totalMiles.toLocaleString() + '</div>' +
@@ -14416,10 +14416,10 @@
         '</div>' +
         
         // Most/Least Profitable Trips
-        '<div style="margin-top:20px;padding:12px;background:#d1fae5;border-radius:8px">' +
-        '<div style="font-size:12px;color:#047857">🏆 Most Profitable Trip</div>' +
-        '<div style="font-size:18px;font-weight:700;color:#047857">' + (mostProfTrip ? mostProfTrip.trip_number : '-') + '</div>' +
-        '<div style="font-size:14px;color:#047857">' + formatMoney(mostProf !== -Infinity ? mostProf : 0) + '</div>' +
+        '<div style="margin-top:20px;padding:12px;background:var(--green-dim);border-radius:8px">' +
+        '<div style="font-size:12px;color:var(--green)">🏆 Most Profitable Trip</div>' +
+        '<div style="font-size:18px;font-weight:700;color:var(--green)">' + (mostProfTrip ? mostProfTrip.trip_number : '-') + '</div>' +
+        '<div style="font-size:14px;color:var(--green)">' + formatMoney(mostProf !== -Infinity ? mostProf : 0) + '</div>' +
         '</div>' +
         '<div style="margin-top:12px;padding:12px;background:var(--red-dim);border-radius:8px">' +
         '<div style="font-size:12px;color:var(--red)">📉 Least Profitable Trip</div>' +
@@ -14430,16 +14430,16 @@
         
         // Right column - Direct Trip Expenses Breakdown
         '<div class="card" style="padding:20px">' +
-        '<h3 style="margin-bottom:16px;color:var(--red);border-bottom:2px solid #ef4444;padding-bottom:8px">💸 DIRECT TRIP EXPENSES</h3>' +
+        '<h3 style="margin-bottom:16px;color:var(--red);border-bottom:2px solid var(--red);padding-bottom:8px">💸 DIRECT TRIP EXPENSES</h3>' +
         '<div style="display:flex;flex-direction:column;gap:12px">' +
         '<div style="display:flex;justify-content:space-between;align-items:center"><span>Broker Fees</span><span style="font-weight:600;color:var(--red)">' + formatMoney(totalBrokerFees) + '</span></div>' +
         '<div style="background:var(--red-dim);height:8px;border-radius:4px"><div style="background:var(--red);height:100%;border-radius:4px;width:' + (totalRev > 0 ? (totalBrokerFees/totalRev*100) : 0) + '%"></div></div>' +
         '<div style="display:flex;justify-content:space-between;align-items:center"><span>Local Fees</span><span style="font-weight:600;color:var(--amber)">' + formatMoney(totalLocalFees) + '</span></div>' +
         '<div style="background:var(--amber-dim);height:8px;border-radius:4px"><div style="background:var(--amber);height:100%;border-radius:4px;width:' + (totalRev > 0 ? (totalLocalFees/totalRev*100) : 0) + '%"></div></div>' +
-        '<div style="display:flex;justify-content:space-between;align-items:center"><span>Driver Cut</span><span style="font-weight:600;color:#8b5cf6">' + formatMoney(totalDriverCut) + '</span></div>' +
-        '<div style="background:#ede9fe;height:8px;border-radius:4px"><div style="background:#8b5cf6;height:100%;border-radius:4px;width:' + (totalRev > 0 ? (totalDriverCut/totalRev*100) : 0) + '%"></div></div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center"><span>Driver Cut</span><span style="font-weight:600;color:var(--purple)">' + formatMoney(totalDriverCut) + '</span></div>' +
+        '<div style="background:var(--purple-dim);height:8px;border-radius:4px"><div style="background:var(--purple);height:100%;border-radius:4px;width:' + (totalRev > 0 ? (totalDriverCut/totalRev*100) : 0) + '%"></div></div>' +
         '<div style="display:flex;justify-content:space-between;align-items:center"><span>Trip Expenses</span><span style="font-weight:600;color:var(--text-muted)">' + formatMoney(totalExpenses) + '</span></div>' +
-        '<div style="background:var(--border);height:8px;border-radius:4px"><div style="background:#64748b;height:100%;border-radius:4px;width:' + (totalRev > 0 ? (totalExpenses/totalRev*100) : 0) + '%"></div></div>' +
+        '<div style="background:var(--border);height:8px;border-radius:4px"><div style="background:var(--text-secondary);height:100%;border-radius:4px;width:' + (totalRev > 0 ? (totalExpenses/totalRev*100) : 0) + '%"></div></div>' +
         '<div style="border-top:2px solid var(--border);padding-top:12px;margin-top:8px;display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700">Total Direct Trip Expenses</span><span style="font-weight:700;color:var(--red)">' + formatMoney(totalBrokerFees + totalLocalFees + totalDriverCut + totalExpenses) + '</span></div>' +
         '</div>' +
         '</div>' +
@@ -14447,16 +14447,16 @@
 
         // Fuel Tracking Comparison Card
         '<div class="card" style="padding:20px;margin-bottom:20px">' +
-        '<h3 style="margin-bottom:16px;color:var(--amber);border-bottom:2px solid #f59e0b;padding-bottom:8px">⛽ FUEL TRACKING</h3>' +
+        '<h3 style="margin-bottom:16px;color:var(--amber);border-bottom:2px solid var(--amber);padding-bottom:8px">⛽ FUEL TRACKING</h3>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">' +
-        '<div style="background:var(--amber-dim);padding:16px;border-radius:8px;border-left:4px solid #f59e0b">' +
+        '<div style="background:var(--amber-dim);padding:16px;border-radius:8px;border-left:4px solid var(--amber)">' +
         '<div style="font-size:12px;color:var(--amber);margin-bottom:4px">Trip-Level Fuel Expenses</div>' +
         '<div style="font-size:24px;font-weight:700;color:var(--amber)">' + formatMoney(tripFuelExpenses) + '</div>' +
-        '<div style="font-size:11px;color:#a16207;margin-top:4px">From individual trip expenses</div>' +
+        '<div style="font-size:11px;color:var(--amber);margin-top:4px">From individual trip expenses</div>' +
         '</div>' +
-        '<div style="background:var(--blue-dim);padding:16px;border-radius:8px;border-left:4px solid #3b82f6">' +
-        '<div style="font-size:12px;color:#1d4ed8;margin-bottom:4px">Fleet Fuel (Fuel Tracking)</div>' +
-        '<div style="font-size:24px;font-weight:700;color:#1d4ed8">' + formatMoney(fleetFuelCost) + '</div>' +
+        '<div style="background:var(--blue-dim);padding:16px;border-radius:8px;border-left:4px solid var(--blue)">' +
+        '<div style="font-size:12px;color:var(--blue);margin-bottom:4px">Fleet Fuel (Fuel Tracking)</div>' +
+        '<div style="font-size:24px;font-weight:700;color:var(--blue)">' + formatMoney(fleetFuelCost) + '</div>' +
         '<div style="font-size:11px;color:var(--blue);margin-top:4px">' + fleetFuelGallons.toLocaleString(undefined, {maximumFractionDigits: 0}) + ' gallons • ' + (fleetFuelGallons > 0 && totalMiles > 0 ? (totalMiles / fleetFuelGallons).toFixed(2) : '-') + ' MPG</div>' +
         '</div>' +
         '</div>' +
@@ -14468,14 +14468,14 @@
         
         // KPIs
         '<div class="card" style="padding:20px">' +
-        '<h3 style="margin-bottom:16px;color:#8b5cf6;border-bottom:2px solid #8b5cf6;padding-bottom:8px">📊 KEY PERFORMANCE INDICATORS</h3>' +
+        '<h3 style="margin-bottom:16px;color:var(--purple);border-bottom:2px solid var(--purple);padding-bottom:8px">📊 KEY PERFORMANCE INDICATORS</h3>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
         '<div style="background:var(--bg-app);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--text-muted)">Revenue/Mile</div><div style="font-size:18px;font-weight:700;color:var(--text-primary)">$' + revenuePerMile + '</div></div>' +
-        '<div style="background:var(--bg-app);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--text-muted)">Profit/Mile</div><div style="font-size:18px;font-weight:700;color:' + (profitPerMile >= 0 ? '#047857' : '#dc2626') + '">$' + profitPerMile + '</div></div>' +
+        '<div style="background:var(--bg-app);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--text-muted)">Profit/Mile</div><div style="font-size:18px;font-weight:700;color:' + (profitPerMile >= 0 ? 'var(--green)' : 'var(--red)') + '">$' + profitPerMile + '</div></div>' +
         '<div style="background:var(--bg-app);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--text-muted)">Avg Revenue/Trip</div><div style="font-size:18px;font-weight:700;color:var(--text-primary)">$' + parseFloat(avgRevPerTrip).toLocaleString() + '</div></div>' +
-        '<div style="background:var(--bg-app);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--text-muted)">Avg Profit/Trip</div><div style="font-size:18px;font-weight:700;color:' + (avgProfitPerTrip >= 0 ? '#047857' : '#dc2626') + '">$' + parseFloat(avgProfitPerTrip).toLocaleString() + '</div></div>' +
+        '<div style="background:var(--bg-app);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--text-muted)">Avg Profit/Trip</div><div style="font-size:18px;font-weight:700;color:' + (avgProfitPerTrip >= 0 ? 'var(--green)' : 'var(--red)') + '">$' + parseFloat(avgProfitPerTrip).toLocaleString() + '</div></div>' +
         '<div style="background:var(--bg-app);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--text-muted)">Avg Price/Car</div><div style="font-size:18px;font-weight:700;color:var(--text-primary)">$' + parseFloat(avgPricePerCar).toLocaleString() + '</div></div>' +
-        '<div style="background:var(--bg-app);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--text-muted)">Truck Gross</div><div style="font-size:18px;font-weight:700;color:#0ea5e9">' + formatMoney(truckGross) + '</div></div>' +
+        '<div style="background:var(--bg-app);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--text-muted)">Truck Gross</div><div style="font-size:18px;font-weight:700;color:var(--blue)">' + formatMoney(truckGross) + '</div></div>' +
         '</div>' +
         '</div>' +
         
@@ -14483,9 +14483,9 @@
         '<div class="card" style="padding:20px">' +
         '<h3 style="margin-bottom:16px;color:var(--green);border-bottom:2px solid var(--green);padding-bottom:8px">🏆 TOP PERFORMERS</h3>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
-        '<div style="background:#d1fae5;padding:16px;border-radius:8px;text-align:center"><div style="font-size:11px;color:#047857">Top Earner Truck</div><div style="font-size:24px;font-weight:700;color:#047857">#' + (topTruck ? appData.trucks.find(t => t.id == topTruck)?.truck_number || '-' : '-') + '</div><div style="font-size:14px;color:#047857">' + (topTruck ? formatMoney(truckPerf[topTruck].profit) : '-') + '</div></div>' +
+        '<div style="background:var(--green-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--green)">Top Earner Truck</div><div style="font-size:24px;font-weight:700;color:var(--green)">#' + (topTruck ? appData.trucks.find(t => t.id == topTruck)?.truck_number || '-' : '-') + '</div><div style="font-size:14px;color:var(--green)">' + (topTruck ? formatMoney(truckPerf[topTruck].profit) : '-') + '</div></div>' +
         '<div style="background:var(--red-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--red)">Lowest Earner Truck</div><div style="font-size:24px;font-weight:700;color:var(--red)">#' + (bottomTruck ? appData.trucks.find(t => t.id == bottomTruck)?.truck_number || '-' : '-') + '</div><div style="font-size:14px;color:var(--red)">' + (bottomTruck ? formatMoney(truckPerf[bottomTruck].profit) : '-') + '</div></div>' +
-        '<div style="background:var(--blue-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:11px;color:#1d4ed8">Top Dispatcher</div><div style="font-size:18px;font-weight:700;color:#1d4ed8">' + (topDisp ? appData.dispatchers.find(d => d.id == topDisp)?.name || '-' : '-') + '</div><div style="font-size:14px;color:#1d4ed8">' + (topDisp ? dispPerf[topDisp].cars + ' cars' : '-') + '</div></div>' +
+        '<div style="background:var(--blue-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--blue)">Top Dispatcher</div><div style="font-size:18px;font-weight:700;color:var(--blue)">' + (topDisp ? appData.dispatchers.find(d => d.id == topDisp)?.name || '-' : '-') + '</div><div style="font-size:14px;color:var(--blue)">' + (topDisp ? dispPerf[topDisp].cars + ' cars' : '-') + '</div></div>' +
         '<div style="background:var(--bg-card-hover);padding:16px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--text-muted)">Least Active Dispatcher</div><div style="font-size:18px;font-weight:700;color:var(--text-muted)">' + (bottomDisp ? appData.dispatchers.find(d => d.id == bottomDisp)?.name || '-' : '-') + '</div><div style="font-size:14px;color:var(--text-muted)">' + (bottomDisp ? dispPerf[bottomDisp].cars + ' cars' : '-') + '</div></div>' +
         '</div>' +
         '</div>' +
@@ -14493,13 +14493,13 @@
         
         // Fourth row - Payment Collections
         '<div class="card" style="padding:20px;margin-bottom:20px">' +
-        '<h3 style="margin-bottom:16px;color:#0ea5e9;border-bottom:2px solid #0ea5e9;padding-bottom:8px">💵 PAYMENT COLLECTION</h3>' +
+        '<h3 style="margin-bottom:16px;color:var(--blue);border-bottom:2px solid var(--blue);padding-bottom:8px">💵 PAYMENT COLLECTION</h3>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px">' +
-        '<div style="background:#d1fae5;padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#047857">COD Collected</div><div style="font-size:20px;font-weight:700;color:#047857">' + formatMoney(codAmount) + '</div></div>' +
-        '<div style="background:#bbf7d0;padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#15803d">COP Collected</div><div style="font-size:20px;font-weight:700;color:#15803d">' + formatMoney(copAmount) + '</div></div>' +
-        '<div style="background:var(--amber-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#b45309">Local COD</div><div style="font-size:20px;font-weight:700;color:#b45309">' + formatMoney(localCodAmount) + '</div></div>' +
-        '<div style="background:var(--blue-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#1d4ed8">Check</div><div style="font-size:20px;font-weight:700;color:#1d4ed8">' + formatMoney(checkAmount) + '</div></div>' +
-        '<div style="background:#ede9fe;padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#7c3aed">Bill (Invoice)</div><div style="font-size:20px;font-weight:700;color:#7c3aed">' + formatMoney(billAmount) + '</div></div>' +
+        '<div style="background:var(--green-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:var(--green)">COD Collected</div><div style="font-size:20px;font-weight:700;color:var(--green)">' + formatMoney(codAmount) + '</div></div>' +
+        '<div style="background:var(--green-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:var(--primary-700)">COP Collected</div><div style="font-size:20px;font-weight:700;color:var(--primary-700)">' + formatMoney(copAmount) + '</div></div>' +
+        '<div style="background:var(--amber-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:var(--amber)">Local COD</div><div style="font-size:20px;font-weight:700;color:var(--amber)">' + formatMoney(localCodAmount) + '</div></div>' +
+        '<div style="background:var(--blue-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:var(--blue)">Check</div><div style="font-size:20px;font-weight:700;color:var(--blue)">' + formatMoney(checkAmount) + '</div></div>' +
+        '<div style="background:var(--purple-dim);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:var(--purple)">Bill (Invoice)</div><div style="font-size:20px;font-weight:700;color:var(--purple)">' + formatMoney(billAmount) + '</div></div>' +
         '</div>' +
         '</div>' +
         
@@ -14518,7 +14518,7 @@
           
           // Categories to track
           const categories = ['FUEL', 'TOLLS', 'MAINTENANCE', 'PERMITS', 'PARKING'];
-          const categoryColors = { FUEL: '#ef4444', TOLLS: '#f59e0b', MAINTENANCE: '#3b82f6', PERMITS: '#8b5cf6', PARKING: 'var(--green)' };
+          const categoryColors = { FUEL: 'var(--red)', TOLLS: 'var(--amber)', MAINTENANCE: 'var(--blue)', PERMITS: 'var(--purple)', PARKING: 'var(--green)' };
           const categoryIcons = { FUEL: '⛽', TOLLS: '🛣️', MAINTENANCE: '🔧', PERMITS: '📋', PARKING: '🅿️' };
           
           // Calculate weekly totals per category
@@ -14570,19 +14570,19 @@
           
           return '<div class="card" style="padding:20px;margin-bottom:20px">' +
             '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">' +
-            '<h3 style="margin:0;color:var(--text-muted);border-bottom:2px solid #64748b;padding-bottom:8px">📈 COST TRENDS (Last 12 Weeks)</h3>' +
+            '<h3 style="margin:0;color:var(--text-muted);border-bottom:2px solid var(--text-secondary);padding-bottom:8px">📈 COST TRENDS (Last 12 Weeks)</h3>' +
             '<div style="font-size:11px;color:var(--text-muted)">Hover for details</div>' +
             '</div>' +
             '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">' +
             categoryStats.map(s => {
               const trendIcon = s.trend > 5 ? '↑' : s.trend < -5 ? '↓' : '→';
-              const trendColor = s.trend > 5 ? '#dc2626' : s.trend < -5 ? '#16a34a' : '#64748b';
-              const trendBg = s.trend > 5 ? '#fee2e2' : s.trend < -5 ? '#dcfce7' : 'var(--bg-card-hover)';
+              const trendColor = s.trend > 5 ? 'var(--red)' : s.trend < -5 ? 'var(--green)' : 'var(--text-secondary)';
+              const trendBg = s.trend > 5 ? 'var(--red-dim)' : s.trend < -5 ? 'var(--green-dim)' : 'var(--bg-card-hover)';
               return '<div style="background:var(--bg-app);border-radius:12px;padding:16px;border:1px solid var(--border)" title="' + s.cat + ': Last 12 weeks data">' +
                 '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
                 '<div style="display:flex;align-items:center;gap:8px">' +
                 '<span style="font-size:20px">' + s.icon + '</span>' +
-                '<span style="font-weight:600;color:#334155">' + s.cat + '</span>' +
+                '<span style="font-weight:600;color:var(--bg-elevated)">' + s.cat + '</span>' +
                 '</div>' +
                 '<span style="font-size:11px;padding:4px 8px;border-radius:12px;background:' + trendBg + ';color:' + trendColor + ';font-weight:600">' + trendIcon + ' ' + Math.abs(s.trend).toFixed(0) + '%</span>' +
                 '</div>' +
@@ -14625,7 +14625,7 @@
         '<div class="card-header" style="display:flex;justify-content:space-between;align-items:center">' +
         '<h3>📋 Today\'s Tasks</h3>' +
         '<div style="display:flex;gap:8px;align-items:center">' +
-        (overdueTasks.length > 0 ? '<span class="badge" style="background:#dc2626;color:white">' + overdueTasks.length + ' Overdue</span>' : '') +
+        (overdueTasks.length > 0 ? '<span class="badge" style="background:var(--red);color:white">' + overdueTasks.length + ' Overdue</span>' : '') +
         (urgentTasks.length > 0 ? '<span class="badge" style="background:var(--amber);color:white">' + urgentTasks.length + ' Urgent</span>' : '') +
         '<button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="navigate(\'tasks\')">View All →</button>' +
         '</div></div>' +
@@ -14634,8 +14634,8 @@
           '<div style="padding:16px">' +
           displayTasks.map(t => {
             const assignee = appData.dispatchers.find(d => d.id === t.assigned_to);
-            const bgColor = t.priority === 'URGENT' ? '#fef3c7' : isOverdue(t.due_date) ? '#fee2e2' : '#f8fafc';
-            const borderColor = t.priority === 'URGENT' ? '#f59e0b' : isOverdue(t.due_date) ? '#dc2626' : '#e5e7eb';
+            const bgColor = t.priority === 'URGENT' ? 'var(--amber-dim)' : isOverdue(t.due_date) ? 'var(--red-dim)' : 'var(--bg-app)';
+            const borderColor = t.priority === 'URGENT' ? 'var(--amber)' : isOverdue(t.due_date) ? 'var(--red)' : 'var(--bg-elevated)';
             
             return '<div style="display:flex;align-items:center;gap:12px;padding:12px;background:' + bgColor + ';border:1px solid ' + borderColor + ';border-radius:8px;margin-bottom:8px">' +
               '<input type="checkbox" style="width:18px;height:18px;cursor:pointer" onchange="quickCompleteTask(' + t.id + ',this.checked)" title="Mark as completed">' +
@@ -14666,7 +14666,7 @@
 
     // ============ LOAD BOARD ============
     const loadBoardCategories = [
-      { id: 'ny_to_home', name: 'NY to Home', color: '#3b82f6', subs: [
+      { id: 'ny_to_home', name: 'NY to Home', color: 'var(--blue)', subs: [
         { id: 'ny_sf', name: 'San Francisco' },
         { id: 'ny_la', name: 'Los Angeles' },
         { id: 'ny_tn', name: 'Tennessee' },
@@ -14674,15 +14674,15 @@
         { id: 'ny_nv', name: 'Nevada' },
         { id: 'ny_ok', name: 'Oklahoma' }
       ]},
-      { id: 'home_to_ny', name: 'Home to NY', color: '#8b5cf6', subs: [] },
-      { id: 'home_to_ca', name: 'Home to CA', color: '#06b6d4', subs: [
+      { id: 'home_to_ny', name: 'Home to NY', color: 'var(--purple)', subs: [] },
+      { id: 'home_to_ca', name: 'Home to CA', color: 'var(--blue)', subs: [
         { id: 'ca_sf', name: 'San Francisco' },
         { id: 'ca_la', name: 'Los Angeles' }
       ]},
       { id: 'ca_to_home', name: 'CA to Home', color: 'var(--green)', subs: [] },
-      { id: 'fl_to_ca', name: 'FL to CA', color: '#f59e0b', subs: [] },
-      { id: 'fl_to_home', name: 'FL to Home', color: '#ef4444', subs: [] },
-      { id: 'ny_to_fl', name: 'NY to FL', color: '#ec4899', subs: [] }
+      { id: 'fl_to_ca', name: 'FL to CA', color: 'var(--amber)', subs: [] },
+      { id: 'fl_to_home', name: 'FL to Home', color: 'var(--red)', subs: [] },
+      { id: 'ny_to_fl', name: 'NY to FL', color: 'var(--purple)', subs: [] }
     ];
 
     let selectedLoadCategory = 'ny_to_home';
@@ -14714,7 +14714,7 @@
       // Total revenue
       const totalRevenue = displayOrders.reduce((s, o) => s + parseFloat(o.revenue || 0), 0);
       
-      c.innerHTML = '<div class="header"><h2>📋 Future Cars</h2><div style="display:flex;gap:8px"><button class="btn btn-primary" onclick="openLoadBoardOrder()">+ Add Vehicle</button><button class="btn" style="background:#8b5cf6;color:white" onclick="openCreateNewLoad()">📄 AI Import</button></div></div>' +
+      c.innerHTML = '<div class="header"><h2>📋 Future Cars</h2><div style="display:flex;gap:8px"><button class="btn btn-primary" onclick="openLoadBoardOrder()">+ Add Vehicle</button><button class="btn" style="background:var(--purple);color:white" onclick="openCreateNewLoad()">📄 AI Import</button></div></div>' +
         
         // Stats
         '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px">' +
@@ -14733,10 +14733,10 @@
         
         // Subcategory tabs (if any)
         (currentCat.subs.length > 0 ? '<div style="display:flex;gap:8px;margin-bottom:16px;padding-left:20px;flex-wrap:wrap">' +
-        '<button onclick="selectedLoadSub=null;renderLoadBoard(document.getElementById(\'main-content\'))" style="padding:6px 12px;border:1px solid var(--border);background:' + (!selectedLoadSub ? '#1e40af' : 'var(--bg-card)') + ';color:' + (!selectedLoadSub ? 'white' : 'var(--text-secondary)') + ';border-radius:6px;cursor:pointer;font-size:13px">All</button>' +
+        '<button onclick="selectedLoadSub=null;renderLoadBoard(document.getElementById(\'main-content\'))" style="padding:6px 12px;border:1px solid var(--border);background:' + (!selectedLoadSub ? 'var(--blue)' : 'var(--bg-card)') + ';color:' + (!selectedLoadSub ? 'white' : 'var(--text-secondary)') + ';border-radius:6px;cursor:pointer;font-size:13px">All</button>' +
         currentCat.subs.map(sub => {
           const isActive = sub.id === selectedLoadSub;
-          return '<button onclick="selectedLoadSub=\'' + sub.id + '\';renderLoadBoard(document.getElementById(\'main-content\'))" style="padding:6px 12px;border:1px solid var(--border);background:' + (isActive ? '#1e40af' : 'var(--bg-card)') + ';color:' + (isActive ? 'white' : 'var(--text-secondary)') + ';border-radius:6px;cursor:pointer;font-size:13px">' + sub.name + ' (' + categoryCounts[sub.id] + ')</button>';
+          return '<button onclick="selectedLoadSub=\'' + sub.id + '\';renderLoadBoard(document.getElementById(\'main-content\'))" style="padding:6px 12px;border:1px solid var(--border);background:' + (isActive ? 'var(--blue)' : 'var(--bg-card)') + ';color:' + (isActive ? 'white' : 'var(--text-secondary)') + ';border-radius:6px;cursor:pointer;font-size:13px">' + sub.name + ' (' + categoryCounts[sub.id] + ')</button>';
         }).join('') +
         '</div>' : '') +
         
@@ -14748,7 +14748,7 @@
           const noteHtml = o.dispatcher_notes ? '<tr style="background:var(--amber-dim)"><td colspan="14" style="padding:8px 16px;font-size:13px"><span style="font-weight:600;color:var(--amber)">📝 Note:</span> ' + o.dispatcher_notes + '</td></tr>' : '';
           const pickupPhoneDisplay = o.pickup_phone ? '<a href="tel:' + o.pickup_phone + '" style="color:var(--blue)" title="' + o.pickup_phone + '">📞</a>' : '-';
           const deliveryPhoneDisplay = o.delivery_phone ? '<a href="tel:' + o.delivery_phone + '" style="color:var(--green)" title="' + o.delivery_phone + '">📞</a>' : '-';
-          return '<tr><td><strong>' + o.order_number + '</strong></td><td>' + (o.broker_name || '-') + '</td><td>' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + '</td><td title="' + (o.pickup_full_address || o.origin || '') + '">' + (o.origin || '-') + '</td><td>' + pickupPhoneDisplay + '</td><td title="' + (o.delivery_full_address || o.destination || '') + '">' + (o.destination || '-') + '</td><td>' + deliveryPhoneDisplay + '</td><td>' + (o.pickup_date ? formatDate(o.pickup_date) : '-') + '</td><td>' + (o.dropoff_date ? formatDate(o.dropoff_date) : '-') + '</td><td><span class="badge badge-blue">' + (o.payment_type || '-') + '</span></td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee || 0) + '</td><td class="money">' + formatMoney(o.revenue) + '</td><td class="sticky-col"><div class="actions">' + (o.dispatcher_notes ? '<button class="action-btn" style="background:var(--amber-dim);color:var(--amber)" title="' + o.dispatcher_notes.replace(/"/g, '&quot;') + '">📝</button>' : '') + '<button class="action-btn" style="background:#e0e7ff;color:#4338ca" onclick="openOrderDetailPage(' + o.id + ')">View</button><button class="action-btn view" onclick="openAssignToTrip(' + o.id + ')">Assign</button><button class="action-btn edit" onclick="openLoadBoardOrder(' + o.id + ')">Edit</button><button class="action-btn delete" onclick="deleteLoadBoardOrder(' + o.id + ')">Del</button></div></td></tr>' + noteHtml;
+          return '<tr><td><strong>' + o.order_number + '</strong></td><td>' + (o.broker_name || '-') + '</td><td>' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + '</td><td title="' + (o.pickup_full_address || o.origin || '') + '">' + (o.origin || '-') + '</td><td>' + pickupPhoneDisplay + '</td><td title="' + (o.delivery_full_address || o.destination || '') + '">' + (o.destination || '-') + '</td><td>' + deliveryPhoneDisplay + '</td><td>' + (o.pickup_date ? formatDate(o.pickup_date) : '-') + '</td><td>' + (o.dropoff_date ? formatDate(o.dropoff_date) : '-') + '</td><td><span class="badge badge-blue">' + (o.payment_type || '-') + '</span></td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee || 0) + '</td><td class="money">' + formatMoney(o.revenue) + '</td><td class="sticky-col"><div class="actions">' + (o.dispatcher_notes ? '<button class="action-btn" style="background:var(--amber-dim);color:var(--amber)" title="' + o.dispatcher_notes.replace(/"/g, '&quot;') + '">📝</button>' : '') + '<button class="action-btn" style="background:var(--blue-dim);color:var(--purple)" onclick="openOrderDetailPage(' + o.id + ')">View</button><button class="action-btn view" onclick="openAssignToTrip(' + o.id + ')">Assign</button><button class="action-btn edit" onclick="openLoadBoardOrder(' + o.id + ')">Edit</button><button class="action-btn delete" onclick="deleteLoadBoardOrder(' + o.id + ')">Del</button></div></td></tr>' + noteHtml;
         }).join('') +
         '</tbody></table></div>') +
         '</div>';
@@ -14772,11 +14772,11 @@
       m.innerHTML = '<div class="modal" style="max-width:700px;max-height:90vh;display:flex;flex-direction:column"><div class="modal-header"><h3>' + (o ? 'Edit' : 'Add') + ' Vehicle to Future Cars</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
         
         // Category Selection
-        '<div class="form-row"><div class="form-group"><label>Category *</label><select id="lbCategory" onchange="toggleLoadBoardSub()" style="border:2px solid #22c55e;font-weight:600">' + loadBoardCategories.map(cat => '<option value="' + cat.id + '"' + (o?.load_category === cat.id ? ' selected' : '') + '>' + cat.name + '</option>').join('') + '</select></div><div class="form-group" id="lbSubGroup" style="display:none"><label>Sub-Category</label><select id="lbSubCategory"></select></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Category *</label><select id="lbCategory" onchange="toggleLoadBoardSub()" style="border:2px solid var(--green);font-weight:600">' + loadBoardCategories.map(cat => '<option value="' + cat.id + '"' + (o?.load_category === cat.id ? ' selected' : '') + '>' + cat.name + '</option>').join('') + '</select></div><div class="form-group" id="lbSubGroup" style="display:none"><label>Sub-Category</label><select id="lbSubCategory"></select></div></div>' +
         
         // Order # and Broker
         '<div class="form-row"><div class="form-group"><label>Order #</label><input id="lbOrderNum" value="' + (o?.order_number || 'ORD-' + Date.now().toString().slice(-4)) + '"></div><div class="form-group" style="position:relative"><label>Broker</label><input type="text" id="lbBrokerInput" placeholder="Start typing broker..." value="' + (o?.broker_name || '') + '" autocomplete="off"><input type="hidden" id="lbBrokerId" value="' + (o?.broker_id || '') + '"></div></div>' +
-        '<div id="lbNewBrokerSection" style="display:none;background:var(--green-dim);padding:12px;border-radius:8px;margin-bottom:12px;border:1px solid #bbf7d0"><div class="form-group" style="margin-bottom:0"><label>New Broker Name *</label><input id="lbNewBrokerName" placeholder="Enter broker name"></div></div>' +
+        '<div id="lbNewBrokerSection" style="display:none;background:var(--green-dim);padding:12px;border-radius:8px;margin-bottom:12px;border:1px solid var(--green-dim)"><div class="form-group" style="margin-bottom:0"><label>New Broker Name *</label><input id="lbNewBrokerName" placeholder="Enter broker name"></div></div>' +
         
         // Vehicle Info Section with separate Year, Make, Model
         '<div style="background:var(--bg-app);padding:12px;border-radius:8px;margin-bottom:16px">' +
@@ -14799,7 +14799,7 @@
         '<div class="form-group" style="margin-bottom:0;margin-top:8px;position:relative"><label>Full Address</label><input type="text" id="lbPickupFullAddress" value="' + (o?.pickup_full_address || '') + '" placeholder="Full street address" autocomplete="off"></div></div>' +
         
         // Delivery Section
-        '<div style="background:#d1fae5;padding:12px;border-radius:8px;margin-bottom:12px">' +
+        '<div style="background:var(--green-dim);padding:12px;border-radius:8px;margin-bottom:12px">' +
         '<label style="font-weight:600;display:block;margin-bottom:8px">🏁 DELIVERY</label>' +
         '<div class="form-row" style="gap:12px">' +
         '<div class="form-group" style="margin-bottom:0;flex:1;position:relative"><label>City/State</label><input type="text" id="lbDest" value="' + (o?.destination || '') + '" placeholder="Start typing city..." autocomplete="off"></div>' +
@@ -14812,7 +14812,7 @@
         '<div style="background:var(--amber-dim);padding:12px;border-radius:8px;margin-bottom:16px"><label style="font-weight:600;margin-bottom:8px;display:block">💰 Payment</label>' +
         '<div class="form-row" style="gap:12px"><div class="form-group" style="margin-bottom:0"><label>Total Revenue $</label><input type="number" id="lbRevenue" value="' + (o?.revenue || '') + '" onchange="updateLBPaymentSplit()"></div>' +
         '<div class="form-group" style="margin-bottom:0"><label>Payment Type</label><select id="lbPayment" onchange="toggleLBSplitPayment()"><option value="BILL"' + (o?.payment_type === 'BILL' ? ' selected' : '') + '>BILL (Invoice)</option><option value="COD"' + (o?.payment_type === 'COD' ? ' selected' : '') + '>COD (Cash on Delivery)</option><option value="COP"' + (o?.payment_type === 'COP' ? ' selected' : '') + '>COP (Cash on Pickup)</option><option value="LOCAL_COD"' + (o?.payment_type === 'LOCAL_COD' ? ' selected' : '') + '>LOCAL_COD (Local Driver)</option><option value="CHECK"' + (o?.payment_type === 'CHECK' ? ' selected' : '') + '>CHECK</option><option value="SPLIT"' + (o?.payment_type === 'SPLIT' ? ' selected' : '') + '>SPLIT (Multiple)</option></select></div></div>' +
-        '<div id="lbSplitPaymentSection" style="display:' + (o?.payment_type === 'SPLIT' ? 'block' : 'none') + ';margin-top:12px;padding-top:12px;border-top:1px dashed #f59e0b">' +
+        '<div id="lbSplitPaymentSection" style="display:' + (o?.payment_type === 'SPLIT' ? 'block' : 'none') + ';margin-top:12px;padding-top:12px;border-top:1px dashed var(--amber)">' +
         '<div class="form-row" style="grid-template-columns:1fr 1fr 1fr;gap:12px">' +
         '<div class="form-group" style="margin-bottom:0"><label>COD/COP Amount $</label><input type="number" id="lbSplitCodAmount" value="' + (o?.cod_amount || 0) + '" onchange="updateLBSplitBill()"></div>' +
         '<div class="form-group" style="margin-bottom:0"><label>Bill Amount $</label><input type="number" id="lbSplitBillAmount" value="' + (o?.bill_amount || 0) + '" readonly style="background:var(--bg-card-hover)"></div>' +
