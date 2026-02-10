@@ -522,7 +522,7 @@ code, pre {
   margin-bottom: 4px;
 }
 
-.nav-section-label {
+.nav-section-title {
   padding: 8px 20px;
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
@@ -577,7 +577,7 @@ code, pre {
   display: none;
 }
 
-.sidebar.collapsed .nav-section-label {
+.sidebar.collapsed .nav-section-title {
   display: none;
 }
 
