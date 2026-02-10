@@ -13034,7 +13034,7 @@
       const m = document.getElementById('main-content');
 
       // Show loading state in main content area
-      m.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px"><div class="loading-spinner" style="width:40px;height:40px;border-width:4px"></div><p style="margin-top:16px;color:var(--text-muted)">Loading order details...</p></div>';
+      m.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px"><div class="loading-spinner" style="width:40px;height:40px;border-width:4px"></div><p style="margin-top:var(--spacing-4);color:var(--text-muted)">Loading order details...</p></div>';
 
       // Fetch related data
       const trip = order.trip_id ? appData.trips.find(t => t.id === order.trip_id) : null;
@@ -14309,7 +14309,7 @@
             '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
             '<h3 style="margin:0;color:white;font-size:16px">⚡ Quick View - Company Profitability</h3>' +
             '<div style="display:flex;align-items:center;gap:12px">' +
-            '<span style="background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:12px;font-size:11px">' + totalMiles.toLocaleString() + ' mi ' + (dashboardMilesSource === 'samsara' ? '<span style="color:var(--blue-dim);font-size:9px">📡</span>' : '') + ' • ' + totalCars + ' cars</span>' +
+            '<span style="background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:var(--radius-lg);font-size:var(--text-xs)">' + totalMiles.toLocaleString() + ' mi ' + (dashboardMilesSource === 'samsara' ? '<span style="color:var(--blue-dim);font-size:9px">📡</span>' : '') + ' • ' + totalCars + ' cars</span>' +
             '<button onclick="openSetupWizard()" style="background:rgba(59,130,246,0.3);color:var(--blue-dim);border:1px solid rgba(59,130,246,0.5);padding:4px 10px;border-radius:var(--radius);font-size:var(--text-xs);cursor:pointer">🧙‍♂️ Setup</button>' +
             '</div></div></div>' +
             warningBanner +
