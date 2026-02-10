@@ -13459,12 +13459,11 @@
         `;
       }
 
-      // Enhanced photo section with featured photo and 4-column grid
+      // Photo grid - 2x2 layout, max 4 visible
       let photoSection = '';
       if (photos.length > 0) {
-        const featuredPhoto = photos[0];
-        const gridPhotos = photos.slice(1, 9); // Show 8 more in grid
-        const remainingCount = photos.length > 9 ? photos.length - 9 : 0;
+        const visiblePhotos = photos.slice(0, 4);
+        const remainingCount = photos.length - 4;
 
         photoSection = `
           <div class="inspection-photos-enhanced">
@@ -13476,19 +13475,14 @@
               </button>
             </div>
             ${videoSection}
-            <div class="photos-layout">
-              <div class="featured-photo" onclick="openPhotoGallery(${orderDetailPhotos.indexOf(featuredPhoto)})">
-                <img src="${featuredPhoto.photo_url}" alt="${featuredPhoto.photo_type || 'Featured'}" loading="lazy">
-                <span class="photo-type-badge">${featuredPhoto.photo_type || ''}</span>
-              </div>
-              <div class="photos-grid-4col">
-                ${gridPhotos.map((p, idx) => `
-                  <div class="photo-thumb-small" onclick="openPhotoGallery(${orderDetailPhotos.indexOf(p)})">
-                    <img src="${p.photo_url}" alt="${p.photo_type || 'Photo'}" loading="lazy">
-                    ${idx === gridPhotos.length - 1 && remainingCount > 0 ? `<div class="more-photos-overlay">+${remainingCount}</div>` : ''}
-                  </div>
-                `).join('')}
-              </div>
+            <div class="inspection-photo-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--spacing-2);margin-top:var(--spacing-3)">
+              ${visiblePhotos.map((p, i) => {
+                const isLast = i === 3 && remainingCount > 0;
+                return `<div style="position:relative;border-radius:var(--radius);overflow:hidden;aspect-ratio:4/3;cursor:pointer" onclick="openPhotoGallery(${orderDetailPhotos.indexOf(p)})">
+                  <img src="${p.photo_url}" style="width:100%;height:100%;object-fit:cover" alt="Inspection photo" loading="lazy">
+                  ${isLast ? `<div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:white;font-size:var(--text-xl);font-weight:var(--weight-bold)">+${remainingCount}</div>` : ''}
+                </div>`;
+              }).join('')}
             </div>
             <div class="inspection-additional">
               <div class="additional-title">Additional Inspection</div>
