@@ -2,37 +2,28 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-09)
+See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** Efficient end-to-end vehicle transport management
-**Current focus:** v1.1 Web TMS UI Redesign Mockups
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 10 (Operations & Admin Pages) of 10 — COMPLETE
-Plan: 4 of 4 — Settings + Activity Log + Team Chat (COMPLETE)
-Status: Phase 10 complete — ALL PHASES COMPLETE
-Last activity: 2026-02-10 — Completed all 4 plans (fuel+IFTA, compliance, maintenance+tasks, settings+activitylog+teamchat)
+Phase: — (between milestones)
+Plan: —
+Status: v1.1 shipped, ready for next milestone
+Last activity: 2026-02-10 — v1.1 Web TMS UI Redesign Mockups shipped
 
-Progress: ████████████████████ 21/21 plans (100%)
+Progress: v1.1 complete (5 phases, 21 plans, 31 requirements)
 
 ## Accumulated Context
 
 ### Decisions Made
 
-| ID | Decision | Rationale | Phase | Date |
-|----|----------|-----------|-------|------|
-| ui-only-redesign | **UI-ONLY: No changes to existing layouts, functions, logic, or behavior** | User requirement — redesign is purely visual/CSS, production code stays identical | 06-02 | 2026-02-09 |
-| dark-theme-default | Dark theme as default (matching iOS v3) | Consistency with mobile, reduces eye strain for dispatchers | 06-01 | 2026-02-09 |
-| css-variables-only | Pure CSS variables, no preprocessor | Simple mockups, no build step, easy to tweak | 06-01 | 2026-02-09 |
-| fart-prevention-inline | Inline head script for theme persistence | Prevents Flash of Arbitrary Rendered Theme on page load | 06-01 | 2026-02-09 |
-| sidebar-width-tokens | 240px expanded, 72px collapsed, 280px mobile | Balances content visibility with navigation accessibility | 06-01 | 2026-02-09 |
-| mockups-before-code | Mockups before code: review and approve designs before touching production index.html | De-risk changes | — | 2026-02-09 |
-| mockups-directory | Mockups go in `mockups/web-tms-redesign/` directory | Separation from production | — | 2026-02-09 |
-| sidebar-nav-from-production | **When applying design to production, sidebar nav items must match exact order/structure from live index.html** — mockup sidebar may differ from production order | User feedback: mockup sidebar pages are in different locations than live platform | 07 | 2026-02-09 |
+See .planning/PROJECT.md Key Decisions table (cumulative across milestones).
 
 ### Known Issues
-- Mockup sidebar nav order differs from production sidebar — cosmetic only, will use production order when applying design
+- Mockup sidebar nav order differs from production sidebar — will use production order when applying design
 
 ### Todos
 - (None yet)
@@ -40,5 +31,5 @@ Progress: ████████████████████ 21/21 pla
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Phase 10 complete, all 4 plans built and approved — milestone v1.1 complete
+Stopped at: v1.1 milestone shipped and archived
 Resume file: None
