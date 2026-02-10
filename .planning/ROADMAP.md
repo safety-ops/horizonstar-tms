@@ -65,14 +65,15 @@ Phase 1-5 details collapsed. See git history for original v1.0 work.
 4. Sidebar navigation matches mockup styling with correct colors, hover states, active indicators, and icons while preserving production nav order
 5. All global components (header, modals, toasts, tables, forms, buttons, badges, cards, pagination) visually match their mockup counterparts across both themes
 
-**Plans:** 5 plans
+**Plans:** 6 plans (5 original + 1 gap closure)
 
 Plans:
-- [ ] 11-01-PLAN.md — Verify + complete all component styles in design-system.css
-- [ ] 11-02-PLAN.md — Replace hex colors in style block (lines 35-8049)
-- [ ] 11-03-PLAN.md — Replace hex colors in JS render functions (lines 8050-22000)
-- [ ] 11-04-PLAN.md — Replace hex colors in JS render functions (lines 22001-38085)
-- [ ] 11-05-PLAN.md — Final audit + visual verification checkpoint
+- [x] 11-01-PLAN.md — Verify + complete all component styles in design-system.css
+- [x] 11-02-PLAN.md — Replace hex colors in style block (lines 35-8049)
+- [x] 11-03-PLAN.md — Replace hex colors in JS render functions (lines 8050-22000)
+- [x] 11-04-PLAN.md — Replace hex colors in JS render functions (lines 22001-38085)
+- [x] 11-05-PLAN.md — Final audit + visual verification checkpoint
+- [ ] 11-06-PLAN.md — Gap closure: remaining hex colors + nav class mismatch fix
 
 ---
 
