@@ -65,9 +65,13 @@ Phase 1-5 details collapsed. See git history for original v1.0 work.
 4. Sidebar navigation matches mockup styling with correct colors, hover states, active indicators, and icons while preserving production nav order
 5. All global components (header, modals, toasts, tables, forms, buttons, badges, cards, pagination) visually match their mockup counterparts across both themes
 
-**Plans**: TBD
+**Plans:** 4 plans
 
-Plans: (will be created during planning phase)
+Plans:
+- [ ] 11-01-PLAN.md -- Complete design-system.css + replace hex colors in style block
+- [ ] 11-02-PLAN.md -- Replace hex colors in JS render functions (lines 8050-22000)
+- [ ] 11-03-PLAN.md -- Replace hex colors in JS render functions (lines 22001-38085)
+- [ ] 11-04-PLAN.md -- Audit, fixup, and visual verification checkpoint
 
 ---
 
@@ -164,7 +168,7 @@ Phases execute in numeric order: 11 → 12 → 13 → 14 → 15
 | 8. People & Fleet Mockup | v1.1 | 3/3 | Complete | 2026-02-10 |
 | 9. Financial Pages Mockup | v1.1 | 4/4 | Complete | 2026-02-10 |
 | 10. Operations & Admin Mockup | v1.1 | 8/8 | Complete | 2026-02-10 |
-| 11. Design System Foundation | v1.2 | 0/TBD | Not started | - |
+| 11. Design System Foundation | v1.2 | 0/4 | Planned | - |
 | 12. Core Dispatch Pages | v1.2 | 0/TBD | Not started | - |
 | 13. People & Fleet Pages | v1.2 | 0/TBD | Not started | - |
 | 14. Financial Pages | v1.2 | 0/TBD | Not started | - |
