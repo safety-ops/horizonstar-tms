@@ -10,6 +10,10 @@ DROP POLICY IF EXISTS "Authenticated users can view notifications" ON driver_not
 DROP POLICY IF EXISTS "Authenticated users can insert notifications" ON driver_notifications;
 DROP POLICY IF EXISTS "Authenticated users can update notifications" ON driver_notifications;
 DROP POLICY IF EXISTS "Authenticated users can delete notifications" ON driver_notifications;
+DROP POLICY IF EXISTS "Enable read access for all users" ON driver_notifications;
+DROP POLICY IF EXISTS "Enable insert for all users" ON driver_notifications;
+DROP POLICY IF EXISTS "Enable update for all users" ON driver_notifications;
+DROP POLICY IF EXISTS "Enable delete for all users" ON driver_notifications;
 
 -- Add permissive policies (same pattern as all other tables the app uses)
 CREATE POLICY "Enable read access for all users" ON driver_notifications

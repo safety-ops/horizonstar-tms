@@ -72,6 +72,21 @@ ALTER TABLE inspection_photos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE inspection_videos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE inspection_damages ENABLE ROW LEVEL SECURITY;
 
+-- Drop policies so migration can be re-run safely
+DROP POLICY IF EXISTS "Authenticated users can view inspections" ON vehicle_inspections;
+DROP POLICY IF EXISTS "Authenticated users can insert inspections" ON vehicle_inspections;
+DROP POLICY IF EXISTS "Authenticated users can update inspections" ON vehicle_inspections;
+DROP POLICY IF EXISTS "Authenticated users can view inspection photos" ON inspection_photos;
+DROP POLICY IF EXISTS "Authenticated users can insert inspection photos" ON inspection_photos;
+DROP POLICY IF EXISTS "Authenticated users can delete inspection photos" ON inspection_photos;
+DROP POLICY IF EXISTS "Authenticated users can view inspection videos" ON inspection_videos;
+DROP POLICY IF EXISTS "Authenticated users can insert inspection videos" ON inspection_videos;
+DROP POLICY IF EXISTS "Authenticated users can delete inspection videos" ON inspection_videos;
+DROP POLICY IF EXISTS "Authenticated users can view inspection damages" ON inspection_damages;
+DROP POLICY IF EXISTS "Authenticated users can insert inspection damages" ON inspection_damages;
+DROP POLICY IF EXISTS "Authenticated users can update inspection damages" ON inspection_damages;
+DROP POLICY IF EXISTS "Authenticated users can delete inspection damages" ON inspection_damages;
+
 -- Policies for vehicle_inspections
 CREATE POLICY "Authenticated users can view inspections" ON vehicle_inspections
   FOR SELECT USING (auth.uid() IS NOT NULL);
@@ -116,14 +131,14 @@ CREATE POLICY "Authenticated users can delete inspection damages" ON inspection_
   FOR DELETE USING (auth.uid() IS NOT NULL);
 
 -- Create indexes for faster lookups
-CREATE INDEX idx_vehicle_inspections_order_id ON vehicle_inspections(order_id);
-CREATE INDEX idx_vehicle_inspections_trip_id ON vehicle_inspections(trip_id);
-CREATE INDEX idx_vehicle_inspections_driver_id ON vehicle_inspections(driver_id);
-CREATE INDEX idx_vehicle_inspections_type ON vehicle_inspections(inspection_type);
-CREATE INDEX idx_vehicle_inspections_status ON vehicle_inspections(status);
-CREATE INDEX idx_inspection_photos_inspection_id ON inspection_photos(inspection_id);
-CREATE INDEX idx_inspection_videos_inspection_id ON inspection_videos(inspection_id);
-CREATE INDEX idx_inspection_damages_inspection_id ON inspection_damages(inspection_id);
+CREATE INDEX IF NOT EXISTS idx_vehicle_inspections_order_id ON vehicle_inspections(order_id);
+CREATE INDEX IF NOT EXISTS idx_vehicle_inspections_trip_id ON vehicle_inspections(trip_id);
+CREATE INDEX IF NOT EXISTS idx_vehicle_inspections_driver_id ON vehicle_inspections(driver_id);
+CREATE INDEX IF NOT EXISTS idx_vehicle_inspections_type ON vehicle_inspections(inspection_type);
+CREATE INDEX IF NOT EXISTS idx_vehicle_inspections_status ON vehicle_inspections(status);
+CREATE INDEX IF NOT EXISTS idx_inspection_photos_inspection_id ON inspection_photos(inspection_id);
+CREATE INDEX IF NOT EXISTS idx_inspection_videos_inspection_id ON inspection_videos(inspection_id);
+CREATE INDEX IF NOT EXISTS idx_inspection_damages_inspection_id ON inspection_damages(inspection_id);
 
 -- Create storage bucket for inspection media (photos and videos)
 INSERT INTO storage.buckets (id, name, public)
@@ -131,6 +146,10 @@ VALUES ('inspection-media', 'inspection-media', false)
 ON CONFLICT (id) DO NOTHING;
 
 -- Storage policies for inspection-media bucket
+DROP POLICY IF EXISTS "Authenticated users can upload inspection media" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can view inspection media" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can delete inspection media" ON storage.objects;
+
 CREATE POLICY "Authenticated users can upload inspection media" ON storage.objects
   FOR INSERT WITH CHECK (
     bucket_id = 'inspection-media' AND
@@ -159,6 +178,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Create trigger for updated_at
+DROP TRIGGER IF EXISTS vehicle_inspections_updated_at ON vehicle_inspections;
 CREATE TRIGGER vehicle_inspections_updated_at
   BEFORE UPDATE ON vehicle_inspections
   FOR EACH ROW
