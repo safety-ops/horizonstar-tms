@@ -34,24 +34,37 @@ function isDuplicateAuthEmailError(message: string) {
   )
 }
 
+function isAuthSignupDatabaseError(message: string) {
+  const msg = message.toLowerCase()
+  return (
+    msg.includes("database error saving new user") ||
+    msg.includes("database error creating new user") ||
+    msg.includes("unexpected_failure")
+  )
+}
+
 async function findAuthUserIdByEmail(service: any, email: string) {
-  const target = normalizeEmail(email)
-  let page = 1
-  const perPage = 200
-  const maxPages = 20
+  try {
+    const target = normalizeEmail(email)
+    let page = 1
+    const perPage = 200
+    const maxPages = 20
 
-  while (page <= maxPages) {
-    const { data, error } = await service.auth.admin.listUsers({ page, perPage })
-    if (error) {
-      throw new Error(error.message || "Failed to query auth users.")
+    while (page <= maxPages) {
+      const { data, error } = await service.auth.admin.listUsers({ page, perPage })
+      if (error) {
+        return null
+      }
+
+      const users = data?.users ?? []
+      const match = users.find((user: any) => normalizeEmail(user?.email ?? "") === target)
+      if (match?.id) return match.id as string
+
+      if (users.length < perPage) break
+      page += 1
     }
-
-    const users = data?.users ?? []
-    const match = users.find((user: any) => normalizeEmail(user?.email ?? "") === target)
-    if (match?.id) return match.id as string
-
-    if (users.length < perPage) break
-    page += 1
+  } catch (_) {
+    return null
   }
 
   return null
@@ -125,7 +138,16 @@ serve(async (req) => {
       .eq("id", driverId)
       .maybeSingle()
 
-    if (driverError || !driver) {
+    if (driverError) {
+      const driverMessage = driverError.message ?? "Failed to load driver."
+      if (driverMessage.toLowerCase().includes("auth_user_id") && driverMessage.toLowerCase().includes("column")) {
+        return json(500, {
+          error: "Database migration is missing. Please run 20260210_driver_auth_email_otp.sql.",
+        })
+      }
+      return json(500, { error: driverMessage })
+    }
+    if (!driver) {
       return json(404, { error: "Driver not found." })
     }
 
@@ -179,6 +201,11 @@ serve(async (req) => {
 
           if (existingAuthUserId) {
             authUserId = existingAuthUserId
+          } else if (isAuthSignupDatabaseError(createMessage)) {
+            return json(500, {
+              error:
+                "Supabase Auth signup is failing at the database level. Please run migration 20260211_fix_auth_signup_trigger.sql in SQL Editor, then retry.",
+            })
           } else if (isDuplicateAuthEmailError(createMessage)) {
             return json(409, { error: "Email already exists in auth and could not be linked automatically." })
           } else {
@@ -205,6 +232,11 @@ serve(async (req) => {
 
     if (updateDriverError) {
       const updateMessage = updateDriverError.message ?? "Failed to update driver record."
+      if (updateMessage.toLowerCase().includes("auth_user_id") && updateMessage.toLowerCase().includes("column")) {
+        return json(500, {
+          error: "Database migration is missing. Please run 20260210_driver_auth_email_otp.sql.",
+        })
+      }
       if (updateMessage.toLowerCase().includes("duplicate") || updateMessage.toLowerCase().includes("unique")) {
         return json(409, { error: "Another driver already uses this email." })
       }
