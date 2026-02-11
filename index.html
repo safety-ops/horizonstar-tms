@@ -9686,6 +9686,129 @@
       return new Date(dateStr);
     }
 
+    // Canonical financial settings
+    const INVOICE_AMOUNT_BASIS = 'GROSS_REVENUE'; // 'GROSS_REVENUE' | 'CLEAN_REVENUE'
+    const OWNER_OPERATOR_ACCOUNTING_MODE = 'DISPATCH_FEE_ONLY'; // Canonical model
+
+    function toMoneyNumber(value) {
+      const num = parseFloat(value);
+      return Number.isFinite(num) ? num : 0;
+    }
+
+    function countMonthsInclusive(startDate, endDate) {
+      if (!startDate || !endDate) return 1;
+      const parsedStart = parseTripDate(startDate);
+      const parsedEnd = parseTripDate(endDate);
+      if (!parsedStart || !parsedEnd || isNaN(parsedStart.getTime()) || isNaN(parsedEnd.getTime())) return 1;
+
+      const start = parsedStart <= parsedEnd ? parsedStart : parsedEnd;
+      const end = parsedStart <= parsedEnd ? parsedEnd : parsedStart;
+      return Math.max(
+        1,
+        (end.getFullYear() - start.getFullYear()) * 12 +
+        (end.getMonth() - start.getMonth()) +
+        1
+      );
+    }
+
+    function getDateRangeFromTrips(trips) {
+      const tripDates = (trips || [])
+        .map(t => t.trip_date)
+        .filter(Boolean)
+        .sort();
+      if (tripDates.length === 0) return null;
+      return { start: tripDates[0], end: tripDates[tripDates.length - 1] };
+    }
+
+    function getInvoiceBasisLabel() {
+      return INVOICE_AMOUNT_BASIS === 'CLEAN_REVENUE' ? 'Clean Revenue' : 'Gross Revenue';
+    }
+
+    function getOrderPaymentBreakdown(order) {
+      const revenue = toMoneyNumber(order?.revenue);
+      const brokerFee = toMoneyNumber(order?.broker_fee);
+      const localFee = toMoneyNumber(order?.local_fee);
+      const cleanRevenue = Math.max(0, revenue - brokerFee - localFee);
+      const paymentType = String(order?.payment_type || 'BILL').toUpperCase();
+      const codAmount = Math.max(0, toMoneyNumber(order?.cod_amount));
+      const explicitBillAmount = Math.max(0, toMoneyNumber(order?.bill_amount));
+
+      let billedGross = 0;
+      let cashGross = 0;
+
+      if (paymentType === 'CHECK') {
+        cashGross = revenue;
+      } else if (paymentType === 'BILL') {
+        billedGross = explicitBillAmount > 0 ? explicitBillAmount : revenue;
+      } else if (paymentType === 'COD' || paymentType === 'COP' || paymentType === 'LOCAL_COD') {
+        if (explicitBillAmount > 0) {
+          cashGross = codAmount;
+          billedGross = explicitBillAmount;
+        } else {
+          cashGross = revenue;
+        }
+      } else if (paymentType === 'SPLIT') {
+        billedGross = explicitBillAmount > 0 ? explicitBillAmount : Math.max(0, revenue - codAmount);
+        cashGross = codAmount > 0 ? codAmount : Math.max(0, revenue - billedGross);
+      } else {
+        billedGross = revenue;
+      }
+
+      // Guardrail for malformed split data where pieces exceed total revenue
+      if (revenue > 0 && billedGross + cashGross > revenue) {
+        const overflow = billedGross + cashGross - revenue;
+        if (billedGross >= overflow) {
+          billedGross -= overflow;
+        } else {
+          const remainingOverflow = overflow - billedGross;
+          billedGross = 0;
+          cashGross = Math.max(0, cashGross - remainingOverflow);
+        }
+      }
+
+      const cleanMultiplier = revenue > 0 ? cleanRevenue / revenue : 0;
+      return {
+        revenue,
+        cleanRevenue,
+        paymentType,
+        billedGross,
+        cashGross,
+        billedClean: billedGross * cleanMultiplier,
+        cashClean: cashGross * cleanMultiplier
+      };
+    }
+
+    // Canonical receivable amount (AR basis)
+    function getOrderInvoiceAmount(order) {
+      const breakdown = getOrderPaymentBreakdown(order);
+      return INVOICE_AMOUNT_BASIS === 'CLEAN_REVENUE'
+        ? breakdown.billedClean
+        : breakdown.billedGross;
+    }
+
+    // Canonical cash collection amount (cash basis)
+    function getOrderCashCollectedAmount(order) {
+      const breakdown = getOrderPaymentBreakdown(order);
+      return breakdown.cashGross;
+    }
+
+    function isDateInRange(dateValue, startDate = null, endDate = null) {
+      if (!startDate && !endDate) return true;
+      if (!dateValue) return false;
+      const date = parseTripDate(dateValue);
+      if (!date || isNaN(date.getTime())) return false;
+
+      if (startDate) {
+        const start = parseTripDate(startDate);
+        if (start && !isNaN(start.getTime()) && date < start) return false;
+      }
+      if (endDate) {
+        const end = parseTripDate(endDate);
+        if (end && !isNaN(end.getTime()) && date > end) return false;
+      }
+      return true;
+    }
+
     function getTripFin(tripId) {
       const tripIdStr = String(tripId);
       const trip = appData.trips.find(t => String(t.id) === tripIdStr);
@@ -9723,13 +9846,11 @@
       // Keep these for backward compatibility
       const truckGross = cleanGross - driverCut - dispatchFee;
       
-      // Cash collected = COD and COP payments only (LOCAL_COD is paid to local drivers, not trip driver)
-      const cashCollected = orders.filter(o => o.payment_type === 'COD' || o.payment_type === 'COP').reduce((s, o) => {
-        // If bill_amount > 0, this is a split payment - only count cod_amount as cash
-        if (parseFloat(o.bill_amount || 0) > 0) {
-          return s + parseFloat(o.cod_amount || 0);
-        }
-        return s + parseFloat(o.revenue || 0);
+      // Driver-collected cash (LOCAL_COD goes to local driver, not trip driver)
+      const cashCollected = orders.reduce((sum, order) => {
+        const paymentType = String(order.payment_type || '').toUpperCase();
+        if (paymentType !== 'COD' && paymentType !== 'COP' && paymentType !== 'SPLIT') return sum;
+        return sum + getOrderCashCollectedAmount(order);
       }, 0);
       
       return {
@@ -9746,6 +9867,252 @@
         vehicleCount: orders.length,
         cashCollected,
         isOwnerOp            // Flag to indicate Owner-Operator trip
+      };
+    }
+
+    // Canonical period aggregator used by financial modules.
+    function calculateFinancialSnapshot({
+      startDate = null,
+      endDate = null,
+      trips = appData.trips || [],
+      orders = appData.orders || [],
+      expenses = appData.expenses || [],
+      fixedCosts = appData.fixed_costs || [],
+      variableCosts = appData.variable_costs || [],
+      maintenance = appData.maintenance_records || [],
+      fuelTransactions = appData.fuel_transactions || []
+    } = {}) {
+      const filteredTrips = (trips || []).filter(t => isDateInRange(t.trip_date, startDate, endDate));
+      const tripIds = new Set(filteredTrips.map(t => String(t.id)));
+
+      const filteredOrders = (orders || []).filter(o => {
+        if (o.trip_id !== null && o.trip_id !== undefined && o.trip_id !== '') {
+          return tripIds.has(String(o.trip_id));
+        }
+        return isDateInRange(o.delivery_date || o.dropoff_date || o.created_at, startDate, endDate);
+      });
+
+      const filteredExpenses = (expenses || []).filter(e => tripIds.has(String(e.trip_id)));
+      const filteredVariableCosts = (variableCosts || []).filter(vc => isDateInRange(vc.date || vc.created_at, startDate, endDate));
+      const filteredMaintenance = (maintenance || []).filter(m => isDateInRange(m.service_date || m.date || m.created_at, startDate, endDate));
+      const filteredFuelTransactions = (fuelTransactions || []).filter(f => isDateInRange(f.transaction_date || f.date || f.created_at, startDate, endDate));
+
+      const tripFinancials = filteredTrips.map(trip => ({ trip, fin: getTripFin(trip.id) }));
+      const tripFinById = new Map(tripFinancials.map(({ trip, fin }) => [String(trip.id), fin]));
+
+      let totalRevenue = 0;
+      let totalBrokerFees = 0;
+      let totalLocalFees = 0;
+      let totalDriverPay = 0;
+      let totalDispatchFees = 0;
+      let totalTripNetProfit = 0;
+      let totalMiles = 0;
+      let totalCars = 0;
+      let ownerOpCleanRevenue = 0;
+
+      tripFinancials.forEach(({ trip, fin }) => {
+        totalRevenue += fin.loadRevenue;
+        totalBrokerFees += fin.brokerFee;
+        totalLocalFees += fin.localFees;
+        totalDriverPay += fin.driverCut;
+        totalDispatchFees += fin.dispatchFee;
+        totalTripNetProfit += fin.netProfit;
+        totalMiles += toMoneyNumber(trip.miles);
+        totalCars += fin.vehicleCount;
+        if (OWNER_OPERATOR_ACCOUNTING_MODE === 'DISPATCH_FEE_ONLY' && fin.isOwnerOp) {
+          ownerOpCleanRevenue += fin.cleanGross;
+        }
+      });
+
+      let fuelExpenses = 0;
+      let tollsPermits = 0;
+      let maintenanceTripExpenses = 0;
+      let otherExpenses = 0;
+
+      filteredExpenses.forEach(exp => {
+        const amount = toMoneyNumber(exp.amount);
+        const tripFin = tripFinById.get(String(exp.trip_id));
+        const skipOwnerOpExpense = OWNER_OPERATOR_ACCOUNTING_MODE === 'DISPATCH_FEE_ONLY' && tripFin && tripFin.isOwnerOp;
+        if (skipOwnerOpExpense) return;
+
+        switch (exp.category) {
+          case 'FUEL':
+            fuelExpenses += amount;
+            break;
+          case 'TOLLS':
+          case 'PERMITS':
+            tollsPermits += amount;
+            break;
+          case 'MAINTENANCE':
+            maintenanceTripExpenses += amount;
+            break;
+          default:
+            otherExpenses += amount;
+        }
+      });
+
+      const totalTripExpenses = fuelExpenses + tollsPermits + maintenanceTripExpenses + otherExpenses;
+      const cleanRevenue = totalRevenue - totalBrokerFees - totalLocalFees;
+      const ownerOpPassthrough = OWNER_OPERATOR_ACCOUNTING_MODE === 'DISPATCH_FEE_ONLY'
+        ? Math.max(0, ownerOpCleanRevenue - totalDispatchFees)
+        : 0;
+      const totalDirectCosts = totalDriverPay + totalTripExpenses + ownerOpPassthrough;
+
+      const monthlyFixedCosts = (fixedCosts || []).reduce((sum, fc) => sum + toMoneyNumber(fc.amount), 0);
+      const filteredTripRange = getDateRangeFromTrips(filteredTrips);
+      const periodMonths = startDate && endDate
+        ? countMonthsInclusive(startDate, endDate)
+        : Math.max(1, countMonthsInclusive(
+          filteredTripRange?.start || startDate || new Date(),
+          filteredTripRange?.end || endDate || new Date()
+        ));
+      const totalFixedCosts = monthlyFixedCosts * periodMonths;
+
+      const totalFuelFromRecords = filteredFuelTransactions.reduce((sum, f) => {
+        return sum + toMoneyNumber(f.total_cost || f.amount);
+      }, 0);
+      const totalMaintenanceCost = filteredMaintenance.reduce((sum, m) => sum + toMoneyNumber(m.total_cost || m.cost), 0);
+      const totalOtherVariableCosts = filteredVariableCosts.reduce((sum, vc) => sum + toMoneyNumber(vc.amount), 0);
+      const totalVariableCosts = totalFuelFromRecords + totalMaintenanceCost + totalOtherVariableCosts;
+
+      const grossProfit = cleanRevenue - totalDirectCosts;
+      const operatingProfit = grossProfit - totalVariableCosts;
+      const netProfit = operatingProfit - totalFixedCosts;
+
+      let codCollected = 0;
+      let copCollected = 0;
+      let localCodCollected = 0;
+      let checkPayments = 0;
+      let billedAmount = 0;
+
+      filteredOrders.forEach(order => {
+        const paymentType = String(order.payment_type || 'BILL').toUpperCase();
+        const cashAmount = getOrderCashCollectedAmount(order);
+        const invoiceAmount = getOrderInvoiceAmount(order);
+
+        if (paymentType === 'COD') codCollected += cashAmount;
+        else if (paymentType === 'COP') copCollected += cashAmount;
+        else if (paymentType === 'LOCAL_COD') localCodCollected += cashAmount;
+        else if (paymentType === 'CHECK') checkPayments += cashAmount;
+        else if (paymentType === 'SPLIT' && cashAmount > 0) codCollected += cashAmount;
+
+        billedAmount += invoiceAmount;
+      });
+
+      const totalCashInflow = codCollected + copCollected + localCodCollected + checkPayments;
+      const totalCashRevenue = filteredOrders.reduce((sum, o) => sum + toMoneyNumber(o.revenue), 0);
+      const driverPayments = totalDriverPay;
+      const totalCashOutflow = driverPayments + fuelExpenses + tollsPermits + maintenanceTripExpenses + otherExpenses + totalFixedCosts;
+      const netCashFlow = totalCashInflow - totalCashOutflow;
+
+      const outstandingReceivables = filteredOrders.reduce((sum, order) => {
+        const invoiceAmount = getOrderInvoiceAmount(order);
+        if (invoiceAmount <= 0) return sum;
+        const isPaid = String(order.payment_status || '').toLowerCase() === 'paid';
+        return isPaid ? sum : sum + invoiceAmount;
+      }, 0);
+
+      return {
+        range: {
+          startDate,
+          endDate,
+          periodMonths
+        },
+        filtered: {
+          trips: filteredTrips,
+          orders: filteredOrders,
+          expenses: filteredExpenses,
+          variableCosts: filteredVariableCosts,
+          maintenance: filteredMaintenance,
+          fuelTransactions: filteredFuelTransactions
+        },
+        operations: {
+          totalRevenue,
+          totalBrokerFees,
+          totalLocalFees,
+          cleanRevenue,
+          totalDriverPay,
+          totalDispatchFees,
+          totalTripExpenses,
+          ownerOpCleanRevenue,
+          ownerOpPassthrough,
+          tripNetProfit: totalTripNetProfit,
+          totalMiles,
+          totalCars,
+          tripCount: filteredTrips.length,
+          expenseBuckets: {
+            fuelExpenses,
+            tollsPermits,
+            maintenanceTripExpenses,
+            otherExpenses
+          }
+        },
+        overhead: {
+          monthlyFixedCosts,
+          totalFixedCosts,
+          totalFuelFromRecords,
+          totalMaintenanceCost,
+          totalOtherVariableCosts,
+          totalVariableCosts
+        },
+        profitability: {
+          grossProfit,
+          operatingProfit,
+          netProfit,
+          profitMargin: totalRevenue > 0 ? (netProfit / totalRevenue * 100) : 0
+        },
+        cashFlow: {
+          inflows: {
+            codCollected,
+            copCollected,
+            localCodCollected,
+            checkPayments,
+            billedAmount,
+            totalCashInflow,
+            totalRevenue: totalCashRevenue
+          },
+          outflows: {
+            driverPayments,
+            fuelExpenses,
+            tollsPermits,
+            maintenanceExpenses: maintenanceTripExpenses,
+            otherExpenses,
+            totalFixedCosts,
+            totalCashOutflow
+          },
+          netCashFlow,
+          outstandingReceivables,
+          cashPosition: netCashFlow + outstandingReceivables
+        },
+        incomeStatement: {
+          revenue: {
+            grossRevenue: totalRevenue,
+            brokerFees: totalBrokerFees,
+            localFees: totalLocalFees,
+            netRevenue: cleanRevenue
+          },
+          directCosts: {
+            driverCut: totalDriverPay,
+            fuelCosts: fuelExpenses,
+            tollsPermits,
+            otherDirectCosts: otherExpenses + maintenanceTripExpenses + ownerOpPassthrough,
+            totalDirectCosts
+          },
+          grossProfit,
+          grossProfitMargin: totalRevenue > 0 ? (grossProfit / totalRevenue * 100) : 0,
+          operatingExpenses: {
+            fixedCosts: totalFixedCosts,
+            maintenanceCosts: totalMaintenanceCost,
+            fuelCardCosts: totalFuelFromRecords,
+            otherVariableCosts: totalOtherVariableCosts,
+            totalOperatingExpenses: totalFixedCosts + totalMaintenanceCost + totalFuelFromRecords + totalOtherVariableCosts
+          },
+          operatingProfit: grossProfit - totalFixedCosts,
+          operatingProfitMargin: totalRevenue > 0 ? ((grossProfit - totalFixedCosts) / totalRevenue * 100) : 0,
+          netProfit,
+          netProfitMargin: totalRevenue > 0 ? (netProfit / totalRevenue * 100) : 0,
+          periodMonths
+        }
       };
     }
 
@@ -9949,203 +10316,20 @@
 
     // ============ CASH FLOW ANALYSIS ============
     function calculateCashFlow(periodStart = null, periodEnd = null) {
-      const trips = appData.trips || [];
-      const orders = appData.orders || [];
-      const expenses = appData.expenses || [];
-      const fixedCosts = appData.fixed_costs || [];
-      
-      // Filter by period if specified
-      const filterByPeriod = (date) => {
-        if (!periodStart && !periodEnd) return true;
-        const d = new Date(date);
-        if (periodStart && d < new Date(periodStart)) return false;
-        if (periodEnd && d > new Date(periodEnd)) return false;
-        return true;
-      };
-      
-      const filteredTrips = trips.filter(t => filterByPeriod(t.trip_date));
-      const filteredOrders = orders.filter(o => {
-        const trip = trips.find(t => t.id === o.trip_id);
-        return trip && filterByPeriod(trip.trip_date);
+      const snapshot = calculateFinancialSnapshot({
+        startDate: periodStart,
+        endDate: periodEnd
       });
-      
-      // CASH INFLOWS
-      let codCollected = 0, copCollected = 0, localCodCollected = 0, checkPayments = 0, billedAmount = 0;
-      
-      filteredOrders.forEach(order => {
-        const revenue = parseFloat(order.revenue || 0);
-        const codAmount = parseFloat(order.cod_amount || 0);
-        const billAmount = parseFloat(order.bill_amount || 0);
-        
-        switch (order.payment_type) {
-          case 'COD':
-            codCollected += billAmount > 0 ? codAmount : revenue;
-            billedAmount += billAmount;
-            break;
-          case 'COP':
-            copCollected += billAmount > 0 ? codAmount : revenue;
-            billedAmount += billAmount;
-            break;
-          case 'LOCAL_COD':
-            localCodCollected += billAmount > 0 ? codAmount : revenue;
-            billedAmount += billAmount;
-            break;
-          case 'CHECK':
-            checkPayments += revenue;
-            break;
-          case 'BILL':
-          case 'SPLIT':
-          default:
-            billedAmount += revenue;
-        }
-      });
-      
-      const totalCashInflow = codCollected + copCollected + localCodCollected + checkPayments;
-      const totalRevenue = codCollected + copCollected + localCodCollected + checkPayments + billedAmount;
-      
-      // CASH OUTFLOWS
-      let driverPayments = 0, fuelExpenses = 0, tollsPermits = 0, maintenanceExpenses = 0, otherExpenses = 0;
-      
-      filteredTrips.forEach(trip => {
-        const fin = getTripFin(trip.id);
-        driverPayments += fin.driverCut;
-        
-        const tripExpenses = expenses.filter(e => e.trip_id === trip.id);
-        tripExpenses.forEach(exp => {
-          const amount = parseFloat(exp.amount || 0);
-          switch (exp.category) {
-            case 'FUEL': fuelExpenses += amount; break;
-            case 'TOLLS':
-            case 'PERMITS': tollsPermits += amount; break;
-            case 'MAINTENANCE': maintenanceExpenses += amount; break;
-            default: otherExpenses += amount;
-          }
-        });
-      });
-      
-      // Fixed costs (monthly)
-      const periodMonths = periodStart && periodEnd 
-        ? Math.max(1, Math.ceil((new Date(periodEnd) - new Date(periodStart)) / (1000 * 60 * 60 * 24 * 30)))
-        : 1;
-      const totalFixedCosts = fixedCosts.reduce((s, fc) => s + parseFloat(fc.amount || 0), 0) * periodMonths;
-      
-      const totalCashOutflow = driverPayments + fuelExpenses + tollsPermits + maintenanceExpenses + otherExpenses + totalFixedCosts;
-      const netCashFlow = totalCashInflow - totalCashOutflow;
-      
-      // Outstanding receivables (billed but not collected)
-      const outstandingReceivables = billedAmount;
-      
-      return {
-        inflows: {
-          codCollected,
-          copCollected,
-          localCodCollected,
-          checkPayments,
-          billedAmount,
-          totalCashInflow,
-          totalRevenue
-        },
-        outflows: {
-          driverPayments,
-          fuelExpenses,
-          tollsPermits,
-          maintenanceExpenses,
-          otherExpenses,
-          totalFixedCosts,
-          totalCashOutflow
-        },
-        netCashFlow,
-        outstandingReceivables,
-        cashPosition: netCashFlow + outstandingReceivables
-      };
+      return snapshot.cashFlow;
     }
 
     // ============ INCOME STATEMENT (P&L) ============
     function generateIncomeStatement(periodStart = null, periodEnd = null) {
-      const trips = appData.trips || [];
-      const fixedCosts = appData.fixed_costs || [];
-      
-      // Filter by period
-      const filterByPeriod = (date) => {
-        if (!periodStart && !periodEnd) return true;
-        const d = new Date(date);
-        if (periodStart && d < new Date(periodStart)) return false;
-        if (periodEnd && d > new Date(periodEnd)) return false;
-        return true;
-      };
-      
-      const filteredTrips = trips.filter(t => filterByPeriod(t.trip_date));
-      
-      // REVENUE
-      let grossRevenue = 0, brokerFees = 0, localFees = 0;
-      
-      // DIRECT COSTS (COGS)
-      let driverCut = 0, fuelCosts = 0, tollsPermits = 0, otherDirectCosts = 0;
-      
-      filteredTrips.forEach(trip => {
-        const fin = getTripFin(trip.id);
-        grossRevenue += fin.loadRevenue;
-        brokerFees += fin.brokerFee;
-        localFees += fin.localFees;
-        driverCut += fin.driverCut;
-        
-        const tripExpenses = (appData.expenses || []).filter(e => e.trip_id === trip.id);
-        tripExpenses.forEach(exp => {
-          const amount = isNaN(parseFloat(exp.amount)) ? 0 : parseFloat(exp.amount);
-          if (exp.category === 'FUEL') fuelCosts += amount;
-          else if (exp.category === 'TOLLS' || exp.category === 'PERMITS') tollsPermits += amount;
-          else otherDirectCosts += amount;
-        });
+      const snapshot = calculateFinancialSnapshot({
+        startDate: periodStart,
+        endDate: periodEnd
       });
-      
-      const netRevenue = grossRevenue - brokerFees - localFees;
-      const totalDirectCosts = driverCut + fuelCosts + tollsPermits + otherDirectCosts;
-      const grossProfit = netRevenue - totalDirectCosts;
-      const grossProfitMargin = grossRevenue > 0 ? (grossProfit / grossRevenue * 100) : 0;
-      
-      // OPERATING EXPENSES (Fixed Costs)
-      const periodMonths = periodStart && periodEnd 
-        ? Math.max(1, Math.ceil((new Date(periodEnd) - new Date(periodStart)) / (1000 * 60 * 60 * 24 * 30)))
-        : Math.max(1, Object.keys(calculateTripVolume(filteredTrips).monthlyData).length);
-      
-      const totalFixedCosts = fixedCosts.reduce((s, fc) => s + parseFloat(fc.amount || 0), 0) * periodMonths;
-      const operatingProfit = grossProfit - totalFixedCosts;
-      const operatingProfitMargin = grossRevenue > 0 ? (operatingProfit / grossRevenue * 100) : 0;
-      
-      // Maintenance from maintenance_records
-      const maintenanceCosts = (appData.maintenance_records || [])
-        .filter(m => filterByPeriod(m.service_date))
-        .reduce((s, m) => s + parseFloat(m.total_cost || 0), 0);
-      
-      const netProfit = operatingProfit - maintenanceCosts;
-      const netProfitMargin = grossRevenue > 0 ? (netProfit / grossRevenue * 100) : 0;
-      
-      return {
-        revenue: {
-          grossRevenue,
-          brokerFees,
-          localFees,
-          netRevenue
-        },
-        directCosts: {
-          driverCut,
-          fuelCosts,
-          tollsPermits,
-          otherDirectCosts,
-          totalDirectCosts
-        },
-        grossProfit,
-        grossProfitMargin,
-        operatingExpenses: {
-          fixedCosts: totalFixedCosts,
-          maintenanceCosts
-        },
-        operatingProfit,
-        operatingProfitMargin,
-        netProfit,
-        netProfitMargin,
-        periodMonths
-      };
+      return snapshot.incomeStatement;
     }
 
     // ============ FORECASTING ENGINE ============
@@ -10274,16 +10458,17 @@
     }
 
     // ============ EFFICIENCY METRICS ============
-    function calculateEfficiencyMetrics(filteredTrips) {
+    function calculateEfficiencyMetrics(filteredTrips, dateRange = null) {
       // Use filtered trips if provided, otherwise use all trips
       const trips = filteredTrips || appData.trips || [];
       const trucks = appData.trucks.filter(t => t.status === 'ACTIVE') || [];
       const tripVolume = calculateTripVolume(trips);
-      const incomeStatement = generateIncomeStatement();
 
-      // Get fleet miles from Samsara if available
-      const dateRange = getDashboardDateRange();
-      const fleetMilesResult = getFleetMiles(dateRange.start, dateRange.end);
+      // Fleet miles should match the same period as the trip subset.
+      const effectiveRange = (dateRange && dateRange.start && dateRange.end)
+        ? dateRange
+        : (getDateRangeFromTrips(trips) || getDashboardDateRange());
+      const fleetMilesResult = getFleetMiles(effectiveRange.start, effectiveRange.end);
 
       let totalCars = 0, totalRevenue = 0, totalProfit = 0;
 
@@ -10376,7 +10561,8 @@
     // ============ DISPATCHER PRICING GUIDANCE ============
     function getDispatcherPricingGuidance(tripId) {
       const breakEven = calculateBreakEven({ tripId });
-      const efficiency = calculateEfficiencyMetrics();
+      const allTrips = appData.trips || [];
+      const efficiency = calculateEfficiencyMetrics(allTrips, getDateRangeFromTrips(allTrips));
       const trip = appData.trips.find(t => t.id === tripId);
       const orders = appData.orders.filter(o => o.trip_id === tripId);
       const fin = getTripFin(tripId);
@@ -10459,8 +10645,8 @@
         return t.trip_date >= yearStart && t.trip_date <= yearEnd;
       });
 
-      const efficiency = calculateEfficiencyMetrics(yearTrips);
-      const allTimeEfficiency = calculateEfficiencyMetrics(allTrips); // All time score
+      const efficiency = calculateEfficiencyMetrics(yearTrips, { start: yearStart, end: yearEnd });
+      const allTimeEfficiency = calculateEfficiencyMetrics(allTrips, getDateRangeFromTrips(allTrips)); // All time score
       const cashFlow = calculateCashFlow(yearStart, yearEnd);
       const incomeStatement = generateIncomeStatement(yearStart, yearEnd);
       const forecast = generateForecast(6);
@@ -10565,7 +10751,7 @@
             <h3 style="color:white;font-size:14px">💡 AI-Powered Optimization Recommendations</h3>
           </div>
           <div style="padding:14px">
-            ${generateOptimizationRecommendations(efficiency, tripVolume, breakEven, forecast)}
+            ${generateOptimizationRecommendations(efficiency, tripVolume, breakEven, forecast, cashFlow)}
           </div>
         </div>
         
@@ -10611,7 +10797,9 @@
           const periodMonths = Math.max(1, incomeStatement.periodMonths || 1);
           const totalFixedCosts = monthlyFixedCosts * periodMonths;
           const maintenanceCosts = incomeStatement.operatingExpenses.maintenanceCosts || 0;
-          const totalOperatingCosts = incomeStatement.revenue.brokerFees + incomeStatement.revenue.localFees + incomeStatement.directCosts.totalDirectCosts + totalFixedCosts + maintenanceCosts;
+          const fuelCardCosts = incomeStatement.operatingExpenses.fuelCardCosts || 0;
+          const otherVariableCosts = incomeStatement.operatingExpenses.otherVariableCosts || 0;
+          const totalOperatingCosts = incomeStatement.revenue.brokerFees + incomeStatement.revenue.localFees + incomeStatement.directCosts.totalDirectCosts + totalFixedCosts + maintenanceCosts + fuelCardCosts + otherVariableCosts;
           const cpm = efficiency.totalMiles > 0 ? (totalOperatingCosts / efficiency.totalMiles) : 0;
           const rpm = efficiency.totalMiles > 0 ? (efficiency.totalRevenue / efficiency.totalMiles) : 0;
           const marginPerMile = rpm - cpm;
@@ -10685,6 +10873,8 @@
                 <tr style="background:#fef3c7"><td colspan="2" style="font-weight:700;color:#92400e;padding:10px">OPERATING EXPENSES</td></tr>
                 <tr><td style="padding:8px 10px 8px 24px">Fixed Costs</td><td style="text-align:right">(${formatMoney(incomeStatement.operatingExpenses.fixedCosts)})</td></tr>
                 <tr><td style="padding:8px 10px 8px 24px">Maintenance</td><td style="text-align:right">(${formatMoney(incomeStatement.operatingExpenses.maintenanceCosts)})</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px">Fuel Card Costs</td><td style="text-align:right">(${formatMoney(incomeStatement.operatingExpenses.fuelCardCosts || 0)})</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px">Other Variable Costs</td><td style="text-align:right">(${formatMoney(incomeStatement.operatingExpenses.otherVariableCosts || 0)})</td></tr>
                 <tr style="background:${incomeStatement.netProfit >= 0 ? '#dcfce7' : '#fee2e2'}"><td style="padding:12px;font-weight:700;font-size:16px">NET PROFIT</td><td style="text-align:right;font-weight:700;font-size:18px;color:${incomeStatement.netProfit >= 0 ? '#166534' : '#dc2626'}">${formatMoney(incomeStatement.netProfit)}</td></tr>
               </table>
             </div>
@@ -10955,7 +11145,7 @@
     }
 
     // ============ OPTIMIZATION RECOMMENDATIONS ENGINE ============
-    function generateOptimizationRecommendations(efficiency, tripVolume, breakEven, forecast) {
+    function generateOptimizationRecommendations(efficiency, tripVolume, breakEven, forecast, cashFlow) {
       const recommendations = [];
       
       // 1. Trip Volume Analysis
@@ -11074,7 +11264,6 @@
       }
       
       // 8. Cash Flow Management
-      const cashFlow = calculateCashFlow();
       if (cashFlow.outstandingReceivables > cashFlow.inflows.totalCashInflow * 0.3) {
         recommendations.push({
           category: 'CASH_FLOW',
@@ -14543,28 +14732,20 @@
         if (f.netProfit < leastProf) { leastProf = f.netProfit; leastProfTrip = t; }
       });
 
-      // COD collections - for split payments, only count cod_amount as COD, not full revenue (filtered by year)
-      const codAmount = yearOrders.filter(o => o.payment_type === 'COD').reduce((s, o) => {
-        if (parseFloat(o.bill_amount || 0) > 0) {
-          return s + parseFloat(o.cod_amount || 0);
-        }
-        return s + parseFloat(o.revenue || 0);
-      }, 0);
-      const copAmount = yearOrders.filter(o => o.payment_type === 'COP').reduce((s, o) => {
-        if (parseFloat(o.bill_amount || 0) > 0) {
-          return s + parseFloat(o.cod_amount || 0);
-        }
-        return s + parseFloat(o.revenue || 0);
-      }, 0);
-      const localCodAmount = yearOrders.filter(o => o.payment_type === 'LOCAL_COD').reduce((s, o) => {
-        if (parseFloat(o.bill_amount || 0) > 0) {
-          return s + parseFloat(o.cod_amount || 0);
-        }
-        return s + parseFloat(o.revenue || 0);
-      }, 0);
-      const checkAmount = yearOrders.filter(o => o.payment_type === 'CHECK').reduce((s, o) => s + parseFloat(o.revenue || 0), 0);
-      // Bill amount = total revenue minus all cash/check collections
-      const billAmount = totalRev - codAmount - copAmount - localCodAmount - checkAmount;
+      // Cash/AR split based on canonical payment helpers.
+      const codAmount = yearOrders
+        .filter(o => ['COD', 'SPLIT'].includes(String(o.payment_type || '').toUpperCase()))
+        .reduce((sum, o) => sum + getOrderCashCollectedAmount(o), 0);
+      const copAmount = yearOrders
+        .filter(o => String(o.payment_type || '').toUpperCase() === 'COP')
+        .reduce((sum, o) => sum + getOrderCashCollectedAmount(o), 0);
+      const localCodAmount = yearOrders
+        .filter(o => String(o.payment_type || '').toUpperCase() === 'LOCAL_COD')
+        .reduce((sum, o) => sum + getOrderCashCollectedAmount(o), 0);
+      const checkAmount = yearOrders
+        .filter(o => String(o.payment_type || '').toUpperCase() === 'CHECK')
+        .reduce((sum, o) => sum + getOrderCashCollectedAmount(o), 0);
+      const billAmount = yearOrders.reduce((sum, o) => sum + getOrderInvoiceAmount(o), 0);
       
       // KPIs
       const profitMargin = totalRev > 0 ? ((totalProfit / totalRev) * 100).toFixed(1) : 0;
@@ -14625,7 +14806,7 @@
             if (!mDate) return false;
             return mDate >= dateRange.start && mDate <= dateRange.end;
           });
-          const maintenanceCosts = periodMaintenanceRecords.reduce((s, m) => s + parseFloat(m.total_cost || 0), 0);
+          const maintenanceCosts = periodMaintenanceRecords.reduce((s, m) => s + parseFloat(m.total_cost || m.cost || 0), 0);
           const totalOperatingCosts = totalBrokerFees + totalLocalFees + totalDriverCut + totalExpenses + totalFixedCosts + maintenanceCosts;
           const cpm = totalMiles > 0 ? (totalOperatingCosts / totalMiles) : 0;
           const rpm = totalMiles > 0 ? (totalRev / totalMiles) : 0;
@@ -22863,7 +23044,7 @@ ${rateText}`
       
       // Get maintenance records for this truck
       const maintenanceRecords = (appData.maintenance_records || []).filter(m => m.truck_id === truckId);
-      const totalMaintenanceCost = maintenanceRecords.reduce((s, m) => s + parseFloat(m.total_cost || 0), 0);
+      const totalMaintenanceCost = maintenanceRecords.reduce((s, m) => s + parseFloat(m.total_cost || m.cost || 0), 0);
       
       c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px"><button class="btn btn-secondary" onclick="renderCompliance(document.getElementById(\'main-content\'))">← Back</button><h2>🚚 Truck #' + t.truck_number + ' Compliance Files</h2><span class="badge ' + getBadge(t.status) + '">' + t.status + '</span></div></div>' +
         
@@ -22896,7 +23077,7 @@ ${rateText}`
         '<div class="card"><div class="card-header" style="background:#059669;color:white;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">🔧 Maintenance Records</h3><button class="btn" style="background:white;color:#059669;padding:8px 16px" onclick="openMaintenanceModal(' + truckId + ')">+ Add Service Record</button></div>' +
         (maintenanceRecords.length === 0 ? '<div style="padding:40px;text-align:center;color:#64748b">No maintenance records yet. Add a service record or upload an invoice.</div>' :
         '<div class="table-wrapper"><table><thead><tr><th>Date</th><th>Service Type</th><th>Shop</th><th>Description</th><th>Odometer</th><th>Cost</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
-        maintenanceRecords.map(m => '<tr><td>' + formatDate(m.service_date) + '</td><td><span class="badge badge-blue">' + (m.service_type || '-') + '</span></td><td>' + (m.shop_name || '-') + '</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (m.description || '-') + '</td><td>' + (m.odometer ? m.odometer.toLocaleString() + ' mi' : '-') + '</td><td class="money">' + formatMoney(m.total_cost) + '</td><td class="sticky-col"><div class="actions">' + (m.invoice_file ? '<button class="action-btn view" onclick="viewMaintenanceInvoice(' + m.id + ')">Invoice</button>' : '') + '<button class="action-btn edit" onclick="openMaintenanceModal(' + truckId + ',' + m.id + ')">Edit</button><button class="action-btn delete" onclick="deleteMaintenanceRecord(' + m.id + ',' + truckId + ')">Del</button></div></td></tr>').join('') +
+        maintenanceRecords.map(m => '<tr><td>' + formatDate(m.service_date) + '</td><td><span class="badge badge-blue">' + (m.service_type || '-') + '</span></td><td>' + (m.shop_name || '-') + '</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (m.description || '-') + '</td><td>' + (m.odometer ? m.odometer.toLocaleString() + ' mi' : '-') + '</td><td class="money">' + formatMoney(m.total_cost || m.cost || 0) + '</td><td class="sticky-col"><div class="actions">' + (m.invoice_file ? '<button class="action-btn view" onclick="viewMaintenanceInvoice(' + m.id + ')">Invoice</button>' : '') + '<button class="action-btn edit" onclick="openMaintenanceModal(' + truckId + ',' + m.id + ')">Edit</button><button class="action-btn delete" onclick="deleteMaintenanceRecord(' + m.id + ',' + truckId + ')">Del</button></div></td></tr>').join('') +
         '</tbody></table></div>') +
         '</div>';
     }
@@ -23038,7 +23219,7 @@ ${rateText}`
         
         '<div class="form-group"><label>Description / Work Performed</label><textarea id="maintDesc" rows="5" placeholder="Detailed list of all services performed, parts replaced, work done...">' + (record?.description || '') + '</textarea></div>' +
         
-        '<div class="form-row"><div class="form-group"><label>Parts Cost</label><input type="number" step="0.01" id="maintParts" value="' + (record?.parts_cost || '') + '" placeholder="0.00"></div><div class="form-group"><label>Labor Cost</label><input type="number" step="0.01" id="maintLabor" value="' + (record?.labor_cost || '') + '" placeholder="0.00"></div><div class="form-group"><label>Total Cost *</label><input type="number" step="0.01" id="maintTotal" value="' + (record?.total_cost || '') + '" placeholder="0.00"></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Parts Cost</label><input type="number" step="0.01" id="maintParts" value="' + (record?.parts_cost || '') + '" placeholder="0.00"></div><div class="form-group"><label>Labor Cost</label><input type="number" step="0.01" id="maintLabor" value="' + (record?.labor_cost || '') + '" placeholder="0.00"></div><div class="form-group"><label>Total Cost *</label><input type="number" step="0.01" id="maintTotal" value="' + (record?.total_cost || record?.cost || '') + '" placeholder="0.00"></div></div>' +
         
         '<div class="form-group"><label>Notes</label><input id="maintNotes" value="' + (record?.notes || '') + '" placeholder="Any additional notes..."></div>' +
         
@@ -24452,8 +24633,7 @@ ${rateText}`
       }
 
       const daysOverdue = Math.floor((now - dueDate) / (1000 * 60 * 60 * 24));
-      const amount = order.payment_type === 'SPLIT' ?
-        parseFloat(order.bill_amount || 0) : parseFloat(order.revenue || 0);
+      const amount = getOrderInvoiceAmount(order);
 
       return { dueDate, daysOverdue, billAmount: amount };
     }
@@ -24461,7 +24641,7 @@ ${rateText}`
     function getUnpaidBillOrders() {
       return appData.orders
         .filter(o =>
-          (o.payment_type === 'BILL' || o.payment_type === 'SPLIT') &&
+          getOrderInvoiceAmount(o) > 0 &&
           o.payment_status !== 'paid' &&
           (o.delivery_status === 'delivered' || o.status === 'DELIVERED')
         )
@@ -24472,22 +24652,18 @@ ${rateText}`
     function getPaidBillOrders() {
       return appData.orders
         .filter(o =>
-          (o.payment_type === 'BILL' || o.payment_type === 'SPLIT') &&
+          getOrderInvoiceAmount(o) > 0 &&
           o.payment_status === 'paid' &&
           (o.delivery_status === 'delivered' || o.status === 'DELIVERED')
         )
-        .map(o => {
-          const amount = o.payment_type === 'SPLIT' ?
-            parseFloat(o.bill_amount || 0) : parseFloat(o.revenue || 0);
-          return { ...o, billAmount: amount };
-        });
+        .map(o => ({ ...o, billAmount: getOrderInvoiceAmount(o) }));
     }
 
     // Get delivered BILL orders that haven't been formally invoiced yet
     function getOrdersNeedingInvoice() {
       return appData.orders
         .filter(o =>
-          (o.payment_type === 'BILL' || o.payment_type === 'SPLIT') &&
+          getOrderInvoiceAmount(o) > 0 &&
           o.payment_status !== 'paid' &&
           (o.delivery_status === 'delivered' || o.status === 'DELIVERED') &&
           !o.invoiced_at
@@ -24677,10 +24853,8 @@ ${rateText}`
       const order = appData.orders.find(o => o.id === orderId);
       if (!order) return;
 
-      const revenue = parseFloat(order.revenue) || 0;
-      const brokerFee = parseFloat(order.broker_fee) || 0;
-      const localFee = parseFloat(order.local_fee) || 0;
-      const amountDue = revenue - brokerFee - localFee;
+      const amountDue = getOrderInvoiceAmount(order);
+      const basisLabel = getInvoiceBasisLabel();
 
       const modalHtml = `
         <div class="modal-overlay" id="mark-invoiced-modal" onclick="if(event.target===this)this.remove()">
@@ -24700,7 +24874,7 @@ ${rateText}`
                   <strong style="color:var(--text-primary);font-size:14px">${escapeHtml(order.broker_name || 'Unknown')}</strong>
                 </div>
                 <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--border)">
-                  <span style="font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Amount</span>
+                  <span style="font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Amount (${basisLabel})</span>
                   <strong style="color:var(--primary);font-size:16px;font-family:var(--font-mono)">${formatMoney(amountDue)}</strong>
                 </div>
               </div>
@@ -25273,16 +25447,9 @@ ${rateText}`
           grossEarnings += fin.driverCut;
           
           const tripOrders = appData.orders.filter(o => o.trip_id === trip.id);
-          // For split payments, only count cod_amount as cash collected, not full revenue
-          // LOCAL_COD is paid to local drivers, not the trip driver
           cashCollected += tripOrders
-            .filter(o => o.payment_type === 'COD' || o.payment_type === 'COP')
-            .reduce((sum, o) => {
-              if (parseFloat(o.bill_amount || 0) > 0) {
-                return sum + parseFloat(o.cod_amount || 0);
-              }
-              return sum + parseFloat(o.revenue || 0);
-            }, 0);
+            .filter(o => ['COD', 'COP', 'SPLIT'].includes(String(o.payment_type || '').toUpperCase()))
+            .reduce((sum, o) => sum + getOrderCashCollectedAmount(o), 0);
           
           const tripExpenses = appData.expenses.filter(e => e.trip_id === trip.id);
           // Only reimburse OTHER category expenses
@@ -25347,9 +25514,9 @@ ${rateText}`
 
       orders.forEach((o, idx) => {
         const revenue = parseFloat(o.revenue || 0);
-        const isCash = o.payment_type === 'COD' || o.payment_type === 'COP'; // LOCAL_COD goes to local driver, not trip driver
-        const hasBillPortion = parseFloat(o.bill_amount || 0) > 0;
-        const cashAmount = isCash ? (hasBillPortion ? parseFloat(o.cod_amount || 0) : revenue) : 0;
+        const paymentType = String(o.payment_type || '').toUpperCase();
+        const isCash = paymentType === 'COD' || paymentType === 'COP' || paymentType === 'SPLIT'; // LOCAL_COD goes to local driver
+        const cashAmount = isCash ? getOrderCashCollectedAmount(o) : 0;
         tripCashTotal += cashAmount;
 
         const vehicleInfo = [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).join(' ') || 'N/A';
@@ -25522,9 +25689,9 @@ ${rateText}`
           const localFee = parseFloat(o.local_fee || 0);
           const cleanGross = revenue - brokerFee - localFee;
           const orderDispatchFee = cleanGross * (dispatchFeePercent / 100);
-          const isCash = o.payment_type === 'COD' || o.payment_type === 'COP'; // LOCAL_COD goes to local driver
-          const hasBillPortion = parseFloat(o.bill_amount || 0) > 0;
-          const cashCollected = isCash ? (hasBillPortion ? parseFloat(o.cod_amount || 0) : revenue) : 0;
+          const paymentType = String(o.payment_type || '').toUpperCase();
+          const isCash = paymentType === 'COD' || paymentType === 'COP' || paymentType === 'SPLIT'; // LOCAL_COD goes to local driver
+          const cashCollected = isCash ? getOrderCashCollectedAmount(o) : 0;
           const settlement = cleanGross - orderDispatchFee - cashCollected;
 
           // Build order/vehicle label
@@ -26282,10 +26449,9 @@ ${rateText}`
           const localFee = parseFloat(o.local_fee || 0);
           const cleanGross = revenue - brokerFee - localFee;
           const driverCut = cleanGross * (cutPercent / 100);
-          const isCash = o.payment_type === 'COD' || o.payment_type === 'COP'; // LOCAL_COD goes to local driver
-          // For split payments, only count cod_amount as cash on hand
-          const hasBillPortion = parseFloat(o.bill_amount || 0) > 0;
-          const cashOnHand = isCash ? (hasBillPortion ? parseFloat(o.cod_amount || 0) : revenue) : 0;
+          const paymentType = String(o.payment_type || '').toUpperCase();
+          const isCash = paymentType === 'COD' || paymentType === 'COP' || paymentType === 'SPLIT'; // LOCAL_COD goes to local driver
+          const cashOnHand = isCash ? getOrderCashCollectedAmount(o) : 0;
           
           // Build order/vehicle label
           const vehicleInfo = [o.vehicle_year, o.vehicle_make].filter(Boolean).join(' ');
@@ -27286,7 +27452,9 @@ ${rateText}`
       const revenue = parseFloat(order.revenue) || 0;
       const brokerFee = parseFloat(order.broker_fee) || 0;
       const localFee = parseFloat(order.local_fee) || 0;
-      const netAmount = revenue - brokerFee - localFee;
+      const paymentBreakdown = getOrderPaymentBreakdown(order);
+      const invoiceAmount = getOrderInvoiceAmount(order);
+      const invoiceBasisLabel = getInvoiceBasisLabel();
 
       // === WATERMARK ===
       doc.saveGraphicsState();
@@ -27463,14 +27631,21 @@ ${rateText}`
       doc.text('Pricing', margin, y);
       y += 5;
 
-      const pricingData = [
-        ['Gross Revenue', fmtMoney(revenue)],
-      ];
-      if (brokerFee > 0) {
-        pricingData.push(['Broker Fee', '-' + fmtMoney(brokerFee)]);
+      const pricingData = [];
+      if (INVOICE_AMOUNT_BASIS === 'CLEAN_REVENUE') {
+        pricingData.push(['Gross Revenue', fmtMoney(revenue)]);
+        if (brokerFee > 0) pricingData.push(['Broker Fee', '-' + fmtMoney(brokerFee)]);
+        if (localFee > 0) pricingData.push(['Local Fee', '-' + fmtMoney(localFee)]);
       }
-      if (localFee > 0) {
-        pricingData.push(['Local Fee', '-' + fmtMoney(localFee)]);
+      const baseInvoiceableAmount = INVOICE_AMOUNT_BASIS === 'CLEAN_REVENUE'
+        ? paymentBreakdown.cleanRevenue
+        : paymentBreakdown.revenue;
+      pricingData.push(['Invoice Basis (' + invoiceBasisLabel + ')', fmtMoney(baseInvoiceableAmount)]);
+      if (paymentBreakdown.cashGross > 0 && paymentBreakdown.billedGross > 0) {
+        const splitCashAmount = INVOICE_AMOUNT_BASIS === 'CLEAN_REVENUE'
+          ? paymentBreakdown.cashClean
+          : paymentBreakdown.cashGross;
+        pricingData.push(['Less Cash Portion', '-' + fmtMoney(splitCashAmount)]);
       }
 
       doc.autoTable({
@@ -27507,7 +27682,7 @@ ${rateText}`
       doc.text('AMOUNT DUE', margin + 6, y + 10);
       doc.setFontSize(16);
       doc.setTextColor(...green);
-      doc.text(fmtMoney(netAmount), pageWidth - margin - 6, y + 10.5, { align: 'right' });
+      doc.text(fmtMoney(invoiceAmount), pageWidth - margin - 6, y + 10.5, { align: 'right' });
       y += 24;
 
       // === PAYMENT TERMS + INFO — combined card ===
@@ -27586,10 +27761,8 @@ ${rateText}`
       const brokerEmail = broker?.email || '';
 
       // Calculate amount due
-      const revenue = parseFloat(order.revenue) || 0;
-      const brokerFee = parseFloat(order.broker_fee) || 0;
-      const localFee = parseFloat(order.local_fee) || 0;
-      const amountDue = revenue - brokerFee - localFee;
+      const amountDue = getOrderInvoiceAmount(order);
+      const basisLabel = getInvoiceBasisLabel();
       const fmtMoney = (amt) => '$' + (parseFloat(amt) || 0).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
 
       const modalHTML = `
@@ -27640,7 +27813,7 @@ ${rateText}`
                     <strong style="color:var(--text-primary)">${escapeHtml(order.origin || order.pickup_state || 'Origin')} → ${escapeHtml(order.destination || order.delivery_state || 'Dest')}</strong>
                   </div>
                   <div style="display:flex;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border);margin-top:4px">
-                    <span style="font-weight:600">Amount Due</span>
+                    <span style="font-weight:600">Amount Due (${basisLabel})</span>
                     <strong style="font-size:18px;color:var(--primary);font-family:var(--font-mono)">${fmtMoney(amountDue)}</strong>
                   </div>
                 </div>
@@ -27705,10 +27878,8 @@ ${rateText}`
         }
 
         // Calculate amounts for email
-        const revenue = parseFloat(order.revenue) || 0;
-        const brokerFee = parseFloat(order.broker_fee) || 0;
-        const localFee = parseFloat(order.local_fee) || 0;
-        const amountDue = revenue - brokerFee - localFee;
+        const amountDue = getOrderInvoiceAmount(order);
+        const basisLabel = getInvoiceBasisLabel();
         const fmtMoney = (amt) => '$' + (parseFloat(amt) || 0).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
 
         // Build email body
@@ -27742,7 +27913,7 @@ ${rateText}`
                     <td style="padding: 8px 0; color: #78350f; font-weight: 600; text-align: right;">${order.origin || order.pickup_state || ''} → ${order.destination || order.delivery_state || ''}</td>
                   </tr>
                   <tr style="border-top: 2px solid #fde68a;">
-                    <td style="padding: 12px 0 8px; color: #92400e; font-size: 16px; font-weight: 600;">Amount Due</td>
+                    <td style="padding: 12px 0 8px; color: #92400e; font-size: 16px; font-weight: 600;">Amount Due (${basisLabel})</td>
                     <td style="padding: 12px 0 8px; color: #b45309; font-weight: 700; text-align: right; font-size: 20px;">${fmtMoney(amountDue)}</td>
                   </tr>
                 </table>
@@ -29026,13 +29197,15 @@ ${rateText}`
       });
 
       const variableCosts = allVariableCosts.filter(vc => {
-        if (!vc.date) return false;
-        return vc.date >= yearStart && vc.date <= yearEnd;
+        const costDate = vc.date || vc.created_at;
+        if (!costDate) return false;
+        return costDate >= yearStart && costDate <= yearEnd;
       });
 
       const maintenance = allMaintenance.filter(m => {
-        if (!m.date) return false;
-        return m.date >= yearStart && m.date <= yearEnd;
+        const serviceDate = m.service_date || m.date || m.created_at;
+        if (!serviceDate) return false;
+        return serviceDate >= yearStart && serviceDate <= yearEnd;
       });
 
       const fuelRecords = allFuelRecords.filter(f => {
@@ -29045,24 +29218,26 @@ ${rateText}`
       const isCurrentYear = financialsYear === now.getFullYear();
       const monthsInData = isCurrentYear ? now.getMonth() + 1 : 12;
 
-      // ═══ REVENUE & COSTS FROM TRIPS ═══
-      let totalRevenue = 0, totalBrokerFees = 0, totalLocalFees = 0, totalDriverPay = 0, totalDispatchFees = 0, totalTripExpenses = 0;
-      let tripMilesTotal = 0, totalCars = 0;
-
-      trips.forEach(t => {
-        const fin = getTripFin(t.id);
-        totalRevenue += fin.loadRevenue;
-        totalBrokerFees += fin.brokerFee;
-        totalLocalFees += fin.localFees;
-        totalDriverPay += fin.driverCut;        // Company drivers only (Owner-Ops have 0)
-        totalDispatchFees += fin.dispatchFee;   // Owner-Ops only (this is company profit)
-        // Only count expenses for Company Driver trips - Owner-Op expenses are their responsibility
-        if (!fin.isOwnerOp) {
-          totalTripExpenses += fin.totalExpenses;
-        }
-        tripMilesTotal += parseFloat(t.miles || 0);
-        totalCars += fin.vehicleCount;
+      const snapshot = calculateFinancialSnapshot({
+        startDate: yearStart,
+        endDate: yearEnd,
+        trips: allTrips,
+        orders: allOrders,
+        expenses: appData.expenses || [],
+        fixedCosts,
+        variableCosts: allVariableCosts,
+        maintenance: allMaintenance,
+        fuelTransactions: allFuelRecords
       });
+
+      const totalRevenue = snapshot.operations.totalRevenue;
+      const totalBrokerFees = snapshot.operations.totalBrokerFees;
+      const totalLocalFees = snapshot.operations.totalLocalFees;
+      const totalDriverPay = snapshot.operations.totalDriverPay;
+      const totalDispatchFees = snapshot.operations.totalDispatchFees;
+      const totalTripExpenses = snapshot.operations.totalTripExpenses;
+      const tripMilesTotal = snapshot.operations.totalMiles;
+      const totalCars = snapshot.operations.totalCars;
 
       // Use fleet miles from Samsara for fleet-wide metrics, fall back to trip miles
       const fleetMilesResult = getFleetMiles(yearStart, yearEnd);
@@ -29070,24 +29245,17 @@ ${rateText}`
       const milesSource = fleetMilesResult.miles > 0 ? 'samsara' : 'trips';
 
       // Fixed & Variable Costs
-      const monthlyFixedCosts = fixedCosts.reduce((s, fc) => s + parseFloat(fc.amount || 0), 0);
+      const monthlyFixedCosts = snapshot.overhead.monthlyFixedCosts;
       const totalFixedCosts = monthlyFixedCosts * monthsInData;
-      const totalFuelFromRecords = fuelRecords.reduce((sum, f) => sum + parseFloat(f.total_cost || 0), 0);
-      const totalMaintenanceCost = maintenance.reduce((sum, m) => sum + parseFloat(m.total_cost || 0), 0);
-      const totalOtherVariableCosts = variableCosts.reduce((sum, vc) => sum + parseFloat(vc.amount || 0), 0);
+      const totalFuelFromRecords = snapshot.overhead.totalFuelFromRecords;
+      const totalMaintenanceCost = snapshot.overhead.totalMaintenanceCost;
+      const totalOtherVariableCosts = snapshot.overhead.totalOtherVariableCosts;
       const totalVariableCosts = totalFuelFromRecords + totalMaintenanceCost + totalOtherVariableCosts;
       
-      // Calculate profits
-      // For Company Drivers: profit = cleanRevenue - driverCut - expenses
-      // For Owner-Ops: profit = dispatch fee only (company doesn't pay driver or expenses)
-      // totalDispatchFees represents pure profit from Owner-Op trips
-      // totalDriverPay is only from Company Driver trips (Owner-Ops have driverCut=0)
       const cleanRevenue = totalRevenue - totalBrokerFees - totalLocalFees;
-      // Gross Profit = what's left after paying drivers (Company Drivers only)
-      // Plus dispatch fees which are pure profit from Owner-Ops
-      const grossProfit = (cleanRevenue - totalDriverPay) + totalDispatchFees;
-      // Operating Profit = after trip expenses (only from Company Driver trips - Owner-Op expenses are their responsibility)
-      const operatingProfit = grossProfit - totalTripExpenses - totalVariableCosts;
+      // Canonical trip profit already applies owner-op dispatch-fee-only accounting.
+      const grossProfit = snapshot.operations.tripNetProfit;
+      const operatingProfit = grossProfit - totalVariableCosts;
       const netProfit = operatingProfit - totalFixedCosts;
       const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue * 100) : 0;
       
@@ -29412,11 +29580,12 @@ ${rateText}`
     
     function renderFinByBroker(orders, trips) {
       const brokerStats = {};
+      const tripAllocationCache = {};
 
       orders.forEach(o => {
         const brokerName = o.broker_name || 'Unknown';
         if (!brokerStats[brokerName]) {
-          brokerStats[brokerName] = { revenue: 0, brokerFee: 0, localFee: 0, driverPay: 0, dispatchFee: 0, cars: 0, trips: new Set() };
+          brokerStats[brokerName] = { revenue: 0, brokerFee: 0, localFee: 0, allocatedProfit: 0, cars: 0, trips: new Set() };
         }
         brokerStats[brokerName].revenue += parseFloat(o.revenue || 0);
         brokerStats[brokerName].brokerFee += parseFloat(o.broker_fee || 0);
@@ -29424,20 +29593,26 @@ ${rateText}`
         brokerStats[brokerName].cars++;
         if (o.trip_id) {
           brokerStats[brokerName].trips.add(o.trip_id);
-          // Get driver pay/dispatch fee from trip for profit calculation
-          const fin = getTripFin(o.trip_id);
-          const tripOrderCount = orders.filter(ord => ord.trip_id === o.trip_id).length || 1;
-          // Allocate driver pay proportionally to each order in the trip
-          brokerStats[brokerName].driverPay += fin.driverCut / tripOrderCount;
-          brokerStats[brokerName].dispatchFee += fin.dispatchFee / tripOrderCount;
+          if (!tripAllocationCache[o.trip_id]) {
+            const tripOrders = orders.filter(ord => ord.trip_id === o.trip_id);
+            tripAllocationCache[o.trip_id] = {
+              count: tripOrders.length || 1,
+              totalRevenue: tripOrders.reduce((sum, ord) => sum + parseFloat(ord.revenue || 0), 0)
+            };
+          }
+          const allocation = tripAllocationCache[o.trip_id];
+          const orderRevenue = parseFloat(o.revenue || 0);
+          const share = allocation.totalRevenue > 0
+            ? (orderRevenue / allocation.totalRevenue)
+            : (1 / allocation.count);
+          brokerStats[brokerName].allocatedProfit += getTripFin(o.trip_id).netProfit * share;
         }
       });
 
       const brokerList = Object.entries(brokerStats)
         .map(([name, data]) => {
           const cleanRevenue = data.revenue - data.brokerFee - data.localFee;
-          // Net profit = clean revenue - driver pay + dispatch fees (dispatch fees are company profit)
-          const netProfit = cleanRevenue - data.driverPay + data.dispatchFee;
+          const netProfit = data.allocatedProfit;
           return {
             name,
             revenue: data.revenue,
@@ -29479,6 +29654,7 @@ ${rateText}`
     
     function renderFinByLane(orders, trips) {
       const laneStats = {};
+      const tripAllocationCache = {};
 
       orders.forEach(o => {
         if (!o.origin || !o.destination) return;
@@ -29487,7 +29663,7 @@ ${rateText}`
         const lane = originState + ' → ' + destState;
 
         if (!laneStats[lane]) {
-          laneStats[lane] = { revenue: 0, cleanRevenue: 0, driverPay: 0, dispatchFee: 0, miles: 0, cars: 0, trips: new Set() };
+          laneStats[lane] = { revenue: 0, cleanRevenue: 0, allocatedProfit: 0, miles: 0, cars: 0, trips: new Set() };
         }
 
         const revenue = parseFloat(o.revenue || 0);
@@ -29499,22 +29675,30 @@ ${rateText}`
         laneStats[lane].cars++;
         if (o.trip_id) {
           laneStats[lane].trips.add(o.trip_id);
+          if (!tripAllocationCache[o.trip_id]) {
+            const tripOrders = orders.filter(ord => ord.trip_id === o.trip_id);
+            tripAllocationCache[o.trip_id] = {
+              count: tripOrders.length || 1,
+              totalRevenue: tripOrders.reduce((sum, ord) => sum + parseFloat(ord.revenue || 0), 0)
+            };
+          }
           const trip = trips.find(t => t.id === o.trip_id);
           if (trip) {
-            const tripOrderCount = orders.filter(ord => ord.trip_id === o.trip_id).length || 1;
+            const allocation = tripAllocationCache[o.trip_id];
+            const tripOrderCount = allocation.count;
             laneStats[lane].miles += parseFloat(trip.miles || 0) / tripOrderCount;
-            // Get driver pay/dispatch fee for accurate profit
-            const fin = getTripFin(o.trip_id);
-            laneStats[lane].driverPay += fin.driverCut / tripOrderCount;
-            laneStats[lane].dispatchFee += fin.dispatchFee / tripOrderCount;
+            const orderRevenue = parseFloat(o.revenue || 0);
+            const share = allocation.totalRevenue > 0
+              ? (orderRevenue / allocation.totalRevenue)
+              : (1 / tripOrderCount);
+            laneStats[lane].allocatedProfit += getTripFin(o.trip_id).netProfit * share;
           }
         }
       });
 
       const laneList = Object.entries(laneStats)
         .map(([lane, data]) => {
-          // Net profit = clean revenue - driver pay + dispatch fees
-          const netProfit = data.cleanRevenue - data.driverPay + data.dispatchFee;
+          const netProfit = data.allocatedProfit;
           return {
             lane,
             revenue: data.revenue,
@@ -30357,7 +30541,7 @@ ${rateText}`
       });
 
       // ============ YEAR CALCULATIONS FOR "AT A GLANCE" ============
-      let allTimeRevenue = 0, allTimeBrokerFees = 0, allTimeLocalFees = 0, allTimeDriverCut = 0, allTimeExpenses = 0, allTimeMiles = 0, allTimeCars = 0;
+      let allTimeRevenue = 0, allTimeBrokerFees = 0, allTimeLocalFees = 0, allTimeDriverCut = 0, allTimeExpenses = 0, allTimeMiles = 0, allTimeCars = 0, allTimeTripNetProfit = 0;
       const allTimeFuelCosts = { FUEL: 0, TOLLS: 0, PERMITS: 0, PARKING: 0, MAINTENANCE: 0, OTHER: 0 };
 
       yearFilteredTrips.forEach(t => {
@@ -30366,21 +30550,26 @@ ${rateText}`
         allTimeBrokerFees += f.brokerFee;
         allTimeLocalFees += f.localFees;
         allTimeDriverCut += f.driverCut;
-        allTimeExpenses += f.totalExpenses;
+        if (!f.isOwnerOp) {
+          allTimeExpenses += f.totalExpenses;
+        }
         allTimeMiles += parseFloat(t.miles || 0);
         allTimeCars += f.vehicleCount;
+        allTimeTripNetProfit += f.netProfit;
         
         const tripExpenses = appData.expenses.filter(e => e.trip_id === t.id);
-        tripExpenses.forEach(e => {
-          if (allTimeFuelCosts[e.category] !== undefined) allTimeFuelCosts[e.category] += parseFloat(e.amount || 0);
-          else allTimeFuelCosts.OTHER += parseFloat(e.amount || 0);
-        });
+        if (!f.isOwnerOp) {
+          tripExpenses.forEach(e => {
+            if (allTimeFuelCosts[e.category] !== undefined) allTimeFuelCosts[e.category] += parseFloat(e.amount || 0);
+            else allTimeFuelCosts.OTHER += parseFloat(e.amount || 0);
+          });
+        }
       });
       
       const allTimeTripCount = yearFilteredTrips.length;
       const allTimeCleanGross = allTimeRevenue - allTimeBrokerFees - allTimeLocalFees;
-      const allTimeDirectTripExpenses = allTimeBrokerFees + allTimeLocalFees + allTimeDriverCut + allTimeExpenses; // All trip costs
-      const allTimeNetProfit = allTimeRevenue - allTimeDirectTripExpenses; // Revenue - All Trip Costs
+      const allTimeDirectTripExpenses = allTimeRevenue - allTimeTripNetProfit; // Derived from canonical trip profit
+      const allTimeNetProfit = allTimeTripNetProfit; // Revenue - All trip costs (owner-op dispatch-fee-only)
       const allTimeTruckGross = allTimeCleanGross - allTimeDriverCut; // Keep for backward compatibility
 
       // Calculate avg driver cut percentage
@@ -30410,18 +30599,17 @@ ${rateText}`
       // Driver Cut = Clean Gross * driverRatio
       // Net Profit = Clean Gross - Driver Cut - Expenses - Fixed Costs = 0
       // Revenue * (1 - brokerRatio - localRatio) * (1 - driverRatio) = expenses + Fixed Costs
-      // Calculate avg monthly direct costs from trips (includes all trip costs)
-      // Use yearFilteredTrips instead of all trips for accurate year-based metrics
+      // Calculate average monthly trip expenses (do not stack broker/local/driver ratios twice).
       const tripDates = yearFilteredTrips.map(t => parseTripDate(t.trip_date)).filter(d => d !== null);
       const minDate = tripDates.length > 0 ? new Date(Math.min(...tripDates)) : new Date();
       const maxDate = tripDates.length > 0 ? new Date(Math.max(...tripDates)) : new Date();
-      const monthsOfData = Math.max(1, Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24 * 30)));
-      const avgMonthlyDirectExpenses = allTimeDirectTripExpenses / monthsOfData;
+      const monthsOfData = countMonthsInclusive(minDate, maxDate);
+      const avgMonthlyTripExpenses = allTimeExpenses / monthsOfData;
       const avgMonthlyTrips = allTimeTripCount / monthsOfData;
       const avgMonthlyCars = allTimeCars / monthsOfData;
       
       const truckGrossRatio = (1 - brokerFeeRatio - localFeeRatio) * (1 - driverCutRatio);
-      const breakEvenMonthlyRevenue = truckGrossRatio > 0 ? (monthlyFixedCosts + avgMonthlyDirectExpenses) / truckGrossRatio : 0;
+      const breakEvenMonthlyRevenue = truckGrossRatio > 0 ? (monthlyFixedCosts + avgMonthlyTripExpenses) / truckGrossRatio : 0;
       const breakEvenPPC = avgMonthlyCars > 0 ? breakEvenMonthlyRevenue / avgMonthlyCars : 0;
       const currentProfitPerCar = allTimeCars > 0 ? allTimeNetProfit / allTimeCars : 0;
       const ppcGap = breakEvenPPC - allTimeAvgPPC;
@@ -31407,14 +31595,10 @@ ${rateText}`
       // Trip Net Profit = Revenue - All Trip Costs
       const tripNetProfit = loadRevenue - directTripExpenses;
       
-      // Cash collected (COD + COP only) - LOCAL_COD goes to local driver, not trip driver
-      const cashCollected = orders.filter(o => o.payment_type === 'COD' || o.payment_type === 'COP').reduce((s, o) => {
-        // If bill_amount > 0, this is a split payment - use cod_amount instead of revenue
-        if (parseFloat(o.bill_amount || 0) > 0) {
-          return s + parseFloat(o.cod_amount || 0);
-        }
-        return s + parseFloat(o.revenue || 0);
-      }, 0);
+      // Cash collected by trip driver (LOCAL_COD goes to local driver, not trip driver)
+      const cashCollected = orders
+        .filter(o => ['COD', 'COP', 'SPLIT'].includes(String(o.payment_type || '').toUpperCase()))
+        .reduce((sum, o) => sum + getOrderCashCollectedAmount(o), 0);
       const expenseReimbursement = fuelCosts.OTHER; // Only OTHER category is reimbursed
       const netPayToDriver = driverCut - cashCollected + expenseReimbursement;
       
@@ -31576,54 +31760,55 @@ ${rateText}`
         const fixedCosts = appData.fixed_costs || [];
         const variableCosts = appData.variable_costs || [];
       
-      // Period selector - calculate months in data
-      const tripDates = trips.filter(t => t.trip_date).map(t => parseTripDate(t.trip_date)).filter(d => d !== null);
-      const minDate = tripDates.length > 0 ? new Date(Math.min(...tripDates)) : new Date();
-      const maxDate = tripDates.length > 0 ? new Date(Math.max(...tripDates)) : new Date();
-      const monthsInData = Math.max(1, Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24 * 30)));
-      
-      // ═══ FIXED: Use getTripFin() for accurate revenue/cost data ═══
-      let totalRevenue = 0, totalBrokerFees = 0, totalLocalFees = 0, totalDriverPay = 0, totalTripExpenses = 0;
-      let tripMilesTotal = 0, totalCars = 0;
-
-      trips.forEach(t => {
-        const fin = getTripFin(t.id);
-        totalRevenue += fin.loadRevenue;
-        totalBrokerFees += fin.brokerFee;
-        totalLocalFees += fin.localFees;
-        totalDriverPay += fin.driverCut;
-        totalTripExpenses += fin.totalExpenses;
-        tripMilesTotal += parseFloat(t.miles || 0);
-        totalCars += fin.vehicleCount;
+      // Canonical snapshot for profitability reports
+      const tripRange = getDateRangeFromTrips(trips);
+      const startDate = tripRange?.start || new Date().toISOString().split('T')[0];
+      const endDate = tripRange?.end || startDate;
+      const monthsInData = countMonthsInclusive(startDate, endDate);
+      const snapshot = calculateFinancialSnapshot({
+        startDate,
+        endDate,
+        trips,
+        orders,
+        expenses: appData.expenses || [],
+        fixedCosts,
+        variableCosts,
+        maintenance,
+        fuelTransactions: fuelRecords
       });
 
+      const totalRevenue = snapshot.operations.totalRevenue;
+      const totalBrokerFees = snapshot.operations.totalBrokerFees;
+      const totalLocalFees = snapshot.operations.totalLocalFees;
+      const totalDriverPay = snapshot.operations.totalDriverPay;
+      const totalTripExpenses = snapshot.operations.totalTripExpenses;
+      const tripMilesTotal = snapshot.operations.totalMiles;
+      const totalCars = snapshot.operations.totalCars;
+
       // Use fleet miles from Samsara for fleet-wide metrics, fall back to trip miles
-      const startDate = minDate.toISOString().split('T')[0];
-      const endDate = maxDate.toISOString().split('T')[0];
       const fleetMilesResult = getFleetMiles(startDate, endDate);
       const totalMiles = fleetMilesResult.miles > 0 ? fleetMilesResult.miles : tripMilesTotal;
       const milesSource = fleetMilesResult.miles > 0 ? 'samsara' : 'trips';
 
-      const cleanRevenue = totalRevenue - totalBrokerFees - totalLocalFees;
+      const cleanRevenue = snapshot.operations.cleanRevenue;
       const avgRevenuePerMile = totalMiles > 0 ? totalRevenue / totalMiles : 0;
       
       // Calculate Variable Costs (Fuel Records + Maintenance Records + Variable Costs table)
       // Note: Trip expenses (fuel, tolls etc.) are already in totalTripExpenses from getTripFin()
-      const totalFuelFromRecords = fuelRecords.reduce((sum, f) => sum + parseFloat(f.total_cost || 0), 0);
-      const totalMaintenanceCost = maintenance.reduce((sum, m) => sum + parseFloat(m.total_cost || 0), 0);
-      const totalOtherVariableCosts = variableCosts.reduce((sum, vc) => sum + parseFloat(vc.amount || 0), 0);
-      // Don't double-count: totalTripExpenses already includes trip-level fuel/tolls
+      const totalFuelFromRecords = snapshot.overhead.totalFuelFromRecords;
+      const totalMaintenanceCost = snapshot.overhead.totalMaintenanceCost;
+      const totalOtherVariableCosts = snapshot.overhead.totalOtherVariableCosts;
       const totalVariableCosts = totalFuelFromRecords + totalMaintenanceCost + totalOtherVariableCosts;
       
       // Calculate Fixed Costs (monthly * months in data)
-      const monthlyFixedCosts = fixedCosts.reduce((sum, fc) => sum + parseFloat(fc.amount || 0), 0);
+      const monthlyFixedCosts = snapshot.overhead.monthlyFixedCosts;
       const totalFixedCosts = monthlyFixedCosts * monthsInData;
       
-      // TOTAL COSTS & TRUE NET PROFIT (using accurate data from getTripFin)
-      const totalAllCosts = totalBrokerFees + totalLocalFees + totalDriverPay + totalTripExpenses + totalVariableCosts + totalFixedCosts;
-      const grossProfit = cleanRevenue - totalDriverPay;
-      const operatingProfit = grossProfit - totalTripExpenses - totalVariableCosts;
+      // TOTAL COSTS & TRUE NET PROFIT (canonical owner-op dispatch-fee-only model)
+      const grossProfit = snapshot.operations.tripNetProfit;
+      const operatingProfit = grossProfit - totalVariableCosts;
       const trueNetProfit = operatingProfit - totalFixedCosts;
+      const totalAllCosts = totalRevenue - trueNetProfit;
       const profitMargin = totalRevenue > 0 ? (trueNetProfit / totalRevenue * 100) : 0;
       
       // ═══ NEW: Cost Per Mile & Profit Per Mile metrics ═══
@@ -31750,7 +31935,7 @@ ${rateText}`
       
       maintenance.forEach(m => {
         if (m.truck_id && truckStats[m.truck_id]) {
-          truckStats[m.truck_id].maintenanceCost += parseFloat(m.total_cost || 0);
+          truckStats[m.truck_id].maintenanceCost += parseFloat(m.total_cost || m.cost || 0);
         }
       });
       
@@ -31882,7 +32067,7 @@ ${rateText}`
         }
       });
       
-      const total = filtered.reduce((s, m) => s + parseFloat(m.total_cost || 0), 0);
+      const total = filtered.reduce((s, m) => s + parseFloat(m.total_cost || m.cost || 0), 0);
       
       // Get unique trucks for filter dropdown
       const trucksWithRecords = [...new Set(records.map(m => m.truck_id))].filter(id => id);
@@ -31913,7 +32098,7 @@ ${rateText}`
             '<td><span class="badge badge-blue">' + (m.service_type || '-') + '</span></td>' +
             '<td>' + (m.shop_name || '-') + '</td>' +
             '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (m.description || '-') + '</td>' +
-            '<td class="money">' + formatMoney(m.total_cost || 0) + '</td>' +
+            '<td class="money">' + formatMoney(m.total_cost || m.cost || 0) + '</td>' +
             '<td class="sticky-col"><div class="actions">' +
             (m.invoice_file ? '<button class="action-btn view" onclick="viewMaintenanceInvoice(' + m.id + ')">📄</button>' : '') +
             '<button class="action-btn edit" onclick="openMaintenanceModal(null,' + m.id + ')">Edit</button>' +
@@ -31947,7 +32132,7 @@ ${rateText}`
           m.odometer || '',
           m.parts_cost || 0,
           m.labor_cost || 0,
-          m.total_cost || 0,
+          m.total_cost || m.cost || 0,
           (m.notes || '').replace(/"/g, '""')
         ].map(val => '"' + val + '"').join(',');
       });
@@ -34481,7 +34666,7 @@ function jsonResponse(data, status = 200) {
           'Truck': truck ? '#' + truck.truck_number : '',
           'Service Type': m.service_type || '',
           'Description': m.description || '',
-          'Cost': m.cost || 0,
+          'Cost': m.total_cost || m.cost || 0,
           'Vendor': m.vendor || '',
           'Mileage': m.mileage || '',
           'Next Service': m.next_service_date || '',
@@ -34514,7 +34699,7 @@ function jsonResponse(data, status = 200) {
         const tripCount = appData.trips.filter(tr => tr.truck_id === t.id).length;
         const maintenanceCost = appData.maintenance_records
           .filter(m => m.truck_id === t.id)
-          .reduce((sum, m) => sum + parseFloat(m.cost || 0), 0);
+          .reduce((sum, m) => sum + parseFloat(m.total_cost || m.cost || 0), 0);
         return {
           'Truck #': t.truck_number,
           'Type': t.truck_type || '',
@@ -36704,7 +36889,7 @@ function jsonResponse(data, status = 200) {
         const tripIds = truckTrips.map(t => t.id);
         const fuelExpenses = (appData.expenses || []).filter(e => tripIds.includes(e.trip_id) && e.category === 'FUEL').reduce((s, e) => s + parseFloat(e.amount || 0), 0);
         const otherExpenses = (appData.expenses || []).filter(e => tripIds.includes(e.trip_id) && e.category !== 'FUEL').reduce((s, e) => s + parseFloat(e.amount || 0), 0);
-        const maintenance = (appData.maintenance_records || []).filter(m => m.truck_id === truck.id).reduce((s, m) => s + parseFloat(m.cost || 0), 0);
+        const maintenance = (appData.maintenance_records || []).filter(m => m.truck_id === truck.id).reduce((s, m) => s + parseFloat(m.total_cost || m.cost || 0), 0);
         
         const totalCosts = driverCut + fuelExpenses + otherExpenses + fixedCostPerTruck + maintenance;
         const netProfit = cleanGross - totalCosts;
@@ -36760,14 +36945,10 @@ function jsonResponse(data, status = 200) {
           return sum + (tripClean * ((trip.driver_cut_percent || 32) / 100));
         }, 0);
         
-        // Cash collected - handle split payments (bill_amount > 0 means use cod_amount)
         // LOCAL_COD goes to local driver, not trip driver
-        const cashCollected = driverOrders.filter(o => o.payment_type === 'COD' || o.payment_type === 'COP').reduce((s, o) => {
-          if (parseFloat(o.bill_amount || 0) > 0) {
-            return s + parseFloat(o.cod_amount || 0);
-          }
-          return s + parseFloat(o.revenue || 0);
-        }, 0);
+        const cashCollected = driverOrders
+          .filter(o => ['COD', 'COP', 'SPLIT'].includes(String(o.payment_type || '').toUpperCase()))
+          .reduce((sum, o) => sum + getOrderCashCollectedAmount(o), 0);
         const miles = driverTrips.reduce((s, t) => s + parseFloat(t.miles || 0), 0);
         const avgPerCar = driverOrders.length > 0 ? cleanGross / driverOrders.length : 0;
         
@@ -37125,7 +37306,9 @@ function jsonResponse(data, status = 200) {
       const monthlyProfit = monthlyRevenue - driverCuts - monthlyExpenses - monthlyFixedCosts;
       const profitPerTruck = activeTrucks > 0 ? monthlyProfit / activeTrucks : 0;
       const cashCollected = monthlyOrders.filter(o => o.driver_paid_status === 'PAID').reduce((s, o) => s + parseFloat(o.driver_paid_amount || 0), 0);
-      const outstanding = monthlyOrders.filter(o => o.driver_paid_status !== 'PAID' && (o.payment_type === 'COD' || o.payment_type === 'COP' || o.payment_type === 'LOCAL_COD')).reduce((s, o) => s + parseFloat(o.revenue || 0), 0);
+      const outstanding = monthlyOrders
+        .filter(o => o.driver_paid_status !== 'PAID' && ['COD', 'COP', 'LOCAL_COD', 'SPLIT'].includes(String(o.payment_type || '').toUpperCase()))
+        .reduce((sum, o) => sum + getOrderCashCollectedAmount(o), 0);
 
       return {
         monthlyRevenue, monthlyProfit, activeTrucks, profitPerTruck,
@@ -37385,7 +37568,10 @@ function jsonResponse(data, status = 200) {
         l.revenue += rev; l.miles += mi; l.trips++;
       });
       const lanes = Array.from(data.values()).map(l => ({...l, rpm: l.miles > 0 ? l.revenue/l.miles : 0})).filter(l => l.trips >= 2);
-      return { best: lanes.sort((a,b) => b.rpm - a.rpm), worst: lanes.sort((a,b) => a.rpm - b.rpm) };
+      return {
+        best: [...lanes].sort((a,b) => b.rpm - a.rpm),
+        worst: [...lanes].sort((a,b) => a.rpm - b.rpm)
+      };
     }
     
     function analyzeRisksForAI(fs) {
