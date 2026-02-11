@@ -9720,6 +9720,154 @@
       return { start: tripDates[0], end: tripDates[tripDates.length - 1] };
     }
 
+    // Normalize date/datetime values to YYYY-MM-DD so string comparisons are safe.
+    function toDateKey(value) {
+      if (!value) return null;
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (!trimmed) return null;
+        const isoLike = trimmed.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (isoLike) return isoLike[1];
+      }
+      const parsed = parseTripDate(value);
+      if (!parsed || isNaN(parsed.getTime())) return null;
+      return [
+        parsed.getFullYear(),
+        String(parsed.getMonth() + 1).padStart(2, '0'),
+        String(parsed.getDate()).padStart(2, '0')
+      ].join('-');
+    }
+
+    function buildPeriodRange(periodCtx = {}) {
+      const type = String(periodCtx.type || 'year').toLowerCase();
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const year = parseInt(periodCtx.year, 10) || currentYear;
+      const month = Math.min(12, Math.max(1, parseInt(periodCtx.month, 10) || (now.getMonth() + 1)));
+      const quarter = Math.min(4, Math.max(1, parseInt(periodCtx.quarter, 10) || Math.ceil(month / 3)));
+
+      if (type === 'all') {
+        return { type: 'all', start: null, end: null, year: null, month: null, quarter: null };
+      }
+      if (type === 'month') {
+        const lastDay = new Date(year, month, 0).getDate();
+        return {
+          type: 'month',
+          year,
+          month,
+          quarter: Math.ceil(month / 3),
+          start: year + '-' + String(month).padStart(2, '0') + '-01',
+          end: year + '-' + String(month).padStart(2, '0') + '-' + String(lastDay).padStart(2, '0')
+        };
+      }
+      if (type === 'quarter') {
+        const startMonth = (quarter - 1) * 3 + 1;
+        const endMonth = startMonth + 2;
+        const endDay = new Date(year, endMonth, 0).getDate();
+        return {
+          type: 'quarter',
+          year,
+          quarter,
+          month: null,
+          start: year + '-' + String(startMonth).padStart(2, '0') + '-01',
+          end: year + '-' + String(endMonth).padStart(2, '0') + '-' + String(endDay).padStart(2, '0')
+        };
+      }
+      return {
+        type: 'year',
+        year,
+        month: null,
+        quarter: null,
+        start: year + '-01-01',
+        end: year + '-12-31'
+      };
+    }
+
+    function getPeriodLabel(periodCtx = {}) {
+      const range = buildPeriodRange(periodCtx);
+      if (range.type === 'all') return 'All Time';
+      if (range.type === 'year') return 'Year ' + range.year;
+      if (range.type === 'quarter') return 'Q' + range.quarter + ' ' + range.year;
+      const names = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return names[range.month] + ' ' + range.year;
+    }
+
+    function getDataDrivenYearOptions(dates, includeCurrent = true) {
+      const currentYear = new Date().getFullYear();
+      const years = new Set();
+      (dates || []).forEach(value => {
+        const dateKey = toDateKey(value);
+        if (!dateKey) return;
+        const year = parseInt(dateKey.slice(0, 4), 10);
+        if (Number.isFinite(year)) years.add(year);
+      });
+      if (includeCurrent) years.add(currentYear);
+      return Array.from(years).sort((a, b) => b - a);
+    }
+
+    function resolveOrderEffectiveDate(order, trips = []) {
+      if (!order) return null;
+      if (order.trip_id !== null && order.trip_id !== undefined && order.trip_id !== '') {
+        const trip = (trips || []).find(t => String(t.id) === String(order.trip_id));
+        const tripDate = toDateKey(trip?.trip_date || trip?.period_start_date || trip?.created_at);
+        if (tripDate) return tripDate;
+      }
+      return toDateKey(order.pickup_date || order.dropoff_date || order.delivery_date || order.created_at);
+    }
+
+    function isDateKeyInRange(dateKey, range) {
+      if (!dateKey) return false;
+      if (!range || (!range.start && !range.end)) return true;
+      if (range.start && dateKey < range.start) return false;
+      if (range.end && dateKey > range.end) return false;
+      return true;
+    }
+
+    function filterByRange(records, dateSelector, range, options = {}) {
+      const { excludeUndated = true } = options;
+      const hasBounds = !!(range && (range.start || range.end));
+      return (records || []).filter(record => {
+        const dateValue = dateSelector(record);
+        const dateKey = toDateKey(dateValue);
+        if (!dateKey) return hasBounds ? !excludeUndated : true;
+        return isDateKeyInRange(dateKey, range);
+      });
+    }
+
+    function filterTripsByRange(trips, range, options = {}) {
+      return filterByRange(
+        trips || [],
+        t => t?.trip_date || t?.period_start_date || t?.created_at,
+        range,
+        options
+      );
+    }
+
+    function filterOrdersByRange(orders, trips, range, options = {}) {
+      const { excludeUndated = true } = options;
+      const hasBounds = !!(range && (range.start || range.end));
+      return (orders || []).filter(order => {
+        const effectiveDate = resolveOrderEffectiveDate(order, trips || []);
+        if (!effectiveDate) return hasBounds ? !excludeUndated : true;
+        return isDateKeyInRange(effectiveDate, range);
+      });
+    }
+
+    function getEarliestDataDateKey() {
+      const dates = [];
+      (appData.trips || []).forEach(t => {
+        dates.push(t?.trip_date, t?.period_start_date, t?.created_at);
+      });
+      (appData.orders || []).forEach(o => {
+        dates.push(resolveOrderEffectiveDate(o, appData.trips || []));
+      });
+      (appData.expenses || []).forEach(e => dates.push(e?.expense_date || e?.created_at));
+      (appData.fuel_transactions || []).forEach(f => dates.push(f?.transaction_date || f?.created_at));
+      (appData.maintenance_records || []).forEach(m => dates.push(m?.service_date || m?.date || m?.created_at));
+      const normalized = dates.map(toDateKey).filter(Boolean).sort();
+      return normalized.length > 0 ? normalized[0] : null;
+    }
+
     function getInvoiceBasisLabel() {
       return INVOICE_AMOUNT_BASIS === 'CLEAN_REVENUE' ? 'Clean Revenue' : 'Gross Revenue';
     }
@@ -14524,6 +14672,11 @@
     let dashboardPeriod = 'year';  // 'all', 'year', 'month', 'q1', 'q2', 'q3', 'q4'
     let dashboardYear = new Date().getFullYear();
     let dashboardMonth = new Date().getMonth() + 1;  // 1-12
+    let brokersPeriod = { type: 'year', year: new Date().getFullYear() };
+    let dispatchersPeriod = { type: 'year', year: new Date().getFullYear() };
+    let profitabilityPeriod = { type: 'year', year: new Date().getFullYear() };
+    let billingPeriod = { type: 'year', year: new Date().getFullYear() };
+    let aiPeriod = { type: 'year', year: new Date().getFullYear() };
 
     function changeDashboardPeriod(period) {
       dashboardPeriod = period;
@@ -14540,106 +14693,50 @@
       renderDashboard(document.getElementById('main-content'));
     }
 
-    function getTripYear(trip) {
-      const dateStr = trip.trip_date || trip.period_start_date || trip.created_at;
-      if (!dateStr) return null;
-      const date = new Date(dateStr);
-      return date.getFullYear();
-    }
-
-    function getTripQuarter(trip) {
-      const dateStr = trip.trip_date || trip.period_start_date || trip.created_at;
-      if (!dateStr) return null;
-      const month = new Date(dateStr).getMonth();
-      if (month >= 0 && month <= 2) return 1;
-      if (month >= 3 && month <= 5) return 2;
-      if (month >= 6 && month <= 8) return 3;
-      return 4;
-    }
-
-    function getTripMonth(trip) {
-      const dateStr = trip.trip_date || trip.period_start_date || trip.created_at;
-      if (!dateStr) return null;
-      return new Date(dateStr).getMonth() + 1;  // 1-12
+    function getDashboardPeriodContext() {
+      if (dashboardPeriod === 'all') return { type: 'all' };
+      if (dashboardPeriod === 'month') return { type: 'month', year: dashboardYear, month: dashboardMonth };
+      if (dashboardPeriod === 'q1') return { type: 'quarter', year: dashboardYear, quarter: 1 };
+      if (dashboardPeriod === 'q2') return { type: 'quarter', year: dashboardYear, quarter: 2 };
+      if (dashboardPeriod === 'q3') return { type: 'quarter', year: dashboardYear, quarter: 3 };
+      if (dashboardPeriod === 'q4') return { type: 'quarter', year: dashboardYear, quarter: 4 };
+      return { type: 'year', year: dashboardYear };
     }
 
     function filterTripsByPeriod(trips) {
-      return trips.filter(t => {
-        if (dashboardPeriod === 'all') return true;
-        const tripYear = getTripYear(t);
-        if (tripYear !== dashboardYear) return false;
-        if (dashboardPeriod === 'year') return true;
-        if (dashboardPeriod === 'month') return getTripMonth(t) === dashboardMonth;
-        const quarter = getTripQuarter(t);
-        if (dashboardPeriod === 'q1') return quarter === 1;
-        if (dashboardPeriod === 'q2') return quarter === 2;
-        if (dashboardPeriod === 'q3') return quarter === 3;
-        if (dashboardPeriod === 'q4') return quarter === 4;
-        return true;
-      });
+      const range = getDashboardDateRange();
+      return filterTripsByRange(trips || [], range, { excludeUndated: true });
     }
 
     const dashboardMonthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     function getDashboardPeriodLabel() {
       if (dashboardPeriod === 'all') return 'All Time';
-      if (dashboardPeriod === 'year') return dashboardYear;
+      if (dashboardPeriod === 'year') return 'Year ' + dashboardYear;
       if (dashboardPeriod === 'month') return dashboardMonthNames[dashboardMonth] + ' ' + dashboardYear;
       if (dashboardPeriod === 'q1') return 'Q1 ' + dashboardYear;
       if (dashboardPeriod === 'q2') return 'Q2 ' + dashboardYear;
       if (dashboardPeriod === 'q3') return 'Q3 ' + dashboardYear;
       if (dashboardPeriod === 'q4') return 'Q4 ' + dashboardYear;
-      return dashboardYear;
+      return 'Year ' + dashboardYear;
     }
 
     // Get date range for dashboard period
     function getDashboardDateRange() {
-      const year = dashboardYear;
-      if (dashboardPeriod === 'all') {
-        // All Time: from earliest possible year to current date
-        return { start: '2020-01-01', end: new Date().toISOString().split('T')[0] };
+      const periodCtx = getDashboardPeriodContext();
+      const range = buildPeriodRange(periodCtx);
+      if (range.type === 'all') {
+        const earliest = getEarliestDataDateKey() || toDateKey(new Date());
+        return { type: 'all', start: earliest, end: toDateKey(new Date()) };
       }
-      if (dashboardPeriod === 'year') {
-        return { start: year + '-01-01', end: year + '-12-31' };
-      }
-      if (dashboardPeriod === 'month') {
-        const lastDay = new Date(year, dashboardMonth, 0).getDate();
-        return {
-          start: year + '-' + String(dashboardMonth).padStart(2, '0') + '-01',
-          end: year + '-' + String(dashboardMonth).padStart(2, '0') + '-' + lastDay
-        };
-      }
-      if (dashboardPeriod === 'q1') return { start: year + '-01-01', end: year + '-03-31' };
-      if (dashboardPeriod === 'q2') return { start: year + '-04-01', end: year + '-06-30' };
-      if (dashboardPeriod === 'q3') return { start: year + '-07-01', end: year + '-09-30' };
-      if (dashboardPeriod === 'q4') return { start: year + '-10-01', end: year + '-12-31' };
-      return { start: year + '-01-01', end: year + '-12-31' };
+      return range;
     }
 
     function renderDashboard(c) {
-      // Filter trips by selected period (year, quarter, or all time)
-      const yearTrips = filterTripsByPeriod(appData.trips);
-      const yearTripIds = yearTrips.map(t => t.id);
-
-      // Filter orders to match the same period
-      const yearOrders = appData.orders.filter(o => {
-        if (yearTripIds.includes(o.trip_id)) return true;
-        if (!o.trip_id) {
-          // Standalone orders - filter by period
-          const orderDate = new Date(o.created_at);
-          const orderYear = orderDate.getFullYear();
-          if (dashboardPeriod === 'all') return true;
-          if (orderYear !== dashboardYear) return false;
-          if (dashboardPeriod === 'year') return true;
-          const month = orderDate.getMonth();
-          const quarter = month >= 0 && month <= 2 ? 1 : month >= 3 && month <= 5 ? 2 : month >= 6 && month <= 8 ? 3 : 4;
-          if (dashboardPeriod === 'q1') return quarter === 1;
-          if (dashboardPeriod === 'q2') return quarter === 2;
-          if (dashboardPeriod === 'q3') return quarter === 3;
-          if (dashboardPeriod === 'q4') return quarter === 4;
-        }
-        return false;
-      });
+      const dateRange = getDashboardDateRange();
+      const excludeUndated = dashboardPeriod !== 'all';
+      const yearTrips = filterTripsByRange(appData.trips || [], dateRange, { excludeUndated });
+      const yearOrders = filterOrdersByRange(appData.orders || [], appData.trips || [], dateRange, { excludeUndated });
 
       // Calculate all metrics for selected year
       let totalRev = 0, totalProfit = 0, totalExpenses = 0, totalBrokerFees = 0, totalLocalFees = 0, totalDriverCut = 0, totalCars = 0;
@@ -14648,7 +14745,6 @@
       const dispPerf = {};
 
       // Get fleet miles from Samsara if available (preferred), otherwise use trip miles
-      const dateRange = getDashboardDateRange();
       const fleetMilesResult = getFleetMiles(dateRange.start, dateRange.end);
       const totalMiles = fleetMilesResult.miles;
       const dashboardMilesSource = fleetMilesResult.source; // 'samsara' or 'trips'
@@ -14679,9 +14775,8 @@
 
       // Calculate fleet-wide fuel from Fuel Tracking (fuel_transactions table)
       const fleetFuelRecords = (appData.fuel_transactions || []).filter(f => {
-        if (!f.transaction_date) return false;
-        const fuelDate = f.transaction_date;
-        return fuelDate >= dateRange.start && fuelDate <= dateRange.end;
+        const fuelDateKey = toDateKey(f.transaction_date || f.created_at);
+        return isDateKeyInRange(fuelDateKey, dateRange);
       });
       // Use 'amount' field (same as Fuel Tracking page uses)
       const fleetFuelCost = fleetFuelRecords.reduce((s, f) => s + parseFloat(f.amount || 0), 0);
@@ -14760,9 +14855,13 @@
       const truckGross = cleanGross - totalDriverCut;
 
       // Build year selector dropdown
-      const currentYear = new Date().getFullYear();
-      const availableYears = [...new Set(appData.trips.map(t => getTripYear(t)).filter(y => y))].sort((a, b) => b - a);
-      if (!availableYears.includes(currentYear)) availableYears.unshift(currentYear);
+      const dashboardDates = []
+        .concat((appData.trips || []).map(t => t.trip_date || t.period_start_date || t.created_at))
+        .concat((appData.orders || []).map(o => resolveOrderEffectiveDate(o, appData.trips || [])))
+        .concat((appData.fuel_transactions || []).map(f => f.transaction_date || f.created_at));
+      const yearSet = new Set(getDataDrivenYearOptions(dashboardDates, true));
+      yearSet.add(dashboardYear);
+      const availableYears = Array.from(yearSet).sort((a, b) => b - a);
       const yearOptions = availableYears.map(y => '<option value="' + y + '"' + (y === dashboardYear ? ' selected' : '') + '>' + y + '</option>').join('');
 
       // Period selector buttons
@@ -14802,9 +14901,8 @@
           const totalFixedCosts = monthlyFixedCosts * periodMonths;
           // Filter maintenance by the same period as dashboard (respects Q1/Q2/month filters)
           const periodMaintenanceRecords = (appData.maintenance_records || []).filter(m => {
-            const mDate = m.service_date || m.date || m.created_at;
-            if (!mDate) return false;
-            return mDate >= dateRange.start && mDate <= dateRange.end;
+            const maintenanceDateKey = toDateKey(m.service_date || m.date || m.created_at);
+            return isDateKeyInRange(maintenanceDateKey, dateRange);
           });
           const maintenanceCosts = periodMaintenanceRecords.reduce((s, m) => s + parseFloat(m.total_cost || m.cost || 0), 0);
           const totalOperatingCosts = totalBrokerFees + totalLocalFees + totalDriverCut + totalExpenses + totalFixedCosts + maintenanceCosts;
@@ -14881,7 +14979,7 @@
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:14px">' +
         '<div><span style="color:#64748b"># of Trucks in Service</span></div><div style="text-align:right;font-weight:600">' + appData.trucks.filter(t => t.status === 'ACTIVE').length + '</div>' +
         '<div><span style="color:#64748b">Total Miles Traveled</span></div><div style="text-align:right;font-weight:600">' + totalMiles.toLocaleString() + '</div>' +
-        '<div><span style="color:#64748b"># of Trips</span></div><div style="text-align:right;font-weight:600">' + appData.trips.length + '</div>' +
+        '<div><span style="color:#64748b"># of Trips</span></div><div style="text-align:right;font-weight:600">' + yearTrips.length + '</div>' +
         '<div><span style="color:#64748b"># of Cars Hauled</span></div><div style="text-align:right;font-weight:600">' + totalCars + '</div>' +
         '</div>' +
         
@@ -18120,22 +18218,9 @@ ${rateText}`
     function renderOrders(c) {
       selectedOrders = [];
 
-      // Year filter for orders (by linked trip date or created_at)
-      const yearStart = ordersYear + '-01-01';
-      const yearEnd = ordersYear + '-12-31';
-      const yearFilteredOrders = appData.orders.filter(o => {
-        // If order has a trip, use trip date
-        if (o.trip_id) {
-          const trip = appData.trips.find(t => t.id === o.trip_id);
-          if (trip && trip.trip_date) {
-            return trip.trip_date >= yearStart && trip.trip_date <= yearEnd;
-          }
-        }
-        // Otherwise use pickup_date or created_at
-        if (o.pickup_date) return o.pickup_date >= yearStart && o.pickup_date <= yearEnd;
-        if (o.created_at) return o.created_at >= yearStart && o.created_at <= yearEnd;
-        return true; // Include orders without dates
-      });
+      const ordersRange = buildPeriodRange({ type: 'year', year: ordersYear });
+      const yearFilteredOrders = filterOrdersByRange(appData.orders || [], appData.trips || [], ordersRange, { excludeUndated: true });
+      const undatedOrderCount = (appData.orders || []).filter(o => !resolveOrderEffectiveDate(o, appData.trips || [])).length;
 
       // Sort orders by ID descending (newest first)
       let filteredOrders = [...yearFilteredOrders].sort((a, b) => b.id - a.id);
@@ -18179,14 +18264,14 @@ ${rateText}`
       }
 
       // Get unique brokers for filter
-      const uniqueBrokers = [...new Set(appData.orders.map(o => o.broker_name).filter(b => b))];
+      const uniqueBrokers = [...new Set(yearFilteredOrders.map(o => o.broker_name).filter(b => b))];
       const brokerOptions = uniqueBrokers.map(b => '<option value="' + b + '"' + (ordersFilter.broker === b ? ' selected' : '') + '>' + b + '</option>').join('');
 
       // Get dispatchers for filter
       const dispatcherOptions = appData.dispatchers.map(d => '<option value="' + d.id + '"' + (ordersFilter.dispatcher === String(d.id) ? ' selected' : '') + '>' + d.name + '</option>').join('');
 
       // Get drivers with orders for filter
-      const driversWithOrders = [...new Set(appData.orders.filter(o => o.trip_id).map(o => {
+      const driversWithOrders = [...new Set(yearFilteredOrders.filter(o => o.trip_id).map(o => {
         const trip = appData.trips.find(t => t.id === o.trip_id);
         return trip?.driver_id;
       }).filter(Boolean))];
@@ -18196,12 +18281,13 @@ ${rateText}`
       }).join('');
 
       // Year selector options for Orders page
-      const currentYear = new Date().getFullYear();
-      const ordersYearOptions = [currentYear, currentYear - 1, currentYear - 2, currentYear - 3].map(y =>
+      const ordersYearSet = new Set(getDataDrivenYearOptions((appData.orders || []).map(o => resolveOrderEffectiveDate(o, appData.trips || [])), true));
+      ordersYearSet.add(ordersYear);
+      const ordersYearOptions = Array.from(ordersYearSet).sort((a, b) => b - a).map(y =>
         '<option value="' + y + '"' + (ordersYear === y ? ' selected' : '') + '>' + y + '</option>'
       ).join('');
 
-      c.innerHTML = '<div class="header"><h2>Vehicles / Orders</h2><div style="display:flex;align-items:center;gap:12px"><div style="display:flex;align-items:center;gap:8px;background:#f8fafc;padding:8px 12px;border-radius:6px"><label style="font-weight:600;color:#475569;font-size:13px">Year:</label><select onchange="ordersYear=parseInt(this.value);renderOrders(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:14px">' + ordersYearOptions + '</select></div><button class="btn btn-secondary" onclick="exportOrders()">📥 Export</button><button class="btn" style="background:#8b5cf6;color:white" onclick="openCreateNewLoad()">📄 AI Import</button><button class="btn btn-primary" onclick="openOrderModal()">+ New Order</button><button class="btn btn-secondary" id="bulkDeleteBtn" style="display:none;background:#fee2e2;color:#dc2626;border-color:#fecaca" onclick="bulkDeleteOrders()">🗑️ Delete Selected (<span id="selectedCount">0</span>)</button></div></div>' +
+      c.innerHTML = '<div class="header"><h2>Vehicles / Orders</h2><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:8px;background:#f8fafc;padding:8px 12px;border-radius:6px"><label style="font-weight:600;color:#475569;font-size:13px">Year:</label><select onchange="ordersYear=parseInt(this.value);renderOrders(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:14px">' + ordersYearOptions + '</select></div><span style="font-size:12px;background:#dbeafe;color:#1d4ed8;padding:6px 10px;border-radius:999px;font-weight:600">Year ' + ordersYear + '</span>' + (undatedOrderCount > 0 ? '<span style="font-size:12px;background:#fff7ed;color:#9a3412;padding:6px 10px;border-radius:999px;font-weight:600">Undated excluded: ' + undatedOrderCount + '</span>' : '') + '<button class="btn btn-secondary" onclick="exportOrders()">📥 Export</button><button class="btn" style="background:#8b5cf6;color:white" onclick="openCreateNewLoad()">📄 AI Import</button><button class="btn btn-primary" onclick="openOrderModal()">+ New Order</button><button class="btn btn-secondary" id="bulkDeleteBtn" style="display:none;background:#fee2e2;color:#dc2626;border-color:#fecaca" onclick="bulkDeleteOrders()">🗑️ Delete Selected (<span id="selectedCount">0</span>)</button></div></div>' +
 
         // Search and Filters
         '<div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap;align-items:center;background:#f8fafc;padding:16px;border-radius:8px">' +
@@ -19261,25 +19347,17 @@ ${rateText}`
       // Clear detail view flag when going back to local drivers list
       currentDetailView = null;
 
-      // Year filter for local drivers earnings
-      const yearStart = localDriversYear + '-01-01';
-      const yearEnd = localDriversYear + '-12-31';
-
-      // Filter orders by year (using pickup_date or created_at)
-      const yearFilteredOrders = appData.orders.filter(o => {
-        if (o.pickup_date) return o.pickup_date >= yearStart && o.pickup_date <= yearEnd;
-        if (o.created_at) return o.created_at >= yearStart && o.created_at <= yearEnd;
-        return true;
-      });
-
-      // Get completed trip IDs (year-filtered for stats) and terminal/completed IDs (all years for pending deliveries)
-      const yearFilteredTrips = appData.trips.filter(t => t.trip_date >= yearStart && t.trip_date <= yearEnd);
-      const completedTripIds = yearFilteredTrips.filter(t => t.status === 'COMPLETED').map(t => t.id);
-      const terminalOrCompletedTripIds = appData.trips.filter(t => t.status === 'COMPLETED' || t.status === 'AT_TERMINAL').map(t => t.id);
+      const localDriversRange = buildPeriodRange({ type: 'year', year: localDriversYear });
+      const yearFilteredOrders = filterOrdersByRange(appData.orders || [], appData.trips || [], localDriversRange, { excludeUndated: true });
+      const yearFilteredTrips = filterTripsByRange(appData.trips || [], localDriversRange, { excludeUndated: true });
+      const terminalOrCompletedTripIds = yearFilteredTrips
+        .filter(t => t.status === 'COMPLETED' || t.status === 'AT_TERMINAL')
+        .map(t => t.id);
+      const undatedOrderCount = (appData.orders || []).filter(o => !resolveOrderEffectiveDate(o, appData.trips || [])).length;
 
       // Pending local delivery: trip is COMPLETED or AT_TERMINAL, destination is NY/NJ/PA, has local_fee > 0, not assigned, not marked as "not for local"
       // Sorted by earliest delivery date first
-      const pendingLocalDelivery = appData.orders.filter(o =>
+      const pendingLocalDelivery = yearFilteredOrders.filter(o =>
         terminalOrCompletedTripIds.includes(o.trip_id) &&
         parseFloat(o.local_fee || 0) > 0 &&
         isLocalDeliveryState(o.destination, o.delivery_state) &&
@@ -19289,13 +19367,11 @@ ${rateText}`
       
       // Pending local pickup: cars in Load Board with "NY to Home" or "NY to FL" category, not assigned to local driver, not marked as "not for local"
       // Sorted by earliest pickup date first
-      const pendingLocalPickup = appData.orders.filter(o =>
+      const pendingLocalPickup = yearFilteredOrders.filter(o =>
         (o.load_category === 'ny_to_home' || o.load_category === 'ny_to_fl') &&
         (!o.local_driver_id || o.local_delivery_status === 'UNASSIGNED') &&
         !o.not_for_local_delivery
       ).sort((a, b) => (a.pickup_date || '').localeCompare(b.pickup_date || ''));
-      
-      const assignedToLocal = appData.orders.filter(o => o.local_driver_id);
       
       // Calculate stats per local driver (filtered by year)
       const localDriverStats = (appData.local_drivers || []).map(ld => {
@@ -19312,12 +19388,16 @@ ${rateText}`
       const totalPendingPickupRevenue = pendingLocalPickup.reduce((s, o) => s + parseFloat(o.revenue || 0), 0);
       
       // Year selector options for Local Drivers page
-      const currentYear = new Date().getFullYear();
-      const localDriversYearOptions = [currentYear, currentYear - 1, currentYear - 2, currentYear - 3].map(y =>
+      const localDriverDateSources = []
+        .concat((appData.trips || []).map(t => t.trip_date || t.period_start_date || t.created_at))
+        .concat((appData.orders || []).map(o => resolveOrderEffectiveDate(o, appData.trips || [])));
+      const localDriverYearSet = new Set(getDataDrivenYearOptions(localDriverDateSources, true));
+      localDriverYearSet.add(localDriversYear);
+      const localDriversYearOptions = Array.from(localDriverYearSet).sort((a, b) => b - a).map(y =>
         '<option value="' + y + '"' + (localDriversYear === y ? ' selected' : '') + '>' + y + '</option>'
       ).join('');
 
-      c.innerHTML = '<div class="header"><h2>🚙 Local Drivers</h2><div style="display:flex;align-items:center;gap:12px"><div style="display:flex;align-items:center;gap:8px;background:#f8fafc;padding:8px 12px;border-radius:6px"><label style="font-weight:600;color:#475569;font-size:13px">Year:</label><select onchange="localDriversYear=parseInt(this.value);renderLocalDrivers(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:14px">' + localDriversYearOptions + '</select></div><button class="btn btn-primary" onclick="openLocalDriverModal()">+ Add Local Driver</button></div></div>' +
+      c.innerHTML = '<div class="header"><h2>🚙 Local Drivers</h2><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:8px;background:#f8fafc;padding:8px 12px;border-radius:6px"><label style="font-weight:600;color:#475569;font-size:13px">Year:</label><select onchange="localDriversYear=parseInt(this.value);renderLocalDrivers(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:14px">' + localDriversYearOptions + '</select></div><span style="font-size:12px;background:#dbeafe;color:#1d4ed8;padding:6px 10px;border-radius:999px;font-weight:600">Year ' + localDriversYear + '</span>' + (undatedOrderCount > 0 ? '<span style="font-size:12px;background:#fff7ed;color:#9a3412;padding:6px 10px;border-radius:999px;font-weight:600">Undated excluded: ' + undatedOrderCount + '</span>' : '') + '<button class="btn btn-primary" onclick="openLocalDriverModal()">+ Add Local Driver</button></div></div>' +
 
         // Stats
         '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px">' +
@@ -19578,14 +19658,8 @@ ${rateText}`
         return;
       }
 
-      // Filter by localDriversYear
-      const yearStart = localDriversYear + '-01-01';
-      const yearEnd = localDriversYear + '-12-31';
-      const yearFilteredOrders = appData.orders.filter(o => {
-        if (o.pickup_date) return o.pickup_date >= yearStart && o.pickup_date <= yearEnd;
-        if (o.created_at) return o.created_at >= yearStart && o.created_at <= yearEnd;
-        return true;
-      });
+      const localDriversRange = buildPeriodRange({ type: 'year', year: localDriversYear });
+      const yearFilteredOrders = filterOrdersByRange(appData.orders || [], appData.trips || [], localDriversRange, { excludeUndated: true });
 
       const driverOrders = yearFilteredOrders.filter(o => o.local_driver_id === localDriverId);
       const totalEarnings = driverOrders.reduce((s, o) => s + parseFloat(o.local_fee || 0), 0);
@@ -19731,10 +19805,20 @@ ${rateText}`
     }
 
     // ============ BROKERS SECTION ============
-    function renderBrokers(c) {
+    function renderBrokers(c, periodCtx = brokersPeriod) {
+      const resolvedPeriod = periodCtx || brokersPeriod;
+      const scopedRange = buildPeriodRange(resolvedPeriod);
+      const scopedOrders = filterOrdersByRange(appData.orders || [], appData.trips || [], scopedRange, { excludeUndated: true });
+      const undatedOrderCount = (appData.orders || []).filter(o => !resolveOrderEffectiveDate(o, appData.trips || [])).length;
+      const brokerYearSet = new Set(getDataDrivenYearOptions((appData.orders || []).map(o => resolveOrderEffectiveDate(o, appData.trips || [])), true));
+      brokerYearSet.add(parseInt(brokersPeriod.year, 10) || new Date().getFullYear());
+      const brokerYearOptions = Array.from(brokerYearSet).sort((a, b) => b - a).map(y =>
+        '<option value="' + y + '"' + ((parseInt(brokersPeriod.year, 10) === y) ? ' selected' : '') + '>' + y + '</option>'
+      ).join('');
+
       // Calculate comprehensive stats per broker
       const brokerStats = (appData.brokers || []).map(b => {
-        const brokerOrders = appData.orders.filter(o => o.broker_id === b.id);
+        const brokerOrders = scopedOrders.filter(o => o.broker_id === b.id);
         const totalRevenue = brokerOrders.reduce((s, o) => s + parseFloat(o.revenue || 0), 0);
         const totalBrokerFee = brokerOrders.reduce((s, o) => s + parseFloat(o.broker_fee || 0), 0);
         const avgRevenue = brokerOrders.length > 0 ? totalRevenue / brokerOrders.length : 0;
@@ -19823,7 +19907,7 @@ ${rateText}`
         return { label: 'Dormant', color: '#dc2626', bg: '#fee2e2' };
       };
       
-      c.innerHTML = '<div class="header"><h2>🏢 Brokers</h2><div style="display:flex;gap:12px"><button class="btn btn-primary" onclick="openBrokerModal()">+ New Broker</button></div></div>' +
+      c.innerHTML = '<div class="header"><h2>🏢 Brokers</h2><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><select onchange="brokersPeriod.type=this.value;if(brokersPeriod.type===\'year\'&&!brokersPeriod.year){brokersPeriod.year=new Date().getFullYear();}renderBrokers(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)"><option value="year"' + (brokersPeriod.type === 'year' ? ' selected' : '') + '>Year</option><option value="all"' + (brokersPeriod.type === 'all' ? ' selected' : '') + '>All Time</option></select>' + (brokersPeriod.type === 'year' ? '<select onchange="brokersPeriod.year=parseInt(this.value);renderBrokers(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)">' + brokerYearOptions + '</select>' : '') + '<span style="font-size:12px;background:#dbeafe;color:#1d4ed8;padding:6px 10px;border-radius:999px;font-weight:600">' + getPeriodLabel(brokersPeriod) + '</span>' + (undatedOrderCount > 0 && brokersPeriod.type !== 'all' ? '<span style="font-size:12px;background:#fff7ed;color:#9a3412;padding:6px 10px;border-radius:999px;font-weight:600">Undated excluded: ' + undatedOrderCount + '</span>' : '') + '<button class="btn btn-primary" onclick="openBrokerModal()">+ New Broker</button></div></div>' +
         
         // Summary Cards
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px">' +
@@ -19960,8 +20044,34 @@ ${rateText}`
       } catch (e) { showToast(e.message, 'error'); }
     }
 
-    function renderDispatchers(c) {
-      c.innerHTML = '<div class="header"><h2>Dispatchers</h2><button class="btn btn-primary" onclick="openDispModal()">+ New Dispatcher</button></div><div class="card"><div class="table-wrapper"><table><thead><tr><th>Code</th><th>Name</th><th>Cars Booked</th><th>Revenue Generated</th><th>Actions</th></tr></thead><tbody>' + (appData.dispatchers.length === 0 ? '<tr><td colspan="5" style="text-align:center;padding:40px">No dispatchers yet</td></tr>' : appData.dispatchers.map(d => { const dispOrders = appData.orders.filter(o => o.dispatcher_id === d.id); const cars = dispOrders.length; const rev = dispOrders.reduce((s, o) => s + parseFloat(o.revenue || 0), 0); return '<tr><td><strong>' + d.code + '</strong></td><td>' + d.name + '</td><td>' + cars + '</td><td class="money positive">' + formatMoney(rev) + '</td><td><div class="actions"><button class="action-btn edit" onclick="openDispModal(' + d.id + ')">Edit</button><button class="action-btn delete" onclick="deleteDisp(' + d.id + ')">Del</button></div></td></tr>'; }).join('')) + '</tbody></table></div></div>';
+    function renderDispatchers(c, periodCtx = dispatchersPeriod) {
+      const resolvedPeriod = periodCtx || dispatchersPeriod;
+      const scopedRange = buildPeriodRange(resolvedPeriod);
+      const scopedOrders = filterOrdersByRange(appData.orders || [], appData.trips || [], scopedRange, { excludeUndated: true });
+      const undatedOrderCount = (appData.orders || []).filter(o => !resolveOrderEffectiveDate(o, appData.trips || [])).length;
+      const dispatcherYearSet = new Set(getDataDrivenYearOptions((appData.orders || []).map(o => resolveOrderEffectiveDate(o, appData.trips || [])), true));
+      dispatcherYearSet.add(parseInt(dispatchersPeriod.year, 10) || new Date().getFullYear());
+      const dispatcherYearOptions = Array.from(dispatcherYearSet).sort((a, b) => b - a).map(y =>
+        '<option value="' + y + '"' + ((parseInt(dispatchersPeriod.year, 10) === y) ? ' selected' : '') + '>' + y + '</option>'
+      ).join('');
+
+      const rows = appData.dispatchers.map(d => {
+        const dispOrders = scopedOrders.filter(o => o.dispatcher_id === d.id);
+        const cars = dispOrders.length;
+        const rev = dispOrders.reduce((s, o) => s + parseFloat(o.revenue || 0), 0);
+        return '<tr><td><strong>' + d.code + '</strong></td><td>' + d.name + '</td><td>' + cars + '</td><td class="money positive">' + formatMoney(rev) + '</td><td><div class="actions"><button class="action-btn edit" onclick="openDispModal(' + d.id + ')">Edit</button><button class="action-btn delete" onclick="deleteDisp(' + d.id + ')">Del</button></div></td></tr>';
+      }).join('');
+
+      c.innerHTML =
+        '<div class="header"><h2>Dispatchers</h2><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">' +
+        '<select onchange="dispatchersPeriod.type=this.value;if(dispatchersPeriod.type===\'year\'&&!dispatchersPeriod.year){dispatchersPeriod.year=new Date().getFullYear();}renderDispatchers(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)"><option value="year"' + (dispatchersPeriod.type === 'year' ? ' selected' : '') + '>Year</option><option value="all"' + (dispatchersPeriod.type === 'all' ? ' selected' : '') + '>All Time</option></select>' +
+        (dispatchersPeriod.type === 'year' ? '<select onchange="dispatchersPeriod.year=parseInt(this.value);renderDispatchers(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)">' + dispatcherYearOptions + '</select>' : '') +
+        '<span style="font-size:12px;background:#dbeafe;color:#1d4ed8;padding:6px 10px;border-radius:999px;font-weight:600">' + getPeriodLabel(dispatchersPeriod) + '</span>' +
+        (undatedOrderCount > 0 && dispatchersPeriod.type !== 'all' ? '<span style="font-size:12px;background:#fff7ed;color:#9a3412;padding:6px 10px;border-radius:999px;font-weight:600">Undated excluded: ' + undatedOrderCount + '</span>' : '') +
+        '<button class="btn btn-primary" onclick="openDispModal()">+ New Dispatcher</button></div></div>' +
+        '<div class="card"><div class="table-wrapper"><table><thead><tr><th>Code</th><th>Name</th><th>Cars Booked</th><th>Revenue Generated</th><th>Actions</th></tr></thead><tbody>' +
+        (appData.dispatchers.length === 0 ? '<tr><td colspan="5" style="text-align:center;padding:40px">No dispatchers yet</td></tr>' : rows) +
+        '</tbody></table></div></div>';
     }
 
     function openDispModal(id = null) {
@@ -20005,7 +20115,7 @@ ${rateText}`
       if (dispRankPeriod === 'month') {
         const start = dispRankYear + '-' + String(dispRankMonth).padStart(2, '0') + '-01';
         const lastDay = new Date(dispRankYear, dispRankMonth, 0).getDate();
-        const end = dispRankYear + '-' + String(dispRankMonth).padStart(2, '0') + '-' + lastDay;
+        const end = dispRankYear + '-' + String(dispRankMonth).padStart(2, '0') + '-' + String(lastDay).padStart(2, '0');
         return { start, end };
       } else if (dispRankPeriod === 'q1') {
         return { start: dispRankYear + '-01-01', end: dispRankYear + '-03-31' };
@@ -20034,16 +20144,12 @@ ${rateText}`
     function renderDispatcherRanking(c) {
       const months = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
       const range = getDispRankDateRange();
-      
-      // Filter orders by date range (use pickup_date or created_at)
-      let filteredOrders = appData.orders;
-      if (range.start && range.end) {
-        filteredOrders = appData.orders.filter(o => {
-          const orderDate = o.pickup_date || o.created_at?.split('T')[0];
-          if (!orderDate) return false;
-          return orderDate >= range.start && orderDate <= range.end;
-        });
-      }
+      const filteredOrders = filterOrdersByRange(appData.orders || [], appData.trips || [], range, { excludeUndated: true });
+      const dispRankYearSet = new Set(getDataDrivenYearOptions((appData.orders || []).map(o => resolveOrderEffectiveDate(o, appData.trips || [])), true));
+      dispRankYearSet.add(dispRankYear);
+      const dispRankYearOptions = Array.from(dispRankYearSet).sort((a, b) => b - a).map(y =>
+        '<option value="' + y + '"' + (dispRankYear === y ? ' selected' : '') + '>' + y + '</option>'
+      ).join('');
       
       // Calculate stats for each dispatcher
       const dispStats = {};
@@ -20118,7 +20224,7 @@ ${rateText}`
         '<div class="card" style="padding:16px;margin-bottom:24px"><div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">' +
         '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Period</label><select id="dispRankPeriod" onchange="dispRankPeriod=this.value;renderDispatcherRanking(document.getElementById(\'main-content\'))"><option value="all"' + (dispRankPeriod === 'all' ? ' selected' : '') + '>All Time</option><option value="month"' + (dispRankPeriod === 'month' ? ' selected' : '') + '>Monthly</option><option value="q1"' + (dispRankPeriod === 'q1' ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="q2"' + (dispRankPeriod === 'q2' ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="q3"' + (dispRankPeriod === 'q3' ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="q4"' + (dispRankPeriod === 'q4' ? ' selected' : '') + '>Q4 (Oct-Dec)</option><option value="year"' + (dispRankPeriod === 'year' ? ' selected' : '') + '>Full Year</option></select></div>' +
         (dispRankPeriod === 'month' ? '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Month</label><select id="dispRankMonth" onchange="dispRankMonth=parseInt(this.value);renderDispatcherRanking(document.getElementById(\'main-content\'))">' + months.slice(1).map((m, i) => '<option value="' + (i+1) + '"' + (dispRankMonth === i+1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select></div>' : '') +
-        (dispRankPeriod !== 'all' ? '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select id="dispRankYear" onchange="dispRankYear=parseInt(this.value);renderDispatcherRanking(document.getElementById(\'main-content\'))"><option value="2024"' + (dispRankYear === 2024 ? ' selected' : '') + '>2024</option><option value="2025"' + (dispRankYear === 2025 ? ' selected' : '') + '>2025</option><option value="2026"' + (dispRankYear === 2026 ? ' selected' : '') + '>2026</option><option value="2027"' + (dispRankYear === 2027 ? ' selected' : '') + '>2027</option></select></div>' : '') +
+        (dispRankPeriod !== 'all' ? '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select id="dispRankYear" onchange="dispRankYear=parseInt(this.value);renderDispatcherRanking(document.getElementById(\'main-content\'))">' + dispRankYearOptions + '</select></div>' : '') +
         '<div style="margin-left:auto;font-size:18px;font-weight:700;color:#1e40af">📅 ' + getDispRankPeriodLabel() + '</div></div></div>' +
         
         // Summary stats
@@ -20220,7 +20326,7 @@ ${rateText}`
       if (fuelPeriod === 'month') {
         const start = fuelYear + '-' + String(fuelMonth).padStart(2, '0') + '-01';
         const lastDay = new Date(fuelYear, fuelMonth, 0).getDate();
-        const end = fuelYear + '-' + String(fuelMonth).padStart(2, '0') + '-' + lastDay;
+        const end = fuelYear + '-' + String(fuelMonth).padStart(2, '0') + '-' + String(lastDay).padStart(2, '0');
         return { start, end };
       } else if (fuelPeriod === 'q1') {
         return { start: fuelYear + '-01-01', end: fuelYear + '-03-31' };
@@ -20264,6 +20370,16 @@ ${rateText}`
     function renderFuelTracking(c) {
       const months = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
       const range = getFuelDateRange();
+      const fuelYearSet = new Set(getDataDrivenYearOptions(
+        []
+          .concat((appData.fuel_transactions || []).map(t => t.transaction_date || t.created_at))
+          .concat((appData.trips || []).map(t => t.trip_date || t.period_start_date || t.created_at)),
+        true
+      ));
+      fuelYearSet.add(fuelYear);
+      const fuelYearOptions = Array.from(fuelYearSet).sort((a, b) => b - a).map(y =>
+        '<option value="' + y + '"' + (fuelYear === y ? ' selected' : '') + '>' + y + '</option>'
+      ).join('');
       
       // Get all transactions for the period (before filters) for dropdown options
       const periodTxns = (appData.fuel_transactions || []).filter(t => {
@@ -20337,7 +20453,7 @@ ${rateText}`
           // Fall back to trip miles for this truck
           const truck = appData.trucks.find(tr => tr.truck_number == activeTruckFilter);
           if (truck) {
-            const truckTrips = appData.trips.filter(t => t.truck_id === truck.id && t.trip_date >= range.start && t.trip_date <= range.end);
+            const truckTrips = appData.trips.filter(t => t.truck_id === truck.id && isDateKeyInRange(toDateKey(t.trip_date || t.period_start_date || t.created_at), range));
             periodMiles = truckTrips.reduce((s, t) => s + parseFloat(t.miles || 0), 0);
           }
         }
@@ -20384,7 +20500,7 @@ ${rateText}`
           // Fall back to trip miles
           const truck = appData.trucks.find(t => t.truck_number == tn);
           if (truck) {
-            const truckTrips = appData.trips.filter(t => t.truck_id === truck.id && t.trip_date >= range.start && t.trip_date <= range.end);
+            const truckTrips = appData.trips.filter(t => t.truck_id === truck.id && isDateKeyInRange(toDateKey(t.trip_date || t.period_start_date || t.created_at), range));
             truckStats[tn].miles = truckTrips.reduce((s, t) => s + parseFloat(t.miles || 0), 0);
           }
           truckStats[tn].milesSource = 'trips';
@@ -20450,7 +20566,7 @@ ${rateText}`
         '<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:16px">' +
         '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Period</label><select id="fuelPeriod" onchange="fuelPeriod=this.value;renderFuelTracking(document.getElementById(\'main-content\'))"><option value="month"' + (fuelPeriod === 'month' ? ' selected' : '') + '>Monthly</option><option value="q1"' + (fuelPeriod === 'q1' ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="q2"' + (fuelPeriod === 'q2' ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="q3"' + (fuelPeriod === 'q3' ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="q4"' + (fuelPeriod === 'q4' ? ' selected' : '') + '>Q4 (Oct-Dec)</option><option value="year"' + (fuelPeriod === 'year' ? ' selected' : '') + '>Full Year</option></select></div>' +
         (fuelPeriod === 'month' ? '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Month</label><select id="fuelMonth" onchange="fuelMonth=parseInt(this.value);renderFuelTracking(document.getElementById(\'main-content\'))">' + months.slice(1).map((m, i) => '<option value="' + (i+1) + '"' + (fuelMonth === i+1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select></div>' : '') +
-        '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select id="fuelYear" onchange="fuelYear=parseInt(this.value);renderFuelTracking(document.getElementById(\'main-content\'))"><option value="2024"' + (fuelYear === 2024 ? ' selected' : '') + '>2024</option><option value="2025"' + (fuelYear === 2025 ? ' selected' : '') + '>2025</option><option value="2026"' + (fuelYear === 2026 ? ' selected' : '') + '>2026</option><option value="2027"' + (fuelYear === 2027 ? ' selected' : '') + '>2027</option></select></div>' +
+        '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select id="fuelYear" onchange="fuelYear=parseInt(this.value);renderFuelTracking(document.getElementById(\'main-content\'))">' + fuelYearOptions + '</select></div>' +
         '<div style="margin-left:auto;font-size:18px;font-weight:700;color:#1e40af">📅 ' + getFuelPeriodLabel() + '</div></div>' +
         
         // Filter row
@@ -21513,6 +21629,17 @@ ${rateText}`
 
     function renderIFTA(c) {
       const qRange = getQuarterDateRange(iftaQuarter, iftaYear);
+      const iftaYearSet = new Set(getDataDrivenYearOptions(
+        []
+          .concat((appData.fuel_transactions || []).map(t => t.transaction_date || t.created_at))
+          .concat((appData.trips || []).map(t => t.trip_date || t.period_start_date || t.created_at))
+          .concat((iftaMileageData || []).map(m => m?.date || m?.created_at)),
+        true
+      ));
+      iftaYearSet.add(iftaYear);
+      const iftaYearOptions = Array.from(iftaYearSet).sort((a, b) => b - a).map(y =>
+        '<option value="' + y + '"' + (iftaYear === y ? ' selected' : '') + '>' + y + '</option>'
+      ).join('');
       
       // Get fuel data for the quarter from fuel_transactions
       const quarterFuel = (appData.fuel_transactions || []).filter(t => {
@@ -21535,8 +21662,7 @@ ${rateText}`
       
       // Calculate actual MPG - prioritize IFTA uploaded miles over trip miles
       const quarterTrips = (appData.trips || []).filter(t => {
-        if (!t.trip_date) return false;
-        return t.trip_date >= qRange.start && t.trip_date <= qRange.end;
+        return isDateKeyInRange(toDateKey(t.trip_date || t.period_start_date || t.created_at), qRange);
       });
       const tripMilesTotal = quarterTrips.reduce((s, t) => s + parseFloat(t.miles || 0), 0);
       const iftaMilesTotal = iftaMileageData.reduce((s, m) => s + m.miles, 0);
@@ -21593,7 +21719,7 @@ ${rateText}`
         // Quarter selector
         '<div class="card" style="padding:16px;margin-bottom:24px"><div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">' +
         '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Quarter</label><select id="iftaQuarter" onchange="iftaQuarter=parseInt(this.value);renderIFTA(document.getElementById(\'main-content\'))"><option value="1"' + (iftaQuarter === 1 ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="2"' + (iftaQuarter === 2 ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="3"' + (iftaQuarter === 3 ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="4"' + (iftaQuarter === 4 ? ' selected' : '') + '>Q4 (Oct-Dec)</option></select></div>' +
-        '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select id="iftaYear" onchange="iftaYear=parseInt(this.value);renderIFTA(document.getElementById(\'main-content\'))"><option value="2024"' + (iftaYear === 2024 ? ' selected' : '') + '>2024</option><option value="2025"' + (iftaYear === 2025 ? ' selected' : '') + '>2025</option><option value="2026"' + (iftaYear === 2026 ? ' selected' : '') + '>2026</option><option value="2027"' + (iftaYear === 2027 ? ' selected' : '') + '>2027</option></select></div>' +
+        '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select id="iftaYear" onchange="iftaYear=parseInt(this.value);renderIFTA(document.getElementById(\'main-content\'))">' + iftaYearOptions + '</select></div>' +
         '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Fleet MPG</label><div style="display:flex;gap:8px;align-items:center"><input type="number" step="0.1" value="' + fleetMPG + '" style="width:80px" onchange="fleetMPG=parseFloat(this.value)||6;renderIFTA(document.getElementById(\'main-content\'))">' +
         (hasCalcData ? '<button class="btn btn-secondary" style="padding:6px 10px;font-size:12px" onclick="fleetMPG=' + calculatedMPG.toFixed(2) + ';renderIFTA(document.getElementById(\'main-content\'))" title="Use calculated MPG from your ' + milesSource + ' miles and fuel data">Use ' + calculatedMPG.toFixed(2) + '</button>' : '') +
         '</div></div>' +
@@ -24638,8 +24764,13 @@ ${rateText}`
       return { dueDate, daysOverdue, billAmount: amount };
     }
 
-    function getUnpaidBillOrders() {
-      return appData.orders
+    function getBillingScopedOrders(periodCtx = billingPeriod) {
+      const range = buildPeriodRange(periodCtx || billingPeriod);
+      return filterOrdersByRange(appData.orders || [], appData.trips || [], range, { excludeUndated: true });
+    }
+
+    function getUnpaidBillOrders(periodCtx = billingPeriod) {
+      return getBillingScopedOrders(periodCtx)
         .filter(o =>
           getOrderInvoiceAmount(o) > 0 &&
           o.payment_status !== 'paid' &&
@@ -24649,8 +24780,8 @@ ${rateText}`
         .sort((a, b) => b.daysOverdue - a.daysOverdue);
     }
 
-    function getPaidBillOrders() {
-      return appData.orders
+    function getPaidBillOrders(periodCtx = billingPeriod) {
+      return getBillingScopedOrders(periodCtx)
         .filter(o =>
           getOrderInvoiceAmount(o) > 0 &&
           o.payment_status === 'paid' &&
@@ -24660,8 +24791,8 @@ ${rateText}`
     }
 
     // Get delivered BILL orders that haven't been formally invoiced yet
-    function getOrdersNeedingInvoice() {
-      return appData.orders
+    function getOrdersNeedingInvoice(periodCtx = billingPeriod) {
+      return getBillingScopedOrders(periodCtx)
         .filter(o =>
           getOrderInvoiceAmount(o) > 0 &&
           o.payment_status !== 'paid' &&
@@ -24688,9 +24819,9 @@ ${rateText}`
     }
 
     // Aggregate billing data by broker
-    function getBrokerBillingStats() {
-      const unpaidOrders = getUnpaidBillOrders();
-      const paidOrders = getPaidBillOrders();
+    function getBrokerBillingStats(periodCtx = billingPeriod) {
+      const unpaidOrders = getUnpaidBillOrders(periodCtx);
+      const paidOrders = getPaidBillOrders(periodCtx);
 
       const brokerMap = new Map();
 
@@ -24902,10 +25033,17 @@ ${rateText}`
       await markOrderInvoiced(orderId, invoiceNumber);
     }
 
-    function renderBillingPage(c) {
-      const unpaidOrders = getUnpaidBillOrders();
-      const paidOrders = getPaidBillOrders();
-      const brokerStats = getBrokerBillingStats();
+    function renderBillingPage(c, periodCtx = billingPeriod) {
+      const resolvedPeriod = periodCtx || billingPeriod;
+      const unpaidOrders = getUnpaidBillOrders(resolvedPeriod);
+      const paidOrders = getPaidBillOrders(resolvedPeriod);
+      const brokerStats = getBrokerBillingStats(resolvedPeriod);
+      const undatedOrderCount = (appData.orders || []).filter(o => !resolveOrderEffectiveDate(o, appData.trips || [])).length;
+      const billingYearSet = new Set(getDataDrivenYearOptions((appData.orders || []).map(o => resolveOrderEffectiveDate(o, appData.trips || [])), true));
+      billingYearSet.add(parseInt(billingPeriod.year, 10) || new Date().getFullYear());
+      const billingYearOptions = Array.from(billingYearSet).sort((a, b) => b - a).map(y =>
+        '<option value="' + y + '"' + ((parseInt(billingPeriod.year, 10) === y) ? ' selected' : '') + '>' + y + '</option>'
+      ).join('');
 
       // Calculate metrics
       const totalReceivables = unpaidOrders.reduce((s, o) => s + o.billAmount, 0);
@@ -24931,9 +25069,10 @@ ${rateText}`
       let html = '';
 
       // Header with Export button
-      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:24px">';
       html += '<div><h2 style="margin:0;font-size:24px;font-weight:700;font-family:var(--font-display)">Receivables</h2>';
-      html += '<p style="margin:4px 0 0;color:var(--text-muted);font-size:14px">Manage invoices, track payments, monitor aging by broker</p></div>';
+      html += '<p style="margin:4px 0 0;color:var(--text-muted);font-size:14px">Manage invoices, track payments, monitor aging by broker</p>';
+      html += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px"><select onchange="billingPeriod.type=this.value;if(billingPeriod.type===\'year\'&&!billingPeriod.year){billingPeriod.year=new Date().getFullYear();}renderBillingPage(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)"><option value="year"' + (billingPeriod.type === 'year' ? ' selected' : '') + '>Year</option><option value="all"' + (billingPeriod.type === 'all' ? ' selected' : '') + '>All Time</option></select>' + (billingPeriod.type === 'year' ? '<select onchange="billingPeriod.year=parseInt(this.value);renderBillingPage(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)">' + billingYearOptions + '</select>' : '') + '<span style="font-size:12px;background:#dbeafe;color:#1d4ed8;padding:6px 10px;border-radius:999px;font-weight:600">' + getPeriodLabel(billingPeriod) + '</span>' + (undatedOrderCount > 0 && billingPeriod.type !== 'all' ? '<span style="font-size:12px;background:#fff7ed;color:#9a3412;padding:6px 10px;border-radius:999px;font-weight:600">Undated excluded: ' + undatedOrderCount + '</span>' : '') + '</div></div>';
       html += '<button class="btn btn-secondary" onclick="window.print()" style="display:flex;align-items:center;gap:8px">Export</button>';
       html += '</div>';
 
@@ -29180,38 +29319,14 @@ ${rateText}`
       const allFuelRecords = appData.fuel_transactions || [];
 
       // Filter by selected year
-      const yearStart = financialsYear + '-01-01';
-      const yearEnd = financialsYear + '-12-31';
-
-      const trips = allTrips.filter(t => {
-        if (!t.trip_date) return false;
-        return t.trip_date >= yearStart && t.trip_date <= yearEnd;
-      });
-
-      const orders = allOrders.filter(o => {
-        if (o.trip_id) {
-          const trip = allTrips.find(t => t.id === o.trip_id);
-          return trip && trip.trip_date >= yearStart && trip.trip_date <= yearEnd;
-        }
-        return o.created_at && o.created_at >= yearStart && o.created_at <= yearEnd;
-      });
-
-      const variableCosts = allVariableCosts.filter(vc => {
-        const costDate = vc.date || vc.created_at;
-        if (!costDate) return false;
-        return costDate >= yearStart && costDate <= yearEnd;
-      });
-
-      const maintenance = allMaintenance.filter(m => {
-        const serviceDate = m.service_date || m.date || m.created_at;
-        if (!serviceDate) return false;
-        return serviceDate >= yearStart && serviceDate <= yearEnd;
-      });
-
-      const fuelRecords = allFuelRecords.filter(f => {
-        if (!f.transaction_date) return false;
-        return f.transaction_date >= yearStart && f.transaction_date <= yearEnd;
-      });
+      const yearRange = buildPeriodRange({ type: 'year', year: financialsYear });
+      const yearStart = yearRange.start;
+      const yearEnd = yearRange.end;
+      const trips = filterTripsByRange(allTrips, yearRange, { excludeUndated: true });
+      const orders = filterOrdersByRange(allOrders, allTrips, yearRange, { excludeUndated: true });
+      const variableCosts = filterByRange(allVariableCosts, vc => vc.date || vc.created_at, yearRange, { excludeUndated: true });
+      const maintenance = filterByRange(allMaintenance, m => m.service_date || m.date || m.created_at, yearRange, { excludeUndated: true });
+      const fuelRecords = filterByRange(allFuelRecords, f => f.transaction_date || f.created_at, yearRange, { excludeUndated: true });
 
       // Calculate months in selected year (always 12 for a full year, or partial if current year)
       const now = new Date();
@@ -30532,13 +30647,8 @@ ${rateText}`
       const numTrucks = appData.trucks.filter(t => t.status === 'ACTIVE').length || 1;
       const monthlyFixedCosts = (appData.fixed_costs || []).reduce((s, fc) => s + parseFloat(fc.amount || 0), 0);
 
-      // Filter by financialsYear
-      const yearStart = financialsYear + '-01-01';
-      const yearEnd = financialsYear + '-12-31';
-      const yearFilteredTrips = (appData.trips || []).filter(t => {
-        if (!t.trip_date) return false;
-        return t.trip_date >= yearStart && t.trip_date <= yearEnd;
-      });
+      const analysisYearRange = buildPeriodRange({ type: 'year', year: finYear });
+      const yearFilteredTrips = filterTripsByRange(appData.trips || [], analysisYearRange, { excludeUndated: true });
 
       // ============ YEAR CALCULATIONS FOR "AT A GLANCE" ============
       let allTimeRevenue = 0, allTimeBrokerFees = 0, allTimeLocalFees = 0, allTimeDriverCut = 0, allTimeExpenses = 0, allTimeMiles = 0, allTimeCars = 0, allTimeTripNetProfit = 0;
@@ -30619,29 +30729,14 @@ ${rateText}`
       const isProfitable = currentMonthlyProfit >= 0;
       
       // ============ PERIOD CALCULATIONS ============
-      let filteredTrips = [];
-      let periodLabel = '';
-      
-      if (finPeriodType === 'month') {
-        filteredTrips = appData.trips.filter(t => {
-          const d = parseTripDate(t.trip_date);
-          return d && d.getFullYear() === finYear && (d.getMonth() + 1) === finMonth;
-        });
-        periodLabel = months[finMonth] + ' ' + finYear;
-      } else if (finPeriodType === 'quarter') {
-        const qMonths = [(finQuarter-1)*3+1, (finQuarter-1)*3+2, (finQuarter-1)*3+3];
-        filteredTrips = appData.trips.filter(t => {
-          const d = parseTripDate(t.trip_date);
-          return d && d.getFullYear() === finYear && qMonths.includes(d.getMonth() + 1);
-        });
-        periodLabel = 'Q' + finQuarter + ' ' + finYear;
-      } else {
-        filteredTrips = appData.trips.filter(t => {
-          const d = parseTripDate(t.trip_date);
-          return d && d.getFullYear() === finYear;
-        });
-        periodLabel = 'Year ' + finYear;
-      }
+      const periodCtx = finPeriodType === 'month'
+        ? { type: 'month', year: finYear, month: finMonth }
+        : finPeriodType === 'quarter'
+          ? { type: 'quarter', year: finYear, quarter: finQuarter }
+          : { type: 'year', year: finYear };
+      const periodRange = buildPeriodRange(periodCtx);
+      const filteredTrips = filterTripsByRange(appData.trips || [], periodRange, { excludeUndated: true });
+      const periodLabel = getPeriodLabel(periodCtx);
       
       // ═══════════════════════════════════════════════════════════════
       // 📊 CAR VOLUME TRACKING BY TIMEFRAME
@@ -30869,32 +30964,22 @@ ${rateText}`
       const marginOfSafety = loadRevenue > 0 && breakEvenRevenuePerMonth > 0 ? ((loadRevenue / periodMonths - breakEvenRevenuePerMonth) / (loadRevenue / periodMonths) * 100) : 0;
       
       // Variable costs integration
-      const totalVariableCosts = (appData.variable_costs || [])
-        .filter(vc => {
-          if (!vc.date) return false;
-          const d = new Date(vc.date);
-          if (finPeriodType === 'month') return d.getFullYear() === finYear && (d.getMonth() + 1) === finMonth;
-          if (finPeriodType === 'quarter') {
-            const qMonths = [(finQuarter-1)*3+1, (finQuarter-1)*3+2, (finQuarter-1)*3+3];
-            return d.getFullYear() === finYear && qMonths.includes(d.getMonth() + 1);
-          }
-          return d.getFullYear() === finYear;
-        })
+      const totalVariableCosts = filterByRange(
+        appData.variable_costs || [],
+        vc => vc.date || vc.created_at,
+        periodRange,
+        { excludeUndated: true }
+      )
         .reduce((s, vc) => s + parseFloat(vc.amount || 0), 0);
       
       // Fuel from fuel_transactions (for period)
-      const fuelTransactionsCost = (appData.fuel_transactions || [])
-        .filter(ft => {
-          if (!ft.transaction_date) return false;
-          const d = new Date(ft.transaction_date);
-          if (finPeriodType === 'month') return d.getFullYear() === finYear && (d.getMonth() + 1) === finMonth;
-          if (finPeriodType === 'quarter') {
-            const qMonths = [(finQuarter-1)*3+1, (finQuarter-1)*3+2, (finQuarter-1)*3+3];
-            return d.getFullYear() === finYear && qMonths.includes(d.getMonth() + 1);
-          }
-          return d.getFullYear() === finYear;
-        })
-        .reduce((s, ft) => s + parseFloat(ft.total_cost || 0), 0);
+      const fuelTransactionsCost = filterByRange(
+        appData.fuel_transactions || [],
+        ft => ft.transaction_date || ft.created_at,
+        periodRange,
+        { excludeUndated: true }
+      )
+        .reduce((s, ft) => s + parseFloat(ft.total_cost || ft.amount || 0), 0);
       
       // Combined true operating expenses
       const trueOperatingExpenses = totalOperatingExpenses + totalVariableCosts + fuelTransactionsCost;
@@ -30902,6 +30987,17 @@ ${rateText}`
       
       // Build fixed costs breakdown
       const fixedCostsBreakdown = (appData.fixed_costs || []).map(fc => '<tr><td style="padding-left:24px">' + fc.name + '</td><td class="money">' + formatMoney(fc.amount * periodMonths) + '</td></tr>').join('');
+      const finYearSources = []
+        .concat((appData.trips || []).map(t => t.trip_date || t.period_start_date || t.created_at))
+        .concat((appData.orders || []).map(o => resolveOrderEffectiveDate(o, appData.trips || [])))
+        .concat((appData.variable_costs || []).map(vc => vc.date || vc.created_at))
+        .concat((appData.fuel_transactions || []).map(ft => ft.transaction_date || ft.created_at))
+        .concat((appData.expenses || []).map(e => e.expense_date || e.created_at));
+      const finYearSet = new Set(getDataDrivenYearOptions(finYearSources, true));
+      finYearSet.add(finYear);
+      const finYearOptions = Array.from(finYearSet).sort((a, b) => b - a).map(y =>
+        '<option value="' + y + '"' + (finYear === y ? ' selected' : '') + '>' + y + '</option>'
+      ).join('');
       
       // Tabs for consolidated view
       const finTabs = `
@@ -31239,7 +31335,7 @@ ${rateText}`
         '<button onclick="finPeriodType=\'quarter\';renderFinancialAnalysis(document.getElementById(\'main-content\'))" style="padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-weight:500;transition:all 0.2s;' + (finPeriodType === 'quarter' ? 'background:#3b82f6;color:white' : 'background:transparent;color:#64748b') + '">Quarterly</button>' +
         '<button onclick="finPeriodType=\'year\';renderFinancialAnalysis(document.getElementById(\'main-content\'))" style="padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-weight:500;transition:all 0.2s;' + (finPeriodType === 'year' ? 'background:#3b82f6;color:white' : 'background:transparent;color:#64748b') + '">Yearly</button>' +
         '</div>' +
-        '<select id="finYear" onchange="finYear=parseInt(this.value);renderFinancialAnalysis(document.getElementById(\'main-content\'))" style="padding:10px 16px;border:1px solid #e2e8f0;border-radius:8px;background:white;font-weight:500"><option value="2024"' + (finYear === 2024 ? ' selected' : '') + '>2024</option><option value="2025"' + (finYear === 2025 ? ' selected' : '') + '>2025</option><option value="2026"' + (finYear === 2026 ? ' selected' : '') + '>2026</option><option value="2027"' + (finYear === 2027 ? ' selected' : '') + '>2027</option></select>' +
+        '<select id="finYear" onchange="finYear=parseInt(this.value);renderFinancialAnalysis(document.getElementById(\'main-content\'))" style="padding:10px 16px;border:1px solid #e2e8f0;border-radius:8px;background:white;font-weight:500">' + finYearOptions + '</select>' +
         (finPeriodType === 'month' ? '<select id="finMonth" onchange="finMonth=parseInt(this.value);renderFinancialAnalysis(document.getElementById(\'main-content\'))" style="padding:10px 16px;border:1px solid #e2e8f0;border-radius:8px;background:white;font-weight:500">' + months.slice(1).map((m, i) => '<option value="' + (i+1) + '"' + (finMonth === i+1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select>' : '') +
         (finPeriodType === 'quarter' ? '<select id="finQuarter" onchange="finQuarter=parseInt(this.value);renderFinancialAnalysis(document.getElementById(\'main-content\'))" style="padding:10px 16px;border:1px solid #e2e8f0;border-radius:8px;background:white;font-weight:500"><option value="1"' + (finQuarter === 1 ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="2"' + (finQuarter === 2 ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="3"' + (finQuarter === 3 ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="4"' + (finQuarter === 4 ? ' selected' : '') + '>Q4 (Oct-Dec)</option></select>' : '') +
         '<div style="margin-left:auto;background:#1e293b;color:white;padding:10px 20px;border-radius:8px;font-weight:700">' + periodLabel + '</div>' +
@@ -31750,21 +31846,49 @@ ${rateText}`
     }
 
     // ============ PROFITABILITY DASHBOARD ============
-    function renderProfitability(c) {
+    function renderProfitability(c, periodCtx = profitabilityPeriod) {
       try {
-        const trips = appData.trips || [];
-        const orders = appData.orders || [];
+        const periodRange = buildPeriodRange(periodCtx || profitabilityPeriod);
+        const trips = filterTripsByRange(appData.trips || [], periodRange, { excludeUndated: true });
+        const orders = filterOrdersByRange(appData.orders || [], appData.trips || [], periodRange, { excludeUndated: true })
+          .filter(o => o.trip_id && trips.some(t => t.id === o.trip_id));
         const trucks = appData.trucks || [];
-        const maintenance = appData.maintenance_records || [];
-        const fuelRecords = appData.fuel_transactions || [];
+        const maintenance = filterByRange(
+          appData.maintenance_records || [],
+          m => m.service_date || m.date || m.created_at,
+          periodRange,
+          { excludeUndated: true }
+        );
+        const fuelRecords = filterByRange(
+          appData.fuel_transactions || [],
+          f => f.transaction_date || f.created_at,
+          periodRange,
+          { excludeUndated: true }
+        );
         const fixedCosts = appData.fixed_costs || [];
         const variableCosts = appData.variable_costs || [];
+        const profitabilityYearSet = new Set(getDataDrivenYearOptions(
+          []
+            .concat((appData.trips || []).map(t => t.trip_date || t.period_start_date || t.created_at))
+            .concat((appData.orders || []).map(o => resolveOrderEffectiveDate(o, appData.trips || []))),
+          true
+        ));
+        profitabilityYearSet.add(parseInt(profitabilityPeriod.year, 10) || new Date().getFullYear());
+        const profitabilityYearOptions = Array.from(profitabilityYearSet).sort((a, b) => b - a).map(y =>
+          '<option value="' + y + '"' + ((parseInt(profitabilityPeriod.year, 10) === y) ? ' selected' : '') + '>' + y + '</option>'
+        ).join('');
+        const undatedTripCount = (appData.trips || []).filter(t => !toDateKey(t.trip_date || t.period_start_date || t.created_at)).length;
       
       // Canonical snapshot for profitability reports
-      const tripRange = getDateRangeFromTrips(trips);
-      const startDate = tripRange?.start || new Date().toISOString().split('T')[0];
-      const endDate = tripRange?.end || startDate;
-      const monthsInData = countMonthsInclusive(startDate, endDate);
+      const startDate = periodRange.start || (getEarliestDataDateKey() || toDateKey(new Date()));
+      const endDate = periodRange.end || toDateKey(new Date());
+      const monthsInData = periodRange.type === 'month'
+        ? 1
+        : periodRange.type === 'quarter'
+          ? 3
+          : periodRange.type === 'year'
+            ? 12
+            : countMonthsInclusive(startDate, endDate);
       const snapshot = calculateFinancialSnapshot({
         startDate,
         endDate,
@@ -31953,7 +32077,7 @@ ${rateText}`
         .sort((a, b) => b.trueProfit - a.trueProfit);
       
       // Build HTML
-      c.innerHTML = '<div class="header"><h2>💎 Profitability Dashboard</h2></div>' +
+      c.innerHTML = '<div class="header"><h2>💎 Profitability Dashboard</h2><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><select onchange="profitabilityPeriod.type=this.value;if(profitabilityPeriod.type===\'year\'&&!profitabilityPeriod.year){profitabilityPeriod.year=new Date().getFullYear();}renderProfitability(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)"><option value="year"' + (profitabilityPeriod.type === 'year' ? ' selected' : '') + '>Year</option><option value="all"' + (profitabilityPeriod.type === 'all' ? ' selected' : '') + '>All Time</option></select>' + (profitabilityPeriod.type === 'year' ? '<select onchange="profitabilityPeriod.year=parseInt(this.value);renderProfitability(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)">' + profitabilityYearOptions + '</select>' : '') + '<span style="font-size:12px;background:#dbeafe;color:#1d4ed8;padding:6px 10px;border-radius:999px;font-weight:600">' + getPeriodLabel(profitabilityPeriod) + '</span>' + (undatedTripCount > 0 && profitabilityPeriod.type !== 'all' ? '<span style="font-size:12px;background:#fff7ed;color:#9a3412;padding:6px 10px;border-radius:999px;font-weight:600">Undated trips excluded: ' + undatedTripCount + '</span>' : '') + '</div></div>' +
         
         // Summary Stats - Enhanced with new metrics
         '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px">' +
@@ -36802,28 +36926,40 @@ function jsonResponse(data, status = 200) {
     let reportTab = 'truck_pl';
     let reportPeriod = 'month';
     let reportMonth = new Date().getMonth() + 1;
+    let reportQuarter = Math.ceil(reportMonth / 3);
     let reportYear = new Date().getFullYear();
     let reportCompare = false;
 
     function renderReports(c) {
       const months = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      
-      const filteredTrips = filterReportTripsByPeriod(appData.trips);
-      const filteredOrders = appData.orders.filter(o => {
-        const trip = appData.trips.find(t => t.id === o.trip_id);
-        return trip && filteredTrips.includes(trip);
-      });
-      
-      const prevPeriodTrips = reportCompare ? filterReportTripsByPeriod(appData.trips, true) : [];
-      const prevPeriodOrders = reportCompare ? appData.orders.filter(o => {
-        const trip = appData.trips.find(t => t.id === o.trip_id);
-        return trip && prevPeriodTrips.includes(trip);
-      }) : [];
-      
+
+      const filteredTrips = filterReportTripsByPeriod(appData.trips || []);
+      const filteredOrders = (appData.orders || []).filter(o => o.trip_id && filteredTrips.some(t => t.id === o.trip_id));
+      const prevPeriodTrips = reportCompare && reportPeriod !== 'all' ? filterReportTripsByPeriod(appData.trips || [], true) : [];
+      const prevPeriodOrders = reportCompare && reportPeriod !== 'all'
+        ? (appData.orders || []).filter(o => o.trip_id && prevPeriodTrips.some(t => t.id === o.trip_id))
+        : [];
+
+      const reportYearSources = []
+        .concat((appData.trips || []).map(t => t.trip_date || t.period_start_date || t.created_at))
+        .concat((appData.orders || []).map(o => resolveOrderEffectiveDate(o, appData.trips || [])))
+        .concat((appData.maintenance_records || []).map(m => m.service_date || m.date || m.created_at));
+      const reportYearSet = new Set(getDataDrivenYearOptions(reportYearSources, true));
+      reportYearSet.add(reportYear);
+      const reportYearOptions = Array.from(reportYearSet).sort((a, b) => b - a).map(y =>
+        '<option value="' + y + '"' + (reportYear === y ? ' selected' : '') + '>' + y + '</option>'
+      ).join('');
+
+      const periodChipLabel = getPeriodLabel(getReportPeriodContext(false));
+      const undatedTripCount = (appData.trips || []).filter(t => !toDateKey(t.trip_date || t.period_start_date || t.created_at)).length;
+
       c.innerHTML = '<div class="header"><h2>📊 Enhanced Reports</h2><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><select id="reportPeriod" onchange="reportPeriod=this.value;renderReports(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)"><option value="month"' + (reportPeriod === 'month' ? ' selected' : '') + '>Monthly</option><option value="quarter"' + (reportPeriod === 'quarter' ? ' selected' : '') + '>Quarterly</option><option value="year"' + (reportPeriod === 'year' ? ' selected' : '') + '>Yearly</option><option value="all"' + (reportPeriod === 'all' ? ' selected' : '') + '>All Time</option></select>' +
-        (reportPeriod === 'month' ? '<select id="reportMonth" onchange="reportMonth=parseInt(this.value);renderReports(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)">' + months.slice(1).map((m, i) => '<option value="' + (i+1) + '"' + (reportMonth === i+1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select>' : '') +
-        (reportPeriod !== 'all' ? '<select id="reportYear" onchange="reportYear=parseInt(this.value);renderReports(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)"><option value="2024"' + (reportYear === 2024 ? ' selected' : '') + '>2024</option><option value="2025"' + (reportYear === 2025 ? ' selected' : '') + '>2025</option><option value="2026"' + (reportYear === 2026 ? ' selected' : '') + '>2026</option><option value="2027"' + (reportYear === 2027 ? ' selected' : '') + '>2027</option></select>' : '') +
-        '<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox"' + (reportCompare ? ' checked' : '') + ' onchange="reportCompare=this.checked;renderReports(document.getElementById(\'main-content\'))"><span style="font-size:13px">Compare to previous</span></label><button class="btn btn-secondary" onclick="exportReportCSV()">📥 Export CSV</button></div></div>' +
+        (reportPeriod === 'month' ? '<select id="reportMonth" onchange="reportMonth=parseInt(this.value);reportQuarter=Math.ceil(reportMonth/3);renderReports(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)">' + months.slice(1).map((m, i) => '<option value="' + (i+1) + '"' + (reportMonth === i+1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select>' : '') +
+        (reportPeriod === 'quarter' ? '<select id="reportQuarter" onchange="reportQuarter=parseInt(this.value);renderReports(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)"><option value="1"' + (reportQuarter === 1 ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="2"' + (reportQuarter === 2 ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="3"' + (reportQuarter === 3 ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="4"' + (reportQuarter === 4 ? ' selected' : '') + '>Q4 (Oct-Dec)</option></select>' : '') +
+        (reportPeriod !== 'all' ? '<select id="reportYear" onchange="reportYear=parseInt(this.value);renderReports(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)">' + reportYearOptions + '</select>' : '') +
+        '<span style="font-size:12px;background:#dbeafe;color:#1d4ed8;padding:6px 10px;border-radius:999px;font-weight:600">' + periodChipLabel + '</span>' +
+        (undatedTripCount > 0 && reportPeriod !== 'all' ? '<span style="font-size:12px;background:#fff7ed;color:#9a3412;padding:6px 10px;border-radius:999px;font-weight:600">Undated trips excluded: ' + undatedTripCount + '</span>' : '') +
+        '<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox"' + (reportCompare ? ' checked' : '') + (reportPeriod === 'all' ? ' disabled' : '') + ' onchange="reportCompare=this.checked;renderReports(document.getElementById(\'main-content\'))"><span style="font-size:13px">Compare to previous</span></label><button class="btn btn-secondary" onclick="exportReportCSV()">📥 Export CSV</button></div></div>' +
         '<div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap"><button class="btn ' + (reportTab === 'truck_pl' ? 'btn-primary' : 'btn-secondary') + '" onclick="reportTab=\'truck_pl\';renderReports(document.getElementById(\'main-content\'))">🚛 Truck P&L</button><button class="btn ' + (reportTab === 'driver_performance' ? 'btn-primary' : 'btn-secondary') + '" onclick="reportTab=\'driver_performance\';renderReports(document.getElementById(\'main-content\'))">👨‍✈️ Driver Performance</button><button class="btn ' + (reportTab === 'lane_analysis' ? 'btn-primary' : 'btn-secondary') + '" onclick="reportTab=\'lane_analysis\';renderReports(document.getElementById(\'main-content\'))">🛣️ Lane Analysis</button></div>' +
         '<div id="reportContent">' +
         (reportTab === 'truck_pl' ? renderTruckPLReport(filteredTrips, filteredOrders, prevPeriodTrips, prevPeriodOrders) : '') +
@@ -36832,39 +36968,71 @@ function jsonResponse(data, status = 200) {
         '</div>';
     }
 
-    function filterReportTripsByPeriod(trips, previous = false) {
-      if (reportPeriod === 'all') return trips;
-      
-      let startDate, endDate;
-      const year = previous ? (reportPeriod === 'month' && reportMonth === 1 ? reportYear - 1 : reportYear) : reportYear;
-      const month = previous ? (reportMonth === 1 ? 12 : reportMonth - 1) : reportMonth;
-      
+    function getReportPeriodContext(previous = false) {
+      if (reportPeriod === 'all') return { type: 'all' };
+
       if (reportPeriod === 'month') {
-        startDate = new Date(year, month - 1, 1);
-        endDate = new Date(year, month, 0);
-      } else if (reportPeriod === 'quarter') {
-        const q = Math.ceil(reportMonth / 3);
-        const actualQ = previous ? (q === 1 ? 4 : q - 1) : q;
-        const actualYear = previous && q === 1 ? reportYear - 1 : reportYear;
-        startDate = new Date(actualYear, (actualQ - 1) * 3, 1);
-        endDate = new Date(actualYear, actualQ * 3, 0);
-      } else if (reportPeriod === 'year') {
-        const actualYear = previous ? reportYear - 1 : reportYear;
-        startDate = new Date(actualYear, 0, 1);
-        endDate = new Date(actualYear, 11, 31);
+        let year = reportYear;
+        let month = reportMonth;
+        if (previous) {
+          month -= 1;
+          if (month < 1) {
+            month = 12;
+            year -= 1;
+          }
+        }
+        return { type: 'month', year, month };
       }
-      
-      return trips.filter(t => {
-        if (!t.trip_date) return false;
-        const tripDate = new Date(t.trip_date);
-        return tripDate >= startDate && tripDate <= endDate;
-      });
+
+      if (reportPeriod === 'quarter') {
+        let year = reportYear;
+        let quarter = reportQuarter;
+        if (previous) {
+          quarter -= 1;
+          if (quarter < 1) {
+            quarter = 4;
+            year -= 1;
+          }
+        }
+        return { type: 'quarter', year, quarter };
+      }
+
+      return { type: 'year', year: previous ? reportYear - 1 : reportYear };
+    }
+
+    function getReportPeriodRange(previous = false) {
+      return buildPeriodRange(getReportPeriodContext(previous));
+    }
+
+    function filterReportTripsByPeriod(trips, previous = false) {
+      return filterTripsByRange(trips || [], getReportPeriodRange(previous), { excludeUndated: reportPeriod !== 'all' });
+    }
+
+    function filterReportMaintenanceByPeriod(records, previous = false) {
+      return filterByRange(
+        records || [],
+        m => m.service_date || m.date || m.created_at,
+        getReportPeriodRange(previous),
+        { excludeUndated: reportPeriod !== 'all' }
+      );
     }
 
     function renderTruckPLReport(trips, orders, prevTrips, prevOrders) {
       const trucks = appData.trucks.filter(t => t.status === 'ACTIVE');
       const monthlyFixedCosts = (appData.fixed_costs || []).reduce((s, fc) => s + parseFloat(fc.amount || 0), 0);
-      const fixedCostPerTruck = trucks.length > 0 ? monthlyFixedCosts / trucks.length : 0;
+      const periodRange = getReportPeriodRange(false);
+      const periodMonths = periodRange.type === 'month'
+        ? 1
+        : periodRange.type === 'quarter'
+          ? 3
+          : periodRange.type === 'year'
+            ? 12
+            : countMonthsInclusive(
+              getDateRangeFromTrips(trips)?.start || getEarliestDataDateKey(),
+              getDateRangeFromTrips(trips)?.end || toDateKey(new Date())
+            );
+      const fixedCostPerTruck = trucks.length > 0 ? (monthlyFixedCosts * periodMonths) / trucks.length : 0;
+      const maintenanceInPeriod = filterReportMaintenanceByPeriod(appData.maintenance_records || []);
       
       let totalRevenue = 0, totalDriverCut = 0, totalFuel = 0, totalOther = 0, totalProfit = 0;
       
@@ -36889,7 +37057,7 @@ function jsonResponse(data, status = 200) {
         const tripIds = truckTrips.map(t => t.id);
         const fuelExpenses = (appData.expenses || []).filter(e => tripIds.includes(e.trip_id) && e.category === 'FUEL').reduce((s, e) => s + parseFloat(e.amount || 0), 0);
         const otherExpenses = (appData.expenses || []).filter(e => tripIds.includes(e.trip_id) && e.category !== 'FUEL').reduce((s, e) => s + parseFloat(e.amount || 0), 0);
-        const maintenance = (appData.maintenance_records || []).filter(m => m.truck_id === truck.id).reduce((s, m) => s + parseFloat(m.total_cost || m.cost || 0), 0);
+        const maintenance = maintenanceInPeriod.filter(m => m.truck_id === truck.id).reduce((s, m) => s + parseFloat(m.total_cost || m.cost || 0), 0);
         
         const totalCosts = driverCut + fuelExpenses + otherExpenses + fixedCostPerTruck + maintenance;
         const netProfit = cleanGross - totalCosts;
@@ -37103,14 +37271,29 @@ function jsonResponse(data, status = 200) {
     function renderAIAdvisor(c) {
       const apiKey = getApiKey();
       const hasApiKey = apiKey && apiKey.length > 10;
-      const fs = getFinancialSummaryForAI();
+      const fs = getFinancialSummaryForAI(aiPeriod);
       const alertsList = checkFinancialAlerts(fs);
       const tip = getDailyTip(fs);
+      const aiYearSet = new Set(getDataDrivenYearOptions(
+        []
+          .concat((appData.trips || []).map(t => t.trip_date || t.period_start_date || t.created_at))
+          .concat((appData.orders || []).map(o => resolveOrderEffectiveDate(o, appData.trips || []))),
+        true
+      ));
+      aiYearSet.add(parseInt(aiPeriod.year, 10) || new Date().getFullYear());
+      const aiYearOptions = Array.from(aiYearSet).sort((a, b) => b - a).map(y =>
+        '<option value="' + y + '"' + ((parseInt(aiPeriod.year, 10) === y) ? ' selected' : '') + '>' + y + '</option>'
+      ).join('');
+      const undatedTripCount = (appData.trips || []).filter(t => !toDateKey(t.trip_date || t.period_start_date || t.created_at)).length;
       
       c.innerHTML = `
         <div class="header">
           <h2>🤖 AI Financial Advisor</h2>
-          <div style="display:flex;gap:12px;align-items:center">
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+            <select onchange="aiPeriod.type=this.value;if(aiPeriod.type==='year'&&!aiPeriod.year){aiPeriod.year=new Date().getFullYear();}renderAIAdvisor(document.getElementById('main-content'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary)"><option value="year" ${aiPeriod.type === 'year' ? 'selected' : ''}>Year</option><option value="all" ${aiPeriod.type === 'all' ? 'selected' : ''}>All Time</option></select>
+            ${aiPeriod.type === 'year' ? `<select onchange="aiPeriod.year=parseInt(this.value);renderAIAdvisor(document.getElementById('main-content'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary)">${aiYearOptions}</select>` : ''}
+            <span style="font-size:12px;background:#dbeafe;color:#1d4ed8;padding:6px 10px;border-radius:999px;font-weight:600">${fs.periodLabel}</span>
+            ${undatedTripCount > 0 && aiPeriod.type !== 'all' ? `<span style="font-size:12px;background:#fff7ed;color:#9a3412;padding:6px 10px;border-radius:999px;font-weight:600">Undated trips excluded: ${undatedTripCount}</span>` : ''}
             <span style="font-size:13px;color:var(--text-muted)">Powered by Claude AI</span>
             ${hasApiKey ? '<span style="color:#22c55e;font-size:12px">✓ API Connected</span>' : '<span style="color:#ef4444;font-size:12px">⚠️ Add API Key in Settings</span>'}
           </div>
@@ -37145,11 +37328,11 @@ function jsonResponse(data, status = 200) {
             </div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px">
               <div style="background:rgba(0,0,0,0.2);padding:12px;border-radius:8px">
-                <div style="font-size:11px;color:#64748b">Monthly Revenue</div>
+                <div style="font-size:11px;color:#64748b">Revenue (${fs.periodLabel})</div>
                 <div style="font-size:18px;font-weight:700;color:#22c55e">${formatMoney(fs.monthlyRevenue)}</div>
               </div>
               <div style="background:rgba(0,0,0,0.2);padding:12px;border-radius:8px">
-                <div style="font-size:11px;color:#64748b">Monthly Profit</div>
+                <div style="font-size:11px;color:#64748b">Profit (${fs.periodLabel})</div>
                 <div style="font-size:18px;font-weight:700;color:${fs.monthlyProfit >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(fs.monthlyProfit)}</div>
               </div>
               <div style="background:rgba(0,0,0,0.2);padding:12px;border-radius:8px">
@@ -37273,52 +37456,65 @@ function jsonResponse(data, status = 200) {
       setTimeout(() => { const m = document.getElementById('aiAdvisorMessages'); if(m) m.scrollTop = m.scrollHeight; }, 100);
     }
 
-    function getFinancialSummaryForAI() {
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      
-      const monthlyTrips = appData.trips.filter(t => {
-        if (!t.trip_date) return false;
-        const d = new Date(t.trip_date);
-        return d >= startOfMonth && d <= endOfMonth;
-      });
-      
-      const monthlyOrders = appData.orders.filter(o => monthlyTrips.some(t => t.id === o.trip_id));
-      const grossRevenue = monthlyOrders.reduce((s, o) => s + parseFloat(o.revenue || 0), 0);
-      const brokerFees = monthlyOrders.reduce((s, o) => s + parseFloat(o.broker_fee || 0), 0);
-      const localFees = monthlyOrders.reduce((s, o) => s + parseFloat(o.local_fee || 0), 0);
-      const monthlyRevenue = grossRevenue - brokerFees - localFees;
-      
-      const driverCuts = monthlyTrips.reduce((sum, trip) => {
-        const tripOrders = monthlyOrders.filter(o => o.trip_id === trip.id);
+    function getFinancialSummaryForAI(periodCtx = aiPeriod) {
+      const resolvedPeriod = periodCtx || aiPeriod;
+      const range = buildPeriodRange(resolvedPeriod);
+      const periodTrips = filterTripsByRange(appData.trips || [], range, { excludeUndated: true });
+      const periodOrders = filterOrdersByRange(appData.orders || [], appData.trips || [], range, { excludeUndated: true })
+        .filter(o => o.trip_id && periodTrips.some(t => t.id === o.trip_id));
+
+      const grossRevenue = periodOrders.reduce((s, o) => s + parseFloat(o.revenue || 0), 0);
+      const brokerFees = periodOrders.reduce((s, o) => s + parseFloat(o.broker_fee || 0), 0);
+      const localFees = periodOrders.reduce((s, o) => s + parseFloat(o.local_fee || 0), 0);
+      const periodRevenue = grossRevenue - brokerFees - localFees;
+
+      const driverCuts = periodTrips.reduce((sum, trip) => {
+        const tripOrders = periodOrders.filter(o => o.trip_id === trip.id);
         const tripRevenue = tripOrders.reduce((s, o) => s + parseFloat(o.revenue || 0), 0);
         const tripBroker = tripOrders.reduce((s, o) => s + parseFloat(o.broker_fee || 0), 0);
         const tripLocal = tripOrders.reduce((s, o) => s + parseFloat(o.local_fee || 0), 0);
         const tripClean = tripRevenue - tripBroker - tripLocal;
         return sum + (tripClean * ((trip.driver_cut_percent || 32) / 100));
       }, 0);
-      
-      const tripIds = monthlyTrips.map(t => t.id);
-      const monthlyExpenses = (appData.expenses || []).filter(e => tripIds.includes(e.trip_id)).reduce((s, e) => s + parseFloat(e.amount || 0), 0);
+
+      const tripIds = new Set(periodTrips.map(t => t.id));
+      const periodExpenses = (appData.expenses || []).filter(e => tripIds.has(e.trip_id)).reduce((s, e) => s + parseFloat(e.amount || 0), 0);
       const monthlyFixedCosts = (appData.fixed_costs || []).reduce((s, fc) => s + parseFloat(fc.amount || 0), 0);
+      const periodMonths = range.type === 'month'
+        ? 1
+        : range.type === 'quarter'
+          ? 3
+          : range.type === 'year'
+            ? 12
+            : countMonthsInclusive(range.start, range.end);
+      const periodFixedCosts = monthlyFixedCosts * periodMonths;
       const activeTrucks = appData.trucks.filter(t => t.status === 'ACTIVE').length;
-      const monthlyProfit = monthlyRevenue - driverCuts - monthlyExpenses - monthlyFixedCosts;
-      const profitPerTruck = activeTrucks > 0 ? monthlyProfit / activeTrucks : 0;
-      const cashCollected = monthlyOrders.filter(o => o.driver_paid_status === 'PAID').reduce((s, o) => s + parseFloat(o.driver_paid_amount || 0), 0);
-      const outstanding = monthlyOrders
+      const periodProfit = periodRevenue - driverCuts - periodExpenses - periodFixedCosts;
+      const profitPerTruck = activeTrucks > 0 ? periodProfit / activeTrucks : 0;
+      const cashCollected = periodOrders.filter(o => o.driver_paid_status === 'PAID').reduce((s, o) => s + parseFloat(o.driver_paid_amount || 0), 0);
+      const outstanding = periodOrders
         .filter(o => o.driver_paid_status !== 'PAID' && ['COD', 'COP', 'LOCAL_COD', 'SPLIT'].includes(String(o.payment_type || '').toUpperCase()))
         .reduce((sum, o) => sum + getOrderCashCollectedAmount(o), 0);
 
       return {
-        monthlyRevenue, monthlyProfit, activeTrucks, profitPerTruck,
-        cashOnHand: cashCollected, monthlyFixedCosts, driverCuts, monthlyExpenses,
-        totalTrips: monthlyTrips.length, totalCars: monthlyOrders.length, outstanding,
-        avgRevenuePerCar: monthlyOrders.length > 0 ? monthlyRevenue / monthlyOrders.length : 0,
-        avgTripsPerTruck: activeTrucks > 0 ? monthlyTrips.length / activeTrucks : 0,
+        monthlyRevenue: periodRevenue,
+        monthlyProfit: periodProfit,
+        activeTrucks,
+        profitPerTruck,
+        cashOnHand: cashCollected,
+        monthlyFixedCosts: periodFixedCosts,
+        driverCuts,
+        monthlyExpenses: periodExpenses,
+        totalTrips: periodTrips.length,
+        totalCars: periodOrders.length,
+        outstanding,
+        avgRevenuePerCar: periodOrders.length > 0 ? periodRevenue / periodOrders.length : 0,
+        avgTripsPerTruck: activeTrucks > 0 ? periodTrips.length / activeTrucks : 0,
         drivers: appData.drivers?.length || 0,
         brokerFeePercent: grossRevenue > 0 ? (brokerFees / grossRevenue) * 100 : 0,
-        profitMargin: monthlyRevenue > 0 ? (monthlyProfit / monthlyRevenue) * 100 : 0
+        profitMargin: periodRevenue > 0 ? (periodProfit / periodRevenue) * 100 : 0,
+        periodLabel: getPeriodLabel(resolvedPeriod),
+        periodMonths
       };
     }
 
@@ -37544,8 +37740,10 @@ function jsonResponse(data, status = 200) {
     }
     
     function analyzeBrokersForAI() {
+      const range = buildPeriodRange(aiPeriod);
+      const scopedOrders = filterOrdersByRange(appData.orders || [], appData.trips || [], range, { excludeUndated: true });
       const data = {};
-      appData.orders.forEach(o => {
+      scopedOrders.forEach(o => {
         const broker = appData.brokers?.find(b => b.id === o.broker_id);
         const name = broker?.name || 'Unknown';
         if (!data[name]) data[name] = {name, revenue: 0, fees: 0};
@@ -37556,11 +37754,14 @@ function jsonResponse(data, status = 200) {
     }
     
     function analyzeLanesForAI() {
+      const range = buildPeriodRange(aiPeriod);
+      const scopedTrips = filterTripsByRange(appData.trips || [], range, { excludeUndated: true });
+      const scopedOrders = filterOrdersByRange(appData.orders || [], appData.trips || [], range, { excludeUndated: true });
       const data = new Map();
-      appData.trips.forEach(t => {
+      scopedTrips.forEach(t => {
         if (!t.origin || !t.destination) return;
         const key = extractReportState(t.origin) + '→' + extractReportState(t.destination);
-        const orders = appData.orders.filter(o => o.trip_id === t.id);
+        const orders = scopedOrders.filter(o => o.trip_id === t.id);
         const rev = orders.reduce((s,o) => s + parseFloat(o.revenue||0), 0);
         const mi = parseFloat(t.miles||0);
         if (!data.has(key)) data.set(key, {lane:key, revenue:0, miles:0, trips:0});
