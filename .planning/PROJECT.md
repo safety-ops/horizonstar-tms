@@ -43,47 +43,50 @@ Dispatchers can efficiently manage the full lifecycle of vehicle transport order
 
 <!-- Current scope. Building toward these. -->
 
-- [ ] Apply v1.1 design system (CSS variables, tokens, component styles) to production index.html
-- [ ] Dark/light theme toggle working in production
-- [ ] Every page visually matches approved mockups (colors, typography, spacing, shadows, borders)
-- [ ] No layout changes — same page structure, sections, element positions
-- [ ] No behavior changes — all JS logic, functionality, and features identical
-- [ ] Production sidebar nav order preserved exactly
+- [ ] Strip all gradients from production CSS — solid colors only
+- [ ] Remove all glow/glass effects — clean shadows, solid overlays
+- [ ] Simplify shadow system to minimal depth levels
+- [ ] Remove decorative animations — keep only functional (spinner, toast, transitions)
+- [ ] Clean, professional light and dark themes
+- [ ] Status color coding preserved across all pages
 
-## Current Milestone: v1.2 — Apply UI Redesign to Production
+## Current Milestone: v1.3 — CSS Polish (Flat & Professional)
 
-**Goal:** Apply the approved v1.1 mockup designs to the live production index.html — purely visual changes, no layout or behavior modifications.
+**Goal:** Strip gradients, glow effects, heavy shadows, and decorative animations from production. Deliver clean, flat, Stripe-dashboard-tier styling across all pages.
 
 **Target features:**
-- Production design system (CSS variables from shared.css → variables.css/base.css)
-- Dark/light theme toggle in production
-- All pages restyled: dashboard, dispatch, people & fleet, financials, operations & admin
-- Component styles: cards, tables, buttons, modals, forms, badges, nav
+- Solid color replacements for all gradients (buttons, cards, sidebar, login, chat)
+- Simplified shadow system (3 levels max, no color tint)
+- Removal of glass/backdrop-filter effects
+- Removal of decorative animations (particle rain, shimmer, float, bounce)
+- Clean hover states (no scale transforms, no glow)
+- Professional light and dark themes with solid backgrounds
 
 ## Shipped Milestones
 
 - **v1.0** — Core TMS (phases 1-5, pre-GSD)
 - **v1.1** — Web TMS UI Redesign Mockups (phases 6-10, 21 plans, 31 requirements, shipped 2026-02-10)
+- **v1.2** — Apply UI Redesign to Production (phases 11-15, abandoned — reverted, direction changed)
 
 ## Current State
 
 - Web TMS: ~38,000-line `index.html` with inline JS + 6 external modules
 - iOS app: SwiftUI at `Horizon Star LLC Driver App/LuckyCabbage Driver App/`
-- UI Redesign: 26 mockup files (24,516 lines) in `mockups/web-tms-redesign/` — approved, ready to apply to production
-- Design system: `mockups/web-tms-redesign/shared.css` (1,308 lines) with iOS v3 color tokens, dark/light theming
+- Production CSS: `variables.css` (139 lines), `base.css` (301 lines), `print.css` (491 lines)
+- Production has gradients, glow shadows, glass effects, 47 animation keyframes, heavy shadows throughout
 
 ### Out of Scope
 
 - SaaS multi-tenant transformation (documented but deferred)
 - Android driver app
 - Customer-facing portal (mockup only)
+- Applying v1.1 mockup designs (abandoned in v1.2)
 
 ## Context
 
 - Supabase project ref: `yrrczhlzulwvdqjwvhtu`
 - Supabase CLI is NOT installed — migrations must be applied via Dashboard SQL Editor
-- Existing PROJECT.md in root has detailed iOS v3 redesign spec (1,650 lines)
-- Prototype reference: `mockups/ui_concept_4_driver_app_v3.html`
+- v1.2 work was reverted (commit `ae70551`) — production is at original styling
 - Protected files (DO NOT modify): Config.swift, CacheManager.swift, LocalizationManager.swift
 
 ## Constraints
@@ -92,6 +95,7 @@ Dispatchers can efficiently manage the full lifecycle of vehicle transport order
 - **Backend**: Supabase (PostgreSQL + REST + Storage) — no server-side code except Edge Functions
 - **No build tools**: Web TMS has no bundler, linter, or test suite
 - **DB migrations**: Must be applied manually via Supabase Dashboard SQL Editor
+- **UI-ONLY**: No layout changes, no behavior changes — CSS polish only
 - **Offline**: iOS app must work offline with CacheManager
 
 ## Key Decisions
@@ -103,12 +107,10 @@ Dispatchers can efficiently manage the full lifecycle of vehicle transport order
 | SwiftUI for iOS | Modern Apple framework, declarative | ✓ Good |
 | Local driver fee preservation | Fees must persist through reassignment | ✓ Good — fixed 2026-02-09 |
 | Mockups before code changes | Review and approve designs before touching production index.html | ✓ Good — v1.1 complete |
-| Match iOS v3 design system | Unified brand across web and mobile products | ✓ Good — design system created |
-| Dark theme default | Consistency with iOS, reduces eye strain | ✓ Good |
-| Pure CSS variables, no preprocessor | Simple mockups, no build step | ✓ Good |
-| UI-ONLY constraint for redesign | No functionality changes during visual redesign | ✓ Good — clean separation |
-| Sidebar nav from production | Mockup sidebar differs; use production order when applying | ✓ Good — confirmed for v1.2 |
-| No layout changes in v1.2 | Apply visual design only, keep DOM structure identical | — Pending |
+| v1.2 revert | Mockup-matching approach was too heavy; pivot to flat/professional polish | ✓ Good — simpler direction |
+| Flat over gradients | User wants Stripe-tier professional, not shiny/glossy | — Pending |
+| Solid shadows only | No color-tinted glow, no glass effects | — Pending |
+| Keep functional animations only | Spinners, toasts, transitions stay; decorative effects go | — Pending |
 
 ---
-*Last updated: 2026-02-10 after v1.2 milestone started*
+*Last updated: 2026-02-11 after v1.3 milestone started*

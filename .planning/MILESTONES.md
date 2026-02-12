@@ -1,5 +1,21 @@
 # Milestones
 
+## v1.2 — Apply UI Redesign to Production (Abandoned: 2026-02-11)
+
+**Status:** Reverted — production restored to pre-v1.2 state (commit `ae70551`)
+
+**Phases attempted:** 11-12 (13 plans completed, then reverted)
+
+**What happened:**
+- Phase 11: Design system foundation + global components applied to production
+- Phase 12: Core dispatch pages restyled (Dashboard, Load Board, Trips, Orders)
+- All changes reverted before phases 13-15 could begin
+- Direction changed: user opted for CSS polish (flat/professional) instead of mockup-matching approach
+
+**Last phase number:** 15 (reserved, not completed)
+
+---
+
 ## v1.1 — Web TMS UI Redesign Mockups (Shipped: 2026-02-10)
 
 **Delivered:** Complete set of standalone HTML mockups for every major Web TMS page, applying the iOS v3 design system with dark/light theme toggle.
@@ -24,8 +40,6 @@
 
 **Git range:** `2098ab4` → `576fa90`
 
-**What's next:** Apply approved designs to production index.html
-
 ---
 
 ## v1.0 — Core TMS (Shipped)
@@ -47,4 +61,4 @@
 **Last phase number:** 5
 
 ---
-*Updated: 2026-02-10*
+*Updated: 2026-02-11*
