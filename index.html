@@ -8979,9 +8979,54 @@
     // Current auth session
     let authSession = null;
     
-    // Get current access token for API calls
+    // Get current access token for API calls (session token only).
     function getAccessToken() {
-      return authSession?.access_token || SUPABASE_KEY;
+      return authSession?.access_token || null;
+    }
+
+    function requireAuthToken(options = {}) {
+      const { redirect = true, silent = false } = options;
+      const token = getAccessToken();
+      if (token) return token;
+      if (redirect) {
+        currentUser = null;
+        localStorage.removeItem('horizonstar_user');
+        if (!silent && typeof showToast === 'function') {
+          showToast('Your session expired. Please sign in again.', 'error');
+        }
+        renderLogin();
+      }
+      throw new Error('Authentication required');
+    }
+
+    async function createAuthUserWithoutSessionSwitch(email, password, metadata = {}) {
+      const previousSession = authSession;
+      const { data, error } = await sb.auth.signUp({
+        email,
+        password,
+        options: { data: metadata || {} }
+      });
+      if (error || !data?.user?.id) {
+        throw new Error(error?.message || 'Failed to create Supabase Auth user');
+      }
+
+      if (previousSession?.access_token && previousSession?.refresh_token) {
+        const { data: restored, error: restoreError } = await sb.auth.setSession({
+          access_token: previousSession.access_token,
+          refresh_token: previousSession.refresh_token
+        });
+        if (restoreError || !restored?.session) {
+          await sb.auth.signOut();
+          authSession = null;
+          currentUser = null;
+          localStorage.removeItem('horizonstar_user');
+          renderLogin();
+          throw new Error('Admin session restore failed after creating user');
+        }
+        authSession = restored.session;
+      }
+
+      return data.user.id;
     }
 
     // ============ GLOBAL ERROR HANDLER ============
@@ -9339,6 +9384,14 @@
           await sb.auth.signOut();
           throw new Error('This login is for dealers only. Please use the main login.');
         }
+        if (user.is_active === false) {
+          await sb.auth.signOut();
+          throw new Error('Dealer account is deactivated.');
+        }
+        if (!user.auth_id || String(user.auth_id) !== String(authData.user.id)) {
+          await sb.auth.signOut();
+          throw new Error('Dealer account is not linked for secure access. Contact admin.');
+        }
 
         // Set current user and session
         currentUser = user;
@@ -9361,7 +9414,16 @@
     }
 
     // ============ DATABASE FUNCTIONS ============
+    const PUBLIC_DB_TABLES = new Set(['driver_applications']);
+
+    function requireTableAuth(table, options = {}) {
+      if (options.allowUnauthenticated) return;
+      if (PUBLIC_DB_TABLES.has(String(table || ''))) return;
+      requireAuthToken();
+    }
+
     async function dbFetch(table, options = {}) {
+      requireTableAuth(table, options);
       let query = sb.from(table).select(options.select || '*');
       
       if (options.filter) {
@@ -9416,6 +9478,7 @@
     };
 
     async function dbInsert(table, data) {
+      requireTableAuth(table);
       const { data: result, error } = await sb
         .from(table)
         .insert(data)
@@ -9449,6 +9512,7 @@
     }
     
     async function dbUpdate(table, id, data, skipConflictCheck = false) {
+      requireTableAuth(table);
       // Check for conflicts on important tables
       if (!skipConflictCheck && ['trips', 'orders', 'drivers', 'trucks'].includes(table)) {
         const originalTimestamp = getEditingTimestamp(table, id);
@@ -9497,6 +9561,7 @@
     }
 
     async function dbDelete(table, id) {
+      requireTableAuth(table);
       const { error } = await sb
         .from(table)
         .delete()
@@ -11143,12 +11208,13 @@
 
       if (toSign.length === 0) return result;
 
+      const authToken = requireAuthToken();
       try {
         const response = await fetch(SUPABASE_URL + '/functions/v1/media-sign', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + getAccessToken(),
+            'Authorization': 'Bearer ' + authToken,
             'apikey': SUPABASE_KEY
           },
           body: JSON.stringify({
@@ -14092,153 +14158,69 @@
       btnEl.disabled = true;
       
       try {
-        // Try Supabase Auth first
         const { data: authData, error: authError } = await sb.auth.signInWithPassword({
           email: email,
           password: password
         });
-        
-        if (!authError && authData.session) {
-          // Supabase Auth success - store session
-          authSession = authData.session;
-          recordLoginAttempt(email, true);
-          
-          // Get user from our users table
-          let users = await dbFetch('users', { filter: { email: 'eq.' + email } });
-          
-          if (users.length === 0) {
-            // Create user record if doesn't exist (new Supabase Auth user)
-            const newUser = await dbInsert('users', {
-              auth_id: authData.user.id,
-              email: email,
-              first_name: authData.user.user_metadata?.first_name || email.split('@')[0],
-              last_name: authData.user.user_metadata?.last_name || '',
-              role: 'DISPATCHER',
-              is_active: true
-            });
-            users = [newUser];
-          } else if (!users[0].auth_id) {
-            // Link existing user to Supabase Auth
-            await dbUpdate('users', users[0].id, { auth_id: authData.user.id });
-            users[0].auth_id = authData.user.id;
-          }
-          
-          currentUser = users[0];
-          localStorage.setItem('horizonstar_user', JSON.stringify(currentUser));
-          startSessionMonitor();
-          await logActivity('LOGIN_SUCCESS', { email, method: 'supabase_auth' });
-          renderApp();
-          return;
-        }
-        
-        // Supabase Auth failed - try legacy login for migration
-        const users = await dbFetch('users', { filter: { email: 'eq.' + email } });
-        
-        if (users.length === 0) {
+
+        if (authError || !authData?.session || !authData?.user) {
           recordLoginAttempt(email, false);
           const attempts = getLoginAttempts(email);
-          const remaining = LOGIN_ATTEMPT_LIMIT - attempts.count;
-          errorEl.textContent = `Invalid credentials. ${remaining} attempts remaining.`;
+          const remaining = Math.max(0, LOGIN_ATTEMPT_LIMIT - attempts.count);
+          errorEl.textContent = authError?.message || `Invalid credentials. ${remaining} attempts remaining.`;
           errorEl.style.display = 'block';
           btnEl.textContent = 'Sign In';
           btnEl.disabled = false;
           return;
         }
-        
+
+        authSession = authData.session;
+
+        const users = await dbFetch('users', { filter: { email: 'eq.' + email } });
+        if (!users.length) {
+          await sb.auth.signOut();
+          authSession = null;
+          recordLoginAttempt(email, false);
+          errorEl.textContent = 'No TMS access assigned for this account. Contact admin.';
+          errorEl.style.display = 'block';
+          btnEl.textContent = 'Sign In';
+          btnEl.disabled = false;
+          return;
+        }
+
         const user = users[0];
-        
-        // Check if user is active
         if (user.is_active === false) {
+          await sb.auth.signOut();
+          authSession = null;
+          recordLoginAttempt(email, false);
           errorEl.textContent = 'Account deactivated.';
           errorEl.style.display = 'block';
           btnEl.textContent = 'Sign In';
           btnEl.disabled = false;
           return;
         }
-        
-        // Check legacy password (for users not yet migrated to Supabase Auth)
-        const hashedPassword = await hashPassword(password);
-        const passwordMatch = user.password === hashedPassword || user.password === password;
-        
-        if (!passwordMatch) {
+
+        if (!user.auth_id || String(user.auth_id) !== String(authData.user.id)) {
+          await sb.auth.signOut();
+          authSession = null;
           recordLoginAttempt(email, false);
-          const attempts = getLoginAttempts(email);
-          
-          if (attempts.count >= LOGIN_ATTEMPT_LIMIT) {
-            errorEl.textContent = `Too many attempts. Account locked for ${LOGIN_LOCKOUT_MINUTES} minutes.`;
-          } else {
-            const remaining = LOGIN_ATTEMPT_LIMIT - attempts.count;
-            errorEl.textContent = `Invalid password. ${remaining} attempts remaining.`;
-          }
+          errorEl.textContent = 'Account is not linked for secure access. Contact admin.';
           errorEl.style.display = 'block';
           btnEl.textContent = 'Sign In';
           btnEl.disabled = false;
           return;
         }
-        
-        // Legacy password matched - migrate to Supabase Auth
+
         recordLoginAttempt(email, true);
-        
-        // Try to sign in with Supabase Auth first (user might already exist there)
-        let { data: signInData, error: signInError } = await sb.auth.signInWithPassword({
-          email: email,
-          password: password
-        });
-        
-        if (signInError) {
-          // User doesn't exist in Supabase Auth - create account
-          const { data: signUpData, error: signUpError } = await sb.auth.signUp({
-            email: email,
-            password: password,
-            options: {
-              data: {
-                first_name: user.first_name,
-                last_name: user.last_name
-              }
-            }
-          });
-          
-          if (signUpError) {
-            console.error('Supabase Auth signup error:', signUpError);
-            // Continue anyway with legacy session
-          } else if (signUpData.user) {
-            // Update user with auth_id
-            try {
-              await dbUpdate('users', user.id, { auth_id: signUpData.user.id });
-              user.auth_id = signUpData.user.id;
-            } catch (e) { console.error('Update auth_id error:', e); }
-            
-            // Sign in immediately after signup
-            const { data: newSignIn } = await sb.auth.signInWithPassword({
-              email: email,
-              password: password
-            });
-            if (newSignIn?.session) {
-              authSession = newSignIn.session;
-            }
-          }
-        } else if (signInData?.session) {
-          // Successfully signed in to existing Supabase Auth account
-          authSession = signInData.session;
-          
-          // Link auth_id if not linked yet
-          if (!user.auth_id && signInData.user) {
-            try {
-              await dbUpdate('users', user.id, { auth_id: signInData.user.id });
-              user.auth_id = signInData.user.id;
-            } catch (e) { console.error('Update auth_id error:', e); }
-          }
-        }
-        
         currentUser = user;
         localStorage.setItem('horizonstar_user', JSON.stringify(currentUser));
         startSessionMonitor();
-        await logActivity('LOGIN_SUCCESS', { email, method: 'legacy_migrated' });
+        await logActivity('LOGIN_SUCCESS', { email, method: 'supabase_auth_hard_cutover' });
         renderApp();
         
       } catch (err) {
         console.error('Login error:', err);
-        errorEl.textContent = 'Connection error';
+        errorEl.textContent = err?.message || 'Connection error';
         errorEl.style.display = 'block';
         btnEl.textContent = 'Sign In';
         btnEl.disabled = false;
@@ -14407,32 +14389,25 @@
       }
       
       btn.disabled = true;
-      btn.textContent = 'Verifying...';
+      btn.textContent = 'Sending...';
       
       try {
-        const users = await dbFetch('users', { filter: { email: 'eq.' + email } });
-        
-        if (users.length === 0) {
-          errorEl.textContent = 'Email not found';
-          errorEl.style.display = 'block';
-          btn.disabled = false;
-          btn.textContent = 'Continue';
-          return;
-        }
-        
-        // Store user for step 2
-        window.forgotPasswordUser = users[0];
-        
-        // Log activity
-        await logActivity('PASSWORD_RESET_REQUEST', { email });
-        
-        // Move to step 2 (In a real app, you'd send an email with a code)
+        const redirectTo = window.location.origin + window.location.pathname;
+        const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+        if (error) throw error;
+
         document.getElementById('forgot-step-1').style.display = 'none';
-        document.getElementById('forgot-step-2').style.display = 'block';
-        btn.textContent = 'Reset Password';
-        btn.disabled = false;
-        btn.onclick = handleForgotStep2;
-        
+        document.getElementById('forgot-step-2').style.display = 'none';
+        document.getElementById('forgot-success').style.display = 'block';
+        document.getElementById('forgot-success').innerHTML = `
+          <div style="font-size:48px;margin-bottom:12px">[[icon:check_circle]]</div>
+          <div style="font-weight:600;margin-bottom:8px">Reset Email Sent</div>
+          <div style="color:var(--text-secondary);font-size:13px">Check <strong>${email}</strong> for the secure password reset link.</div>
+        `;
+        document.getElementById('forgot-footer').innerHTML = `
+          <button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove()">Close</button>
+        `;
+      
       } catch (e) {
         errorEl.textContent = 'Error: ' + e.message;
         errorEl.style.display = 'block';
@@ -14442,53 +14417,7 @@
     }
 
     async function handleForgotStep2() {
-      const newPassword = document.getElementById('forgot-new-password').value;
-      const confirmPassword = document.getElementById('forgot-confirm-password').value;
-      const errorEl = document.getElementById('forgot-error-2');
-      const btn = document.getElementById('forgot-btn');
-      
-      if (newPassword.length < 6) {
-        errorEl.textContent = 'Password must be at least 6 characters';
-        errorEl.style.display = 'block';
-        return;
-      }
-      
-      if (newPassword !== confirmPassword) {
-        errorEl.textContent = 'Passwords do not match';
-        errorEl.style.display = 'block';
-        return;
-      }
-      
-      btn.disabled = true;
-      btn.textContent = 'Resetting...';
-      
-      try {
-        const hashedPassword = await hashPassword(newPassword);
-        await dbUpdate('users', window.forgotPasswordUser.id, { password: hashedPassword });
-        
-        // Log activity
-        await logActivity('PASSWORD_RESET_SUCCESS', { email: window.forgotPasswordUser.email });
-        
-        // Clear login attempts for this user
-        const attempts = JSON.parse(localStorage.getItem('login_attempts') || '{}');
-        delete attempts[window.forgotPasswordUser.email];
-        localStorage.setItem('login_attempts', JSON.stringify(attempts));
-        
-        // Show success
-        document.getElementById('forgot-step-2').style.display = 'none';
-        document.getElementById('forgot-success').style.display = 'block';
-        document.getElementById('forgot-footer').innerHTML = `
-          <button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove()">Close</button>
-        `;
-        
-        delete window.forgotPasswordUser;
-        
-      } catch (e) {
-        errorEl.textContent = 'Error: ' + e.message;
-        errorEl.style.display = 'block';
-        btn.disabled = false;
-        btn.textContent = 'Reset Password';
-      }
+      showToast('Use the reset link sent to your email to set a new password.', 'info');
     }
 
     async function logout() { 
@@ -28186,14 +28115,16 @@ ${rateText}`
     // Send Settlement Email
     async function sendSettlementEmail(pdfBlob, email, driver, tripIds, payDate, amount) {
       try {
+        const authToken = requireAuthToken();
         const base64 = await blobToBase64(pdfBlob);
         const tripNumbers = tripIds.map(id => appData.trips.find(t => t.id === id)?.trip_number).filter(Boolean).join(', ');
 
         const response = await fetch(SUPABASE_URL + '/functions/v1/send-email', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
           body: JSON.stringify({
             to: email,
+            kind: 'settlement',
             subject: 'Settlement Statement - ' + driver.first_name + ' ' + driver.last_name + ' - ' + formatDate(payDate),
             html: '<p>Please find attached your settlement statement for trips: ' + tripNumbers + '</p><p>Settlement Amount: <strong>' + formatMoney(amount) + '</strong></p><p>Settlement Date: ' + formatDate(payDate) + '</p><p>Thank you for your partnership!</p><p>- Horizon Star LLC</p>',
             attachment: { filename: 'Settlement_' + driver.last_name + '_' + payDate + '.pdf', content: base64, type: 'application/pdf' }
@@ -30053,6 +29984,7 @@ ${rateText}`
       showToast('Generating and sending invoice...', 'info');
 
       try {
+        const authToken = requireAuthToken();
         // Generate Invoice PDF as base64
         const invoiceBase64 = await generateInvoicePDF(orderId, true);
         if (!invoiceBase64) {
@@ -30150,6 +30082,7 @@ ${rateText}`
         // Build request payload
         const payload = {
           to: email,
+          kind: 'invoice',
           subject: 'Invoice INV-' + (order.order_number || orderId) + ' - Horizon Star Transport',
           from_name: 'Horizon Star Billing',
           html: emailHtml,
@@ -30166,7 +30099,7 @@ ${rateText}`
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + SUPABASE_KEY
+            'Authorization': 'Bearer ' + authToken
           },
           body: JSON.stringify(payload)
         });
@@ -30557,14 +30490,16 @@ ${rateText}`
       showToast('Sending tracking link...', 'info');
 
       try {
+        const authToken = requireAuthToken();
         const response = await fetch(SUPABASE_URL + '/functions/v1/send-email', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + SUPABASE_KEY
+            'Authorization': 'Bearer ' + authToken
           },
           body: JSON.stringify({
             to: email,
+            kind: 'tracking',
             subject: 'Tracking Link - Order ' + order.order_number,
             from_name: 'Horizon Star Transport',
             html: '<div style="font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif; max-width: 600px; margin: 0 auto;">' +
@@ -30644,9 +30579,15 @@ ${rateText}`
 
       try {
         // Try to find by order_number first, then by id
-        let orders = await dbFetch('orders', { order_number: 'eq.' + orderIdentifier });
+        let orders = await dbFetch('orders', {
+          allowUnauthenticated: true,
+          filter: { order_number: 'eq.' + orderIdentifier }
+        });
         if (!orders || orders.length === 0) {
-          orders = await dbFetch('orders', { id: 'eq.' + orderIdentifier });
+          orders = await dbFetch('orders', {
+            allowUnauthenticated: true,
+            filter: { id: 'eq.' + orderIdentifier }
+          });
         }
 
         if (orders && orders.length > 0) {
@@ -30654,16 +30595,22 @@ ${rateText}`
 
           // Get trip if assigned
           if (order.trip_id) {
-            const trips = await dbFetch('trips', { id: 'eq.' + order.trip_id });
-            if (trips && trips.length > 0) {
-              trip = trips[0];
+              const trips = await dbFetch('trips', {
+                allowUnauthenticated: true,
+                filter: { id: 'eq.' + order.trip_id }
+              });
+              if (trips && trips.length > 0) {
+                trip = trips[0];
 
-              // Get driver if assigned
-              if (trip.driver_id) {
-                const drivers = await dbFetch('drivers', { id: 'eq.' + trip.driver_id });
-                if (drivers && drivers.length > 0) {
-                  driver = drivers[0];
-                }
+                // Get driver if assigned
+                if (trip.driver_id) {
+                  const drivers = await dbFetch('drivers', {
+                    allowUnauthenticated: true,
+                    filter: { id: 'eq.' + trip.driver_id }
+                  });
+                  if (drivers && drivers.length > 0) {
+                    driver = drivers[0];
+                  }
               }
             }
           }
@@ -30677,7 +30624,10 @@ ${rateText}`
       let deliveryInspection = null;
       if (order) {
         try {
-          const inspections = await dbFetch('vehicle_inspections', { filter: { order_id: 'eq.' + order.id } });
+          const inspections = await dbFetch('vehicle_inspections', {
+            allowUnauthenticated: true,
+            filter: { order_id: 'eq.' + order.id }
+          });
           if (inspections && inspections.length > 0) {
             pickupInspection = inspections.find(i => i.inspection_type === 'pickup' && i.status === 'completed');
             deliveryInspection = inspections.find(i => i.inspection_type === 'delivery' && i.status === 'completed');
@@ -31187,7 +31137,7 @@ ${rateText}`
       const signedAttachmentMap = await requestSignedUrls('order-attachments', attachmentPaths, 900);
       attachments = attachments.map(a => {
         const storagePath = a.storage_path || extractStoragePathFromUrl(a.file_url, 'order-attachments');
-        const resolved = storagePath && signedAttachmentMap[storagePath] ? signedAttachmentMap[storagePath] : a.file_url;
+        const resolved = storagePath && signedAttachmentMap[storagePath] ? signedAttachmentMap[storagePath] : null;
         return Object.assign({}, a, { __resolved_url: resolved, storage_path: storagePath || a.storage_path || null });
       });
 
@@ -31207,7 +31157,7 @@ ${rateText}`
                 <div style="display: flex; align-items: center; gap: 12px;">
                   <input type="file" id="attachmentFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="flex: 1;">
                   <button class="btn btn-primary" onclick="uploadOrderAttachment(${orderId})">
-                    ⬆ Upload
+                    [[icon:upload]] Upload
                   </button>
                 </div>
                 <div style="margin-top: 8px; font-size: 12px; color: var(--text-muted);">
@@ -31237,12 +31187,18 @@ ${rateText}`
                           </div>
                         </div>
                         <div class="attachment-actions">
-                          <button class="btn btn-sm" style="background: var(--bg-lighter);" onclick="window.open('${a.__resolved_url}', '_blank')">
-                            [[icon:eye]] View
-                          </button>
-                          <a href="${a.__resolved_url}" download="${a.file_name}" class="btn btn-sm" style="background: var(--bg-lighter);">
-                            ⬇ Download
-                          </a>
+                          ${a.__resolved_url ? `
+                            <button class="btn btn-sm" style="background: var(--bg-lighter);" onclick="window.open('${a.__resolved_url}', '_blank')">
+                              [[icon:eye]] View
+                            </button>
+                            <a href="${a.__resolved_url}" download="${a.file_name}" class="btn btn-sm" style="background: var(--bg-lighter);">
+                              [[icon:download]] Download
+                            </a>
+                          ` : `
+                            <button class="btn btn-sm" style="background: var(--bg-tertiary); color: var(--text-muted);" disabled title="Unable to sign URL for this file">
+                              [[icon:alert]] Unavailable
+                            </button>
+                          `}
                           <button class="btn btn-sm btn-danger" onclick="deleteOrderAttachment(${a.id}, ${orderId})">
                             [[icon:trash]]
                           </button>
@@ -31279,7 +31235,8 @@ ${rateText}`
       try {
         // Upload to Supabase Storage
         const fileName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const filePath = 'order_' + orderId + '/' + fileName;
+        const uploaderId = currentUser?.id ? String(currentUser.id) : 'tms';
+        const filePath = uploaderId + '/order_' + orderId + '/' + fileName;
 
         const { data: uploadData, error: uploadError } = await supabaseClient
           .storage
@@ -31287,14 +31244,9 @@ ${rateText}`
           .upload(filePath, file);
 
         if (uploadError) throw uploadError;
-
-        // Get public URL
-        const { data: urlData } = supabaseClient
-          .storage
-          .from('order-attachments')
-          .getPublicUrl(filePath);
-
-        const fileUrl = urlData.publicUrl;
+        const signedMap = await requestSignedUrls('order-attachments', [filePath], 900);
+        const resolvedUrl = signedMap[filePath] || null;
+        const fileUrl = buildStorageObjectUrl('order-attachments', filePath);
 
         // Save to database
         const { data: attachment, error: dbError } = await supabaseClient
@@ -31303,6 +31255,7 @@ ${rateText}`
             order_id: orderId,
             file_name: file.name,
             file_url: fileUrl,
+            storage_path: filePath,
             file_type: file.type,
             file_size: file.size,
             uploaded_by: currentUser?.first_name || 'dispatcher'
@@ -31313,7 +31266,7 @@ ${rateText}`
         if (dbError) throw dbError;
 
         // Update appData
-        appData.order_attachments.push(attachment);
+        appData.order_attachments.push(Object.assign({}, attachment, { __resolved_url: resolvedUrl }));
 
         showToast('File uploaded successfully!');
 
@@ -34384,16 +34337,18 @@ ${rateText}`
     }
 
     // Send earnings statement email via Supabase Edge Function
-    async function sendEarningsEmail(driverEmail, driverName, subject, htmlContent, textContent, attachment) {
+    async function sendEarningsEmail(driverEmail, driverName, subject, htmlContent, textContent, attachment, kind = 'settlement') {
       try {
+        const authToken = requireAuthToken();
         const response = await fetch(SUPABASE_URL + '/functions/v1/send-email', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + getAccessToken()
+            'Authorization': 'Bearer ' + authToken
           },
           body: JSON.stringify({
             to: driverEmail,
+            kind,
             subject: subject,
             html: htmlContent || null,
             text: textContent || null,
@@ -34425,7 +34380,10 @@ ${rateText}`
           currentUser.email,
           currentUser.first_name,
           'Test Email from Horizon Star TMS',
-          '<h2>Email Configuration Successful!</h2><p>Your email integration is working correctly.</p><p>You can now send earnings statements directly to drivers.</p><br><p style="color:var(--text-secondary);font-size:12px">- Horizon Star TMS</p>'
+          '<h2>Email Configuration Successful!</h2><p>Your email integration is working correctly.</p><p>You can now send earnings statements directly to drivers.</p><br><p style="color:var(--text-secondary);font-size:12px">- Horizon Star TMS</p>',
+          null,
+          null,
+          'system_test'
         );
 
         resultDiv.innerHTML = '<div style="background:var(--dim-green);padding:12px;border-radius:8px;color:#059669">Test email sent to ' + currentUser.email + '! Check your inbox.</div>';
@@ -34435,8 +34393,22 @@ ${rateText}`
       }
     }
 
-    function renderSettings(c) {
-      if (currentUser.role !== 'ADMIN') { c.innerHTML = '<div style="text-align:center;padding:60px">Access Denied</div>'; return; }
+    function resolveMainContentContainer(candidate = null) {
+      if (candidate && typeof candidate === 'object' && 'innerHTML' in candidate) return candidate;
+      const byId = document.getElementById('main-content');
+      if (byId && typeof byId === 'object' && 'innerHTML' in byId) return byId;
+      const byQuery = document.querySelector('#main-content');
+      if (byQuery && typeof byQuery === 'object' && 'innerHTML' in byQuery) return byQuery;
+      return null;
+    }
+
+    function renderSettings(c = null) {
+      const container = resolveMainContentContainer(c);
+      if (!container) {
+        console.error('renderSettings: main content container is missing');
+        return;
+      }
+      if (!currentUser || currentUser.role !== 'ADMIN') { container.innerHTML = '<div style="text-align:center;padding:60px">Access Denied</div>'; return; }
       
       const currentKey = getApiKey();
       const maskedKey = currentKey ? currentKey.substring(0, 10) + '...' + currentKey.substring(currentKey.length - 4) : '';
@@ -34445,7 +34417,7 @@ ${rateText}`
       const maskedSamsaraKey = samsaraKey ? samsaraKey.substring(0, 8) + '...' + samsaraKey.substring(samsaraKey.length - 4) : '';
       const samsaraProxyUrl = getSamsaraProxyUrl();
       
-      c.innerHTML = '<div class="header"><h2>[[icon:settings]] Settings</h2></div>' +
+      container.innerHTML = '<div class="header"><h2>[[icon:settings]] Settings</h2></div>' +
         
         // Samsara Integration Section
         '<div class="card" style="max-width:700px"><div class="card-header"><h3>[[icon:map_pin]] Samsara GPS Integration</h3></div>' +
@@ -35322,13 +35294,15 @@ ${rateText}`
       const key = document.getElementById('googleMapsKeyInput')?.value?.trim();
       setGoogleMapsApiKey(key);
       showToast(key ? '[[icon:check_circle]] Google Maps API key saved' : 'API key cleared', key ? 'success' : 'info');
-      renderSettings();
+      const container = resolveMainContentContainer();
+      if (container) renderSettings(container);
     }
 
     function clearGoogleMapsKey() {
       setGoogleMapsApiKey('');
       showToast('Google Maps API key removed', 'info');
-      renderSettings();
+      const container = resolveMainContentContainer();
+      if (container) renderSettings(container);
     }
 
     function toggleGoogleMapsKeyVisibility() {
@@ -35477,7 +35451,10 @@ function jsonResponse(data, status = 200) {
       
       if (!key) return null;
       
+      let timeoutId = null;
       try {
+        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        timeoutId = controller ? setTimeout(() => controller.abort(), 12000) : null;
         let response;
         
         if (proxyUrl) {
@@ -35487,7 +35464,8 @@ function jsonResponse(data, status = 200) {
             headers: {
               'X-Samsara-Token': key,
               'Content-Type': 'application/json'
-            }
+            },
+            signal: controller ? controller.signal : undefined
           });
         } else {
           // Direct call (may fail due to CORS)
@@ -35496,17 +35474,22 @@ function jsonResponse(data, status = 200) {
             headers: {
               'Authorization': 'Bearer ' + key,
               'Content-Type': 'application/json'
-            }
+            },
+            signal: controller ? controller.signal : undefined
           });
         }
-        
         if (response.ok) {
           return await response.json();
         } else if (response.status === 401) {
           console.error('Samsara: Invalid API token');
         }
       } catch (e) {
+        if (e?.name === 'AbortError') {
+          console.error('Samsara fetch timeout for path:', path);
+        }
         console.error('Samsara fetch error:', e);
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
       }
       return null;
     }
@@ -35744,6 +35727,7 @@ function jsonResponse(data, status = 200) {
     let liveMapMarkers = {};
     let liveMapRefreshInterval = null;
     let liveMapResizeHandlerAttached = false;
+    let liveMapLeafletLoadPromise = null;
     let liveMapState = {
       selectedVehicleKey: null,
       searchQuery: '',
@@ -35759,6 +35743,107 @@ function jsonResponse(data, status = 200) {
       hasNoData: false,
       panelCollapsedMobile: false
     };
+
+    const LIVE_MAP_LEAFLET_CANDIDATES = [
+      {
+        cssId: 'leaflet-css-jsdelivr',
+        css: 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css',
+        jsId: 'leaflet-js-jsdelivr',
+        js: 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js'
+      },
+      {
+        cssId: 'leaflet-css-unpkg',
+        css: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+        jsId: 'leaflet-js-unpkg',
+        js: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+      }
+    ];
+
+    function appendLeafletCss(id, href) {
+      if (document.getElementById(id) || document.querySelector('link[href="' + href + '"]')) return;
+      const link = document.createElement('link');
+      link.id = id;
+      link.rel = 'stylesheet';
+      link.href = href;
+      document.head.appendChild(link);
+    }
+
+    function loadLeafletScriptOnce(id, src, timeoutMs = 12000) {
+      return new Promise((resolve, reject) => {
+        if (window.L) {
+          resolve();
+          return;
+        }
+
+        let script = document.getElementById(id);
+        if (!script) {
+          script = document.createElement('script');
+          script.id = id;
+          script.src = src;
+          script.async = true;
+          script.defer = true;
+          document.body.appendChild(script);
+        }
+
+        if (script.dataset.loaded === '1' && window.L) {
+          resolve();
+          return;
+        }
+
+        let settled = false;
+        const finishResolve = () => {
+          if (settled) return;
+          settled = true;
+          script.dataset.loaded = '1';
+          resolve();
+        };
+        const finishReject = (message) => {
+          if (settled) return;
+          settled = true;
+          reject(new Error(message));
+        };
+        const timer = setTimeout(() => finishReject('Leaflet load timeout'), timeoutMs);
+
+        script.addEventListener('load', () => {
+          clearTimeout(timer);
+          if (window.L) finishResolve();
+          else finishReject('Leaflet loaded but window.L missing');
+        }, { once: true });
+
+        script.addEventListener('error', () => {
+          clearTimeout(timer);
+          finishReject('Failed to load ' + src);
+        }, { once: true });
+      });
+    }
+
+    async function ensureLeafletForLiveMap() {
+      if (window.L) return;
+      if (liveMapLeafletLoadPromise) {
+        await liveMapLeafletLoadPromise;
+        return;
+      }
+
+      liveMapLeafletLoadPromise = (async () => {
+        let lastError = null;
+        for (const candidate of LIVE_MAP_LEAFLET_CANDIDATES) {
+          try {
+            appendLeafletCss(candidate.cssId, candidate.css);
+            await loadLeafletScriptOnce(candidate.jsId, candidate.js);
+            if (window.L) return;
+          } catch (err) {
+            lastError = err;
+          }
+        }
+        throw lastError || new Error('Leaflet unavailable');
+      })();
+
+      try {
+        await liveMapLeafletLoadPromise;
+      } finally {
+        if (!window.L) liveMapLeafletLoadPromise = null;
+      }
+    }
 
     function buildLiveMapShell() {
       const panelCollapsed = liveMapState.panelCollapsedMobile ? 'true' : 'false';
@@ -35814,6 +35899,27 @@ function jsonResponse(data, status = 200) {
         return '<div class="live-map-empty">No trucks match the current search/filter criteria.</div>';
       }
       return '<div class="live-map-empty">Loading live fleet data...</div>';
+    }
+
+    function setLiveMapErrorState(message, options = {}) {
+      const errorText = message || 'Live map unavailable';
+      liveMapState.lastRefreshError = errorText;
+      liveMapState.isRefreshing = false;
+      updateLiveMapStatusChip();
+
+      if (options.skipPanel !== true) {
+        const panelBody = document.getElementById('liveMapPanelBody');
+        if (panelBody && !liveMapState.baseViewModel) {
+          panelBody.innerHTML = renderLiveMapEmptyState('error');
+        }
+      }
+
+      if (options.skipMap !== true) {
+        const mapContainer = document.getElementById('liveMapContainer');
+        if (mapContainer && !mapContainer.querySelector('.live-map-empty')) {
+          mapContainer.innerHTML = '<div class="live-map-empty" style="margin:16px">' + escapeHtml(errorText) + '</div>';
+        }
+      }
     }
 
     function getLiveMapTimestamp(raw) {
@@ -36385,6 +36491,7 @@ function jsonResponse(data, status = 200) {
       renderLiveMapLegend();
       updateLiveMapStatusChip();
       updateLiveMapPanelCollapsedState();
+      refreshLiveMap({ manual: false });
 
       if (!liveMapResizeHandlerAttached) {
         window.addEventListener('resize', () => {
@@ -36398,37 +36505,55 @@ function jsonResponse(data, status = 200) {
         liveMapResizeHandlerAttached = true;
       }
 
-      // Load Leaflet CSS
-      if (!document.getElementById('leaflet-css')) {
-        const link = document.createElement('link');
-        link.id = 'leaflet-css';
-        link.rel = 'stylesheet';
-        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-        document.head.appendChild(link);
+      try {
+        await ensureLeafletForLiveMap();
+        const initialized = initLiveMap();
+        if (!initialized) {
+          setTimeout(() => {
+            if (!liveMapState.lastRefreshAt && !liveMapState.isRefreshing) {
+              refreshLiveMap({ manual: false });
+            }
+          }, 900);
+        }
+      } catch (e) {
+        const errMessage = e?.message ? String(e.message) : 'Leaflet failed to load';
+        setLiveMapErrorState(errMessage);
+        return;
       }
 
-      // Load Leaflet JS
-      if (!window.L) {
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-        script.onload = () => initLiveMap();
-        document.body.appendChild(script);
-      } else {
-        initLiveMap();
-      }
+      setTimeout(() => {
+        if (!liveMapState.lastRefreshAt && !liveMapState.isRefreshing) {
+          refreshLiveMap({ manual: false });
+        }
+      }, 1200);
 
       // Start auto-refresh every 30 seconds
       liveMapRefreshInterval = setInterval(() => refreshLiveMap({ manual: false }), liveMapState.autoRefreshSeconds * 1000);
     }
 
-    function initLiveMap() {
+    function initLiveMap(retryCount = 0) {
       const container = document.getElementById('liveMapContainer');
-      if (!container || !window.L) return;
+      if (!container) {
+        setLiveMapErrorState('Map container is missing.');
+        return false;
+      }
+      if (!window.L) {
+        if (retryCount < 5) {
+          setTimeout(() => initLiveMap(retryCount + 1), 150);
+        } else {
+          setLiveMapErrorState('Map library failed to initialize.');
+        }
+        return false;
+      }
 
       // Ensure container has dimensions before initializing
       if (container.offsetWidth === 0 || container.offsetHeight === 0) {
-        setTimeout(initLiveMap, 100);
-        return;
+        if (retryCount > 40) {
+          setLiveMapErrorState('Map container has no size.');
+          return false;
+        }
+        setTimeout(() => initLiveMap(retryCount + 1), 100);
+        return false;
       }
 
       // Clear existing map
@@ -36442,13 +36567,26 @@ function jsonResponse(data, status = 200) {
       }
       liveMapMarkers = {};
       liveMapState.hasInitialFit = false;
+      if (container._leaflet_id) {
+        try {
+          delete container._leaflet_id;
+        } catch (e) {
+          container._leaflet_id = undefined;
+        }
+      }
+      container.innerHTML = '';
 
       // Initialize map centered on US
       try {
-        liveMapInstance = L.map('liveMapContainer', { zoomAnimation: false }).setView([39.8283, -98.5795], 4);
+        liveMapInstance = L.map(container, { zoomAnimation: false }).setView([39.8283, -98.5795], 4);
       } catch (e) {
         console.warn('Leaflet map init error:', e);
-        return;
+        if (retryCount < 5) {
+          setTimeout(() => initLiveMap(retryCount + 1), 150);
+        } else {
+          setLiveMapErrorState('Unable to initialize map view.');
+        }
+        return false;
       }
 
       // Add tile layer (OpenStreetMap)
@@ -36458,14 +36596,19 @@ function jsonResponse(data, status = 200) {
 
       // Wait for map to be ready before loading data
       setTimeout(() => {
-        if (liveMapInstance) liveMapInstance.invalidateSize();
+        try {
+          if (liveMapInstance) liveMapInstance.invalidateSize();
+        } catch (e) {
+          console.warn('Live map invalidateSize error:', e);
+        }
         refreshLiveMap({ manual: false });
       }, 200);
+      return true;
     }
 
     async function refreshLiveMap(options = {}) {
       if (!options || typeof options !== 'object' || Array.isArray(options)) options = {};
-      if (!liveMapInstance || !liveMapInstance._container) return;
+      const hasMap = !!(liveMapInstance && liveMapInstance._container);
 
       liveMapState.isRefreshing = true;
       updateLiveMapStatusChip();
@@ -36476,9 +36619,18 @@ function jsonResponse(data, status = 200) {
         const baseViewModel = buildLiveMapViewModel(locations, links);
         liveMapState.baseViewModel = baseViewModel;
         liveMapState.lastRefreshAt = new Date();
-        liveMapState.lastRefreshError = '';
+        liveMapState.lastRefreshError = hasMap ? '' : 'Map not ready. Data is still live.';
         liveMapState.hasNoData = (locations || []).length === 0;
-        applyLiveMapState({ forceFit: !!options.forceFit });
+        try {
+          applyLiveMapState({ forceFit: !!options.forceFit });
+        } catch (renderErr) {
+          console.error('Live map render state failed:', renderErr);
+          liveMapState.lastRefreshError = 'Live map panel render failed';
+          const panelBody = document.getElementById('liveMapPanelBody');
+          if (panelBody) panelBody.innerHTML = renderLiveMapEmptyState('error');
+          renderLiveMapKpis(baseViewModel);
+          renderLiveMapLegend();
+        }
       } catch (e) {
         console.error('Live map refresh failed:', e);
         liveMapState.lastRefreshError = e?.message ? String(e.message) : 'Refresh failed';
@@ -36507,6 +36659,17 @@ function jsonResponse(data, status = 200) {
         liveMapInstance = null;
       }
       liveMapMarkers = {};
+      const container = document.getElementById('liveMapContainer');
+      if (container) {
+        if (container._leaflet_id) {
+          try {
+            delete container._leaflet_id;
+          } catch (e) {
+            container._leaflet_id = undefined;
+          }
+        }
+        container.innerHTML = '';
+      }
       liveMapState.baseViewModel = null;
       liveMapState.viewModel = null;
       liveMapState.selectedVehicleKey = null;
@@ -36671,10 +36834,56 @@ function jsonResponse(data, status = 200) {
         sendChatMessage();
       }
     }
+
+    function parseChatAttachments(rawValue) {
+      if (!rawValue) return [];
+      try {
+        const parsed = typeof rawValue === 'string' ? JSON.parse(rawValue) : rawValue;
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (err) {
+        return [];
+      }
+    }
+
+    function resolveChatAttachmentStoragePath(file) {
+      if (!file) return null;
+      if (file.storage_path) return String(file.storage_path);
+      if (file.bucket === 'chatfiles' && file.path) return String(file.path);
+      return extractStoragePathFromUrl(file.url || file.file_url, 'chatfiles');
+    }
+
+    async function hydrateChatMessagesSignedUrls(messages) {
+      const source = Array.isArray(messages) ? messages : [];
+      const allPaths = [];
+
+      source.forEach(msg => {
+        const files = parseChatAttachments(msg.file_attachments);
+        files.forEach(file => {
+          const path = resolveChatAttachmentStoragePath(file);
+          if (path) allPaths.push(path);
+        });
+      });
+
+      const signedMap = allPaths.length > 0
+        ? await requestSignedUrls('chatfiles', allPaths, 1800)
+        : {};
+
+      return source.map(msg => {
+        const files = parseChatAttachments(msg.file_attachments).map(file => {
+          const path = resolveChatAttachmentStoragePath(file);
+          const resolvedUrl = path && signedMap[path]
+            ? signedMap[path]
+            : (String(file.url || '').startsWith('data:') ? file.url : null);
+          return Object.assign({}, file, { storage_path: path || file.storage_path || null, __resolved_url: resolvedUrl });
+        });
+        return Object.assign({}, msg, { __attachments: files });
+      });
+    }
     
     async function loadChatMessages() {
       try {
-        chatMessages = await dbFetch('chat_messages', { order: 'created_at.asc', limit: 100 }) || [];
+        const messages = await dbFetch('chat_messages', { order: 'created_at.asc', limit: 100 }) || [];
+        chatMessages = await hydrateChatMessagesSignedUrls(messages);
         renderChatMessages();
         if (chatMessages.length > 0) {
           lastMessageId = chatMessages[chatMessages.length - 1].id;
@@ -36707,7 +36916,8 @@ function jsonResponse(data, status = 200) {
         }) || [];
         
         if (newMessages.length > 0) {
-          chatMessages = [...chatMessages, ...newMessages];
+          const hydrated = await hydrateChatMessagesSignedUrls(newMessages);
+          chatMessages = [...chatMessages, ...hydrated];
           lastMessageId = newMessages[newMessages.length - 1].id;
           renderChatMessages();
         }
@@ -36799,31 +37009,27 @@ function jsonResponse(data, status = 200) {
         
         // Parse file attachments
         let attachmentsHtml = '';
-        if (msg.file_attachments) {
-          try {
-            const files = typeof msg.file_attachments === 'string' ? JSON.parse(msg.file_attachments) : msg.file_attachments;
-            if (files && files.length > 0) {
-              attachmentsHtml = '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px">';
-              files.forEach(file => {
-                const isImage = file.type && file.type.startsWith('image/');
-                if (isImage) {
-                  attachmentsHtml += '<a href="' + file.url + '" target="_blank" style="display:block">' +
-                    '<img src="' + file.url + '" alt="' + escapeHtml(file.name) + '" style="max-width:200px;max-height:200px;border-radius:8px;cursor:pointer;display:block" onclick="openImageViewer(\'' + file.url + '\');event.preventDefault()">' +
-                    '</a>';
-                } else {
-                  const icon = file.type && file.type.includes('pdf') ? '[[icon:file]]' : '[[icon:paperclip]]';
-                  attachmentsHtml += '<a href="' + file.url + '" target="_blank" download style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:' + (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)') + ';border-radius:8px;text-decoration:none;color:inherit">' +
-                    '<span style="font-size:20px">' + icon + '</span>' +
-                    '<div><div style="font-size:12px;font-weight:500">' + escapeHtml(file.name) + '</div>' +
-                    '<div style="font-size:10px;opacity:0.7">' + formatFileSize(file.size || 0) + '</div></div>' +
-                    '</a>';
-                }
-              });
-              attachmentsHtml += '</div>';
+        const files = msg.__attachments || parseChatAttachments(msg.file_attachments);
+        if (files && files.length > 0) {
+          attachmentsHtml = '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px">';
+          files.forEach(file => {
+            const resolvedUrl = file.__resolved_url || file.url || null;
+            if (!resolvedUrl) return;
+            const isImage = file.type && file.type.startsWith('image/');
+            if (isImage) {
+              attachmentsHtml += '<a href="' + resolvedUrl + '" target="_blank" style="display:block">' +
+                '<img src="' + resolvedUrl + '" alt="' + escapeHtml(file.name) + '" style="max-width:200px;max-height:200px;border-radius:8px;cursor:pointer;display:block" onclick="openImageViewer(\'' + resolvedUrl + '\');event.preventDefault()">' +
+                '</a>';
+            } else {
+              const icon = file.type && file.type.includes('pdf') ? '[[icon:file]]' : '[[icon:paperclip]]';
+              attachmentsHtml += '<a href="' + resolvedUrl + '" target="_blank" download style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:' + (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)') + ';border-radius:8px;text-decoration:none;color:inherit">' +
+                '<span style="font-size:20px">' + icon + '</span>' +
+                '<div><div style="font-size:12px;font-weight:500">' + escapeHtml(file.name) + '</div>' +
+                '<div style="font-size:10px;opacity:0.7">' + formatFileSize(file.size || 0) + '</div></div>' +
+                '</a>';
             }
-          } catch (e) {
-            console.error('Failed to parse attachments:', e);
-          }
+          });
+          attachmentsHtml += '</div>';
         }
         
         html += '<div style="background:' + (isOwnMessage ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' : otherMsgBg) + ';color:' + (isOwnMessage ? 'white' : otherMsgColor) + ';padding:10px 14px;border-radius:' + (isOwnMessage ? '16px 16px 4px 16px' : '16px 16px 16px 4px') + ';display:inline-block;text-align:left;word-wrap:break-word;box-shadow:' + (isOwnMessage ? '0 2px 8px rgba(34, 197, 94, 0.3)' : otherMsgShadow) + ';border:' + (isOwnMessage ? 'none' : otherMsgBorder) + '">';
@@ -36987,14 +37193,15 @@ function jsonResponse(data, status = 200) {
     
     async function uploadChatFile(file) {
       const timestamp = Date.now();
-      const ext = file.name.split('.').pop();
-      const fileName = `chat_${currentUser.id}_${timestamp}.${ext}`;
+      const ext = (file.name.split('.').pop() || 'bin').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+      const safeBase = file.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9._-]/g, '_');
+      const filePath = `${currentUser?.id || 'tms'}/${timestamp}_${safeBase}.${ext || 'bin'}`;
       
       try {
         // Upload to Supabase Storage
         const { data, error } = await sb.storage
           .from('chatfiles')
-          .upload(fileName, file, {
+          .upload(filePath, file, {
             cacheControl: '3600',
             upsert: true
           });
@@ -37003,40 +37210,23 @@ function jsonResponse(data, status = 200) {
           console.error('Storage upload error:', error);
           throw new Error(error.message || 'Storage upload failed');
         }
-        
-        const { data: urlData } = sb.storage
-          .from('chatfiles')
-          .getPublicUrl(fileName);
-        
+
+        const signedMap = await requestSignedUrls('chatfiles', [filePath], 1800);
+        const signedUrl = signedMap[filePath] || null;
+        if (!signedUrl) {
+          throw new Error('Failed to create signed URL for uploaded file');
+        }
+
         return {
-          url: urlData.publicUrl,
+          url: signedUrl,
+          storage_path: filePath,
+          bucket: 'chatfiles',
           name: file.name,
           type: file.type,
           size: file.size
         };
       } catch (storageError) {
         console.error('Upload failed:', storageError);
-        
-        // Base64 fallback for small files (under 500KB)
-        const maxBase64Size = 500 * 1024;
-        if (file.size <= maxBase64Size) {
-          showToast('Storage failed, using base64', 'warning');
-          return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-              resolve({
-                url: reader.result,
-                name: file.name,
-                type: file.type,
-                size: file.size,
-                isBase64: true
-              });
-            };
-            reader.onerror = () => reject(new Error('Failed to read file'));
-            reader.readAsDataURL(file);
-          });
-        }
-        
         throw storageError;
       }
     }
@@ -38348,7 +38538,8 @@ function jsonResponse(data, status = 200) {
     
     async function loadMiniChatMessages() {
       try {
-        chatMessages = await dbFetch('chat_messages', { order: 'created_at.asc', limit: 50 }) || [];
+        const messages = await dbFetch('chat_messages', { order: 'created_at.asc', limit: 50 }) || [];
+        chatMessages = await hydrateChatMessagesSignedUrls(messages);
         renderMiniChatMessages();
       } catch (e) {
         document.getElementById('miniChatMessages').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">Chat not available</div>';
@@ -38619,7 +38810,8 @@ function jsonResponse(data, status = 200) {
     
     async function loadMiniChatMessages() {
       try {
-        chatMessages = await dbFetch('chat_messages', { order: 'created_at.asc', limit: 50 }) || [];
+        const messages = await dbFetch('chat_messages', { order: 'created_at.asc', limit: 50 }) || [];
+        chatMessages = await hydrateChatMessagesSignedUrls(messages);
         renderMiniChatMessages();
       } catch (e) {
         console.error('Failed to load mini chat messages:', e);
@@ -38654,22 +38846,20 @@ function jsonResponse(data, status = 200) {
         
         // Parse file attachments
         let attachmentsHtml = '';
-        if (msg.file_attachments) {
-          try {
-            const files = typeof msg.file_attachments === 'string' ? JSON.parse(msg.file_attachments) : msg.file_attachments;
-            if (files && files.length > 0) {
-              attachmentsHtml = '<div style="margin-top:6px">';
-              files.forEach(file => {
-                const isImage = file.type && file.type.startsWith('image/');
-                if (isImage) {
-                  attachmentsHtml += '<a href="' + file.url + '" target="_blank"><img src="' + file.url + '" style="max-width:150px;max-height:100px;border-radius:6px;margin-top:4px;display:block" onclick="openImageViewer(\'' + file.url + '\');event.preventDefault()"></a>';
-                } else {
-                  attachmentsHtml += '<a href="' + file.url + '" target="_blank" download style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:' + (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)') + ';border-radius:6px;text-decoration:none;color:inherit;font-size:11px;margin-top:4px">[[icon:paperclip]] ' + escapeHtml(file.name) + '</a>';
-                }
-              });
-              attachmentsHtml += '</div>';
+        const files = msg.__attachments || parseChatAttachments(msg.file_attachments);
+        if (files && files.length > 0) {
+          attachmentsHtml = '<div style="margin-top:6px">';
+          files.forEach(file => {
+            const resolvedUrl = file.__resolved_url || file.url || null;
+            if (!resolvedUrl) return;
+            const isImage = file.type && file.type.startsWith('image/');
+            if (isImage) {
+              attachmentsHtml += '<a href="' + resolvedUrl + '" target="_blank"><img src="' + resolvedUrl + '" style="max-width:150px;max-height:100px;border-radius:6px;margin-top:4px;display:block" onclick="openImageViewer(\'' + resolvedUrl + '\');event.preventDefault()"></a>';
+            } else {
+              attachmentsHtml += '<a href="' + resolvedUrl + '" target="_blank" download style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:' + (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)') + ';border-radius:6px;text-decoration:none;color:inherit;font-size:11px;margin-top:4px">[[icon:paperclip]] ' + escapeHtml(file.name) + '</a>';
             }
-          } catch (e) {}
+          });
+          attachmentsHtml += '</div>';
         }
         
         return '<div style="display:flex;gap:8px;' + (isOwnMessage ? 'flex-direction:row-reverse' : '') + '">' +
@@ -38778,7 +38968,8 @@ function jsonResponse(data, status = 200) {
             
             // Update messages if mini chat is open
             if (miniChatOpen) {
-              chatMessages = await dbFetch('chat_messages', { order: 'created_at.asc', limit: 50 }) || [];
+              const latestMessages = await dbFetch('chat_messages', { order: 'created_at.asc', limit: 50 }) || [];
+              chatMessages = await hydrateChatMessagesSignedUrls(latestMessages);
               renderMiniChatMessages();
             }
           }
@@ -39075,20 +39266,37 @@ function jsonResponse(data, status = 200) {
     }
 
     async function saveUser(id) {
-      const data = { first_name: document.getElementById('uFirst').value, last_name: document.getElementById('uLast').value, email: document.getElementById('uEmail').value, role: document.getElementById('uRole').value, is_active: document.getElementById('uActive').value === 'true' };
+      const data = {
+        first_name: document.getElementById('uFirst').value,
+        last_name: document.getElementById('uLast').value,
+        email: document.getElementById('uEmail').value.trim().toLowerCase(),
+        role: document.getElementById('uRole').value,
+        is_active: document.getElementById('uActive').value === 'true'
+      };
       const pass = document.getElementById('uPass').value;
-      if (pass || !id) {
-        // Hash password before saving
-        data.password = await hashPassword(pass);
-      }
-      try { 
-        if (id) { 
+      try {
+        if (id) {
+          const existingUser = appData.users.find(u => u.id === id);
+          if (existingUser && String(existingUser.email || '').toLowerCase() !== data.email) {
+            throw new Error('Changing email for existing users must be done in Supabase Auth admin tools.');
+          }
+          if (pass) {
+            showToast('Password changes are managed via Supabase Auth.', 'info');
+          }
           await dbUpdate('users', id, data); 
           await logActivity('USER_UPDATED', { target_user_id: id, user_email: data.email, role: data.role, is_active: data.is_active });
-        } else { 
-          const newUser = await dbInsert('users', data); 
+        } else {
+          if (!pass || pass.length < 6) {
+            throw new Error('Password is required (minimum 6 characters).');
+          }
+          const authId = await createAuthUserWithoutSessionSwitch(
+            data.email,
+            pass,
+            { first_name: data.first_name, last_name: data.last_name }
+          );
+          const newUser = await dbInsert('users', Object.assign({}, data, { auth_id: authId })); 
           await logActivity('USER_CREATED', { target_user_id: newUser.id, user_email: data.email, role: data.role });
-        } 
+        }
         document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(true); renderUsers(document.getElementById('main-content')); 
       } catch (e) { showToast(e.message, 'error'); }
     }
@@ -39304,123 +39512,9 @@ function jsonResponse(data, status = 200) {
 
     // Process pending auth from landing page
     async function processPendingAuth() {
-      // Check for pending login
-      const pendingLogin = sessionStorage.getItem('pendingLogin');
-      if (pendingLogin) {
-        sessionStorage.removeItem('pendingLogin');
-        const { email, password } = JSON.parse(pendingLogin);
-        
-        // Check if account is locked
-        const lockStatus = isAccountLocked(email.toLowerCase());
-        if (lockStatus.locked) {
-          alert(`Account locked. Try again in ${lockStatus.remainingMinutes} minutes.`);
-          window.location.href = 'index.html';
-          return false;
-        }
-        
-        try {
-          const users = await dbFetch('users', { filter: { email: 'eq.' + email.toLowerCase() } });
-          if (users.length === 0) {
-            recordLoginAttempt(email.toLowerCase(), false);
-            alert('User not found');
-            window.location.href = 'index.html';
-            return false;
-          }
-          
-          const user = users[0];
-          
-          // Check if user is active
-          if (user.is_active === false) {
-            alert('Account deactivated. Contact administrator.');
-            window.location.href = 'index.html';
-            return false;
-          }
-          
-          // Hash password and compare
-          const hashedPassword = await hashPassword(password);
-          const passwordMatch = user.password === hashedPassword || user.password === password;
-          
-          if (!passwordMatch) {
-            recordLoginAttempt(email.toLowerCase(), false);
-            const attempts = getLoginAttempts(email.toLowerCase());
-            if (attempts.count >= LOGIN_ATTEMPT_LIMIT) {
-              alert(`Too many attempts. Account locked for ${LOGIN_LOCKOUT_MINUTES} minutes.`);
-            } else {
-              alert('Invalid password');
-            }
-            window.location.href = 'index.html';
-            return false;
-          }
-          
-          // Successful login
-          recordLoginAttempt(email.toLowerCase(), true);
-          
-          // Update to hashed password if it was plain text
-          if (user.password === password && user.password !== hashedPassword) {
-            try {
-              await dbUpdate('users', user.id, { password: hashedPassword });
-            } catch (e) { /* Ignore */ }
-          }
-          
-          currentUser = user;
-          localStorage.setItem('horizonstar_user', JSON.stringify(user));
-          startSessionMonitor();
-          await logActivity('LOGIN_SUCCESS', { email: email.toLowerCase(), source: 'landing_page' });
-          return true;
-        } catch (e) {
-          alert('Login error: ' + e.message);
-          window.location.href = 'index.html';
-          return false;
-        }
-      }
-      
-      // Check for pending signup
-      const pendingSignup = sessionStorage.getItem('pendingSignup');
-      if (pendingSignup) {
-        sessionStorage.removeItem('pendingSignup');
-        const { firstName, lastName, email, password } = JSON.parse(pendingSignup);
-        
-        try {
-          // Check if email exists
-          const existing = await dbFetch('users', { filter: { email: 'eq.' + email.toLowerCase() } });
-          if (existing.length > 0) {
-            alert('Email already registered');
-            window.location.href = 'index.html';
-            return false;
-          }
-          
-          // Create user
-          const newUser = await dbInsert('users', {
-            email: email.toLowerCase(),
-            password: password,
-            first_name: firstName,
-            last_name: lastName,
-            role: 'DISPATCHER'
-          });
-          
-          // Create dispatcher record
-          await dbInsert('dispatchers', {
-            name: firstName + ' ' + lastName,
-            email: email.toLowerCase(),
-            user_id: newUser.id
-          });
-          
-          currentUser = {
-            id: newUser.id,
-            email: email.toLowerCase(),
-            first_name: firstName,
-            last_name: lastName,
-            role: 'DISPATCHER'
-          };
-          localStorage.setItem('horizonstar_user', JSON.stringify(currentUser));
-          return true;
-        } catch (e) {
-          alert('Signup error: ' + e.message);
-          window.location.href = 'index.html';
-          return false;
-        }
-      }
-      
+      // Hard-cutover: pending legacy auth flows are no longer supported.
+      sessionStorage.removeItem('pendingLogin');
+      sessionStorage.removeItem('pendingSignup');
       return false;
     }
 
@@ -39440,9 +39534,14 @@ function jsonResponse(data, status = 200) {
           
           // Get user from our users table
           const users = await dbFetch('users', { filter: { email: 'eq.' + session.user.email } });
-          if (users.length > 0) {
+          if (users.length > 0 && users[0].is_active !== false && String(users[0].auth_id || '') === String(session.user.id || '')) {
             currentUser = users[0];
             localStorage.setItem('horizonstar_user', JSON.stringify(currentUser));
+          } else {
+            await sb.auth.signOut();
+            authSession = null;
+            currentUser = null;
+            localStorage.removeItem('horizonstar_user');
           }
         } else {
           // No Supabase session - clear any stale local data
@@ -39474,13 +39573,6 @@ function jsonResponse(data, status = 200) {
       // If already logged in with valid Supabase session, show app
       if (currentUser && authSession) {
         startSessionMonitor();
-        renderApp();
-        return;
-      }
-      
-      // Check for pending auth from landing page
-      const authProcessed = await processPendingAuth();
-      if (authProcessed && currentUser && authSession) {
         renderApp();
         return;
       }
@@ -41601,24 +41693,11 @@ function jsonResponse(data, status = 200) {
           // Create new dealer with user account
           const email = document.getElementById('dealer-email').value.trim().toLowerCase();
           const password = document.getElementById('dealer-password').value;
-
-          // First create user with DEALER role
-          const hashedPassword = await hashPassword(password);
-
-          // Try to create Supabase Auth user first
-          let authId = null;
-          try {
-            const { data: authData, error: authError } = await sb.auth.signUp({
-              email: email,
-              password: password,
-              options: { data: { first_name: contactName || companyName, last_name: '' } }
-            });
-            if (!authError && authData.user) {
-              authId = authData.user.id;
-            }
-          } catch (authErr) {
-            console.warn('Supabase Auth signup failed, using legacy auth:', authErr);
-          }
+          const authId = await createAuthUserWithoutSessionSwitch(
+            email,
+            password,
+            { first_name: contactName || companyName, last_name: '' }
+          );
 
           // Create user record
           const newUser = await dbInsert('users', {
@@ -41626,7 +41705,6 @@ function jsonResponse(data, status = 200) {
             email: email,
             first_name: contactName || companyName,
             last_name: '',
-            password: hashedPassword,
             role: 'DEALER',
             is_active: isActive
           });
