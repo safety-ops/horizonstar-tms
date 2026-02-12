@@ -6200,8 +6200,8 @@
       gap: 14px;
       flex: 1;
       min-height: 0;
-      height: clamp(640px, 80vh, 1120px);
-      max-height: 1120px;
+      height: clamp(832px, 104vh, 1456px);
+      max-height: 1456px;
       align-items: stretch;
     }
 
@@ -6601,12 +6601,12 @@
       }
 
       .live-map-canvas {
-        height: 46vh;
-        min-height: 46vh;
+        height: 60vh;
+        min-height: 60vh;
       }
 
       #liveMapContainer {
-        min-height: 46vh;
+        min-height: 60vh;
       }
 
       .live-map-panel {
@@ -35782,6 +35782,7 @@ function jsonResponse(data, status = 200) {
     let liveMapLeafletLoadPromise = null;
     let liveMapState = {
       selectedVehicleKey: null,
+      selectedTruckKey: 'all',
       searchQuery: '',
       movementFilter: 'all',
       sortMode: 'status',
@@ -35985,21 +35986,21 @@ function jsonResponse(data, status = 200) {
         layout.style.height = 'auto';
         layout.style.minHeight = '';
         layout.style.maxHeight = '';
-        canvas.style.height = '46vh';
-        canvas.style.minHeight = '46vh';
+        canvas.style.height = '60vh';
+        canvas.style.minHeight = '60vh';
         container.style.height = '100%';
-        container.style.minHeight = '46vh';
+        container.style.minHeight = '60vh';
         return;
       }
 
-      const desktopHeight = Math.min(1120, Math.max(640, Math.round(window.innerHeight * 0.80)));
+      const desktopHeight = Math.min(1456, Math.max(832, Math.round(window.innerHeight * 1.04)));
       layout.style.height = desktopHeight + 'px';
-      layout.style.minHeight = '640px';
-      layout.style.maxHeight = '1120px';
+      layout.style.minHeight = '832px';
+      layout.style.maxHeight = '1456px';
       canvas.style.height = '100%';
-      canvas.style.minHeight = '640px';
+      canvas.style.minHeight = '832px';
       container.style.height = '100%';
-      container.style.minHeight = '640px';
+      container.style.minHeight = '832px';
     }
 
     function ensureLiveMapContainerSize(container) {
@@ -36007,8 +36008,8 @@ function jsonResponse(data, status = 200) {
       const isMobile = window.innerWidth <= 768;
       const canvas = container.closest('.live-map-canvas');
       const fallbackHeight = isMobile
-        ? Math.max(320, Math.round(window.innerHeight * 0.46))
-        : Math.max(640, Math.round(window.innerHeight * 0.80));
+        ? Math.max(416, Math.round(window.innerHeight * 0.60))
+        : Math.max(832, Math.round(window.innerHeight * 1.04));
 
       if (!isMobile) {
         applyLiveMapResponsiveSizing(document);
@@ -36016,30 +36017,30 @@ function jsonResponse(data, status = 200) {
 
       if (canvas) {
         const canvasMin = parseInt(canvas.style.minHeight || '0', 10);
-        if (!canvas.style.minHeight || (!isMobile && canvasMin < 640)) {
-          canvas.style.minHeight = (isMobile ? '46vh' : '640px');
+        if (!canvas.style.minHeight || (!isMobile && canvasMin < 832)) {
+          canvas.style.minHeight = (isMobile ? '60vh' : '832px');
         }
         if (canvas.offsetHeight === 0) {
-          canvas.style.height = (isMobile ? '46vh' : (fallbackHeight + 'px'));
+          canvas.style.height = (isMobile ? '60vh' : (fallbackHeight + 'px'));
         } else if (!isMobile) {
           const canvasHeightValue = String(canvas.style.height || '').trim();
           const canvasHeightNum = parseInt(canvasHeightValue, 10);
-          if (canvasHeightValue.endsWith('px') && Number.isFinite(canvasHeightNum) && canvasHeightNum < 640) {
+          if (canvasHeightValue.endsWith('px') && Number.isFinite(canvasHeightNum) && canvasHeightNum < 832) {
             canvas.style.height = '100%';
           }
         }
       }
 
       const containerMin = parseInt(container.style.minHeight || '0', 10);
-      if (!container.style.minHeight || (!isMobile && containerMin < 640)) {
-        container.style.minHeight = (isMobile ? '46vh' : '640px');
+      if (!container.style.minHeight || (!isMobile && containerMin < 832)) {
+        container.style.minHeight = (isMobile ? '60vh' : '832px');
       }
       if (container.offsetHeight === 0) {
-        container.style.height = canvas && canvas.offsetHeight > 0 ? '100%' : (isMobile ? '46vh' : (fallbackHeight + 'px'));
+        container.style.height = canvas && canvas.offsetHeight > 0 ? '100%' : (isMobile ? '60vh' : (fallbackHeight + 'px'));
       } else if (!isMobile) {
         const containerHeightValue = String(container.style.height || '').trim();
         const containerHeightNum = parseInt(containerHeightValue, 10);
-        if (containerHeightValue.endsWith('px') && Number.isFinite(containerHeightNum) && containerHeightNum < 640) {
+        if (containerHeightValue.endsWith('px') && Number.isFinite(containerHeightNum) && containerHeightNum < 832) {
           container.style.height = '100%';
         }
       }
@@ -36221,9 +36222,11 @@ function jsonResponse(data, status = 200) {
       const query = (liveMapState.searchQuery || '').trim().toLowerCase();
       const filter = liveMapState.movementFilter || 'all';
       const sortMode = liveMapState.sortMode || 'status';
+      const selectedTruckKey = String(liveMapState.selectedTruckKey || 'all');
       const statusRank = { moving: 0, stopped: 1, stale: 2, unknown: 3, unlinked: 4 };
 
       let filtered = (vehicles || []).filter(vehicle => {
+        if (selectedTruckKey !== 'all' && String(vehicle.key) !== selectedTruckKey) return false;
         if (filter !== 'all' && vehicle.primaryState !== filter) return false;
         if (!query) return true;
         return vehicle.searchBlob.includes(query);
@@ -36309,6 +36312,12 @@ function jsonResponse(data, status = 200) {
         { key: 'speed_desc', label: 'Speed (High to Low)' },
         { key: 'truck_number', label: 'Truck #' }
       ];
+      const truckOptions = [{ key: 'all', label: 'All Trucks' }].concat(
+        (viewModel.vehicles || [])
+          .slice()
+          .sort((a, b) => String(a.truckLabel || '').localeCompare(String(b.truckLabel || ''), undefined, { numeric: true }))
+          .map(vehicle => ({ key: String(vehicle.key), label: vehicle.truckLabel || vehicle.vehicleName || String(vehicle.key) }))
+      );
 
       const controlsHtml =
         '<div class="live-map-panel-controls">' +
@@ -36318,6 +36327,12 @@ function jsonResponse(data, status = 200) {
           '</div>' +
           '<div class="live-map-filter-row">' +
             filters.map(f => '<button class="live-map-filter-chip' + (liveMapState.movementFilter === f.key ? ' active' : '') + '" onclick="setLiveMapFilter(\'' + f.key + '\')" aria-label="Filter ' + f.label + '">' + f.label + '</button>').join('') +
+          '</div>' +
+          '<div class="live-map-sort-row">' +
+            '<label style="font-size:12px;color:var(--text-muted);font-weight:600">Truck:</label>' +
+            '<select onchange="setLiveMapTruckFilter(this.value)" aria-label="Filter by truck">' +
+              truckOptions.map(opt => '<option value="' + escapeHtml(String(opt.key)) + '"' + (String(liveMapState.selectedTruckKey || 'all') === String(opt.key) ? ' selected' : '') + '>' + escapeHtml(String(opt.label)) + '</option>').join('') +
+            '</select>' +
           '</div>' +
           '<div class="live-map-sort-row">' +
             '<label style="font-size:12px;color:var(--text-muted);font-weight:600">Sort:</label>' +
@@ -36441,6 +36456,28 @@ function jsonResponse(data, status = 200) {
       const allowed = ['status', 'speed_desc', 'truck_number'];
       liveMapState.sortMode = allowed.includes(mode) ? mode : 'status';
       if (liveMapState.baseViewModel) applyLiveMapState();
+    }
+
+    function setLiveMapTruckFilter(vehicleKey) {
+      const requestedKey = String(vehicleKey || 'all');
+      const vehicles = liveMapState.baseViewModel?.vehicles || [];
+      const exists = requestedKey === 'all' || vehicles.some(vehicle => String(vehicle.key) === requestedKey);
+      liveMapState.selectedTruckKey = exists ? requestedKey : 'all';
+
+      if (liveMapState.selectedTruckKey !== 'all') {
+        liveMapState.selectedVehicleKey = liveMapState.selectedTruckKey;
+      }
+
+      if (!liveMapState.baseViewModel) return;
+      applyLiveMapState();
+
+      if (liveMapState.selectedTruckKey !== 'all') {
+        const selectedVehicle = (liveMapState.viewModel?.filteredVehicles || [])
+          .find(vehicle => String(vehicle.key) === String(liveMapState.selectedTruckKey));
+        if (selectedVehicle) {
+          selectLiveMapVehicle(selectedVehicle.key, { center: selectedVehicle.hasCoordinates });
+        }
+      }
     }
 
     function clearLiveMapSelection() {
@@ -36567,9 +36604,19 @@ function jsonResponse(data, status = 200) {
 
     function applyLiveMapState(options = {}) {
       if (!liveMapState.baseViewModel) return;
+      const vehicles = liveMapState.baseViewModel.vehicles || [];
+      if (liveMapState.selectedTruckKey !== 'all') {
+        const truckStillVisible = vehicles.some(vehicle => String(vehicle.key) === String(liveMapState.selectedTruckKey));
+        if (!truckStillVisible) {
+          liveMapState.selectedTruckKey = 'all';
+          if (liveMapState.selectedVehicleKey && !vehicles.some(vehicle => String(vehicle.key) === String(liveMapState.selectedVehicleKey))) {
+            liveMapState.selectedVehicleKey = null;
+          }
+        }
+      }
       const nextViewModel = {
         ...liveMapState.baseViewModel,
-        filteredVehicles: getLiveMapFilteredVehicles(liveMapState.baseViewModel.vehicles)
+        filteredVehicles: getLiveMapFilteredVehicles(vehicles)
       };
       liveMapState.viewModel = nextViewModel;
       renderLiveMapKpis(nextViewModel);
@@ -36588,6 +36635,7 @@ function jsonResponse(data, status = 200) {
       }
 
       liveMapState.selectedVehicleKey = null;
+      liveMapState.selectedTruckKey = 'all';
       liveMapState.hasInitialFit = false;
       liveMapState.lastRefreshAt = null;
       liveMapState.isRefreshing = false;
