@@ -10725,6 +10725,189 @@
       return Number.isFinite(num) ? num : 0;
     }
 
+    function isOrderSplitLike(order) {
+      if (!order) return false;
+      const paymentType = String(order.payment_type || '').toUpperCase();
+      const billAmount = Math.max(0, toMoneyNumber(order.bill_amount));
+      return paymentType === 'SPLIT' || (
+        billAmount > 0 &&
+        (paymentType === 'COD' || paymentType === 'COP' || paymentType === 'LOCAL_COD')
+      );
+    }
+
+    function normalizeSplitCashType(paymentType, fallback = 'COD') {
+      const normalized = String(paymentType || '').toUpperCase();
+      if (normalized === 'COD' || normalized === 'COP' || normalized === 'LOCAL_COD') {
+        return normalized;
+      }
+      const fallbackNormalized = String(fallback || 'COD').toUpperCase();
+      if (fallbackNormalized === 'COD' || fallbackNormalized === 'COP' || fallbackNormalized === 'LOCAL_COD') {
+        return fallbackNormalized;
+      }
+      return 'COD';
+    }
+
+    function getSplitFormConfig(prefix = 'order') {
+      const map = {
+        order: {
+          paymentTypeId: 'orderPay',
+          revenueId: 'orderRev',
+          sectionId: 'splitPaymentSection',
+          cashTypeId: 'splitCodType',
+          cashAmountId: 'splitCodAmount',
+          billAmountId: 'splitBillAmount'
+        },
+        editOrder: {
+          paymentTypeId: 'editOrderPay',
+          revenueId: 'editOrderRev',
+          sectionId: 'editSplitPaymentSection',
+          cashTypeId: 'editSplitCodType',
+          cashAmountId: 'editSplitCodAmount',
+          billAmountId: 'editSplitBillAmount'
+        },
+        lb: {
+          paymentTypeId: 'lbPayment',
+          revenueId: 'lbRevenue',
+          sectionId: 'lbSplitPaymentSection',
+          cashTypeId: 'lbSplitCodType',
+          cashAmountId: 'lbSplitCodAmount',
+          billAmountId: 'lbSplitBillAmount'
+        },
+        import: {
+          paymentTypeId: 'importPaymentType',
+          revenueId: 'importRevenue',
+          sectionId: 'importSplitPaymentSection',
+          cashTypeId: 'importSplitCashType',
+          cashAmountId: 'importSplitCodAmount',
+          billAmountId: 'importSplitBillAmount'
+        }
+      };
+      return map[prefix] || null;
+    }
+
+    function setSplitSectionVisibility(prefix, show) {
+      const cfg = getSplitFormConfig(prefix);
+      if (!cfg) return;
+      const section = document.getElementById(cfg.sectionId);
+      if (section) section.style.display = show ? 'block' : 'none';
+    }
+
+    function updateSplitBillForPrefix(prefix) {
+      const cfg = getSplitFormConfig(prefix);
+      if (!cfg) return 0;
+      const revenue = toMoneyNumber(document.getElementById(cfg.revenueId)?.value);
+      const cashAmount = Math.max(0, toMoneyNumber(document.getElementById(cfg.cashAmountId)?.value));
+      const billAmount = Math.max(0, revenue - cashAmount);
+      const billInput = document.getElementById(cfg.billAmountId);
+      if (billInput) billInput.value = billAmount;
+      return billAmount;
+    }
+
+    function getSplitFormState(prefix, order = null) {
+      const cfg = getSplitFormConfig(prefix);
+      if (!cfg) {
+        return {
+          isSplit: false,
+          cashType: 'COD',
+          cashAmount: 0,
+          billAmount: 0,
+          paymentType: 'BILL'
+        };
+      }
+
+      const paymentType = String(document.getElementById(cfg.paymentTypeId)?.value || order?.payment_type || 'BILL').toUpperCase();
+      const selectedSplit = paymentType === 'SPLIT';
+      const splitLikeOrder = isOrderSplitLike(order);
+      const isSplit = selectedSplit || splitLikeOrder;
+
+      const revenue = toMoneyNumber(document.getElementById(cfg.revenueId)?.value || order?.revenue);
+      let cashAmount = Math.max(0, toMoneyNumber(document.getElementById(cfg.cashAmountId)?.value));
+      if (cashAmount <= 0 && splitLikeOrder) {
+        cashAmount = Math.max(0, toMoneyNumber(order?.cod_amount));
+      }
+      let billAmount = Math.max(0, toMoneyNumber(document.getElementById(cfg.billAmountId)?.value));
+      if (billAmount <= 0 && isSplit) {
+        billAmount = Math.max(0, revenue - cashAmount);
+      }
+
+      const cashTypeValue = document.getElementById(cfg.cashTypeId)?.value
+        || (splitLikeOrder ? order?.payment_type : null)
+        || paymentType;
+      const cashType = normalizeSplitCashType(cashTypeValue, 'COD');
+
+      return {
+        isSplit,
+        cashType,
+        cashAmount,
+        billAmount,
+        paymentType
+      };
+    }
+
+    function validateSplitAmounts(revenue, splitCashAmount) {
+      const normalizedRevenue = Math.max(0, toMoneyNumber(revenue));
+      const normalizedCash = Math.max(0, toMoneyNumber(splitCashAmount));
+      if (normalizedRevenue <= 0) return { valid: false, message: 'Split payment requires revenue greater than 0.' };
+      if (normalizedCash <= 0) return { valid: false, message: 'Split payment requires cash amount greater than 0.' };
+      if (normalizedCash >= normalizedRevenue) return { valid: false, message: 'Split payment cash amount must be less than total revenue.' };
+      return { valid: true, message: '' };
+    }
+
+    function applySplitToPayload({ paymentType, revenue, splitCashType, splitCashAmount }) {
+      const normalizedRevenue = Math.max(0, toMoneyNumber(revenue));
+      const normalizedPaymentType = String(paymentType || 'BILL').toUpperCase();
+      if (normalizedPaymentType !== 'SPLIT') {
+        return {
+          payment_type: normalizedPaymentType || 'BILL',
+          cod_amount: null,
+          bill_amount: null
+        };
+      }
+
+      const cashType = normalizeSplitCashType(splitCashType, 'COD');
+      const cashAmount = Math.max(0, toMoneyNumber(splitCashAmount));
+      const billAmount = Math.max(0, normalizedRevenue - cashAmount);
+      return {
+        payment_type: cashType,
+        cod_amount: cashAmount,
+        bill_amount: billAmount
+      };
+    }
+
+    function hydrateSplitControls(prefix, order = null) {
+      const cfg = getSplitFormConfig(prefix);
+      if (!cfg) return;
+
+      const paymentSelect = document.getElementById(cfg.paymentTypeId);
+      if (!paymentSelect) return;
+
+      const splitLike = isOrderSplitLike(order);
+      if (splitLike) paymentSelect.value = 'SPLIT';
+      const showSplit = String(paymentSelect.value || '').toUpperCase() === 'SPLIT';
+      setSplitSectionVisibility(prefix, showSplit);
+      if (!showSplit) return;
+
+      const cashTypeSelect = document.getElementById(cfg.cashTypeId);
+      if (cashTypeSelect) {
+        cashTypeSelect.value = normalizeSplitCashType(order?.payment_type, 'COD');
+      }
+
+      const cashAmountInput = document.getElementById(cfg.cashAmountId);
+      if (cashAmountInput && splitLike) {
+        cashAmountInput.value = Math.max(0, toMoneyNumber(order?.cod_amount));
+      }
+
+      const billAmountInput = document.getElementById(cfg.billAmountId);
+      if (billAmountInput && splitLike) {
+        const revenue = toMoneyNumber(document.getElementById(cfg.revenueId)?.value || order?.revenue);
+        const cashAmount = Math.max(0, toMoneyNumber(order?.cod_amount));
+        const billAmount = Math.max(0, toMoneyNumber(order?.bill_amount));
+        billAmountInput.value = billAmount > 0 ? billAmount : Math.max(0, revenue - cashAmount);
+      } else {
+        updateSplitBillForPrefix(prefix);
+      }
+    }
+
     function countMonthsInclusive(startDate, endDate) {
       if (!startDate || !endDate) return 1;
       const parsedStart = parseTripDate(startDate);
@@ -16752,6 +16935,13 @@
       const existingBroker = o?.broker_id ? (appData.brokers || []).find(b => String(b.id) === String(o.broker_id)) : null;
       const pickupAddress = hydrateOrderAddressParts(o, 'pickup');
       const deliveryAddress = hydrateOrderAddressParts(o, 'delivery');
+      const lbSplitLike = isOrderSplitLike(o);
+      const lbSplitCashType = normalizeSplitCashType(o?.payment_type, 'COD');
+      const lbRevenueValue = toMoneyNumber(o?.revenue);
+      const lbSplitCashAmount = lbSplitLike ? Math.max(0, toMoneyNumber(o?.cod_amount)) : 0;
+      const lbSplitBillAmount = lbSplitLike
+        ? (Math.max(0, toMoneyNumber(o?.bill_amount)) || Math.max(0, lbRevenueValue - lbSplitCashAmount))
+        : 0;
       lbVehicleList = [];
 
       let userDispatcher = appData.dispatchers.find(d => d.user_id === currentUser.id);
@@ -16798,11 +16988,12 @@
         '</div>' +
         '<div class="form-row"><div class="form-group"><label>Pick-Up Date</label><input type="date" id="lbPickup" value="' + (o?.pickup_date || '') + '"></div><div class="form-group"><label>Drop-Off Date</label><input type="date" id="lbDropoff" value="' + (o?.dropoff_date || '') + '"></div></div>' +
         '<div style="background:var(--dim-amber);padding:12px;border-radius:8px;margin-bottom:16px"><label style="font-weight:600;margin-bottom:8px;display:block">[[icon:money]] Payment</label>' +
-        '<div class="form-row" style="gap:12px"><div class="form-group" style="margin-bottom:0"><label>Total Revenue $</label><input type="number" id="lbRevenue" value="' + (o?.revenue || '') + '" onchange="updateLBPaymentSplit()"></div><div class="form-group" style="margin-bottom:0"><label>Payment Type</label><select id="lbPayment" onchange="toggleLBSplitPayment()"><option value="BILL"' + (o?.payment_type === 'BILL' ? ' selected' : '') + '>BILL (Invoice)</option><option value="COD"' + (o?.payment_type === 'COD' ? ' selected' : '') + '>COD (Cash on Delivery)</option><option value="COP"' + (o?.payment_type === 'COP' ? ' selected' : '') + '>COP (Cash on Pickup)</option><option value="LOCAL_COD"' + (o?.payment_type === 'LOCAL_COD' ? ' selected' : '') + '>LOCAL_COD (Local Driver)</option><option value="CHECK"' + (o?.payment_type === 'CHECK' ? ' selected' : '') + '>CHECK</option><option value="SPLIT"' + (o?.payment_type === 'SPLIT' ? ' selected' : '') + '>SPLIT (Multiple)</option></select></div><div class="form-group" style="margin-bottom:0"><label>Terms</label><select id="lbPaymentTerms">' + getPaymentTermsOptionsHtml(o?.payment_terms || existingBroker?.payment_terms || 'NET30') + '</select></div></div>' +
-        '<div id="lbSplitPaymentSection" style="display:' + (o?.payment_type === 'SPLIT' ? 'block' : 'none') + ';margin-top:12px;padding-top:12px;border-top:1px dashed #f59e0b">' +
-        '<div class="form-row" style="grid-template-columns:1fr 1fr;gap:12px">' +
-        '<div class="form-group" style="margin-bottom:0"><label>COD/COP Amount $</label><input type="number" id="lbSplitCodAmount" value="' + (o?.cod_amount || 0) + '" onchange="updateLBSplitBill()"></div>' +
-        '<div class="form-group" style="margin-bottom:0"><label>Bill Amount $</label><input type="number" id="lbSplitBillAmount" value="' + (o?.bill_amount || 0) + '" readonly style="background:var(--surface-elevated)"></div>' +
+        '<div class="form-row" style="gap:12px"><div class="form-group" style="margin-bottom:0"><label>Total Revenue $</label><input type="number" id="lbRevenue" value="' + (o?.revenue || '') + '" onchange="updateLBPaymentSplit()"></div><div class="form-group" style="margin-bottom:0"><label>Payment Type</label><select id="lbPayment" onchange="toggleLBSplitPayment()"><option value="BILL"' + ((!o || (!lbSplitLike && o?.payment_type === 'BILL')) ? ' selected' : '') + '>BILL (Invoice)</option><option value="COD"' + ((!lbSplitLike && o?.payment_type === 'COD') ? ' selected' : '') + '>COD (Cash on Delivery)</option><option value="COP"' + ((!lbSplitLike && o?.payment_type === 'COP') ? ' selected' : '') + '>COP (Cash on Pickup)</option><option value="LOCAL_COD"' + ((!lbSplitLike && o?.payment_type === 'LOCAL_COD') ? ' selected' : '') + '>LOCAL_COD (Local Driver)</option><option value="CHECK"' + ((!lbSplitLike && o?.payment_type === 'CHECK') ? ' selected' : '') + '>CHECK</option><option value="SPLIT"' + (lbSplitLike ? ' selected' : '') + '>SPLIT (Multiple)</option></select></div><div class="form-group" style="margin-bottom:0"><label>Terms</label><select id="lbPaymentTerms">' + getPaymentTermsOptionsHtml(o?.payment_terms || existingBroker?.payment_terms || 'NET30') + '</select></div></div>' +
+        '<div id="lbSplitPaymentSection" style="display:' + (lbSplitLike ? 'block' : 'none') + ';margin-top:12px;padding-top:12px;border-top:1px dashed #f59e0b">' +
+        '<div class="form-row" style="grid-template-columns:1fr 1fr 1fr;gap:12px">' +
+        '<div class="form-group" style="margin-bottom:0"><label>Cash Type</label><select id="lbSplitCodType"><option value="COD"' + (lbSplitCashType === 'COD' ? ' selected' : '') + '>COD</option><option value="COP"' + (lbSplitCashType === 'COP' ? ' selected' : '') + '>COP</option><option value="LOCAL_COD"' + (lbSplitCashType === 'LOCAL_COD' ? ' selected' : '') + '>LOCAL_COD</option></select></div>' +
+        '<div class="form-group" style="margin-bottom:0"><label>Cash Amount $</label><input type="number" id="lbSplitCodAmount" value="' + lbSplitCashAmount + '" onchange="updateLBSplitBill()"></div>' +
+        '<div class="form-group" style="margin-bottom:0"><label>Bill Amount $</label><input type="number" id="lbSplitBillAmount" value="' + lbSplitBillAmount + '" readonly style="background:var(--surface-elevated)"></div>' +
         '</div></div></div>' +
         '<div class="form-row"><div class="form-group"><label>Broker Fee $</label><input type="number" id="lbBrokerFee" value="' + (o?.broker_fee || 0) + '"></div><div class="form-group"><label>Local Fee $</label><input type="number" id="lbLocalFee" value="' + (o?.local_fee || 0) + '"></div></div>' +
         '<div class="form-group"><label>[[icon:note]] Notes for Dispatchers</label><textarea id="lbNotes" rows="2" placeholder="Internal dispatcher notes..." style="resize:vertical">' + (o?.dispatcher_notes || '') + '</textarea></div>' +
@@ -16822,6 +17013,7 @@
       setupYearAutocomplete('lbYear');
       setupMakeAutocomplete('lbMake');
       setupModelAutocomplete('lbModel');
+      hydrateSplitControls('lb', o);
       toggleLoadBoardSub();
       if (o?.load_subcategory) {
         setTimeout(() => {
@@ -16878,18 +17070,17 @@
     }
     
     function toggleLBSplitPayment() {
-      const payType = document.getElementById('lbPayment').value;
-      document.getElementById('lbSplitPaymentSection').style.display = payType === 'SPLIT' ? 'block' : 'none';
+      const payType = String(document.getElementById('lbPayment')?.value || '').toUpperCase();
+      setSplitSectionVisibility('lb', payType === 'SPLIT');
+      if (payType === 'SPLIT') updateSplitBillForPrefix('lb');
     }
     
     function updateLBPaymentSplit() {
-      const total = parseFloat(document.getElementById('lbRevenue').value) || 0;
-      const codAmount = parseFloat(document.getElementById('lbSplitCodAmount').value) || 0;
-      document.getElementById('lbSplitBillAmount').value = Math.max(0, total - codAmount);
+      updateSplitBillForPrefix('lb');
     }
     
     function updateLBSplitBill() {
-      updateLBPaymentSplit();
+      updateSplitBillForPrefix('lb');
     }
 
     function toggleLoadBoardSub() {
@@ -16926,9 +17117,22 @@
         return;
       }
 
-      const paymentType = document.getElementById('lbPayment').value;
-      const codAmount = paymentType === 'SPLIT' ? parseFloat(document.getElementById('lbSplitCodAmount').value) || 0 : null;
-      const billAmount = paymentType === 'SPLIT' ? parseFloat(document.getElementById('lbSplitBillAmount').value) || 0 : null;
+      const selectedPaymentType = String(document.getElementById('lbPayment')?.value || 'BILL').toUpperCase();
+      const totalRevenue = parseFloat(document.getElementById('lbRevenue')?.value) || 0;
+      const splitState = getSplitFormState('lb', id ? appData.orders.find(x => x.id === id) : null);
+      if (selectedPaymentType === 'SPLIT') {
+        const splitValidation = validateSplitAmounts(totalRevenue, splitState.cashAmount);
+        if (!splitValidation.valid) {
+          showToast(splitValidation.message, 'error');
+          return;
+        }
+      }
+      const splitPayload = applySplitToPayload({
+        paymentType: selectedPaymentType,
+        revenue: totalRevenue,
+        splitCashType: splitState.cashType,
+        splitCashAmount: splitState.cashAmount
+      });
 
       const currentYear = document.getElementById('lbYear').value;
       const currentMake = document.getElementById('lbMake').value;
@@ -16970,13 +17174,13 @@
         delivery_phone: document.getElementById('lbDeliveryPhone')?.value || null,
         pickup_date: document.getElementById('lbPickup').value || null,
         dropoff_date: document.getElementById('lbDropoff').value || null,
-        revenue: parseFloat(document.getElementById('lbRevenue').value) || 0,
+        revenue: totalRevenue,
         broker_fee: parseFloat(document.getElementById('lbBrokerFee').value) || 0,
         local_fee: parseFloat(document.getElementById('lbLocalFee').value) || 0,
-        payment_type: paymentType,
+        payment_type: splitPayload.payment_type,
         payment_terms: document.getElementById('lbPaymentTerms')?.value || null,
-        cod_amount: codAmount,
-        bill_amount: billAmount,
+        cod_amount: splitPayload.cod_amount,
+        bill_amount: splitPayload.bill_amount,
         load_category: loadCategory,
         load_subcategory: loadSubcategory,
         dispatcher_id: document.getElementById('lbDispatcher').value ? parseInt(document.getElementById('lbDispatcher').value, 10) : null,
@@ -17013,8 +17217,8 @@
               revenue: i === 0 ? baseData.revenue : 0,
               broker_fee: i === 0 ? baseData.broker_fee : 0,
               local_fee: i === 0 ? baseData.local_fee : 0,
-              cod_amount: i === 0 ? baseData.cod_amount : 0,
-              bill_amount: i === 0 ? baseData.bill_amount : 0
+              cod_amount: i === 0 ? baseData.cod_amount : null,
+              bill_amount: i === 0 ? baseData.bill_amount : null
             };
             await dbInsert('orders', data);
           }
@@ -17112,12 +17316,18 @@
         '<div style="background:var(--dim-amber);padding:12px;border-radius:8px;margin-top:12px">' +
         '<label style="font-weight:600;display:block;margin-bottom:8px">[[icon:money]] Payment</label>' +
         '<div class="form-row" style="gap:12px">' +
-        '<div class="form-group" style="margin-bottom:0"><label style="font-size:12px">Revenue $</label><input type="number" id="importRevenue" style="font-size:14px"></div>' +
-        '<div class="form-group" style="margin-bottom:0"><label style="font-size:12px">Payment Type</label><select id="importPaymentType" style="font-size:14px"><option value="BILL">BILL</option><option value="COD">COD</option><option value="COP">COP</option><option value="LOCAL_COD">LOCAL_COD</option><option value="CHECK">CHECK</option><option value="SPLIT">SPLIT</option></select></div>' +
+        '<div class="form-group" style="margin-bottom:0"><label style="font-size:12px">Revenue $</label><input type="number" id="importRevenue" style="font-size:14px" onchange="updateImportPaymentSplit()"></div>' +
+        '<div class="form-group" style="margin-bottom:0"><label style="font-size:12px">Payment Type</label><select id="importPaymentType" onchange="toggleImportSplitPayment()" style="font-size:14px"><option value="BILL">BILL</option><option value="COD">COD</option><option value="COP">COP</option><option value="LOCAL_COD">LOCAL_COD</option><option value="CHECK">CHECK</option><option value="SPLIT">SPLIT</option></select></div>' +
         '<div class="form-group" style="margin-bottom:0"><label style="font-size:12px">Terms</label><select id="importPaymentTerms" style="font-size:14px">' + getPaymentTermsOptionsHtml('NET30') + '</select></div>' +
         '<div class="form-group" style="margin-bottom:0"><label style="font-size:12px">Broker Fee $</label><input type="number" id="importBrokerFee" value="0" style="font-size:14px"></div>' +
         '<div class="form-group" style="margin-bottom:0"><label style="font-size:12px">Local Fee $</label><input type="number" id="importLocalFee" value="0" style="font-size:14px"></div>' +
-        '</div></div>' +
+        '</div>' +
+        '<div id="importSplitPaymentSection" style="display:none;margin-top:12px;padding-top:12px;border-top:1px dashed #f59e0b">' +
+        '<div class="form-row" style="grid-template-columns:1fr 1fr 1fr;gap:12px">' +
+        '<div class="form-group" style="margin-bottom:0"><label style="font-size:12px">Cash Type</label><select id="importSplitCashType" style="font-size:14px"><option value="COD">COD</option><option value="COP">COP</option><option value="LOCAL_COD">LOCAL_COD</option></select></div>' +
+        '<div class="form-group" style="margin-bottom:0"><label style="font-size:12px">Cash Amount $</label><input type="number" id="importSplitCodAmount" value="0" onchange="updateImportSplitBill()" style="font-size:14px"></div>' +
+        '<div class="form-group" style="margin-bottom:0"><label style="font-size:12px">Bill Amount $</label><input type="number" id="importSplitBillAmount" value="0" readonly style="font-size:14px;background:var(--surface-elevated)"></div>' +
+        '</div></div></div>' +
         
         // Notes
         '<div class="form-group" style="margin-top:12px"><label style="font-size:12px">[[icon:note]] Notes for Dispatchers</label><textarea id="importNotes" rows="2" style="font-size:14px"></textarea></div>' +
@@ -17134,7 +17344,22 @@
       setupLocationAutocomplete('importDeliveryCity');
       setupAddressAutocomplete('importPickupStreet');
       setupAddressAutocomplete('importDeliveryStreet');
+      toggleImportSplitPayment();
       toggleImportSubcategory();
+    }
+
+    function toggleImportSplitPayment() {
+      const payType = String(document.getElementById('importPaymentType')?.value || '').toUpperCase();
+      setSplitSectionVisibility('import', payType === 'SPLIT');
+      if (payType === 'SPLIT') updateSplitBillForPrefix('import');
+    }
+
+    function updateImportPaymentSplit() {
+      updateSplitBillForPrefix('import');
+    }
+
+    function updateImportSplitBill() {
+      updateSplitBillForPrefix('import');
     }
 
     function toggleImportSubcategory() {
@@ -17202,7 +17427,7 @@
   "pickup_date": "string in YYYY-MM-DD format or null",
   "delivery_date": "string in YYYY-MM-DD format or null",
   "revenue": "number or null",
-  "payment_type": "BILL or COD or COP or LOCAL_COD or CHECK or null",
+  "payment_type": "BILL or COD or COP or LOCAL_COD or CHECK or SPLIT or null",
   "broker_fee": "number or null",
   "notes": "string with special instructions or null"
 }
@@ -17251,6 +17476,8 @@ ${rateText}`
         const validPaymentTypes = ['BILL', 'COD', 'COP', 'LOCAL_COD', 'CHECK', 'SPLIT'];
         const extractedPayment = extracted.payment_type?.toUpperCase();
         document.getElementById('importPaymentType').value = validPaymentTypes.includes(extractedPayment) ? extractedPayment : 'BILL';
+        toggleImportSplitPayment();
+        updateImportPaymentSplit();
         document.getElementById('importBrokerFee').value = extracted.broker_fee || 0;
         document.getElementById('importNotes').value = extracted.notes || '';
         document.getElementById('importDriverNotes').value = extracted.notes || '';
@@ -17283,8 +17510,23 @@ ${rateText}`
       
       // Validate payment type
       const validPaymentTypes = ['BILL', 'COD', 'COP', 'LOCAL_COD', 'CHECK', 'SPLIT'];
-      const selectedPayment = document.getElementById('importPaymentType').value;
+      const selectedPayment = String(document.getElementById('importPaymentType')?.value || 'BILL').toUpperCase();
       const paymentType = validPaymentTypes.includes(selectedPayment) ? selectedPayment : 'BILL';
+      const totalRevenue = parseFloat(document.getElementById('importRevenue')?.value) || 0;
+      const splitState = getSplitFormState('import');
+      if (paymentType === 'SPLIT') {
+        const splitValidation = validateSplitAmounts(totalRevenue, splitState.cashAmount);
+        if (!splitValidation.valid) {
+          showToast(splitValidation.message, 'error');
+          return;
+        }
+      }
+      const splitPayload = applySplitToPayload({
+        paymentType,
+        revenue: totalRevenue,
+        splitCashType: splitState.cashType,
+        splitCashAmount: splitState.cashAmount
+      });
 
       let brokerId = null;
       let brokerName = null;
@@ -17329,8 +17571,10 @@ ${rateText}`
         delivery_phone: document.getElementById('importDeliveryPhone').value || null,
         pickup_date: document.getElementById('importPickupDate').value || null,
         dropoff_date: document.getElementById('importDeliveryDate').value || null,
-        revenue: parseFloat(document.getElementById('importRevenue').value) || 0,
-        payment_type: paymentType,
+        revenue: totalRevenue,
+        payment_type: splitPayload.payment_type,
+        cod_amount: splitPayload.cod_amount,
+        bill_amount: splitPayload.bill_amount,
         payment_terms: document.getElementById('importPaymentTerms')?.value || null,
         broker_fee: parseFloat(document.getElementById('importBrokerFee').value) || 0,
         local_fee: parseFloat(document.getElementById('importLocalFee').value) || 0,
@@ -19263,14 +19507,9 @@ ${rateText}`
     }
     
     function toggleSplitPayment() {
-      const payType = document.getElementById('orderPay').value;
-      const splitSection = document.getElementById('splitPaymentSection');
-      if (payType === 'SPLIT') {
-        splitSection.style.display = 'block';
-        updatePaymentSplit();
-      } else {
-        splitSection.style.display = 'none';
-      }
+      const payType = String(document.getElementById('orderPay')?.value || '').toUpperCase();
+      setSplitSectionVisibility('order', payType === 'SPLIT');
+      if (payType === 'SPLIT') updateSplitBillForPrefix('order');
     }
 
     function togglePaymentTerms() {
@@ -19323,18 +19562,25 @@ ${rateText}`
     }
 
     function updatePaymentSplit() {
-      const totalRev = parseFloat(document.getElementById('orderRev').value) || 0;
-      const codAmount = parseFloat(document.getElementById('splitCodAmount')?.value) || 0;
-      const billAmountEl = document.getElementById('splitBillAmount');
-      if (billAmountEl) {
-        billAmountEl.value = Math.max(0, totalRev - codAmount);
-      }
+      updateSplitBillForPrefix('order');
     }
     
     function updateSplitBill() {
-      const totalRev = parseFloat(document.getElementById('orderRev').value) || 0;
-      const codAmount = parseFloat(document.getElementById('splitCodAmount').value) || 0;
-      document.getElementById('splitBillAmount').value = Math.max(0, totalRev - codAmount);
+      updateSplitBillForPrefix('order');
+    }
+
+    function toggleEditOrderSplitPayment() {
+      const payType = String(document.getElementById('editOrderPay')?.value || '').toUpperCase();
+      setSplitSectionVisibility('editOrder', payType === 'SPLIT');
+      if (payType === 'SPLIT') updateSplitBillForPrefix('editOrder');
+    }
+
+    function updateEditOrderPaymentSplit() {
+      updateSplitBillForPrefix('editOrder');
+    }
+
+    function updateEditOrderSplitBill() {
+      updateSplitBillForPrefix('editOrder');
     }
 
     async function saveVehicle(tripId) {
@@ -19387,29 +19633,37 @@ ${rateText}`
       const vehicleBuyerNumber = document.getElementById('vehBuyerNumber')?.value || null;
 
       // Handle payment type (including split)
-      let paymentType = document.getElementById('orderPay').value;
-      let codAmount = 0;
-      let billAmount = 0;
+      const selectedPaymentType = String(document.getElementById('orderPay')?.value || 'BILL').toUpperCase();
       const totalRevenue = parseFloat(document.getElementById('orderRev').value) || 0;
+      const splitState = getSplitFormState('order');
+      if (selectedPaymentType === 'SPLIT') {
+        const splitValidation = validateSplitAmounts(totalRevenue, splitState.cashAmount);
+        if (!splitValidation.valid) {
+          showToast(splitValidation.message, 'error');
+          return;
+        }
+      }
+      const splitPayload = applySplitToPayload({
+        paymentType: selectedPaymentType,
+        revenue: totalRevenue,
+        splitCashType: splitState.cashType,
+        splitCashAmount: splitState.cashAmount
+      });
+      const paymentType = splitPayload.payment_type;
+      const codAmount = splitPayload.cod_amount;
+      const billAmount = splitPayload.bill_amount;
 
       // Payment terms (for BILL and SPLIT types)
       let paymentTerms = null;
       let dueDate = null;
       let customTermsDays = null;
 
-      if (paymentType === 'BILL' || paymentType === 'SPLIT') {
+      if (selectedPaymentType === 'BILL' || selectedPaymentType === 'SPLIT') {
         paymentTerms = document.getElementById('orderPaymentTerms')?.value || 'NET30';
         dueDate = document.getElementById('orderDueDate')?.value || null;
         if (paymentTerms === 'CUSTOM') {
           customTermsDays = parseInt(document.getElementById('orderCustomDays')?.value) || null;
         }
-      }
-
-      if (paymentType === 'SPLIT') {
-        codAmount = parseFloat(document.getElementById('splitCodAmount').value) || 0;
-        billAmount = totalRevenue - codAmount;
-        const codType = document.getElementById('splitCodType').value;
-        paymentType = codType; // Store as COD or COP, split values preserve both portions.
       }
 
       // Check if there's a current vehicle in the form that hasn't been added to list
@@ -19462,8 +19716,8 @@ ${rateText}`
             broker_fee: i === 0 ? brokerFee : 0, // Only first vehicle gets broker fee
             local_fee: i === 0 ? localFee : 0, // Only first vehicle gets local fee
             payment_type: paymentType,
-            cod_amount: i === 0 ? codAmount : 0,
-            bill_amount: i === 0 ? billAmount : 0,
+            cod_amount: i === 0 ? codAmount : null,
+            bill_amount: i === 0 ? billAmount : null,
             payment_terms: paymentTerms,
             due_date: dueDate,
             custom_terms_days: customTermsDays,
@@ -19519,6 +19773,13 @@ ${rateText}`
       const existingBroker = o.broker_id ? (appData.brokers || []).find(b => String(b.id) === String(o.broker_id)) : null;
       const pickupAddress = hydrateOrderAddressParts(o, 'pickup');
       const deliveryAddress = hydrateOrderAddressParts(o, 'delivery');
+      const editSplitLike = isOrderSplitLike(o);
+      const editSplitCashType = normalizeSplitCashType(o?.payment_type, 'COD');
+      const editRevenueValue = Math.max(0, toMoneyNumber(o?.revenue));
+      const editSplitCashAmount = editSplitLike ? Math.max(0, toMoneyNumber(o?.cod_amount)) : 0;
+      const editSplitBillAmount = editSplitLike
+        ? (Math.max(0, toMoneyNumber(o?.bill_amount)) || Math.max(0, editRevenueValue - editSplitCashAmount))
+        : 0;
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
       const currentDispatcher = appData.dispatchers.find(d => d.id === o.dispatcher_id);
       const dispatcherField = (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER') ?
@@ -19566,8 +19827,11 @@ ${rateText}`
         '</div>' +
         
         '<div class="form-row"><div class="form-group"><label>Pick-Up Date</label><input type="date" id="editOrderPickup" value="' + (o.pickup_date || '') + '"></div><div class="form-group"><label>Drop-Off Date</label><input type="date" id="editOrderDropoff" value="' + (o.dropoff_date || '') + '"></div></div>' +
-        '<div class="form-row"><div class="form-group"><label>Revenue $</label><input type="number" id="editOrderRev" value="' + o.revenue + '"></div><div class="form-group"><label>Broker Fee $</label><input type="number" id="editOrderBrokerFee" value="' + (o.broker_fee || 0) + '"></div></div>' +
-        '<div class="form-row"><div class="form-group"><label>Local Fee $</label><input type="number" id="editOrderFee" value="' + (o.local_fee || 0) + '"></div><div class="form-group"><label>Payment</label><select id="editOrderPay"><option' + (o.payment_type === 'BILL' ? ' selected' : '') + '>BILL</option><option' + (o.payment_type === 'COD' ? ' selected' : '') + '>COD</option><option' + (o.payment_type === 'COP' ? ' selected' : '') + '>COP</option><option' + (o.payment_type === 'CHECK' ? ' selected' : '') + '>CHECK</option><option' + (o.payment_type === 'LOCAL_COD' ? ' selected' : '') + '>LOCAL_COD</option></select></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Revenue $</label><input type="number" id="editOrderRev" value="' + o.revenue + '" onchange="updateEditOrderPaymentSplit()"></div><div class="form-group"><label>Broker Fee $</label><input type="number" id="editOrderBrokerFee" value="' + (o.broker_fee || 0) + '"></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Local Fee $</label><input type="number" id="editOrderFee" value="' + (o.local_fee || 0) + '"></div><div class="form-group"><label>Payment</label><select id="editOrderPay" onchange="toggleEditOrderSplitPayment()"><option value="BILL"' + ((!editSplitLike && o.payment_type === 'BILL') ? ' selected' : '') + '>BILL</option><option value="COD"' + ((!editSplitLike && o.payment_type === 'COD') ? ' selected' : '') + '>COD</option><option value="COP"' + ((!editSplitLike && o.payment_type === 'COP') ? ' selected' : '') + '>COP</option><option value="CHECK"' + ((!editSplitLike && o.payment_type === 'CHECK') ? ' selected' : '') + '>CHECK</option><option value="LOCAL_COD"' + ((!editSplitLike && o.payment_type === 'LOCAL_COD') ? ' selected' : '') + '>LOCAL_COD</option><option value="SPLIT"' + (editSplitLike ? ' selected' : '') + '>SPLIT</option></select></div></div>' +
+        '<div id="editSplitPaymentSection" style="display:' + (editSplitLike ? 'block' : 'none') + ';margin-top:8px;padding-top:12px;border-top:1px dashed #f59e0b">' +
+        '<div class="form-row" style="grid-template-columns:1fr 1fr 1fr;gap:12px"><div class="form-group" style="margin-bottom:0"><label>Cash Type</label><select id="editSplitCodType"><option value="COD"' + (editSplitCashType === 'COD' ? ' selected' : '') + '>COD</option><option value="COP"' + (editSplitCashType === 'COP' ? ' selected' : '') + '>COP</option><option value="LOCAL_COD"' + (editSplitCashType === 'LOCAL_COD' ? ' selected' : '') + '>LOCAL_COD</option></select></div><div class="form-group" style="margin-bottom:0"><label>Cash Amount $</label><input type="number" id="editSplitCodAmount" value="' + editSplitCashAmount + '" onchange="updateEditOrderSplitBill()"></div><div class="form-group" style="margin-bottom:0"><label>Bill Amount $</label><input type="number" id="editSplitBillAmount" value="' + editSplitBillAmount + '" readonly style="background:var(--surface-elevated)"></div></div>' +
+        '</div>' +
         '<div class="form-row"><div class="form-group"><label>Status</label><select id="editOrderStatus"><option value="PENDING"' + (o.status === 'PENDING' ? ' selected' : '') + '>NEW</option><option value="IN_TRANSIT"' + (o.status === 'IN_TRANSIT' ? ' selected' : '') + '>IN_TRANSIT</option><option value="DELIVERED"' + (o.status === 'DELIVERED' ? ' selected' : '') + '>DELIVERED</option></select></div><div class="form-group"><label>Booked By</label>' + dispatcherField + '</div></div>' +
         '<div class="form-group"><label>[[icon:note]] Notes for Dispatchers</label><textarea id="editOrderNotes" rows="2" placeholder="Add notes visible to all dispatchers..." style="resize:vertical">' + (o.dispatcher_notes || '') + '</textarea></div>' +
         '<div class="form-group"><label>[[icon:receipt]] Notes for Driver</label><textarea id="editOrderDriverNotes" rows="2" placeholder="Driver-facing instructions..." style="resize:vertical">' + getOrderDriverNotes(o) + '</textarea></div>' +
@@ -19579,6 +19843,7 @@ ${rateText}`
       setupLocationAutocomplete('editOrderDest');
       setupAddressAutocomplete('editPickupFullAddress');
       setupAddressAutocomplete('editDeliveryFullAddress');
+      hydrateSplitControls('editOrder', o);
       
       // Handle broker selection change
       document.getElementById('editOrderBroker').addEventListener('change', function() {
@@ -19619,6 +19884,23 @@ ${rateText}`
         zip: document.getElementById('editDeliveryZip')?.value || ''
       });
 
+      const selectedPaymentType = String(document.getElementById('editOrderPay')?.value || 'BILL').toUpperCase();
+      const revenue = parseFloat(document.getElementById('editOrderRev')?.value) || 0;
+      const splitState = getSplitFormState('editOrder', appData.orders.find(x => x.id === orderId));
+      if (selectedPaymentType === 'SPLIT') {
+        const splitValidation = validateSplitAmounts(revenue, splitState.cashAmount);
+        if (!splitValidation.valid) {
+          showToast(splitValidation.message, 'error');
+          return;
+        }
+      }
+      const splitPayload = applySplitToPayload({
+        paymentType: selectedPaymentType,
+        revenue,
+        splitCashType: splitState.cashType,
+        splitCashAmount: splitState.cashAmount
+      });
+
       const data = {
         order_number: document.getElementById('editOrderNum').value,
         broker_id: brokerId,
@@ -19635,10 +19917,12 @@ ${rateText}`
         ...deliveryAddressPayload,
         pickup_date: document.getElementById('editOrderPickup').value || null,
         dropoff_date: document.getElementById('editOrderDropoff').value || null,
-        revenue: parseFloat(document.getElementById('editOrderRev').value) || 0,
+        revenue,
         broker_fee: parseFloat(document.getElementById('editOrderBrokerFee').value) || 0,
         local_fee: parseFloat(document.getElementById('editOrderFee').value) || 0,
-        payment_type: document.getElementById('editOrderPay').value,
+        payment_type: splitPayload.payment_type,
+        cod_amount: splitPayload.cod_amount,
+        bill_amount: splitPayload.bill_amount,
         status: document.getElementById('editOrderStatus').value,
         dispatcher_id: parseInt(document.getElementById('editOrderDispatcher').value) || null,
         vehicle_direction: document.getElementById('editOrderDirection').value,
@@ -19939,6 +20223,13 @@ ${rateText}`
       const existingBroker = o?.broker_id ? (appData.brokers || []).find(b => String(b.id) === String(o.broker_id)) : null;
       const pickupAddress = hydrateOrderAddressParts(o, 'pickup');
       const deliveryAddress = hydrateOrderAddressParts(o, 'delivery');
+      const orderSplitLike = isOrderSplitLike(o);
+      const orderSplitCashType = normalizeSplitCashType(o?.payment_type, 'COD');
+      const orderRevenueValue = Math.max(0, toMoneyNumber(o?.revenue));
+      const orderSplitCashAmount = orderSplitLike ? Math.max(0, toMoneyNumber(o?.cod_amount)) : 0;
+      const orderSplitBillAmount = orderSplitLike
+        ? (Math.max(0, toMoneyNumber(o?.bill_amount)) || Math.max(0, orderRevenueValue - orderSplitCashAmount))
+        : 0;
       if (o) startEditing('orders', id, o.updated_at);
       const m = document.createElement('div');
       m.className = 'modal-overlay';
@@ -19976,8 +20267,11 @@ ${rateText}`
         '<div class="form-row" style="gap:12px;margin-top:8px"><div class="form-group" style="margin-bottom:0"><label>[[icon:phone]] Site Phone</label><input id="deliveryPhone" value="' + (o?.delivery_phone || '') + '" placeholder="(555) 123-4567"></div><div class="form-group" style="margin-bottom:0"><label>Scheduled Date</label><input type="date" id="orderDropoff" value="' + (o?.dropoff_date || '') + '"></div><div class="form-group" style="margin-bottom:0"><label>Delivery ETA</label><input type="datetime-local" id="deliveryEta" value="' + (o?.delivery_eta ? new Date(o.delivery_eta).toISOString().slice(0,16) : '') + '"></div></div>' +
         '</div>' +
         '<div style="background:var(--dim-amber);padding:12px;border-radius:8px;margin-bottom:12px"><label style="font-weight:600;display:block;margin-bottom:8px">[[icon:money]] Payment</label>' +
-        '<div class="form-row" style="gap:12px"><div class="form-group" style="margin-bottom:0"><label>Revenue $</label><input type="number" id="orderRev" value="' + (o?.revenue || '') + '"></div><div class="form-group" style="margin-bottom:0"><label>Broker Fee $</label><input type="number" id="orderBrokerFee" value="' + (o?.broker_fee || 0) + '"></div><div class="form-group" style="margin-bottom:0"><label>Local Fee $</label><input type="number" id="orderFee" value="' + (o?.local_fee || 0) + '"></div></div>' +
-        '<div class="form-row" style="gap:12px;margin-top:8px"><div class="form-group" style="margin-bottom:0"><label>Payment</label><select id="orderPay"><option value="BILL"' + (o?.payment_type === 'BILL' ? ' selected' : '') + '>BILL</option><option value="COD"' + (o?.payment_type === 'COD' ? ' selected' : '') + '>COD</option><option value="COP"' + (o?.payment_type === 'COP' ? ' selected' : '') + '>COP</option><option value="CHECK"' + (o?.payment_type === 'CHECK' ? ' selected' : '') + '>CHECK</option><option value="LOCAL_COD"' + (o?.payment_type === 'LOCAL_COD' ? ' selected' : '') + '>LOCAL_COD</option><option value="SPLIT"' + (o?.payment_type === 'SPLIT' ? ' selected' : '') + '>SPLIT</option></select></div><div class="form-group" style="margin-bottom:0"><label>Status</label><select id="orderStatus"><option value="PENDING"' + (o?.status === 'PENDING' ? ' selected' : '') + '>NEW</option><option value="IN_TRANSIT"' + (o?.status === 'IN_TRANSIT' ? ' selected' : '') + '>IN_TRANSIT</option><option value="DELIVERED"' + (o?.status === 'DELIVERED' ? ' selected' : '') + '>DELIVERED</option></select></div></div>' +
+        '<div class="form-row" style="gap:12px"><div class="form-group" style="margin-bottom:0"><label>Revenue $</label><input type="number" id="orderRev" value="' + (o?.revenue || '') + '" onchange="updatePaymentSplit()"></div><div class="form-group" style="margin-bottom:0"><label>Broker Fee $</label><input type="number" id="orderBrokerFee" value="' + (o?.broker_fee || 0) + '"></div><div class="form-group" style="margin-bottom:0"><label>Local Fee $</label><input type="number" id="orderFee" value="' + (o?.local_fee || 0) + '"></div></div>' +
+        '<div class="form-row" style="gap:12px;margin-top:8px"><div class="form-group" style="margin-bottom:0"><label>Payment</label><select id="orderPay" onchange="toggleSplitPayment()"><option value="BILL"' + ((!o || (!orderSplitLike && o?.payment_type === 'BILL')) ? ' selected' : '') + '>BILL</option><option value="COD"' + ((!orderSplitLike && o?.payment_type === 'COD') ? ' selected' : '') + '>COD</option><option value="COP"' + ((!orderSplitLike && o?.payment_type === 'COP') ? ' selected' : '') + '>COP</option><option value="CHECK"' + ((!orderSplitLike && o?.payment_type === 'CHECK') ? ' selected' : '') + '>CHECK</option><option value="LOCAL_COD"' + ((!orderSplitLike && o?.payment_type === 'LOCAL_COD') ? ' selected' : '') + '>LOCAL_COD</option><option value="SPLIT"' + (orderSplitLike ? ' selected' : '') + '>SPLIT</option></select></div><div class="form-group" style="margin-bottom:0"><label>Status</label><select id="orderStatus"><option value="PENDING"' + (o?.status === 'PENDING' ? ' selected' : '') + '>NEW</option><option value="IN_TRANSIT"' + (o?.status === 'IN_TRANSIT' ? ' selected' : '') + '>IN_TRANSIT</option><option value="DELIVERED"' + (o?.status === 'DELIVERED' ? ' selected' : '') + '>DELIVERED</option></select></div></div>' +
+        '<div id="splitPaymentSection" style="display:' + (orderSplitLike ? 'block' : 'none') + ';margin-top:12px;padding-top:12px;border-top:1px dashed #f59e0b">' +
+        '<div class="form-row" style="grid-template-columns:1fr 1fr 1fr;gap:12px"><div class="form-group" style="margin-bottom:0"><label>Cash Type</label><select id="splitCodType"><option value="COD"' + (orderSplitCashType === 'COD' ? ' selected' : '') + '>COD</option><option value="COP"' + (orderSplitCashType === 'COP' ? ' selected' : '') + '>COP</option><option value="LOCAL_COD"' + (orderSplitCashType === 'LOCAL_COD' ? ' selected' : '') + '>LOCAL_COD</option></select></div><div class="form-group" style="margin-bottom:0"><label>Cash Amount $</label><input type="number" id="splitCodAmount" value="' + orderSplitCashAmount + '" onchange="updateSplitBill()"></div><div class="form-group" style="margin-bottom:0"><label>Bill Amount $</label><input type="number" id="splitBillAmount" value="' + orderSplitBillAmount + '" readonly style="background:var(--surface-elevated)"></div></div>' +
+        '</div>' +
         '</div>' +
         '<div class="form-group"><label>[[icon:note]] Notes for Dispatchers</label><textarea id="orderNotes" rows="2" placeholder="Internal notes for dispatch team..." style="resize:vertical">' + (o?.dispatcher_notes || '') + '</textarea></div>' +
         '<div class="form-group"><label>[[icon:receipt]] Notes for Driver</label><textarea id="orderDriverNotes" rows="2" placeholder="Driver-facing instructions..." style="resize:vertical">' + getOrderDriverNotes(o) + '</textarea></div>' +
@@ -19988,6 +20282,7 @@ ${rateText}`
       setupLocationAutocomplete('orderDest');
       setupAddressAutocomplete('pickupFullAddress');
       setupAddressAutocomplete('deliveryFullAddress');
+      hydrateSplitControls('order', o);
     }
 
     async function saveOrder(id) {
@@ -20030,6 +20325,22 @@ ${rateText}`
 
       const pickupEtaVal = document.getElementById('pickupEta')?.value || '';
       const deliveryEtaVal = document.getElementById('deliveryEta')?.value || '';
+      const selectedPaymentType = String(document.getElementById('orderPay')?.value || 'BILL').toUpperCase();
+      const revenue = parseFloat(document.getElementById('orderRev')?.value) || 0;
+      const splitState = getSplitFormState('order', id ? appData.orders.find(o => o.id === id) : null);
+      if (selectedPaymentType === 'SPLIT') {
+        const splitValidation = validateSplitAmounts(revenue, splitState.cashAmount);
+        if (!splitValidation.valid) {
+          showToast(splitValidation.message, 'error');
+          return;
+        }
+      }
+      const splitPayload = applySplitToPayload({
+        paymentType: selectedPaymentType,
+        revenue,
+        splitCashType: splitState.cashType,
+        splitCashAmount: splitState.cashAmount
+      });
       const data = {
         order_number: orderNumber,
         trip_id: tripId,
@@ -20049,11 +20360,13 @@ ${rateText}`
         delivery_phone: document.getElementById('deliveryPhone')?.value || null,
         pickup_date: document.getElementById('orderPickup')?.value || null,
         dropoff_date: document.getElementById('orderDropoff')?.value || null,
-        revenue: parseFloat(document.getElementById('orderRev').value) || 0,
+        revenue,
         broker_fee: parseFloat(document.getElementById('orderBrokerFee')?.value) || 0,
         local_fee: parseFloat(document.getElementById('orderFee').value) || 0,
         local_driver_id: (id ? appData.orders.find(o => o.id === id)?.local_driver_id : null) || null,
-        payment_type: document.getElementById('orderPay').value,
+        payment_type: splitPayload.payment_type,
+        cod_amount: splitPayload.cod_amount,
+        bill_amount: splitPayload.bill_amount,
         payment_terms: document.getElementById('orderBrokerTerms')?.value || null,
         status: document.getElementById('orderStatus').value,
         pickup_contact_name: document.getElementById('pickupContactName').value || null,
@@ -26418,6 +26731,11 @@ ${rateText}`
           orderNumber = orderNumber + '-' + Date.now().toString().slice(-4);
         }
 
+        const extractedPaymentType = String(extracted.payment_type || 'BILL').toUpperCase();
+        const normalizedImportedPaymentType = ['BILL', 'COD', 'COP', 'LOCAL_COD', 'CHECK'].includes(extractedPaymentType)
+          ? extractedPaymentType
+          : 'BILL';
+
         // Build order data with only known safe columns
         const orderData = {
           order_number: orderNumber,
@@ -26436,7 +26754,9 @@ ${rateText}`
           delivery_phone: extracted.delivery_phone || null,
           dropoff_date: extracted.dropoff_date || null,
           revenue: parseFloat(extracted.revenue) || 0,
-          payment_type: extracted.payment_type || 'BILL',
+          payment_type: normalizedImportedPaymentType,
+          cod_amount: null,
+          bill_amount: null,
           broker_fee: parseFloat(extracted.broker_fee) || 0,
           dispatcher_notes: extracted.notes || null,
           status: 'PENDING',
