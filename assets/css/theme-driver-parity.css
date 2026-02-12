@@ -1,0 +1,78 @@
+/* ============================================================
+   THEME COMPATIBILITY TOKENS (TMS)
+   Compatibility layer only: provides semantic variables used by
+   newer inline styles without changing the legacy visual system.
+   ============================================================ */
+
+:root {
+  /* Keep legacy typography direction */
+  --font-display-app: 'Space Grotesk', -apple-system, sans-serif;
+  --font-body-app: 'IBM Plex Sans', -apple-system, sans-serif;
+  --font-mono-app: 'JetBrains Mono', 'SF Mono', monospace;
+
+  /* Light mode values aligned to legacy TMS */
+  --surface-app: #f8fafc;
+  --surface-card: #ffffff;
+  --surface-card-hover: #f1f5f9;
+  --surface-elevated: #f1f5f9;
+
+  --text-primary-app: #0f172a;
+  --text-secondary-app: #475569;
+  --text-muted-app: #94a3b8;
+  --border-app: #e2e8f0;
+
+  /* Semantic dim backgrounds used by chips/pills */
+  --dim-green: #dcfce7;
+  --dim-blue: #dbeafe;
+  --dim-amber: #fef3c7;
+  --dim-red: #fee2e2;
+  --dim-purple: #f3e8ff;
+
+  --success-border: rgba(34, 197, 94, 0.25);
+  --info-border: rgba(59, 130, 246, 0.25);
+  --warning-border: rgba(245, 158, 11, 0.25);
+  --danger-border: rgba(239, 68, 68, 0.25);
+  --purple-border: rgba(139, 92, 246, 0.25);
+
+  /* Alias existing variables to compatibility layer */
+  --bg-primary: var(--surface-app);
+  --bg-secondary: var(--surface-card);
+  --bg-card: var(--surface-card);
+  --bg-hover: var(--surface-card-hover);
+  --bg-tertiary: var(--surface-elevated);
+
+  --text-primary: var(--text-primary-app);
+  --text-secondary: var(--text-secondary-app);
+  --text-muted: var(--text-muted-app);
+  --border: var(--border-app);
+
+  --success-light: rgba(34, 197, 94, 0.12);
+  --warning-light: rgba(245, 158, 11, 0.12);
+  --danger-light: rgba(239, 68, 68, 0.12);
+  --info-light: rgba(59, 130, 246, 0.12);
+}
+
+body.dark-theme {
+  /* Dark mode values aligned to legacy TMS */
+  --surface-app: #0c1520;
+  --surface-card: #151f2c;
+  --surface-card-hover: #1e2d3d;
+  --surface-elevated: #1a2735;
+
+  --text-primary-app: #f1f5f9;
+  --text-secondary-app: #cbd5e1;
+  --text-muted-app: #94a3b8;
+  --border-app: #1e3a4a;
+
+  --dim-green: rgba(34, 197, 94, 0.20);
+  --dim-blue: rgba(59, 130, 246, 0.20);
+  --dim-amber: rgba(245, 158, 11, 0.20);
+  --dim-red: rgba(239, 68, 68, 0.20);
+  --dim-purple: rgba(139, 92, 246, 0.20);
+
+  --success-border: rgba(34, 197, 94, 0.30);
+  --info-border: rgba(59, 130, 246, 0.30);
+  --warning-border: rgba(245, 158, 11, 0.30);
+  --danger-border: rgba(239, 68, 68, 0.30);
+  --purple-border: rgba(139, 92, 246, 0.30);
+}
