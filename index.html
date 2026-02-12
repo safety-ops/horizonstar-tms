@@ -35922,6 +35922,34 @@ function jsonResponse(data, status = 200) {
       }
     }
 
+    function ensureLiveMapContainerSize(container) {
+      if (!container) return false;
+      const isMobile = window.innerWidth <= 768;
+      const canvas = container.closest('.live-map-canvas');
+      const fallbackHeight = isMobile
+        ? Math.max(320, Math.round(window.innerHeight * 0.46))
+        : Math.max(420, Math.round(window.innerHeight * 0.58));
+
+      if (canvas) {
+        if (!canvas.style.minHeight) {
+          canvas.style.minHeight = (isMobile ? '46vh' : '420px');
+        }
+        if (canvas.offsetHeight === 0) {
+          canvas.style.height = fallbackHeight + 'px';
+        }
+      }
+
+      if (!container.style.minHeight) {
+        container.style.minHeight = (isMobile ? '46vh' : '420px');
+      }
+      if (container.offsetHeight === 0) {
+        container.style.height = canvas && canvas.offsetHeight > 0 ? (canvas.offsetHeight + 'px') : (fallbackHeight + 'px');
+      }
+
+      // Width can be zero during first paint; try to give it one more pass after style writes.
+      return container.offsetWidth > 0 && container.offsetHeight > 0;
+    }
+
     function getLiveMapTimestamp(raw) {
       const candidates = [
         raw?.location?.time,
@@ -36499,6 +36527,9 @@ function jsonResponse(data, status = 200) {
             updateLiveMapPanelCollapsedState();
             if (liveMapInstance) {
               setTimeout(() => liveMapInstance && liveMapInstance.invalidateSize(), 120);
+            } else {
+              const container = document.getElementById('liveMapContainer');
+              if (container) ensureLiveMapContainerSize(container);
             }
           }
         });
@@ -36507,6 +36538,7 @@ function jsonResponse(data, status = 200) {
 
       try {
         await ensureLeafletForLiveMap();
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         const initialized = initLiveMap();
         if (!initialized) {
           setTimeout(() => {
@@ -36547,9 +36579,10 @@ function jsonResponse(data, status = 200) {
       }
 
       // Ensure container has dimensions before initializing
-      if (container.offsetWidth === 0 || container.offsetHeight === 0) {
-        if (retryCount > 40) {
-          setLiveMapErrorState('Map container has no size.');
+      const hasSize = ensureLiveMapContainerSize(container);
+      if (!hasSize) {
+        if (retryCount > 60) {
+          setLiveMapErrorState('Map area is still initializing. Please refresh once.');
           return false;
         }
         setTimeout(() => initLiveMap(retryCount + 1), 100);
