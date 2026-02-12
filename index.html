@@ -8992,7 +8992,7 @@
     
     // Get current access token for API calls (session token only).
     function getAccessToken() {
-      return authSession?.access_token || null;
+      return authSession?.access_token || SUPABASE_KEY;
     }
 
     function requireAuthToken(options = {}) {
@@ -10191,9 +10191,11 @@
       const customDaysParsed = parseInt(order?.custom_terms_days, 10);
       const customDays = Number.isFinite(customDaysParsed) && customDaysParsed > 0 ? customDaysParsed : null;
       const netTerms = {
+        NET5: 'Net 5',
         NET7: 'Net 7',
         NET10: 'Net 10',
         NET15: 'Net 15',
+        NET21: 'Net 21',
         NET30: 'Net 30',
         NET45: 'Net 45',
         NET60: 'Net 60'
@@ -10376,7 +10378,7 @@
       '</div>';
     }
     const VEHICLE_BODY_TYPE_OPTIONS = ['SUV', 'SEDAN', 'CONVERTABLE', 'VAN', 'MINIVAN', 'PICK UP TRUCK'];
-    const PAYMENT_TERMS_OPTIONS = ['QUICK_PAY', 'NET7', 'NET10', 'NET15', 'NET30', 'NET45', 'NET60'];
+    const PAYMENT_TERMS_OPTIONS = ['QUICK_PAY', 'NET5', 'NET7', 'NET10', 'NET15', 'NET21', 'NET30', 'NET45', 'NET60'];
     function getPaymentTermsOptionsHtml(selected = 'NET30') {
       const normalized = String(selected || 'NET30').toUpperCase();
       return PAYMENT_TERMS_OPTIONS.map(term => {
@@ -14287,7 +14289,10 @@
         
       } catch (err) {
         console.error('Login error:', err);
-        errorEl.textContent = err?.message || 'Connection error';
+        const msg = (err.message || '').toLowerCase().includes('fetch')
+          ? 'Unable to reach server. Check your internet connection and try again.'
+          : 'Connection error: ' + (err.message || 'Unknown error');
+        errorEl.textContent = msg;
         errorEl.style.display = 'block';
         btnEl.textContent = 'Sign In';
         btnEl.disabled = false;
@@ -17239,8 +17244,599 @@
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
+    const IMPORT_FORMAT_OPTIONS = [
+      { id: 'central_dispatch', label: 'Central Dispatch' },
+      { id: 'generic', label: 'Generic / Other' }
+    ];
+    const IMPORT_EXTRACTION_SCHEMA = `{
+  "order_number": "string or null",
+  "broker_name": "string or null",
+  "broker_contact_name": "string or null",
+  "broker_phone": "string or null",
+  "broker_email": "string or null",
+  "broker_street": "string or null",
+  "broker_city": "string or null",
+  "broker_state": "2-letter state or null",
+  "broker_zip": "zip code or null",
+  "broker_terms": "QUICK_PAY or NET5 or NET10 or NET15 or NET21 or NET30 or NET45 or NET60 or CUSTOM or null",
+  "vehicle_year": "number or null",
+  "vehicle_make": "string or null",
+  "vehicle_model": "string or null",
+  "vehicle_vin": "string or null",
+  "vehicle_color": "string or null",
+  "origin_city_state": "string like 'New York, NY' or null",
+  "pickup_street": "street line or null",
+  "pickup_city": "string or null",
+  "pickup_state": "2-letter state or null",
+  "pickup_zip": "zip code or null",
+  "pickup_phone": "string or null",
+  "pickup_date": "YYYY-MM-DD format or null",
+  "destination_city_state": "string like 'Los Angeles, CA' or null",
+  "delivery_street": "street line or null",
+  "delivery_city": "string or null",
+  "delivery_state": "2-letter state or null",
+  "delivery_zip": "zip code or null",
+  "delivery_phone": "string or null",
+  "delivery_date": "YYYY-MM-DD format or null",
+  "revenue": "number or null",
+  "payment_type": "BILL or COD or COP or LOCAL_COD or CHECK or SPLIT or null",
+  "split_cash_type": "COD or COP or LOCAL_COD or null",
+  "cod_amount": "number or null",
+  "bill_amount": "number or null",
+  "broker_fee": "number or null",
+  "notes": "string with special instructions or null"
+}`;
+    const IMPORT_CONFIDENCE_WARN_THRESHOLD = 70;
+    const IMPORT_FIELD_LABELS = {
+      order_number: 'Order #',
+      broker_name: 'Broker Name',
+      revenue: 'Revenue',
+      payment_type: 'Payment Type',
+      broker_terms: 'Payment Terms',
+      broker_fee: 'Broker Fee',
+      pickup_city: 'Pickup City',
+      pickup_state: 'Pickup State',
+      delivery_city: 'Delivery City',
+      delivery_state: 'Delivery State',
+      cod_amount: 'COD Amount',
+      bill_amount: 'Bill Amount'
+    };
+    const BROKER_IMPORT_TEMPLATES = [
+      {
+        id: 'central_dispatch_standard',
+        label: 'Central Dispatch Standard',
+        formats: ['central_dispatch', 'generic'],
+        aliases: [/central dispatch/i, /\bcd\b/i, /dispatch sheet/i],
+        defaultTerms: 'NET30',
+        defaultPaymentType: 'BILL',
+        requiredFields: ['order_number', 'broker_name', 'revenue', 'payment_type', 'pickup_city', 'pickup_state', 'delivery_city', 'delivery_state', 'broker_terms'],
+        criticalFields: ['order_number', 'broker_name', 'revenue', 'pickup_city', 'pickup_state', 'delivery_city', 'delivery_state']
+      },
+      {
+        id: 'copart_ratecon',
+        label: 'Copart',
+        formats: ['central_dispatch', 'generic'],
+        aliases: [/\bcopart\b/i],
+        defaultTerms: 'NET30',
+        defaultPaymentType: 'BILL',
+        requiredFields: ['order_number', 'broker_name', 'revenue', 'payment_type', 'pickup_city', 'pickup_state', 'delivery_city', 'delivery_state', 'broker_terms'],
+        criticalFields: ['order_number', 'broker_name', 'revenue', 'pickup_city', 'pickup_state', 'delivery_city', 'delivery_state']
+      },
+      {
+        id: 'generic_transport',
+        label: 'Generic Transport',
+        formats: ['generic', 'central_dispatch'],
+        aliases: [],
+        defaultTerms: 'NET30',
+        defaultPaymentType: 'BILL',
+        requiredFields: ['broker_name', 'revenue', 'payment_type', 'pickup_city', 'pickup_state', 'delivery_city', 'delivery_state'],
+        criticalFields: ['broker_name', 'revenue', 'pickup_city', 'pickup_state', 'delivery_city', 'delivery_state']
+      }
+    ];
+    let lastImportTemplateAssessment = null;
+    let importReviewHandoff = null;
+    function getImportFieldLabel(fieldKey) {
+      return IMPORT_FIELD_LABELS[fieldKey] || fieldKey;
+    }
+    function hasImportFieldValue(extracted, fieldKey) {
+      const value = extracted ? extracted[fieldKey] : null;
+      if (value === null || value === undefined) return false;
+      if (typeof value === 'number') return Number.isFinite(value) && value > 0;
+      return String(value).trim().length > 0;
+    }
+    function resolveBrokerImportTemplate(extracted, formatId, rawSource = '') {
+      const normalizedFormat = normalizeImportFormatId(formatId);
+      const brokerName = String(extracted?.broker_name || '').trim();
+      const source = [brokerName, String(rawSource || '')].join('\n');
+      const candidates = BROKER_IMPORT_TEMPLATES.filter(template =>
+        !template.formats || template.formats.includes(normalizedFormat)
+      );
+      for (const template of candidates) {
+        if (!template.aliases || template.aliases.length === 0) continue;
+        const matched = template.aliases.some(pattern => pattern.test(source));
+        if (matched) return template;
+      }
+      return candidates.find(t => t.id === (normalizedFormat === 'central_dispatch' ? 'central_dispatch_standard' : 'generic_transport')) || BROKER_IMPORT_TEMPLATES[0];
+    }
+    function applyBrokerTemplateDefaults(extracted, template) {
+      const normalized = normalizeExtractedPayment(extracted || {});
+      if (!template) return normalized;
+      if (!normalized.broker_terms && template.defaultTerms) normalized.broker_terms = template.defaultTerms;
+      if (!normalized.payment_type && template.defaultPaymentType) normalized.payment_type = template.defaultPaymentType;
+      return normalizeExtractedPayment(normalized);
+    }
+    function buildBrokerTemplateAssessment(extracted, template) {
+      const requiredFields = template?.requiredFields || [];
+      const criticalFields = template?.criticalFields || requiredFields;
+      const missingRequired = requiredFields.filter(field => !hasImportFieldValue(extracted, field));
+      const missingCritical = criticalFields.filter(field => !hasImportFieldValue(extracted, field));
+      const warnings = [];
+      const paymentType = String(extracted?.payment_type || '').toUpperCase();
+      const codAmount = parseImportNumber(extracted?.cod_amount);
+      const billAmount = parseImportNumber(extracted?.bill_amount);
+      if (paymentType === 'SPLIT' && (!(codAmount > 0) || !(billAmount > 0))) {
+        warnings.push('Split payment is selected but COD/Bill amounts are incomplete.');
+      }
+      if (paymentType === 'BILL' && !hasImportFieldValue(extracted, 'broker_terms')) {
+        warnings.push('Payment type is BILL but payment terms are missing.');
+      }
+      if (!hasImportFieldValue(extracted, 'broker_fee')) {
+        warnings.push('Broker fee was not detected.');
+      }
+      const requiredScore = requiredFields.length > 0
+        ? ((requiredFields.length - missingRequired.length) / requiredFields.length) * 100
+        : 100;
+      let bonus = 0;
+      if (hasImportFieldValue(extracted, 'broker_fee')) bonus += 4;
+      if (hasImportFieldValue(extracted, 'broker_terms')) bonus += 4;
+      if (paymentType === 'SPLIT' && codAmount > 0 && billAmount > 0) bonus += 5;
+      if (hasImportFieldValue(extracted, 'vehicle_vin')) bonus += 2;
+      const confidence = Math.max(0, Math.min(100, Math.round(requiredScore + bonus)));
+      return {
+        templateId: template?.id || 'unknown',
+        templateLabel: template?.label || 'Unknown Template',
+        confidence,
+        missingRequired,
+        missingCritical,
+        warnings
+      };
+    }
+    function renderImportTemplateAssessment(assessment) {
+      if (!assessment) return '';
+      const confidenceColor = assessment.confidence >= 85
+        ? 'var(--success)'
+        : assessment.confidence >= 70
+          ? 'var(--warning)'
+          : 'var(--danger)';
+      const missingHtml = assessment.missingRequired.length
+        ? assessment.missingRequired.map(field => '<span style="padding:3px 8px;border-radius:999px;background:var(--dim-amber);color:var(--warning);font-size:11px;font-weight:600;border:1px solid var(--warning-border)">' + getImportFieldLabel(field) + '</span>').join(' ')
+        : '<span style="padding:3px 8px;border-radius:999px;background:var(--dim-green);color:var(--success);font-size:11px;font-weight:600;border:1px solid var(--success-border)">All required fields detected</span>';
+      const warningHtml = assessment.warnings.length
+        ? '<div style="margin-top:8px;color:var(--warning);font-size:12px">' + assessment.warnings.join(' ') + '</div>'
+        : '';
+      return '<div style="background:var(--surface-elevated);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:12px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">' +
+        '<div style="font-size:12px;color:var(--text-secondary)"><strong>Template:</strong> ' + escapeHtml(assessment.templateLabel) + '</div>' +
+        '<div style="font-size:12px;color:' + confidenceColor + ';font-weight:700">Confidence: ' + assessment.confidence + '%</div>' +
+        '</div>' +
+        '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px">' + missingHtml + '</div>' +
+        warningHtml +
+      '</div>';
+    }
+    function updateImportTemplateAssessmentUI(assessment) {
+      const container = document.getElementById('importTemplateAssessment');
+      if (!container) return;
+      if (!assessment) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+        return;
+      }
+      container.style.display = 'block';
+      container.innerHTML = renderImportTemplateAssessment(assessment);
+    }
+    function openImportLoadWithHandoff(handoff = null) {
+      importReviewHandoff = handoff || null;
+      openImportLoad();
+    }
+    function applyImportReviewHandoffIfPresent() {
+      const handoff = importReviewHandoff;
+      if (!handoff) return;
+      importReviewHandoff = null;
+      const formatSelect = document.getElementById('importFormatProfile');
+      if (formatSelect && handoff.formatProfile) {
+        formatSelect.value = normalizeImportFormatId(handoff.formatProfile);
+      }
+      const rateTextEl = document.getElementById('importRateText');
+      if (rateTextEl && handoff.rateText) {
+        rateTextEl.value = String(handoff.rateText);
+      }
+      if (!handoff.extracted) return;
+      const extracted = normalizeExtractedPayment(handoff.extracted);
+      populateImportFormFromExtraction(extracted);
+      const template = resolveBrokerImportTemplate(extracted, handoff.formatProfile || formatSelect?.value || 'central_dispatch', handoff.rateText || '');
+      const assessment = handoff.assessment || buildBrokerTemplateAssessment(extracted, template);
+      lastImportTemplateAssessment = assessment;
+      updateImportTemplateAssessmentUI(assessment);
+      const step1 = document.getElementById('importStep1');
+      const step2 = document.getElementById('importStep2');
+      const saveBtn = document.getElementById('importSaveBtn');
+      if (step1) step1.style.display = 'none';
+      if (step2) step2.style.display = 'block';
+      if (saveBtn) saveBtn.disabled = false;
+      showToast('Opened review mode with extracted data. Verify and save.', 'warning');
+    }
+    function getImportFormSnapshotForValidation() {
+      const paymentType = String(document.getElementById('importPaymentType')?.value || '').toUpperCase();
+      const splitCashType = String(document.getElementById('importSplitCashType')?.value || '').toUpperCase();
+      const codAmount = parseImportNumber(document.getElementById('importSplitCodAmount')?.value);
+      const billAmount = parseImportNumber(document.getElementById('importSplitBillAmount')?.value);
+      return normalizeExtractedPayment({
+        order_number: document.getElementById('importOrderNum')?.value || '',
+        broker_name: document.getElementById('importBrokerInput')?.value || '',
+        pickup_city: document.getElementById('importPickupCity')?.value || '',
+        pickup_state: document.getElementById('importPickupState')?.value || '',
+        delivery_city: document.getElementById('importDeliveryCity')?.value || '',
+        delivery_state: document.getElementById('importDeliveryState')?.value || '',
+        revenue: parseImportNumber(document.getElementById('importRevenue')?.value),
+        payment_type: paymentType,
+        split_cash_type: splitCashType,
+        cod_amount: codAmount,
+        bill_amount: paymentType === 'SPLIT' ? billAmount : null,
+        broker_terms: document.getElementById('importPaymentTerms')?.value || document.getElementById('importBrokerTerms')?.value || '',
+        broker_fee: parseImportNumber(document.getElementById('importBrokerFee')?.value)
+      });
+    }
+
+    function normalizeImportFormatId(value) {
+      const raw = String(value || '').trim().toLowerCase();
+      return IMPORT_FORMAT_OPTIONS.some(opt => opt.id === raw) ? raw : 'central_dispatch';
+    }
+    function getImportFormatOptionsHtml(selected = 'central_dispatch') {
+      const normalized = normalizeImportFormatId(selected);
+      return IMPORT_FORMAT_OPTIONS.map(opt =>
+        '<option value="' + opt.id + '"' + (opt.id === normalized ? ' selected' : '') + '>' + opt.label + '</option>'
+      ).join('');
+    }
+    function getImportFormatPromptHint(formatId, sourceType) {
+      const normalized = normalizeImportFormatId(formatId);
+      const sourceLabel = sourceType === 'document' ? 'document image/pdf' : 'text';
+      if (normalized === 'central_dispatch') {
+        return 'This ' + sourceLabel + ' is from Central Dispatch. Prioritize explicit labels (Order ID, Pickup, Delivery, Rate, Broker Fee, Terms, COD, Balance, Broker/Carrier contacts, VIN, vehicle line) and preserve exact numeric amounts.';
+      }
+      return 'This is a transport rate confirmation. Extract only factual values visible in the source and do not invent missing fields.';
+    }
+    function buildImportExtractionPrompt(formatId, sourceType, rawText = '') {
+      const hint = getImportFormatPromptHint(formatId, sourceType);
+      const base = [
+        'Extract shipment data for order import.',
+        hint,
+        'Return ONLY one valid JSON object with these exact fields (use null for missing values):',
+        IMPORT_EXTRACTION_SCHEMA
+      ].join('\n\n');
+      if (sourceType === 'text') {
+        return base + '\n\nRate Confirmation Text:\n' + rawText;
+      }
+      return base;
+    }
+    function parseJsonObjectFromClaudeText(text) {
+      const raw = String(text || '').trim();
+      if (!raw) return {};
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('Could not parse extraction response');
+      return JSON.parse(jsonMatch[0]);
+    }
+    function parseImportNumber(value) {
+      if (value === null || value === undefined || value === '') return null;
+      const normalized = String(value).replace(/[$,]/g, '').trim();
+      const parsed = parseFloat(normalized);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+    function normalizeDateForImport(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return null;
+      const iso = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+      if (iso) return iso[1];
+      const parsed = new Date(raw);
+      if (Number.isNaN(parsed.getTime())) return null;
+      return parsed.toISOString().slice(0, 10);
+    }
+    function extractCityStateFromText(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return { city: '', state: '' };
+      const cityState = raw.match(/([A-Za-z0-9 .'\-]+),\s*([A-Za-z]{2})\b/);
+      if (cityState) {
+        return { city: cityState[1].trim(), state: cityState[2].toUpperCase() };
+      }
+      return parseCityState(raw);
+    }
+    function parseCityStateZipLine(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return { city: '', state: '', zip: '' };
+      const match = raw.match(/([A-Za-z0-9 .'\-]+),\s*([A-Za-z]{2})\s*(\d{5}(?:-\d{4})?)?/);
+      if (match) {
+        return {
+          city: String(match[1] || '').trim(),
+          state: String(match[2] || '').trim().toUpperCase(),
+          zip: String(match[3] || '').trim()
+        };
+      }
+      const base = parseCityState(raw);
+      const zip = (raw.match(/\b\d{5}(?:-\d{4})?\b/) || [])[0] || '';
+      return { city: base.city || '', state: base.state || '', zip };
+    }
+    function normalizeImportedTermsCode(value) {
+      const raw = String(value || '').trim().toUpperCase();
+      if (!raw) return null;
+      if (raw.includes('QUICK') || raw.includes('QP') || raw.includes('NET 2') || raw.includes('NET2')) return 'QUICK_PAY';
+      const netMatch = raw.match(/NET\s*[-:]?\s*(\d{1,2})/);
+      if (!netMatch) return null;
+      const days = parseInt(netMatch[1], 10);
+      if (!Number.isFinite(days)) return null;
+      if (days === 2) return 'QUICK_PAY';
+      if (days === 5) return 'NET5';
+      if (days === 7) return 'NET7';
+      if (days === 10) return 'NET10';
+      if (days === 15) return 'NET15';
+      if (days === 21) return 'NET21';
+      if (days === 30) return 'NET30';
+      if (days === 45) return 'NET45';
+      if (days === 60) return 'NET60';
+      return 'CUSTOM';
+    }
+    function parseCentralDispatchRateText(rateText) {
+      const raw = String(rateText || '');
+      if (!raw.trim()) return {};
+      const lines = raw.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      const blob = lines.join('\n');
+      const extracted = {};
+      const read = regex => {
+        const match = blob.match(regex);
+        return match && match[1] ? match[1].trim() : null;
+      };
+      const readMoney = regex => parseImportNumber(read(regex));
+      const orderNo = read(/\b(?:order|load)\s*(?:number|#|no\.?)?\s*[:#-]?\s*([A-Z0-9\-]{4,})/i);
+      if (orderNo) extracted.order_number = orderNo;
+      const brokerName = read(/\b(?:broker|shipper|customer|company)\s*[:\-]\s*([^\n]+)/i);
+      if (brokerName) extracted.broker_name = brokerName;
+      const brokerContact = read(/\b(?:broker\s*contact|contact\s*name|shipper\s*contact|customer\s*contact)\s*[:\-]\s*([^\n]+)/i);
+      if (brokerContact) extracted.broker_contact_name = brokerContact;
+      const brokerPhone = read(/\b(?:broker\s*phone|shipper\s*phone|customer\s*phone|phone)\s*[:\-]\s*([+\d().\-\s]{7,})/i);
+      if (brokerPhone) extracted.broker_phone = brokerPhone;
+      const brokerEmail = read(/\b(?:broker\s*email|shipper\s*email|customer\s*email|email)\s*[:\-]\s*([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i);
+      if (brokerEmail) extracted.broker_email = brokerEmail;
+      const brokerFee = readMoney(/\b(?:broker|dispatch(?:er)?|service)\s*fee[s]?\s*[:\-]?\s*\$?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i);
+      if (brokerFee !== null) extracted.broker_fee = brokerFee;
+      const termsRaw =
+        read(/\b(?:payment\s*terms?|terms?)\s*[:\-]\s*([^\n]+)/i) ||
+        ((blob.match(/\b(?:quick\s*pay|net\s*[-:]?\s*\d{1,2})\b/i) || [])[0] || '');
+      const termsCode = normalizeImportedTermsCode(termsRaw);
+      if (termsCode) extracted.broker_terms = termsCode;
+      const vin = read(/\bVIN(?:\s*#|:)?\s*([A-HJ-NPR-Z0-9]{11,17})\b/i);
+      if (vin) extracted.vehicle_vin = vin;
+      const vehicleLine = lines.find(line =>
+        /\b(?:19|20)\d{2}\b/.test(line) &&
+        !/\b(pickup|delivery|origin|destination|rate|order|terms?|phone|zip|fee)\b/i.test(line)
+      );
+      if (vehicleLine) {
+        const cleanedVehicleLine = vehicleLine
+          .replace(/\bVIN(?:\s*#|:).*$/i, '')
+          .replace(/\bType(?:\s*[:#-]).*$/i, '')
+          .trim();
+        const vehicleMatch = cleanedVehicleLine.match(/\b((?:19|20)\d{2})\s+([A-Za-z0-9\-]+)\s+(.+)/);
+        if (vehicleMatch) {
+          extracted.vehicle_year = parseInt(vehicleMatch[1], 10);
+          extracted.vehicle_make = String(vehicleMatch[2] || '').trim();
+          extracted.vehicle_model = String(vehicleMatch[3] || '').trim();
+        }
+      }
+      const pickupLine = lines.find(line => /^(pickup|origin|from)\b/i.test(line)) || '';
+      const deliveryLine = lines.find(line => /^(delivery|destination|to)\b/i.test(line)) || '';
+      const pickupCityState = extractCityStateFromText(pickupLine.replace(/^(pickup|origin|from)\s*[:\-]?\s*/i, ''));
+      const deliveryCityState = extractCityStateFromText(deliveryLine.replace(/^(delivery|destination|to)\s*[:\-]?\s*/i, ''));
+      if (pickupCityState.city || pickupCityState.state) {
+        extracted.origin_city_state = composeCityState(pickupCityState.city, pickupCityState.state);
+      }
+      if (deliveryCityState.city || deliveryCityState.state) {
+        extracted.destination_city_state = composeCityState(deliveryCityState.city, deliveryCityState.state);
+      }
+      const pickupStreet = read(/\b(?:pickup|origin)(?:\s*address)?\s*[:\-]\s*([^\n,]+(?:\s+[A-Za-z0-9.'#\-]+)*)/i);
+      if (pickupStreet) extracted.pickup_street = pickupStreet;
+      const deliveryStreet = read(/\b(?:delivery|destination)(?:\s*address)?\s*[:\-]\s*([^\n,]+(?:\s+[A-Za-z0-9.'#\-]+)*)/i);
+      if (deliveryStreet) extracted.delivery_street = deliveryStreet;
+      const pickupDetailed = parseCityStateZipLine(pickupLine);
+      if (pickupDetailed.city) extracted.pickup_city = pickupDetailed.city;
+      if (pickupDetailed.state) extracted.pickup_state = pickupDetailed.state;
+      if (pickupDetailed.zip) extracted.pickup_zip = pickupDetailed.zip;
+      const deliveryDetailed = parseCityStateZipLine(deliveryLine);
+      if (deliveryDetailed.city) extracted.delivery_city = deliveryDetailed.city;
+      if (deliveryDetailed.state) extracted.delivery_state = deliveryDetailed.state;
+      if (deliveryDetailed.zip) extracted.delivery_zip = deliveryDetailed.zip;
+      const pickupDate = normalizeDateForImport(read(/\b(?:pickup\s*date|available)\s*[:\-]\s*([^\n]+)/i));
+      const deliveryDate = normalizeDateForImport(read(/\b(?:delivery\s*date|eta)\s*[:\-]\s*([^\n]+)/i));
+      if (pickupDate) extracted.pickup_date = pickupDate;
+      if (deliveryDate) extracted.delivery_date = deliveryDate;
+      const revenue = readMoney(/\b(?:rate|total|price|amount)\s*[:\-]?\s*\$?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i);
+      if (revenue !== null) extracted.revenue = revenue;
+      const codAmount = readMoney(/\b(?:cod|cash(?:\s*amount)?)\s*[:\-]?\s*\$?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i);
+      const billAmount = readMoney(/\b(?:bill(?:ed)?|balance|invoice(?:\s*amount)?)\s*[:\-]?\s*\$?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i);
+      if (codAmount !== null) extracted.cod_amount = codAmount;
+      if (billAmount !== null) extracted.bill_amount = billAmount;
+      const detectedCashType = /\bLOCAL[_\s-]?COD\b/i.test(blob)
+        ? 'LOCAL_COD'
+        : (/\bCOP\b|\bCASH\s+ON\s+PICKUP\b/i.test(blob)
+          ? 'COP'
+          : (/\bCOD\b|\bCASH\s+ON\s+DELIVERY\b/i.test(blob) ? 'COD' : null));
+      if (detectedCashType) extracted.split_cash_type = detectedCashType;
+      const receiveAmount = readMoney(/\bcarrier\s+will\s+receive\s*\$?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i);
+      const payShipperAmount = readMoney(/\bcarrier\s+will\s+pay\s+shipper\s*\$?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i);
+      if (receiveAmount !== null && extracted.revenue === undefined) {
+        extracted.revenue = receiveAmount;
+      }
+      if (payShipperAmount !== null && extracted.broker_fee === undefined) {
+        extracted.broker_fee = payShipperAmount;
+      }
+      const hasBillingTermsCue = /\bwithin\s+\d+\s+business\s+days\b|\bquick\s*pay\b|\bnet\s*[-:]?\s*\d+\b/i.test(blob);
+      const hasDeliveryCashCue = /\bcod\b|\bcash\s+on\s+delivery\b|\bcash\/certified\s+funds\s+upon\s+delivery\b|\bcheck\s+upon\s+delivery\b|\bcertified\s+funds\s+upon\s+delivery\b/i.test(blob);
+      if (codAmount !== null && billAmount !== null && codAmount > 0 && billAmount > 0) {
+        extracted.payment_type = 'SPLIT';
+      } else if (hasBillingTermsCue) {
+        extracted.payment_type = 'BILL';
+      } else if (hasDeliveryCashCue) {
+        extracted.payment_type = 'COD';
+      } else if (/\bCOP\b|\bCASH\s+ON\s+PICKUP\b/i.test(blob)) {
+        extracted.payment_type = 'COP';
+      } else if (/\bLOCAL[_\s-]?COD\b/i.test(blob)) {
+        extracted.payment_type = 'LOCAL_COD';
+      } else if (/\bCHECK\b/i.test(blob)) {
+        extracted.payment_type = 'CHECK';
+      } else if (/\bBILL\b|\bINVOICE\b|\bNET\s*[-:]?\s*\d+\b/i.test(blob)) {
+        extracted.payment_type = 'BILL';
+      }
+      return extracted;
+    }
+    function mergeExtractionByProfile(aiExtracted, profileExtracted, formatId) {
+      const merged = { ...(aiExtracted || {}) };
+      if (normalizeImportFormatId(formatId) !== 'central_dispatch') return merged;
+      const priorityKeys = [
+        'order_number',
+        'broker_name',
+        'broker_contact_name',
+        'broker_phone',
+        'broker_email',
+        'broker_street',
+        'broker_city',
+        'broker_state',
+        'broker_zip',
+        'broker_terms',
+        'vehicle_year',
+        'vehicle_make',
+        'vehicle_model',
+        'vehicle_vin',
+        'origin_city_state',
+        'pickup_street',
+        'pickup_city',
+        'pickup_state',
+        'pickup_zip',
+        'destination_city_state',
+        'delivery_street',
+        'delivery_city',
+        'delivery_state',
+        'delivery_zip',
+        'pickup_date',
+        'delivery_date',
+        'revenue',
+        'broker_fee',
+        'payment_type',
+        'split_cash_type',
+        'cod_amount',
+        'bill_amount'
+      ];
+      priorityKeys.forEach(key => {
+        const value = profileExtracted ? profileExtracted[key] : null;
+        if (value !== null && value !== undefined && value !== '') {
+          merged[key] = value;
+        }
+      });
+      return merged;
+    }
+    function normalizeExtractedPayment(extracted) {
+      const result = { ...(extracted || {}) };
+      const valid = ['BILL', 'COD', 'COP', 'LOCAL_COD', 'CHECK', 'SPLIT'];
+      const cashTypes = ['COD', 'COP', 'LOCAL_COD'];
+      const payment = String(result.payment_type || '').toUpperCase();
+      const splitCashType = String(result.split_cash_type || '').toUpperCase();
+      const revenue = parseImportNumber(result.revenue) || 0;
+      const codAmount = parseImportNumber(result.cod_amount);
+      const billAmount = parseImportNumber(result.bill_amount);
+      if (codAmount !== null) result.cod_amount = codAmount;
+      if (billAmount !== null) result.bill_amount = billAmount;
+      if (codAmount !== null && codAmount > 0 && billAmount !== null && billAmount > 0) {
+        result.payment_type = 'SPLIT';
+      } else if (!valid.includes(payment)) {
+        result.payment_type = (codAmount !== null && billAmount !== null && codAmount > 0 && billAmount > 0) ? 'SPLIT' : 'BILL';
+      } else {
+        result.payment_type = payment;
+      }
+      if (cashTypes.includes(splitCashType)) {
+        result.split_cash_type = splitCashType;
+      } else if (cashTypes.includes(payment)) {
+        result.split_cash_type = payment;
+      }
+      if (result.payment_type === 'SPLIT') {
+        if (!cashTypes.includes(String(result.split_cash_type || '').toUpperCase())) {
+          result.split_cash_type = 'COD';
+        }
+        if (result.cod_amount === null || result.cod_amount <= 0) {
+          if (billAmount !== null && billAmount > 0 && revenue > billAmount) {
+            result.cod_amount = revenue - billAmount;
+          }
+        }
+        if ((result.bill_amount === null || result.bill_amount <= 0) && result.cod_amount !== null && revenue > 0) {
+          result.bill_amount = Math.max(0, revenue - result.cod_amount);
+        }
+      }
+      return result;
+    }
+    function populateImportFormFromExtraction(extracted) {
+      const normalized = normalizeExtractedPayment(extracted || {});
+      const orderNumber = normalized.order_number || 'ORD-' + Date.now().toString().slice(-4);
+      document.getElementById('importOrderNum').value = orderNumber;
+      document.getElementById('importBrokerInput').value = normalized.broker_name || '';
+      document.getElementById('importBrokerId').value = '';
+      document.getElementById('importBrokerContactName').value = normalized.broker_contact_name || '';
+      document.getElementById('importBrokerPhone').value = normalized.broker_phone || '';
+      document.getElementById('importBrokerEmail').value = normalized.broker_email || '';
+      document.getElementById('importBrokerStreet').value = normalized.broker_street || '';
+      document.getElementById('importBrokerCity').value = normalized.broker_city || '';
+      document.getElementById('importBrokerState').value = String(normalized.broker_state || '').toUpperCase();
+      document.getElementById('importBrokerZip').value = normalized.broker_zip || '';
+      document.getElementById('importYear').value = normalized.vehicle_year || new Date().getFullYear();
+      document.getElementById('importMake').value = normalized.vehicle_make || '';
+      document.getElementById('importModel').value = normalized.vehicle_model || '';
+      const pickupParsed = parseCityState(
+        normalized.origin_city_state || composeCityState(normalized.pickup_city, normalized.pickup_state)
+      );
+      const deliveryParsed = parseCityState(
+        normalized.destination_city_state || composeCityState(normalized.delivery_city, normalized.delivery_state)
+      );
+      document.getElementById('importOrigin').value = normalized.origin_city_state || composeCityState(pickupParsed.city, pickupParsed.state);
+      document.getElementById('importDestination').value = normalized.destination_city_state || composeCityState(deliveryParsed.city, deliveryParsed.state);
+      document.getElementById('importPickupStreet').value = normalized.pickup_street || '';
+      document.getElementById('importPickupCity').value = normalized.pickup_city || pickupParsed.city || '';
+      document.getElementById('importPickupState').value = (normalized.pickup_state || pickupParsed.state || '').toUpperCase();
+      document.getElementById('importPickupZip').value = normalized.pickup_zip || '';
+      document.getElementById('importDeliveryStreet').value = normalized.delivery_street || '';
+      document.getElementById('importDeliveryCity').value = normalized.delivery_city || deliveryParsed.city || '';
+      document.getElementById('importDeliveryState').value = (normalized.delivery_state || deliveryParsed.state || '').toUpperCase();
+      document.getElementById('importDeliveryZip').value = normalized.delivery_zip || '';
+      document.getElementById('importPickupPhone').value = normalized.pickup_phone || '';
+      document.getElementById('importDeliveryPhone').value = normalized.delivery_phone || '';
+      document.getElementById('importPickupDate').value = normalizeDateForImport(normalized.pickup_date) || '';
+      document.getElementById('importDeliveryDate').value = normalizeDateForImport(normalized.delivery_date) || '';
+      document.getElementById('importRevenue').value = parseImportNumber(normalized.revenue) || '';
+      const validPaymentTypes = ['BILL', 'COD', 'COP', 'LOCAL_COD', 'CHECK', 'SPLIT'];
+      const extractedPayment = String(normalized.payment_type || '').toUpperCase();
+      document.getElementById('importPaymentType').value = validPaymentTypes.includes(extractedPayment) ? extractedPayment : 'BILL';
+      if (normalized.payment_type === 'SPLIT') {
+        document.getElementById('importSplitCashType').value = normalizeSplitCashType(normalized.split_cash_type || 'COD', 'COD');
+        document.getElementById('importSplitCodAmount').value = parseImportNumber(normalized.cod_amount) || 0;
+        document.getElementById('importSplitBillAmount').value = parseImportNumber(normalized.bill_amount) || 0;
+      }
+      const terms = String(normalized.broker_terms || '').toUpperCase();
+      if (terms && PAYMENT_TERMS_OPTIONS.includes(terms)) {
+        document.getElementById('importPaymentTerms').value = terms;
+        document.getElementById('importBrokerTerms').value = terms;
+      }
+      document.getElementById('importBrokerFee').value = parseImportNumber(normalized.broker_fee) || 0;
+      document.getElementById('importNotes').value = normalized.notes || '';
+      document.getElementById('importDriverNotes').value = normalized.notes || '';
+      toggleImportSplitPayment();
+      updateImportPaymentSplit();
+    }
+
     // ============ IMPORT LOAD FUNCTION ============
     function openImportLoad() {
+      lastImportTemplateAssessment = null;
       const m = document.createElement('div'); 
       m.className = 'modal-overlay'; 
       m.onclick = e => { if (e.target === m) m.remove(); };
@@ -17251,6 +17847,7 @@
         '<div style="background:var(--dim-purple);padding:16px;border-radius:8px;margin-bottom:16px">' +
         '<div style="font-weight:600;color:#7c3aed;margin-bottom:8px">Step 1: Paste Rate Confirmation</div>' +
         '<div style="color:#6b7280;font-size:13px">Copy the text from your rate confirmation email or document and paste it below. AI will extract all vehicle and order information.</div></div>' +
+        '<div class="form-group"><label style="font-size:12px">Format Profile</label><select id="importFormatProfile" style="font-size:14px">' + getImportFormatOptionsHtml('central_dispatch') + '</select><div style="font-size:11px;color:var(--text-muted);margin-top:4px">Choose <strong>Central Dispatch</strong> for the strictest extraction on CD confirmations.</div></div>' +
         '<div class="form-group"><textarea id="importRateText" rows="10" placeholder="Paste rate confirmation text here...\n\nExample:\nOrder #12345\nBroker: ABC Transport\n2024 BMW X5\nPickup: New York, NY\nDelivery: Los Angeles, CA\nRate: $1,200\n..." style="resize:vertical;width:100%;font-family:monospace;font-size:13px"></textarea></div>' +
         '<button class="btn" style="background:#8b5cf6;color:white;width:100%" onclick="extractLoadInfo()">[[icon:bot]] Extract Information</button>' +
         '</div>' +
@@ -17260,6 +17857,7 @@
         '<div style="background:var(--dim-green);padding:16px;border-radius:8px;margin-bottom:16px">' +
         '<div style="font-weight:600;color:#059669;margin-bottom:8px">[[icon:check_circle]] Step 2: Review & Assign Category</div>' +
         '<div style="color:#6b7280;font-size:13px">Review the extracted information, select the correct category, and adjust any fields if needed.</div></div>' +
+        '<div id="importTemplateAssessment" style="display:none"></div>' +
         
         // Category Selection
         '<div style="background:var(--dim-amber);padding:16px;border-radius:8px;margin-bottom:16px">' +
@@ -17342,6 +17940,7 @@
       setupAddressAutocomplete('importDeliveryStreet');
       toggleImportSplitPayment();
       toggleImportSubcategory();
+      applyImportReviewHandoffIfPresent();
     }
 
     function toggleImportSplitPayment() {
@@ -17388,10 +17987,14 @@
       }
 
       // Show loading state
-      const btn = event.target;
-      const originalText = btn.innerHTML;
-      btn.innerHTML = '[[icon:refresh]] Extracting...';
-      btn.disabled = true;
+      const btn = (typeof event !== 'undefined' && event && event.target) ? event.target : null;
+      const originalText = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.innerHTML = '[[icon:refresh]] Extracting...';
+        btn.disabled = true;
+      }
+      const formatProfile = normalizeImportFormatId(document.getElementById('importFormatProfile')?.value || 'central_dispatch');
+      const profileParsed = formatProfile === 'central_dispatch' ? parseCentralDispatchRateText(rateText) : {};
       
       try {
         // Call Anthropic API to extract information
@@ -17405,31 +18008,10 @@
           },
           body: JSON.stringify({
             model: 'claude-sonnet-4-20250514',
-            max_tokens: 1024,
+            max_tokens: 2048,
             messages: [{
               role: 'user',
-              content: `Extract the following information from this rate confirmation. Return ONLY a JSON object with these exact fields (use null for missing values):
-
-{
-  "order_number": "string or null",
-  "broker_name": "string or null", 
-  "vehicle_year": "number or null",
-  "vehicle_make": "string or null",
-  "vehicle_model": "string or null",
-  "origin_city_state": "string like 'New York, NY' or null",
-  "destination_city_state": "string like 'Los Angeles, CA' or null",
-  "pickup_phone": "string or null",
-  "delivery_phone": "string or null",
-  "pickup_date": "string in YYYY-MM-DD format or null",
-  "delivery_date": "string in YYYY-MM-DD format or null",
-  "revenue": "number or null",
-  "payment_type": "BILL or COD or COP or LOCAL_COD or CHECK or SPLIT or null",
-  "broker_fee": "number or null",
-  "notes": "string with special instructions or null"
-}
-
-Rate Confirmation Text:
-${rateText}`
+              content: buildImportExtractionPrompt(formatProfile, 'text', rateText)
             }]
           })
         });
@@ -17440,43 +18022,14 @@ ${rateText}`
         
         const data = await response.json();
         const content = data.content[0].text;
-        
-        // Parse JSON from response
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-          throw new Error('Could not parse response');
-        }
-        
-        const extracted = JSON.parse(jsonMatch[0]);
-        
-        // Populate form fields
-        document.getElementById('importOrderNum').value = extracted.order_number || 'ORD-' + Date.now().toString().slice(-4);
-        document.getElementById('importBrokerInput').value = extracted.broker_name || '';
-        document.getElementById('importBrokerId').value = '';
-        document.getElementById('importYear').value = extracted.vehicle_year || new Date().getFullYear();
-        document.getElementById('importMake').value = extracted.vehicle_make || '';
-        document.getElementById('importModel').value = extracted.vehicle_model || '';
-        const parsedPickup = parseCityState(extracted.origin_city_state || '');
-        const parsedDelivery = parseCityState(extracted.destination_city_state || '');
-        document.getElementById('importOrigin').value = extracted.origin_city_state || composeCityState(parsedPickup.city, parsedPickup.state);
-        document.getElementById('importDestination').value = extracted.destination_city_state || composeCityState(parsedDelivery.city, parsedDelivery.state);
-        document.getElementById('importPickupCity').value = parsedPickup.city || '';
-        document.getElementById('importPickupState').value = parsedPickup.state || '';
-        document.getElementById('importDeliveryCity').value = parsedDelivery.city || '';
-        document.getElementById('importDeliveryState').value = parsedDelivery.state || '';
-        document.getElementById('importPickupPhone').value = extracted.pickup_phone || '';
-        document.getElementById('importDeliveryPhone').value = extracted.delivery_phone || '';
-        document.getElementById('importPickupDate').value = extracted.pickup_date || '';
-        document.getElementById('importDeliveryDate').value = extracted.delivery_date || '';
-        document.getElementById('importRevenue').value = extracted.revenue || '';
-        const validPaymentTypes = ['BILL', 'COD', 'COP', 'LOCAL_COD', 'CHECK', 'SPLIT'];
-        const extractedPayment = extracted.payment_type?.toUpperCase();
-        document.getElementById('importPaymentType').value = validPaymentTypes.includes(extractedPayment) ? extractedPayment : 'BILL';
-        toggleImportSplitPayment();
-        updateImportPaymentSplit();
-        document.getElementById('importBrokerFee').value = extracted.broker_fee || 0;
-        document.getElementById('importNotes').value = extracted.notes || '';
-        document.getElementById('importDriverNotes').value = extracted.notes || '';
+        const aiExtracted = parseJsonObjectFromClaudeText(content);
+        const mergedExtracted = mergeExtractionByProfile(aiExtracted, profileParsed, formatProfile);
+        const detectedTemplate = resolveBrokerImportTemplate(mergedExtracted, formatProfile, rateText);
+        const templatedExtracted = applyBrokerTemplateDefaults(mergedExtracted, detectedTemplate);
+        const assessment = buildBrokerTemplateAssessment(templatedExtracted, detectedTemplate);
+        lastImportTemplateAssessment = assessment;
+        populateImportFormFromExtraction(templatedExtracted);
+        updateImportTemplateAssessmentUI(assessment);
         
         // Show step 2
         document.getElementById('importStep1').style.display = 'none';
@@ -17487,21 +18040,58 @@ ${rateText}`
         
       } catch (e) {
         console.error('Extraction error:', e);
-        showToast('Failed to extract: ' + e.message, 'error');
+        const hasProfileFallback = profileParsed && Object.keys(profileParsed).length > 0;
+        if (hasProfileFallback) {
+          try {
+            const fallbackTemplate = resolveBrokerImportTemplate(profileParsed, formatProfile, rateText);
+            const fallbackExtracted = applyBrokerTemplateDefaults(profileParsed, fallbackTemplate);
+            const fallbackAssessment = buildBrokerTemplateAssessment(fallbackExtracted, fallbackTemplate);
+            lastImportTemplateAssessment = fallbackAssessment;
+            populateImportFormFromExtraction(fallbackExtracted);
+            updateImportTemplateAssessmentUI(fallbackAssessment);
+            document.getElementById('importStep1').style.display = 'none';
+            document.getElementById('importStep2').style.display = 'block';
+            document.getElementById('importSaveBtn').disabled = false;
+            showToast('AI extraction failed. Loaded Central Dispatch fallback fields for review.', 'warning');
+          } catch (fallbackError) {
+            showToast('Failed to extract: ' + e.message, 'error');
+          }
+        } else {
+          showToast('Failed to extract: ' + e.message, 'error');
+        }
       } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
+        if (btn) {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        }
       }
     }
 
     async function saveImportedLoad() {
       const category = document.getElementById('importCategory').value;
       const subcategory = document.getElementById('importSubCategory')?.value || null;
+      const formatProfile = normalizeImportFormatId(document.getElementById('importFormatProfile')?.value || 'central_dispatch');
       
       // Find dispatcher for current user
       let userDispatcher = appData.dispatchers.find(d => d.user_id === currentUser.id);
       if (!userDispatcher) {
         userDispatcher = appData.dispatchers.find(d => d.email && d.email.toLowerCase() === currentUser.email.toLowerCase());
+      }
+      const validationSnapshot = getImportFormSnapshotForValidation();
+      const templateForSave = resolveBrokerImportTemplate(validationSnapshot, formatProfile, document.getElementById('importRateText')?.value || '');
+      const saveAssessment = buildBrokerTemplateAssessment(validationSnapshot, templateForSave);
+      lastImportTemplateAssessment = saveAssessment;
+      updateImportTemplateAssessmentUI(saveAssessment);
+      const saveWarnings = [];
+      if (saveAssessment.missingCritical.length > 0) {
+        saveWarnings.push('Missing critical fields: ' + saveAssessment.missingCritical.map(getImportFieldLabel).join(', '));
+      }
+      if (saveAssessment.confidence < IMPORT_CONFIDENCE_WARN_THRESHOLD) {
+        saveWarnings.push('Low import confidence (' + saveAssessment.confidence + '%).');
+      }
+      if (saveWarnings.length > 0) {
+        const continueAnyway = confirm(saveWarnings.join('\n') + '\n\nSave anyway?');
+        if (!continueAnyway) return;
       }
       
       // Validate payment type
@@ -19103,7 +19693,7 @@ ${rateText}`
         '<div class="form-group" style="margin-bottom:0"><label>Payment Type</label><select id="orderPay" onchange="toggleSplitPayment();togglePaymentTerms()"><option value="BILL">BILL (Invoice)</option><option value="COD">COD (Cash on Delivery)</option><option value="COP">COP (Cash on Pickup)</option><option value="LOCAL_COD">LOCAL_COD (Local Driver)</option><option value="CHECK">CHECK</option><option value="SPLIT">SPLIT (Multiple)</option></select></div></div>' +
         '<div id="paymentTermsSection" style="margin-top:12px;padding-top:12px;border-top:1px dashed #f59e0b">' +
         '<div class="form-row" style="grid-template-columns:1fr 1fr 1fr;gap:12px">' +
-        '<div class="form-group" style="margin-bottom:0"><label>Payment Terms</label><select id="orderPaymentTerms" onchange="updateOrderDueDate()"><option value="QUICK_PAY">QuickPay (Net 2)</option><option value="NET7">NET 7</option><option value="NET10">NET 10</option><option value="NET15">NET 15</option><option value="NET30" selected>NET 30</option><option value="NET45">NET 45</option><option value="NET60">NET 60</option><option value="CUSTOM">Custom</option></select></div>' +
+        '<div class="form-group" style="margin-bottom:0"><label>Payment Terms</label><select id="orderPaymentTerms" onchange="updateOrderDueDate()"><option value="QUICK_PAY">QuickPay (Net 2)</option><option value="NET5">NET 5</option><option value="NET7">NET 7</option><option value="NET10">NET 10</option><option value="NET15">NET 15</option><option value="NET21">NET 21</option><option value="NET30" selected>NET 30</option><option value="NET45">NET 45</option><option value="NET60">NET 60</option><option value="CUSTOM">Custom</option></select></div>' +
         '<div class="form-group" style="margin-bottom:0" id="customTermsGroup" style="display:none"><label>Custom Days</label><input type="number" id="orderCustomDays" min="1" max="365" placeholder="Days" onchange="updateOrderDueDate()"></div>' +
         '<div class="form-group" style="margin-bottom:0"><label>Due Date</label><input type="date" id="orderDueDate" readonly style="background:var(--surface-elevated)"></div></div></div>' +
         '<div id="splitPaymentSection" style="display:none;margin-top:12px;padding-top:12px;border-top:1px dashed #f59e0b">' +
@@ -19536,9 +20126,11 @@ ${rateText}`
       let days = 30; // default
       switch (terms) {
         case 'QUICK_PAY': days = 2; break;
+        case 'NET5': days = 5; break;
         case 'NET7': days = 7; break;
         case 'NET10': days = 10; break;
         case 'NET15': days = 15; break;
+        case 'NET21': days = 21; break;
         case 'NET30': days = 30; break;
         case 'NET45': days = 45; break;
         case 'NET60': days = 60; break;
@@ -26570,6 +27162,7 @@ ${rateText}`
         '<div style="font-weight:600;color:#7c3aed;margin-bottom:8px">Upload Rate Confirmation</div>' +
         '<div style="color:#6b7280;font-size:13px">Upload a rate confirmation, manifest, or contract. AI will extract all vehicle and order information automatically.</div>' +
         '</div>' +
+        '<div class="form-group" style="margin-bottom:16px"><label style="font-size:12px">Format Profile</label><select id="createLoadFormatProfile" style="font-size:14px">' + getImportFormatOptionsHtml('central_dispatch') + '</select><div style="font-size:11px;color:var(--text-muted);margin-top:4px">Use Central Dispatch profile for CD confirmations; switch to Generic for other brokers.</div></div>' +
         '<div id="createLoadUploadArea" style="border:2px dashed #cbd5e1;border-radius:12px;padding:48px;text-align:center;cursor:pointer;transition:all 0.2s" ' +
         'onclick="document.getElementById(\'createLoadFile\').click()" ' +
         'ondragover="event.preventDefault();this.style.borderColor=\'#8b5cf6\';this.style.background=\'#f3e8ff\'" ' +
@@ -26670,6 +27263,7 @@ ${rateText}`
       document.getElementById('createLoadFilePreview').style.display = 'none';
       document.getElementById('createLoadProgress').style.display = 'block';
       document.getElementById('createLoadBtn').disabled = true;
+      const formatProfile = normalizeImportFormatId(document.getElementById('createLoadFormatProfile')?.value || 'central_dispatch');
 
       try {
         const mediaType = createLoadFileData.type;
@@ -26699,7 +27293,7 @@ ${rateText}`
                 },
                 {
                   type: 'text',
-                  text: 'Extract all order information from this rate confirmation/manifest/contract. Return ONLY a JSON object:\n\n{\n  "order_number": "string or null",\n  "broker_name": "string or null",\n  "vehicle_year": "number or null",\n  "vehicle_make": "string or null",\n  "vehicle_model": "string or null",\n  "vehicle_vin": "string or null",\n  "vehicle_color": "string or null",\n  "origin": "City, State format or null",\n  "pickup_full_address": "full street address or null",\n  "pickup_phone": "string or null",\n  "pickup_date": "YYYY-MM-DD format or null",\n  "destination": "City, State format or null",\n  "delivery_full_address": "full street address or null",\n  "delivery_phone": "string or null",\n  "dropoff_date": "YYYY-MM-DD format or null",\n  "revenue": "number or null",\n  "payment_type": "BILL or COD or COP or CHECK or null",\n  "broker_fee": "number or null",\n  "notes": "special instructions or null"\n}'
+                  text: buildImportExtractionPrompt(formatProfile, 'document')
                 }
               ]
             }]
@@ -26713,48 +27307,99 @@ ${rateText}`
 
         const data = await response.json();
         const content = data.content[0].text;
-
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error('Could not parse response');
-
-        const extracted = JSON.parse(jsonMatch[0]);
+        const extracted = normalizeExtractedPayment(parseJsonObjectFromClaudeText(content));
+        const detectedTemplate = resolveBrokerImportTemplate(extracted, formatProfile, createLoadFileData.name || '');
+        const templatedExtracted = applyBrokerTemplateDefaults(extracted, detectedTemplate);
+        const createLoadAssessment = buildBrokerTemplateAssessment(templatedExtracted, detectedTemplate);
+        if (createLoadAssessment.missingCritical.length > 0) {
+          const currentOverlay = document.getElementById('createLoadBtn')?.closest('.modal-overlay');
+          if (currentOverlay) currentOverlay.remove();
+          openImportLoadWithHandoff({
+            formatProfile,
+            rateText: 'Document import review for: ' + (createLoadFileData.name || 'uploaded file'),
+            extracted: templatedExtracted,
+            assessment: createLoadAssessment
+          });
+          return;
+        }
+        if (createLoadAssessment.confidence < IMPORT_CONFIDENCE_WARN_THRESHOLD) {
+          const currentOverlay = document.getElementById('createLoadBtn')?.closest('.modal-overlay');
+          if (currentOverlay) currentOverlay.remove();
+          openImportLoadWithHandoff({
+            formatProfile,
+            rateText: 'Document import review for: ' + (createLoadFileData.name || 'uploaded file'),
+            extracted: templatedExtracted,
+            assessment: createLoadAssessment
+          });
+          return;
+        }
 
         // Generate unique order number - check for duplicates
-        let orderNumber = extracted.order_number || 'ORD-' + Date.now().toString().slice(-6);
+        let orderNumber = templatedExtracted.order_number || 'ORD-' + Date.now().toString().slice(-6);
         const existingOrder = appData.orders.find(o => o.order_number === orderNumber);
         if (existingOrder) {
           // Order number already exists - append timestamp to make unique
           orderNumber = orderNumber + '-' + Date.now().toString().slice(-4);
         }
 
-        const extractedPaymentType = String(extracted.payment_type || 'BILL').toUpperCase();
-        const normalizedImportedPaymentType = ['BILL', 'COD', 'COP', 'LOCAL_COD', 'CHECK'].includes(extractedPaymentType)
-          ? extractedPaymentType
-          : 'BILL';
+        const revenueValue = parseImportNumber(templatedExtracted.revenue) || 0;
+        const paymentTypeForImport = String(templatedExtracted.payment_type || 'BILL').toUpperCase();
+        const splitPayload = applySplitToPayload({
+          paymentType: paymentTypeForImport,
+          revenue: revenueValue,
+          splitCashType: normalizeSplitCashType(templatedExtracted.split_cash_type || paymentTypeForImport, 'COD'),
+          splitCashAmount: parseImportNumber(templatedExtracted.cod_amount) || 0
+        });
+        if (paymentTypeForImport === 'SPLIT') {
+          const splitValidation = validateSplitAmounts(revenueValue, parseImportNumber(templatedExtracted.cod_amount) || 0);
+          if (!splitValidation.valid) {
+            throw new Error(splitValidation.message);
+          }
+        }
+        const pickupParsed = parseCityState(templatedExtracted.origin_city_state || templatedExtracted.origin || '');
+        const deliveryParsed = parseCityState(templatedExtracted.destination_city_state || templatedExtracted.destination || '');
+        const pickupPayload = buildOrderAddressPayload('pickup', {
+          street: templatedExtracted.pickup_street || templatedExtracted.pickup_full_address || '',
+          city: templatedExtracted.pickup_city || pickupParsed.city || '',
+          state: templatedExtracted.pickup_state || pickupParsed.state || '',
+          zip: templatedExtracted.pickup_zip || ''
+        });
+        const deliveryPayload = buildOrderAddressPayload('delivery', {
+          street: templatedExtracted.delivery_street || templatedExtracted.delivery_full_address || '',
+          city: templatedExtracted.delivery_city || deliveryParsed.city || '',
+          state: templatedExtracted.delivery_state || deliveryParsed.state || '',
+          zip: templatedExtracted.delivery_zip || ''
+        });
+        const brokerName = String(templatedExtracted.broker_name || '').trim();
+        const broker = brokerName
+          ? (appData.brokers || []).find(b => String(b.name || '').toLowerCase() === brokerName.toLowerCase())
+          : null;
+        const extractedTerms = String(templatedExtracted.broker_terms || '').toUpperCase();
 
         // Build order data with only known safe columns
         const orderData = {
           order_number: orderNumber,
-          broker_name: extracted.broker_name || null,
-          vehicle_year: extracted.vehicle_year ? parseInt(extracted.vehicle_year) : new Date().getFullYear(),
-          vehicle_make: extracted.vehicle_make || '',
-          vehicle_model: extracted.vehicle_model || '',
-          vehicle_vin: extracted.vehicle_vin || null,
-          vehicle_color: extracted.vehicle_color || null,
-          origin: extracted.origin || '',
-          pickup_full_address: extracted.pickup_full_address || null,
-          pickup_phone: extracted.pickup_phone || null,
-          pickup_date: extracted.pickup_date || null,
-          destination: extracted.destination || '',
-          delivery_full_address: extracted.delivery_full_address || null,
-          delivery_phone: extracted.delivery_phone || null,
-          dropoff_date: extracted.dropoff_date || null,
-          revenue: parseFloat(extracted.revenue) || 0,
-          payment_type: normalizedImportedPaymentType,
-          cod_amount: null,
-          bill_amount: null,
-          broker_fee: parseFloat(extracted.broker_fee) || 0,
-          dispatcher_notes: extracted.notes || null,
+          broker_id: broker?.id || null,
+          broker_name: brokerName || null,
+          vehicle_year: templatedExtracted.vehicle_year ? parseInt(templatedExtracted.vehicle_year) : new Date().getFullYear(),
+          vehicle_make: templatedExtracted.vehicle_make || '',
+          vehicle_model: templatedExtracted.vehicle_model || '',
+          vehicle_vin: templatedExtracted.vehicle_vin || null,
+          vehicle_color: templatedExtracted.vehicle_color || null,
+          ...pickupPayload,
+          pickup_phone: templatedExtracted.pickup_phone || null,
+          pickup_date: normalizeDateForImport(templatedExtracted.pickup_date) || null,
+          ...deliveryPayload,
+          delivery_phone: templatedExtracted.delivery_phone || null,
+          dropoff_date: normalizeDateForImport(templatedExtracted.delivery_date || templatedExtracted.dropoff_date) || null,
+          revenue: revenueValue,
+          payment_type: splitPayload.payment_type,
+          cod_amount: splitPayload.cod_amount,
+          bill_amount: splitPayload.bill_amount,
+          payment_terms: PAYMENT_TERMS_OPTIONS.includes(extractedTerms) ? extractedTerms : null,
+          broker_fee: parseImportNumber(templatedExtracted.broker_fee) || 0,
+          dispatcher_notes: templatedExtracted.notes || null,
+          notes: templatedExtracted.notes || null,
           status: 'PENDING',
           trip_id: null,
           payment_status: 'pending'
@@ -39752,7 +40397,11 @@ function jsonResponse(data, status = 200) {
 
       // Try to restore Supabase Auth session
       try {
-        const { data: { session } } = await sb.auth.getSession();
+        const sessionPromise = sb.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Session restore timeout')), 5000)
+        );
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
         if (session) {
           authSession = session;
           
