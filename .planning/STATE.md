@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** Efficient end-to-end vehicle transport management
-**Current focus:** v1.3 — CSS Polish (Flat & Professional)
+**Current focus:** v1.3 Phase 16 -- Design Token Cleanup
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements and roadmap for v1.3
-Last activity: 2026-02-11 — Milestone v1.3 started
+Phase: 16 of 18 (Design Token Cleanup)
+Plan: 0 of TBD in current phase
+Status: Ready to plan
+Last activity: 2026-02-11 -- v1.3 roadmap created (3 phases, 16 requirements)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -25,7 +25,7 @@ Progress: [░░░░░░░░░░] 0%
 | v1.0 MVP | 1-5 | Complete | 2024 |
 | v1.1 UI Redesign Mockups | 6-10 | Complete | 2026-02-10 |
 | v1.2 Apply to Production | 11-15 | Abandoned (reverted) | 2026-02-11 |
-| v1.3 CSS Polish | TBD | Defining | - |
+| v1.3 CSS Polish | 16-18 | In progress | - |
 
 ## Accumulated Context
 
@@ -34,22 +34,18 @@ Progress: [░░░░░░░░░░] 0%
 See .planning/PROJECT.md Key Decisions table (cumulative across milestones).
 
 Key context for v1.3:
-- v1.2 work reverted (commit ae70551) — production at original state
+- v1.2 work reverted (commit ae70551) -- production at original state
 - User wants flat, professional, muted styling (Stripe dashboard tier)
-- Remove: gradients, glow shadows, glass effects, heavy shadows, decorative animations
-- Keep: status color coding (green/amber/red), dark/light theme toggle, functional transitions
-- Production CSS files: variables.css (139 lines), base.css (301 lines)
-- Index.html has ~38K lines with extensive inline CSS in JS template literals
-- Gradient count: 144+ inline + 13 CSS variables
-- Shadow count: 40+ heavy shadows, 20+ glow effects
-- Animation count: 47 keyframes, 100+ applications
-- Transform count: 70+ decorative transforms
+- Phase 16: Clean CSS token files first (variables.css, base.css -- small files)
+- Phase 17: Strip inline effects from index.html (144+ gradients, 40+ shadows, 47 animations, 70+ transforms)
+- Phase 18: Verify status colors, theme toggle, layouts, professional appearance
 
 ### Known Issues
-- Production index.html is ~38K lines — changes must be carefully targeted per renderXxx() function
+- Production index.html is ~38K lines -- changes must be carefully targeted per renderXxx() function
+- Supabase CLI not installed -- DB migrations via Dashboard SQL Editor (not relevant for CSS work)
 
 ### Pending Todos
-- (None yet)
+- (None)
 
 ### Blockers/Concerns
 - None
@@ -57,9 +53,9 @@ Key context for v1.3:
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Defining v1.3 milestone
+Stopped at: v1.3 roadmap created, ready to plan Phase 16
 Resume file: None
 
 ---
 
-**Next action**: Complete requirements and roadmap definition
+**Next action**: `/gsd:plan-phase 16`

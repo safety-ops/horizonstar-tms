@@ -4,11 +4,12 @@
 
 - ✅ **v1.0 MVP** - Phases 1-5 (shipped 2024)
 - ✅ **v1.1 UI Redesign Mockups** - Phases 6-10 (shipped 2026-02-10)
-- 🚧 **v1.2 Apply UI Redesign to Production** - Phases 11-15 (in progress)
+- ❌ **v1.2 Apply UI Redesign to Production** - Phases 11-15 (abandoned, reverted 2026-02-11)
+- 🚧 **v1.3 CSS Polish (Flat & Professional)** - Phases 16-18 (in progress)
 
 ## Overview
 
-v1.2 applies the approved v1.1 mockup designs to the production index.html. This is a visual-only transformation — no layout changes, no behavior changes, no JS logic changes. The milestone delivers a refreshed, modern UI across all 25+ pages while preserving the exact same functionality, DOM structure, and sidebar navigation order that dispatchers rely on daily.
+v1.3 strips all visual noise from the production Web TMS -- gradients, glow effects, heavy shadows, glass effects, and decorative animations -- leaving a clean, flat, professional interface. The work moves through three phases: first cleaning the CSS token layer (variables.css, base.css), then scrubbing the massive index.html of inline effects, and finally verifying that nothing broke and the result looks professional across all pages and themes.
 
 ## Phases
 
@@ -46,76 +47,36 @@ Phase 1-5 details collapsed. See git history for original v1.0 work.
 
 </details>
 
-## 🚧 v1.2 Apply UI Redesign to Production (In Progress)
+<details>
+<summary>❌ v1.2 Apply UI Redesign to Production (Phases 11-15) - ABANDONED 2026-02-11</summary>
 
-**Milestone Goal**: Apply the approved v1.1 mockup designs to production index.html — purely visual changes, preserving all existing functionality and structure.
+Phases 11-12 completed (13 plans), then entire milestone reverted (commit ae70551). Direction changed to flat/professional CSS polish instead of mockup-matching approach. Phases 13-15 never started.
 
-### Phase 11: Design System Foundation + Global Components
+</details>
 
-**Goal**: Production CSS contains the complete design system and all global components match mockup styling.
+## 🚧 v1.3 CSS Polish (Flat & Professional)
 
-**Depends on**: Phase 10 (mockups complete)
+**Milestone Goal:** Strip gradients, glow effects, heavy shadows, glass effects, and decorative animations from production. Deliver clean, flat, Stripe-dashboard-tier styling across all pages in both light and dark themes.
 
-**Requirements**: DSF-01, DSF-02, DSF-03, DSF-04, DSF-05, DSF-06, GLC-01, GLC-02, GLC-03, GLC-04, GLC-05, GLC-06, GLC-07, GLC-08, GLC-09, GLC-10
-
-**Success Criteria** (what must be TRUE):
-1. design-system.css contains all CSS tokens from mockup shared.css (colors, typography, spacing, shadows, borders, transitions)
-2. Theme toggle switches between light and dark themes with all colors updating correctly and preference persisting across refresh
-3. All hardcoded hex colors in index.html are replaced with CSS variable references
-4. Sidebar navigation matches mockup styling with correct colors, hover states, active indicators, and icons while preserving production nav order
-5. All global components (header, modals, toasts, tables, forms, buttons, badges, cards, pagination) visually match their mockup counterparts across both themes
-
-**Plans:** 6 plans (5 original + 1 gap closure)
-
-Plans:
-- [x] 11-01-PLAN.md — Verify + complete all component styles in design-system.css
-- [x] 11-02-PLAN.md — Replace hex colors in style block (lines 35-8049)
-- [x] 11-03-PLAN.md — Replace hex colors in JS render functions (lines 8050-22000)
-- [x] 11-04-PLAN.md — Replace hex colors in JS render functions (lines 22001-38085)
-- [x] 11-05-PLAN.md — Final audit + visual verification checkpoint
-- [x] 11-06-PLAN.md — Gap closure: remaining hex colors + nav class mismatch fix
+- [ ] **Phase 16: Design Token Cleanup** - Replace gradient/glow/glass CSS variables with solid, flat equivalents
+- [ ] **Phase 17: Production Style Cleanup** - Strip gradients, heavy shadows, glow effects, decorative animations, and scale transforms from index.html
+- [ ] **Phase 18: Quality Verification** - Verify status colors, theme toggle, layout integrity, and professional appearance across all pages
 
 ---
 
-### Phase 12: Core Dispatch Pages
+### Phase 16: Design Token Cleanup
 
-**Goal**: Dashboard, Load Board, Trips, and Orders pages visually match their mockup designs.
+**Goal**: CSS token layer produces only solid colors, clean shadows, and flat backgrounds -- no gradients, glow, or glass at the variable level.
 
-**Depends on**: Phase 11
+**Depends on**: Nothing (first phase of v1.3)
 
-**Requirements**: DSP-01, DSP-02, DSP-03, DSP-04, DSP-05, DSP-06
-
-**Success Criteria** (what must be TRUE):
-1. Dashboard page displays metrics, recent activity, and quick actions with mockup styling (hero cards, stat grids, action tiles)
-2. Load Board page shows available loads with mockup card layout, filters, and status indicators
-3. Trips list and detail pages match mockup table styling, status badges, timeline views, and action buttons
-4. Orders list and detail pages match mockup layout with vehicle cards, payment tracking, file attachments, and activity timelines
-
-**Plans:** 6 plans
-
-Plans:
-- [x] 12-01-PLAN.md -- Add sticky-col, summary-row, metric-cell, section-title CSS classes to design-system.css
-- [x] 12-02-PLAN.md -- Restyle Dashboard page (stat cards, section headers, metrics, Quick View)
-- [x] 12-03-PLAN.md -- Restyle Load Board + Trips list pages (tabs, filters, tables)
-- [x] 12-04-PLAN.md -- Restyle Trip Detail page (stat cards, pricing widget, vehicle tables)
-- [x] 12-05-PLAN.md -- Restyle Orders list page (filter bar, search, table)
-- [x] 12-06-PLAN.md -- Restyle Order Detail page + inspection photo 4-image grid
-
----
-
-### Phase 13: People & Fleet Pages
-
-**Goal**: Drivers, Trucks, Brokers, and Dispatchers pages visually match their mockup designs.
-
-**Depends on**: Phase 11
-
-**Requirements**: PPL-01, PPL-02, PPL-03, PPL-04, PPL-05
+**Requirements**: TOK-01, TOK-02, TOK-03, TOK-04, TOK-05
 
 **Success Criteria** (what must be TRUE):
-1. Drivers page displays driver cards/table with mockup styling, status indicators, and contact information layout
-2. Local Drivers page matches mockup design for local driver tracking and assignment views
-3. Trucks page shows fleet inventory with mockup card/table styling, status badges, and vehicle details layout
-4. Brokers and Dispatchers pages match mockup table styling, contact cards, and action buttons
+1. Every gradient CSS variable in variables.css resolves to a single solid color value
+2. Shadow variables provide exactly 3 depth levels (sm, md, lg) with neutral colors -- no color-tinted shadows, no glow effects
+3. Glass, glow, and inner-glow CSS variables are removed from variables.css entirely, and base.css references to them are cleaned up
+4. Both light and dark themes render clean solid backgrounds with no radial gradients, mesh backgrounds, or glow pseudo-elements
 
 **Plans**: TBD
 
@@ -123,19 +84,19 @@ Plans: (will be created during planning phase)
 
 ---
 
-### Phase 14: Financial Pages
+### Phase 17: Production Style Cleanup
 
-**Goal**: Payroll, Billing, Financials, and Trip Profitability pages visually match their mockup designs.
+**Goal**: The production index.html contains zero gradient backgrounds, zero glow/glass effects, minimal shadows, no decorative animations, and no scale-transform hover effects.
 
-**Depends on**: Phase 11
+**Depends on**: Phase 16 (clean tokens must be in place first)
 
-**Requirements**: FIN-01, FIN-02, FIN-03, FIN-04
+**Requirements**: STY-01, STY-02, STY-03, STY-04, STY-05, STY-06, STY-07
 
 **Success Criteria** (what must be TRUE):
-1. Payroll page displays driver earnings with mockup table styling, summary cards, and payroll modals matching mockup design
-2. Billing page shows customer invoices with mockup aging view, payment tracking tables, and status indicators
-3. Financials page displays all financial tabs (revenue, expenses, cash flow) with mockup chart styling, summary cards, and data tables
-4. Trip Profitability page shows trip-level P&L analysis with mockup layout, calculation breakdowns, and comparison views
+1. Every element that previously used a gradient background (buttons, cards, headers, sidebar, chat bubbles, login page) now shows a solid color -- across both the inline style block and JS render functions
+2. No text-shadow glow effects or backdrop-filter/glass effects remain anywhere in index.html -- overlays use solid semi-transparent backgrounds instead
+3. All decorative animations are gone (particle rain, shimmer, float, bounce, driveTruck, etc.) while spinner, toast slide-in, and skeleton pulse continue to work
+4. Hover states across the application use subtle effects only -- no scale transforms above 1.01x, no glow, no gradient transitions
 
 **Plans**: TBD
 
@@ -143,20 +104,19 @@ Plans: (will be created during planning phase)
 
 ---
 
-### Phase 15: Operations & Admin Pages
+### Phase 18: Quality Verification
 
-**Goal**: Fuel, IFTA, Compliance, Maintenance, Tasks, Settings, Activity Log, and Team Chat pages visually match their mockup designs.
+**Goal**: The cleaned-up production TMS is visually correct, functionally intact, and professionally polished across every page and both themes.
 
-**Depends on**: Phase 11
+**Depends on**: Phase 17 (all cleanup work complete)
 
-**Requirements**: OPS-01, OPS-02, OPS-03, OPS-04, OPS-05, OPS-06, OPS-07, OPS-08
+**Requirements**: QUA-01, QUA-02, QUA-03, QUA-04
 
 **Success Criteria** (what must be TRUE):
-1. Fuel page displays transaction history and analytics tabs with mockup styling, chart layouts, and MPG tracking views
-2. IFTA page shows quarterly reports with mockup table styling, tax calculation displays, and export functionality layout
-3. Compliance page displays all sub-tabs (claims, tickets, violations) with mockup card/table styling and status tracking
-4. Maintenance page shows vehicle service records with mockup timeline views, due date indicators, and work order cards
-5. Tasks, Settings, Activity Log, and Team Chat pages match mockup layouts with appropriate card styling, form layouts, and interaction patterns
+1. Status color coding is intact -- green, amber, red, and blue badges and indicators display correctly on every page that uses them (orders, trips, drivers, trucks, load board)
+2. Theme toggle switches cleanly between light and dark modes with no visual artifacts, missing colors, or leftover gradient references -- and preference persists across refresh
+3. No page has broken layout caused by removed effects -- all cards, tables, modals, forms, and navigation render with correct spacing and alignment
+4. The overall visual impression across all pages is clean, muted, and professional -- consistent with flat dashboard aesthetics (no lingering glow, shimmer, or heavy shadow anywhere)
 
 **Plans**: TBD
 
@@ -167,7 +127,7 @@ Plans: (will be created during planning phase)
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 11 → 12 → 13 → 14 → 15
+Phases execute in numeric order: 16 → 17 → 18
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -176,13 +136,14 @@ Phases execute in numeric order: 11 → 12 → 13 → 14 → 15
 | 8. People & Fleet Mockup | v1.1 | 3/3 | Complete | 2026-02-10 |
 | 9. Financial Pages Mockup | v1.1 | 4/4 | Complete | 2026-02-10 |
 | 10. Operations & Admin Mockup | v1.1 | 8/8 | Complete | 2026-02-10 |
-| 11. Design System Foundation | v1.2 | 6/6 | Complete | 2026-02-10 |
-| 12. Core Dispatch Pages | v1.2 | 6/6 | Complete | 2026-02-10 |
-| 13. People & Fleet Pages | v1.2 | 0/TBD | Not started | - |
-| 14. Financial Pages | v1.2 | 0/TBD | Not started | - |
-| 15. Operations & Admin Pages | v1.2 | 0/TBD | Not started | - |
+| 11. Design System Foundation | v1.2 | 6/6 | Abandoned | 2026-02-11 |
+| 12. Core Dispatch Pages | v1.2 | 6/6 | Abandoned | 2026-02-11 |
+| 13-15. Remaining Pages | v1.2 | 0/0 | Abandoned | 2026-02-11 |
+| 16. Design Token Cleanup | v1.3 | 0/TBD | Not started | - |
+| 17. Production Style Cleanup | v1.3 | 0/TBD | Not started | - |
+| 18. Quality Verification | v1.3 | 0/TBD | Not started | - |
 
 ---
 
 **Roadmap created**: 2026-02-10
-**Last updated**: 2026-02-10 (Phase 12 complete)
+**Last updated**: 2026-02-11 (v1.3 roadmap added, v1.2 marked abandoned)
