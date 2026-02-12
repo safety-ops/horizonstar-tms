@@ -78,9 +78,10 @@ Phases 11-12 completed (13 plans), then entire milestone reverted (commit ae7055
 3. Glass, glow, and inner-glow CSS variables are removed from variables.css entirely, and base.css references to them are cleaned up
 4. Both light and dark themes render clean solid backgrounds with no radial gradients, mesh backgrounds, or glow pseudo-elements
 
-**Plans**: TBD
+**Plans:** 1 plan
 
-Plans: (will be created during planning phase)
+Plans:
+- [ ] 16-01-PLAN.md -- Replace gradients with solid colors, simplify shadows to 3 levels, neutralize glass/glow, remove dark theme glow pseudo-element
 
 ---
 
@@ -139,7 +140,7 @@ Phases execute in numeric order: 16 → 17 → 18
 | 11. Design System Foundation | v1.2 | 6/6 | Abandoned | 2026-02-11 |
 | 12. Core Dispatch Pages | v1.2 | 6/6 | Abandoned | 2026-02-11 |
 | 13-15. Remaining Pages | v1.2 | 0/0 | Abandoned | 2026-02-11 |
-| 16. Design Token Cleanup | v1.3 | 0/TBD | Not started | - |
+| 16. Design Token Cleanup | v1.3 | 0/1 | Planned | - |
 | 17. Production Style Cleanup | v1.3 | 0/TBD | Not started | - |
 | 18. Quality Verification | v1.3 | 0/TBD | Not started | - |
 
