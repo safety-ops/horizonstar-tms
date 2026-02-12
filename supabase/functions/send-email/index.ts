@@ -3,110 +3,158 @@
 // Set secret: supabase secrets set RESEND_API_KEY=re_xxxxx
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? ""
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? ""
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+
+const ALLOWED_KINDS = new Set(["invoice", "tracking", "settlement", "inspection_customer", "system_test"])
+const DRIVER_ALLOWED_KINDS = new Set(["inspection_customer"])
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+}
+
+function json(status: number, payload: Record<string, unknown>) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  })
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders })
+  }
+
+  if (req.method !== "POST") {
+    return json(405, { error: "Method not allowed." })
   }
 
   try {
-    // Check if API key is configured
     if (!RESEND_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: 'RESEND_API_KEY not configured. Run: supabase secrets set RESEND_API_KEY=your_key' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return json(500, { error: "RESEND_API_KEY is not configured." })
+    }
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
+      return json(500, { error: "Supabase environment is not configured." })
     }
 
-    const { to, cc, bcc, subject, html, text, from_name, attachment, attachments } = await req.json()
+    const authHeader = req.headers.get("Authorization")
+    if (!authHeader) {
+      return json(401, { error: "Missing Authorization header." })
+    }
 
-    // Validate required fields - need either html or text body, OR an attachment
+    const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+    const {
+      data: { user: caller },
+      error: callerError,
+    } = await authClient.auth.getUser()
+    if (callerError || !caller) {
+      return json(401, { error: "Invalid or expired session." })
+    }
+
+    const service = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+
+    const { data: tmsUser } = await service
+      .from("users")
+      .select("id, is_active")
+      .eq("auth_id", caller.id)
+      .eq("is_active", true)
+      .limit(1)
+      .maybeSingle()
+
+    const { data: driver } = await service
+      .from("drivers")
+      .select("id, status")
+      .eq("auth_user_id", caller.id)
+      .limit(1)
+      .maybeSingle()
+
+    const isDriverActive = !!driver && String(driver.status ?? "ACTIVE").toUpperCase() !== "INACTIVE"
+    if (!tmsUser && !isDriverActive) {
+      return json(403, { error: "Caller is not authorized to send email." })
+    }
+
+    const {
+      to,
+      cc,
+      bcc,
+      subject,
+      html,
+      text,
+      from_name,
+      attachment,
+      attachments,
+      kind,
+    } = await req.json()
+
+    const requestedKind = String(kind ?? "").trim().toLowerCase()
+    if (!ALLOWED_KINDS.has(requestedKind)) {
+      return json(400, { error: "Invalid or missing email kind." })
+    }
+    if (!tmsUser && isDriverActive && !DRIVER_ALLOWED_KINDS.has(requestedKind)) {
+      return json(403, { error: "Driver is not authorized for this email kind." })
+    }
+
     if (!to || !subject || (!html && !text && !attachment && !attachments)) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields: to, subject, and either html, text, attachment, or attachments' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return json(400, {
+        error: "Missing required fields: to, subject, and one of html/text/attachment(s).",
+      })
     }
 
-    // Build the email payload
-    const emailPayload: any = {
-      from: from_name ? `${from_name} <noreply@luckycabbagetms.com>` : 'Horizon Star TMS <noreply@luckycabbagetms.com>',
+    const emailPayload: Record<string, unknown> = {
+      from: from_name ? `${from_name} <noreply@luckycabbagetms.com>` : "Horizon Star TMS <noreply@luckycabbagetms.com>",
       to: Array.isArray(to) ? to : [to],
-      subject: subject,
+      subject,
     }
 
-    // Add CC if provided
     if (cc) {
       emailPayload.cc = Array.isArray(cc) ? cc : [cc]
     }
-
-    // Add BCC if provided
     if (bcc) {
       emailPayload.bcc = Array.isArray(bcc) ? bcc : [bcc]
     }
-
-    // Add html body if provided
     if (html) {
       emailPayload.html = html
     }
-
-    // Add text body if provided
     if (text) {
       emailPayload.text = text
     }
 
-    // Add attachments - support both single attachment and array
     if (attachments && Array.isArray(attachments) && attachments.length > 0) {
-      // Multiple attachments array - strip out any extra fields, keep only filename and content
       emailPayload.attachments = attachments
-        .filter(att => att.filename && att.content)
-        .map(att => ({ filename: att.filename, content: att.content }))
+        .filter((att: any) => att.filename && att.content)
+        .map((att: any) => ({ filename: att.filename, content: att.content }))
     } else if (attachment && attachment.filename && attachment.content) {
-      // Single attachment object (legacy support)
-      emailPayload.attachments = [{
-        filename: attachment.filename,
-        content: attachment.content  // base64 encoded content
-      }]
+      emailPayload.attachments = [{ filename: attachment.filename, content: attachment.content }]
     }
 
-    // Send email via Resend API
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify(emailPayload),
     })
 
     const data = await res.json()
-
     if (!res.ok) {
-      console.error('Resend API error:', data)
-      return new Response(
-        JSON.stringify({ error: data.message || 'Failed to send email' }),
-        { status: res.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      console.error("Resend API error:", data)
+      return json(res.status, { error: data?.message || "Failed to send email." })
     }
 
-    return new Response(
-      JSON.stringify({ success: true, id: data.id }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-
+    return json(200, { success: true, id: data.id })
   } catch (error) {
-    console.error('Edge function error:', error)
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    console.error("Edge function error:", error)
+    return json(500, { error: error instanceof Error ? error.message : "Unknown error" })
   }
 })

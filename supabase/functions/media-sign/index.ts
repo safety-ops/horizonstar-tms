@@ -10,7 +10,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? ""
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? ""
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
 
-const ALLOWED_BUCKETS = new Set(["inspection-media", "order-attachments"])
+const ALLOWED_BUCKETS = new Set(["inspection-media", "order-attachments", "chatfiles"])
 const MAX_PATHS_PER_REQUEST = 150
 
 function json(status: number, payload: Record<string, unknown>) {
@@ -108,10 +108,110 @@ serve(async (req) => {
 
     if (driver && !tmsUser) {
       const expectedPrefix = `${driver.id}/`
-      const invalidDriverPath = normalizedPaths.find((p) => !p.startsWith(expectedPrefix))
-      if (invalidDriverPath) {
-        return json(403, { error: "Driver cannot sign media outside own namespace." })
+      let candidatePaths = normalizedPaths
+
+      if (bucket === "chatfiles") {
+        const invalidChatPath = normalizedPaths.find((p) => !p.startsWith(expectedPrefix))
+        if (invalidChatPath) {
+          return json(403, { error: "Driver cannot sign chatfiles outside own namespace." })
+        }
+      } else if (bucket === "order-attachments") {
+        const prefixedPaths = new Set(normalizedPaths.filter((p) => p.startsWith(expectedPrefix)))
+        const unresolvedPaths = normalizedPaths.filter((p) => !prefixedPaths.has(p))
+
+        if (unresolvedPaths.length > 0) {
+          const { data: attachmentRows, error: attachmentError } = await service
+            .from("order_attachments")
+            .select("storage_path, order_id")
+            .in("storage_path", unresolvedPaths)
+
+          if (attachmentError) {
+            return json(500, { error: attachmentError.message ?? "Failed to validate attachment scope." })
+          }
+
+          const attachmentByPath = new Map<string, number>()
+          const orderIds = new Set<number>()
+          ;(attachmentRows || []).forEach((row: any) => {
+            const storagePath = String(row?.storage_path ?? "").trim()
+            const orderId = Number(row?.order_id)
+            if (!storagePath || !Number.isFinite(orderId)) return
+            attachmentByPath.set(storagePath, orderId)
+            orderIds.add(orderId)
+          })
+
+          const allowedOrderIds = new Set<number>()
+          if (orderIds.size > 0) {
+            const orderIdList = Array.from(orderIds)
+            const { data: orders, error: ordersError } = await service
+              .from("orders")
+              .select("id, driver_id, trip_id")
+              .in("id", orderIdList)
+
+            if (ordersError) {
+              return json(500, { error: ordersError.message ?? "Failed to validate order ownership." })
+            }
+
+            const tripIds = Array.from(
+              new Set(
+                (orders || [])
+                  .map((o: any) => Number(o?.trip_id))
+                  .filter((tripId: number) => Number.isFinite(tripId))
+              )
+            )
+
+            const tripDriverMap = new Map<number, number>()
+            if (tripIds.length > 0) {
+              const { data: trips, error: tripsError } = await service
+                .from("trips")
+                .select("id, driver_id")
+                .in("id", tripIds)
+
+              if (tripsError) {
+                return json(500, { error: tripsError.message ?? "Failed to validate trip ownership." })
+              }
+
+              ;(trips || []).forEach((trip: any) => {
+                const tripId = Number(trip?.id)
+                const tripDriverId = Number(trip?.driver_id)
+                if (Number.isFinite(tripId) && Number.isFinite(tripDriverId)) {
+                  tripDriverMap.set(tripId, tripDriverId)
+                }
+              })
+            }
+
+            ;(orders || []).forEach((order: any) => {
+              const orderId = Number(order?.id)
+              const directDriverId = Number(order?.driver_id)
+              const tripId = Number(order?.trip_id)
+              const tripDriverId = Number.isFinite(tripId) ? tripDriverMap.get(tripId) : undefined
+              if (
+                Number.isFinite(orderId) &&
+                (directDriverId === Number(driver.id) || tripDriverId === Number(driver.id))
+              ) {
+                allowedOrderIds.add(orderId)
+              }
+            })
+          }
+
+          const disallowedPath = unresolvedPaths.find((path) => {
+            const orderId = attachmentByPath.get(path)
+            return !orderId || !allowedOrderIds.has(orderId)
+          })
+
+          if (disallowedPath) {
+            return json(403, { error: "Driver cannot sign attachment outside assigned orders." })
+          }
+        }
+
+        candidatePaths = normalizedPaths
+      } else {
+        const invalidDriverPath = normalizedPaths.find((p) => !p.startsWith(expectedPrefix))
+        if (invalidDriverPath) {
+          return json(403, { error: "Driver cannot sign media outside own namespace." })
+        }
       }
+
+      normalizedPaths.splice(0, normalizedPaths.length, ...candidatePaths)
     }
 
     const expiresAt = new Date(Date.now() + ttlSeconds * 1000).toISOString()
