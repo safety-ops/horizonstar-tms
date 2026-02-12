@@ -6200,8 +6200,8 @@
       gap: 14px;
       flex: 1;
       min-height: 0;
-      height: clamp(560px, 74vh, 980px);
-      max-height: 980px;
+      height: clamp(640px, 80vh, 1120px);
+      max-height: 1120px;
       align-items: stretch;
     }
 
@@ -35974,28 +35974,74 @@ function jsonResponse(data, status = 200) {
       }
     }
 
+    function applyLiveMapResponsiveSizing(root = document) {
+      const layout = (root && typeof root.querySelector === 'function') ? root.querySelector('.live-map-layout') : document.querySelector('.live-map-layout');
+      const canvas = (root && typeof root.querySelector === 'function') ? root.querySelector('.live-map-canvas') : document.querySelector('.live-map-canvas');
+      const container = (root && typeof root.querySelector === 'function') ? root.querySelector('#liveMapContainer') : document.getElementById('liveMapContainer');
+      if (!layout || !canvas || !container) return;
+
+      const isMobile = window.innerWidth <= 768;
+      if (isMobile) {
+        layout.style.height = 'auto';
+        layout.style.minHeight = '';
+        layout.style.maxHeight = '';
+        canvas.style.height = '46vh';
+        canvas.style.minHeight = '46vh';
+        container.style.height = '100%';
+        container.style.minHeight = '46vh';
+        return;
+      }
+
+      const desktopHeight = Math.min(1120, Math.max(640, Math.round(window.innerHeight * 0.80)));
+      layout.style.height = desktopHeight + 'px';
+      layout.style.minHeight = '640px';
+      layout.style.maxHeight = '1120px';
+      canvas.style.height = '100%';
+      canvas.style.minHeight = '640px';
+      container.style.height = '100%';
+      container.style.minHeight = '640px';
+    }
+
     function ensureLiveMapContainerSize(container) {
       if (!container) return false;
       const isMobile = window.innerWidth <= 768;
       const canvas = container.closest('.live-map-canvas');
       const fallbackHeight = isMobile
         ? Math.max(320, Math.round(window.innerHeight * 0.46))
-        : Math.max(420, Math.round(window.innerHeight * 0.58));
+        : Math.max(640, Math.round(window.innerHeight * 0.80));
+
+      if (!isMobile) {
+        applyLiveMapResponsiveSizing(document);
+      }
 
       if (canvas) {
-        if (!canvas.style.minHeight) {
-          canvas.style.minHeight = (isMobile ? '46vh' : '420px');
+        const canvasMin = parseInt(canvas.style.minHeight || '0', 10);
+        if (!canvas.style.minHeight || (!isMobile && canvasMin < 640)) {
+          canvas.style.minHeight = (isMobile ? '46vh' : '640px');
         }
         if (canvas.offsetHeight === 0) {
-          canvas.style.height = fallbackHeight + 'px';
+          canvas.style.height = (isMobile ? '46vh' : (fallbackHeight + 'px'));
+        } else if (!isMobile) {
+          const canvasHeightValue = String(canvas.style.height || '').trim();
+          const canvasHeightNum = parseInt(canvasHeightValue, 10);
+          if (canvasHeightValue.endsWith('px') && Number.isFinite(canvasHeightNum) && canvasHeightNum < 640) {
+            canvas.style.height = '100%';
+          }
         }
       }
 
-      if (!container.style.minHeight) {
-        container.style.minHeight = (isMobile ? '46vh' : '420px');
+      const containerMin = parseInt(container.style.minHeight || '0', 10);
+      if (!container.style.minHeight || (!isMobile && containerMin < 640)) {
+        container.style.minHeight = (isMobile ? '46vh' : '640px');
       }
       if (container.offsetHeight === 0) {
-        container.style.height = canvas && canvas.offsetHeight > 0 ? (canvas.offsetHeight + 'px') : (fallbackHeight + 'px');
+        container.style.height = canvas && canvas.offsetHeight > 0 ? '100%' : (isMobile ? '46vh' : (fallbackHeight + 'px'));
+      } else if (!isMobile) {
+        const containerHeightValue = String(container.style.height || '').trim();
+        const containerHeightNum = parseInt(containerHeightValue, 10);
+        if (containerHeightValue.endsWith('px') && Number.isFinite(containerHeightNum) && containerHeightNum < 640) {
+          container.style.height = '100%';
+        }
       }
 
       // Width can be zero during first paint; try to give it one more pass after style writes.
@@ -36567,6 +36613,7 @@ function jsonResponse(data, status = 200) {
       }
 
       c.innerHTML = buildLiveMapShell();
+      applyLiveMapResponsiveSizing(c);
       renderLiveMapKpis({ counts: { moving: 0, stopped: 0, unlinked: 0, unknown: 0 } });
       renderLiveMapLegend();
       updateLiveMapStatusChip();
@@ -36576,6 +36623,7 @@ function jsonResponse(data, status = 200) {
       if (!liveMapResizeHandlerAttached) {
         window.addEventListener('resize', () => {
           if (currentPage === 'live_map') {
+            applyLiveMapResponsiveSizing(document);
             updateLiveMapPanelCollapsedState();
             if (liveMapInstance) {
               setTimeout(() => liveMapInstance && liveMapInstance.invalidateSize(), 120);
