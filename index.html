@@ -35782,7 +35782,6 @@ function jsonResponse(data, status = 200) {
     let liveMapLeafletLoadPromise = null;
     let liveMapState = {
       selectedVehicleKey: null,
-      selectedTruckKey: 'all',
       searchQuery: '',
       movementFilter: 'all',
       sortMode: 'status',
@@ -35794,7 +35793,8 @@ function jsonResponse(data, status = 200) {
       viewModel: null,
       lastRefreshError: '',
       hasNoData: false,
-      panelCollapsedMobile: false
+      panelCollapsedMobile: false,
+      fleetListCollapsed: false
     };
 
     const LIVE_MAP_LEAFLET_CANDIDATES = [
@@ -36222,11 +36222,9 @@ function jsonResponse(data, status = 200) {
       const query = (liveMapState.searchQuery || '').trim().toLowerCase();
       const filter = liveMapState.movementFilter || 'all';
       const sortMode = liveMapState.sortMode || 'status';
-      const selectedTruckKey = String(liveMapState.selectedTruckKey || 'all');
       const statusRank = { moving: 0, stopped: 1, stale: 2, unknown: 3, unlinked: 4 };
 
       let filtered = (vehicles || []).filter(vehicle => {
-        if (selectedTruckKey !== 'all' && String(vehicle.key) !== selectedTruckKey) return false;
         if (filter !== 'all' && vehicle.primaryState !== filter) return false;
         if (!query) return true;
         return vehicle.searchBlob.includes(query);
@@ -36312,12 +36310,6 @@ function jsonResponse(data, status = 200) {
         { key: 'speed_desc', label: 'Speed (High to Low)' },
         { key: 'truck_number', label: 'Truck #' }
       ];
-      const truckOptions = [{ key: 'all', label: 'All Trucks' }].concat(
-        (viewModel.vehicles || [])
-          .slice()
-          .sort((a, b) => String(a.truckLabel || '').localeCompare(String(b.truckLabel || ''), undefined, { numeric: true }))
-          .map(vehicle => ({ key: String(vehicle.key), label: vehicle.truckLabel || vehicle.vehicleName || String(vehicle.key) }))
-      );
 
       const controlsHtml =
         '<div class="live-map-panel-controls">' +
@@ -36329,9 +36321,10 @@ function jsonResponse(data, status = 200) {
             filters.map(f => '<button class="live-map-filter-chip' + (liveMapState.movementFilter === f.key ? ' active' : '') + '" onclick="setLiveMapFilter(\'' + f.key + '\')" aria-label="Filter ' + f.label + '">' + f.label + '</button>').join('') +
           '</div>' +
           '<div class="live-map-sort-row">' +
-            '<label style="font-size:12px;color:var(--text-muted);font-weight:600">Truck:</label>' +
-            '<select onchange="setLiveMapTruckFilter(this.value)" aria-label="Filter by truck">' +
-              truckOptions.map(opt => '<option value="' + escapeHtml(String(opt.key)) + '"' + (String(liveMapState.selectedTruckKey || 'all') === String(opt.key) ? ' selected' : '') + '>' + escapeHtml(String(opt.label)) + '</option>').join('') +
+            '<label style="font-size:12px;color:var(--text-muted);font-weight:600">Truck List:</label>' +
+            '<select onchange="setLiveMapFleetListMode(this.value)" aria-label="Truck list visibility">' +
+              '<option value="expanded"' + (!liveMapState.fleetListCollapsed ? ' selected' : '') + '>Expanded</option>' +
+              '<option value="hidden"' + (liveMapState.fleetListCollapsed ? ' selected' : '') + '>Hidden</option>' +
             '</select>' +
           '</div>' +
           '<div class="live-map-sort-row">' +
@@ -36353,6 +36346,10 @@ function jsonResponse(data, status = 200) {
 
       if (filteredVehicles.length === 0) {
         panelBody.innerHTML = controlsHtml + renderLiveMapEmptyState('filtered_empty');
+        return;
+      }
+      if (liveMapState.fleetListCollapsed) {
+        panelBody.innerHTML = controlsHtml + '<div class="live-map-empty">Truck list is hidden. Set Truck List to Expanded to show cards.</div>';
         return;
       }
 
@@ -36458,25 +36455,10 @@ function jsonResponse(data, status = 200) {
       if (liveMapState.baseViewModel) applyLiveMapState();
     }
 
-    function setLiveMapTruckFilter(vehicleKey) {
-      const requestedKey = String(vehicleKey || 'all');
-      const vehicles = liveMapState.baseViewModel?.vehicles || [];
-      const exists = requestedKey === 'all' || vehicles.some(vehicle => String(vehicle.key) === requestedKey);
-      liveMapState.selectedTruckKey = exists ? requestedKey : 'all';
-
-      if (liveMapState.selectedTruckKey !== 'all') {
-        liveMapState.selectedVehicleKey = liveMapState.selectedTruckKey;
-      }
-
-      if (!liveMapState.baseViewModel) return;
-      applyLiveMapState();
-
-      if (liveMapState.selectedTruckKey !== 'all') {
-        const selectedVehicle = (liveMapState.viewModel?.filteredVehicles || [])
-          .find(vehicle => String(vehicle.key) === String(liveMapState.selectedTruckKey));
-        if (selectedVehicle) {
-          selectLiveMapVehicle(selectedVehicle.key, { center: selectedVehicle.hasCoordinates });
-        }
+    function setLiveMapFleetListMode(mode) {
+      liveMapState.fleetListCollapsed = String(mode || 'expanded') === 'hidden';
+      if (liveMapState.viewModel) {
+        renderLiveMapFleetPanel(liveMapState.viewModel);
       }
     }
 
@@ -36605,15 +36587,6 @@ function jsonResponse(data, status = 200) {
     function applyLiveMapState(options = {}) {
       if (!liveMapState.baseViewModel) return;
       const vehicles = liveMapState.baseViewModel.vehicles || [];
-      if (liveMapState.selectedTruckKey !== 'all') {
-        const truckStillVisible = vehicles.some(vehicle => String(vehicle.key) === String(liveMapState.selectedTruckKey));
-        if (!truckStillVisible) {
-          liveMapState.selectedTruckKey = 'all';
-          if (liveMapState.selectedVehicleKey && !vehicles.some(vehicle => String(vehicle.key) === String(liveMapState.selectedVehicleKey))) {
-            liveMapState.selectedVehicleKey = null;
-          }
-        }
-      }
       const nextViewModel = {
         ...liveMapState.baseViewModel,
         filteredVehicles: getLiveMapFilteredVehicles(vehicles)
@@ -36635,7 +36608,6 @@ function jsonResponse(data, status = 200) {
       }
 
       liveMapState.selectedVehicleKey = null;
-      liveMapState.selectedTruckKey = 'all';
       liveMapState.hasInitialFit = false;
       liveMapState.lastRefreshAt = null;
       liveMapState.isRefreshing = false;
@@ -36643,6 +36615,7 @@ function jsonResponse(data, status = 200) {
       liveMapState.viewModel = null;
       liveMapState.lastRefreshError = '';
       liveMapState.hasNoData = false;
+      liveMapState.fleetListCollapsed = false;
       if (!['all', 'moving', 'stopped', 'unlinked'].includes(liveMapState.movementFilter)) liveMapState.movementFilter = 'all';
       if (!['status', 'speed_desc', 'truck_number'].includes(liveMapState.sortMode)) liveMapState.sortMode = 'status';
       liveMapState.panelCollapsedMobile = window.innerWidth <= 640;
