@@ -6200,8 +6200,8 @@
       gap: 14px;
       flex: 1;
       min-height: 0;
-      height: calc(100vh - 250px);
-      max-height: 900px;
+      height: clamp(560px, 74vh, 980px);
+      max-height: 980px;
       align-items: stretch;
     }
 
@@ -9422,6 +9422,38 @@
       requireAuthToken();
     }
 
+    function normalizeOrderLocationForWrite(payload, existing = null, mode = 'insert') {
+      if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return payload;
+      const next = Object.assign({}, payload);
+      const hasOrigin = Object.prototype.hasOwnProperty.call(next, 'origin');
+      const hasDestination = Object.prototype.hasOwnProperty.call(next, 'destination');
+      const shouldSetOrigin = mode === 'insert' || hasOrigin;
+      const shouldSetDestination = mode === 'insert' || hasDestination;
+
+      const fallbackOrigin = String(
+        (existing && existing.origin) ||
+        composeCityState(next.pickup_city, next.pickup_state) ||
+        composeCityState(existing && existing.pickup_city, existing && existing.pickup_state) ||
+        'N/A'
+      ).trim() || 'N/A';
+      const fallbackDestination = String(
+        (existing && existing.destination) ||
+        composeCityState(next.delivery_city, next.delivery_state) ||
+        composeCityState(existing && existing.delivery_city, existing && existing.delivery_state) ||
+        'N/A'
+      ).trim() || 'N/A';
+
+      if (shouldSetOrigin) {
+        const originValue = String(next.origin == null ? '' : next.origin).trim();
+        next.origin = originValue || fallbackOrigin;
+      }
+      if (shouldSetDestination) {
+        const destinationValue = String(next.destination == null ? '' : next.destination).trim();
+        next.destination = destinationValue || fallbackDestination;
+      }
+      return next;
+    }
+
     async function dbFetch(table, options = {}) {
       requireTableAuth(table, options);
       let query = sb.from(table).select(options.select || '*');
@@ -9479,9 +9511,12 @@
 
     async function dbInsert(table, data) {
       requireTableAuth(table);
+      const insertPayload = (table === 'orders')
+        ? normalizeOrderLocationForWrite(data, null, 'insert')
+        : data;
       const { data: result, error } = await sb
         .from(table)
-        .insert(data)
+        .insert(insertPayload)
         .select()
         .single();
       
@@ -9540,9 +9575,25 @@
         }
       }
       
+      let updatePayload = data;
+      if (table === 'orders') {
+        let existingOrder = null;
+        try {
+          const { data: currentOrder, error: currentErr } = await sb
+            .from('orders')
+            .select('origin,destination,pickup_city,pickup_state,delivery_city,delivery_state')
+            .eq('id', id)
+            .single();
+          if (!currentErr && currentOrder) existingOrder = currentOrder;
+        } catch (lookupErr) {
+          console.warn('Order location fallback lookup skipped:', lookupErr.message);
+        }
+        updatePayload = normalizeOrderLocationForWrite(data, existingOrder, 'update');
+      }
+
       const { data: result, error } = await sb
         .from(table)
-        .update(data)
+        .update(updatePayload)
         .eq('id', id)
         .select();
       
@@ -10401,13 +10452,14 @@
       const city = String(parts?.city || '').trim();
       const state = String(parts?.state || '').trim().toUpperCase();
       const zip = String(parts?.zip || '').trim();
+      const cityStateValue = composeCityState(city, state) || 'N/A';
       return {
         [prefix + '_address']: street || null,
         [prefix + '_city']: city || null,
         [prefix + '_state']: state || null,
         [prefix + '_zip']: zip || null,
         [prefix + '_full_address']: composeFullAddress(street, city, state, zip) || null,
-        [cityStateField]: composeCityState(city, state) || null
+        [cityStateField]: cityStateValue
       };
     }
     function getOrderDriverNotes(order) {
