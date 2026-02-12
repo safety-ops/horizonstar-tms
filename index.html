@@ -12948,6 +12948,9 @@
           loadSecondaryData();
         }
 
+        // Load shared Anthropic key early so non-admin users can use AI features without visiting Settings.
+        await loadAnthropicSettings();
+
         // Cache the data
         dataCache.set('appData', appData);
       } catch (e) { 
@@ -13051,6 +13054,7 @@
         
         // Load Samsara settings from database (shared across all users)
         await loadSamsaraSettings();
+        await loadAnthropicSettings();
 
         // NOTE: We intentionally do NOT call renderPage() here anymore.
         // The data is now loaded and cached - views will use it on next interaction.
@@ -34372,15 +34376,68 @@ ${rateText}`
     }
 
     // ============ SETTINGS ============
+    let anthropicSettings = {
+      api_key: ''
+    };
+
     function getApiKey() {
-      return localStorage.getItem('horizonstar_anthropic_key') || '';
+      return anthropicSettings.api_key || localStorage.getItem('horizonstar_anthropic_key') || '';
     }
     
     function setApiKey(key) {
+      anthropicSettings.api_key = key || '';
       if (key) {
         localStorage.setItem('horizonstar_anthropic_key', key);
       } else {
         localStorage.removeItem('horizonstar_anthropic_key');
+      }
+    }
+
+    async function loadAnthropicSettings() {
+      const localKey = localStorage.getItem('horizonstar_anthropic_key') || '';
+      try {
+        const settings = await dbFetch('app_settings', { filter: { key: 'eq.anthropic' } });
+        if (settings && settings.length > 0) {
+          const storedValue = settings[0].value;
+          let dbKey = '';
+          if (storedValue && typeof storedValue === 'object') {
+            dbKey = storedValue.api_key || '';
+          } else if (typeof storedValue === 'string') {
+            dbKey = storedValue;
+          }
+          if (dbKey) {
+            setApiKey(dbKey);
+            return dbKey;
+          }
+        }
+
+        // One-time compatibility: if admin still has local-only key, promote it to shared DB setting.
+        if (localKey && currentUser?.role === 'ADMIN') {
+          anthropicSettings.api_key = localKey;
+          await saveAnthropicSettingsToDb();
+        } else {
+          anthropicSettings.api_key = localKey || '';
+        }
+      } catch (e) {
+        console.log('Using local Anthropic API key fallback');
+        anthropicSettings.api_key = localKey || '';
+      }
+      return anthropicSettings.api_key;
+    }
+
+    async function saveAnthropicSettingsToDb() {
+      const data = { api_key: anthropicSettings.api_key || '' };
+      try {
+        const existing = await dbFetch('app_settings', { filter: { key: 'eq.anthropic' } });
+        if (existing && existing.length > 0) {
+          await dbUpdate('app_settings', existing[0].id, { value: data });
+        } else {
+          await dbInsert('app_settings', { key: 'anthropic', value: data });
+        }
+        return true;
+      } catch (e) {
+        console.error('Failed to save Anthropic settings to DB:', e);
+        return false;
       }
     }
     
@@ -34654,7 +34711,7 @@ ${rateText}`
     
     async function loadSamsaraSettings() {
       try {
-        const settings = await dbFetch('app_settings', { key: 'eq.samsara' });
+        const settings = await dbFetch('app_settings', { filter: { key: 'eq.samsara' } });
         if (settings && settings.length > 0) {
           const data = settings[0].value;
           if (data) {
@@ -34681,7 +34738,7 @@ ${rateText}`
       
       try {
         // Try to upsert
-        const existing = await dbFetch('app_settings', { key: 'eq.samsara' });
+        const existing = await dbFetch('app_settings', { filter: { key: 'eq.samsara' } });
         if (existing && existing.length > 0) {
           await dbUpdate('app_settings', existing[0].id, { value: data });
         } else {
@@ -39362,20 +39419,22 @@ function jsonResponse(data, status = 200) {
       input.type = input.type === 'password' ? 'text' : 'password';
     }
 
-    function saveApiKey() {
+    async function saveApiKey() {
       const key = document.getElementById('apiKeyInput').value.trim();
       if (key && !key.startsWith('sk-')) {
         showToast('Invalid API key format. Should start with sk-', 'error');
         return;
       }
       setApiKey(key);
-      showToast('API Key saved!');
+      const saved = await saveAnthropicSettingsToDb();
+      showToast(saved ? 'API Key saved for all users!' : 'API Key saved locally');
       renderSettings(document.getElementById('main-content'));
     }
 
-    function clearApiKey() {
+    async function clearApiKey() {
       if (!confirm('Remove API key? AI features will be disabled.')) return;
       setApiKey('');
+      await saveAnthropicSettingsToDb();
       showToast('API Key removed');
       renderSettings(document.getElementById('main-content'));
     }
