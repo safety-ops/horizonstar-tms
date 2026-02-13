@@ -292,59 +292,30 @@ async function handleLogin(e) {
   btnEl.disabled = true;
 
   try {
-    // Try Supabase Auth first
     const { data: authData, error: authError } = await sb.auth.signInWithPassword({
       email: email,
       password: password
     });
 
-    if (!authError && authData.session) {
-      // Supabase Auth success - store session
-      authSession = authData.session;
-      recordLoginAttempt(email, true);
-
-      // Get user from our users table
-      let users = await dbFetch('users', { filter: { email: 'eq.' + email } });
-
-      if (users.length === 0) {
-        // Create user record if doesn't exist (new Supabase Auth user)
-        const newUser = await dbInsert('users', {
-          auth_id: authData.user.id,
-          email: email,
-          first_name: authData.user.user_metadata?.first_name || email.split('@')[0],
-          last_name: authData.user.user_metadata?.last_name || '',
-          role: 'DISPATCHER',
-          is_active: true
-        });
-        users = [newUser];
-      } else if (!users[0].auth_id) {
-        // Link existing user to Supabase Auth
-        await dbUpdate('users', users[0].id, { auth_id: authData.user.id });
-        users[0].auth_id = authData.user.id;
-      }
-
-      currentUser = users[0];
-      localStorage.setItem('horizonstar_user', JSON.stringify(currentUser));
-      startSessionMonitor();
-      await logActivity('LOGIN_SUCCESS', { email, method: 'supabase_auth' });
-
-      // Redirect dealers to dealer dashboard
-      if (currentUser.role === 'DEALER') {
-        currentPage = 'dealer_dashboard';
-      }
-
-      renderApp();
+    if (authError || !authData?.session || !authData?.user) {
+      recordLoginAttempt(email, false);
+      const attempts = getLoginAttempts(email);
+      const remaining = Math.max(0, LOGIN_ATTEMPT_LIMIT - attempts.count);
+      errorEl.textContent = authError?.message || `Invalid credentials. ${remaining} attempts remaining.`;
+      errorEl.style.display = 'block';
+      btnEl.textContent = 'Sign In';
+      btnEl.disabled = false;
       return;
     }
 
-    // Supabase Auth failed - try legacy login for migration
+    authSession = authData.session;
     const users = await dbFetch('users', { filter: { email: 'eq.' + email } });
 
     if (users.length === 0) {
+      await sb.auth.signOut();
+      authSession = null;
       recordLoginAttempt(email, false);
-      const attempts = getLoginAttempts(email);
-      const remaining = LOGIN_ATTEMPT_LIMIT - attempts.count;
-      errorEl.textContent = `Invalid credentials. ${remaining} attempts remaining.`;
+      errorEl.textContent = 'No TMS access assigned for this account. Contact admin.';
       errorEl.style.display = 'block';
       btnEl.textContent = 'Sign In';
       btnEl.disabled = false;
@@ -353,8 +324,10 @@ async function handleLogin(e) {
 
     const user = users[0];
 
-    // Check if user is active
     if (user.is_active === false) {
+      await sb.auth.signOut();
+      authSession = null;
+      recordLoginAttempt(email, false);
       errorEl.textContent = 'Account deactivated.';
       errorEl.style.display = 'block';
       btnEl.textContent = 'Sign In';
@@ -362,81 +335,22 @@ async function handleLogin(e) {
       return;
     }
 
-    // Check legacy password (for users not yet migrated to Supabase Auth)
-    const hashedPassword = await hashPassword(password);
-    const passwordMatch = user.password === hashedPassword || user.password === password;
-
-    if (!passwordMatch) {
+    if (!user.auth_id || String(user.auth_id) !== String(authData.user.id)) {
+      await sb.auth.signOut();
+      authSession = null;
       recordLoginAttempt(email, false);
-      const attempts = getLoginAttempts(email);
-
-      if (attempts.count >= LOGIN_ATTEMPT_LIMIT) {
-        errorEl.textContent = `Too many attempts. Account locked for ${LOGIN_LOCKOUT_MINUTES} minutes.`;
-      } else {
-        const remaining = LOGIN_ATTEMPT_LIMIT - attempts.count;
-        errorEl.textContent = `Invalid password. ${remaining} attempts remaining.`;
-      }
+      errorEl.textContent = 'Account is not linked for secure access. Contact admin.';
       errorEl.style.display = 'block';
       btnEl.textContent = 'Sign In';
       btnEl.disabled = false;
       return;
     }
 
-    // Legacy password matched - migrate to Supabase Auth
     recordLoginAttempt(email, true);
-
-    // Try to sign in with Supabase Auth first (user might already exist there)
-    let { data: signInData, error: signInError } = await sb.auth.signInWithPassword({
-      email: email,
-      password: password
-    });
-
-    if (signInError) {
-      // User doesn't exist in Supabase Auth - create account
-      const { data: signUpData, error: signUpError } = await sb.auth.signUp({
-        email: email,
-        password: password,
-        options: {
-          data: {
-            first_name: user.first_name,
-            last_name: user.last_name
-          }
-        }
-      });
-
-      if (!signUpError && signUpData.user) {
-        // Update user with auth_id
-        try {
-          await dbUpdate('users', user.id, { auth_id: signUpData.user.id });
-          user.auth_id = signUpData.user.id;
-        } catch (e) { console.error('Update auth_id error:', e); }
-
-        // Sign in immediately after signup
-        const { data: newSignIn } = await sb.auth.signInWithPassword({
-          email: email,
-          password: password
-        });
-        if (newSignIn?.session) {
-          authSession = newSignIn.session;
-        }
-      }
-    } else if (signInData?.session) {
-      // Successfully signed in to existing Supabase Auth account
-      authSession = signInData.session;
-
-      // Link auth_id if not linked yet
-      if (!user.auth_id && signInData.user) {
-        try {
-          await dbUpdate('users', user.id, { auth_id: signInData.user.id });
-          user.auth_id = signInData.user.id;
-        } catch (e) { console.error('Update auth_id error:', e); }
-      }
-    }
-
     currentUser = user;
     localStorage.setItem('horizonstar_user', JSON.stringify(currentUser));
     startSessionMonitor();
-    await logActivity('LOGIN_SUCCESS', { email, method: 'legacy_migrated' });
+    await logActivity('LOGIN_SUCCESS', { email, method: 'supabase_auth_hard_cutover' });
 
     // Redirect dealers to dealer dashboard
     if (currentUser.role === 'DEALER') {
@@ -447,7 +361,9 @@ async function handleLogin(e) {
 
   } catch (err) {
     console.error('Login error:', err);
-    errorEl.textContent = 'Connection error';
+    errorEl.textContent = (err.message || '').toLowerCase().includes('fetch')
+      ? 'Unable to reach server. Check your internet connection and try again.'
+      : 'Connection error: ' + (err.message || 'Unknown error');
     errorEl.style.display = 'block';
     btnEl.textContent = 'Sign In';
     btnEl.disabled = false;

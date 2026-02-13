@@ -8992,7 +8992,7 @@
     
     // Get current access token for API calls (session token only).
     function getAccessToken() {
-      return authSession?.access_token || SUPABASE_KEY;
+      return authSession?.access_token || null;
     }
 
     function requireAuthToken(options = {}) {

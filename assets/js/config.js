@@ -21,7 +21,7 @@ let authSession = null;
 
 // Get current access token for API calls
 function getAccessToken() {
-  return authSession?.access_token || SUPABASE_KEY;
+  return authSession?.access_token || null;
 }
 
 // ============ GLOBAL STATE ============
