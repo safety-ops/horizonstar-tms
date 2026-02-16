@@ -22198,7 +22198,7 @@
       const localDriversRange = buildPeriodRange({ type: 'year', year: localDriversYear });
       const yearFilteredOrders = filterOrdersByRange(appData.orders || [], appData.trips || [], localDriversRange, { excludeUndated: true });
       const yearFilteredTrips = filterTripsByRange(appData.trips || [], localDriversRange, { excludeUndated: true });
-      const terminalOrCompletedTripIds = yearFilteredTrips
+      const terminalOrCompletedTripIds = (appData.trips || [])
         .filter(t => t.status === 'COMPLETED' || t.status === 'AT_TERMINAL')
         .map(t => t.id);
       const undatedOrderCount = (appData.orders || []).filter(o => !resolveOrderEffectiveDate(o, appData.trips || [])).length;
