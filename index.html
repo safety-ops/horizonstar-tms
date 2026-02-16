@@ -19135,6 +19135,10 @@
       const isTripClosed = ['COMPLETED', 'DELIVERED'].includes(String(t.status || '').toUpperCase());
       const payPeriodEnd = isTripClosed ? t.period_end_date : null;
       const payPeriodText = formatTripMoment(t.period_start_date, '-') + ' → ' + formatTripMoment(payPeriodEnd, 'In Progress');
+      const canGenerateTripStatement = isTripClosed && !!d;
+      const tripStatementButtonHtml = canGenerateTripStatement
+        ? '<button class="btn btn-secondary" onclick="openTripDriverStatement(' + id + ')">[[icon:file]] Generate Statement</button>'
+        : '';
       
       // Get pricing guidance for dispatchers
       const pricingGuidance = getDispatcherPricingGuidance(id);
@@ -19200,7 +19204,7 @@
       ` : '';
       
       const c = document.getElementById('main-content');
-      c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><button class="btn btn-secondary" onclick="renderTrips(document.getElementById(\'main-content\'))">← Back</button><h2>' + t.trip_number + '</h2><span class="badge ' + getBadge(t.status) + '">' + t.status + '</span>' + (t.status === 'COMPLETED' ? '<span style="color:#10b981;font-weight:600">[[icon:check]] Trip Completed</span>' : (t.status === 'AT_TERMINAL' ? '<button class="btn btn-primary" style="background:#10b981" onclick="markTripCompleted(' + id + ')">[[icon:check]] Mark Completed</button>' : '<button class="btn btn-primary" style="background:#f59e0b" onclick="markTripAtTerminal(' + id + ')">[[icon:building]] Mark At Terminal</button><button class="btn btn-primary" style="background:#10b981" onclick="markTripCompleted(' + id + ')">[[icon:check]] Mark Completed</button>')) + '</div><div style="display:flex;gap:12px"><button class="btn btn-primary" onclick="openAddVehicle(' + id + ')">+ Add Vehicle</button><button class="btn btn-secondary" onclick="openAddExpense(' + id + ')">+ Expense</button><button class="btn btn-secondary" onclick="openTripMap(' + id + ')">[[icon:map]] Trip Map</button></div></div>' +
+      c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><button class="btn btn-secondary" onclick="renderTrips(document.getElementById(\'main-content\'))">← Back</button><h2>' + t.trip_number + '</h2><span class="badge ' + getBadge(t.status) + '">' + t.status + '</span>' + (t.status === 'COMPLETED' ? '<span style="color:#10b981;font-weight:600">[[icon:check]] Trip Completed</span>' : (t.status === 'AT_TERMINAL' ? '<button class="btn btn-primary" style="background:#10b981" onclick="markTripCompleted(' + id + ')">[[icon:check]] Mark Completed</button>' : '<button class="btn btn-primary" style="background:#f59e0b" onclick="markTripAtTerminal(' + id + ')">[[icon:building]] Mark At Terminal</button><button class="btn btn-primary" style="background:#10b981" onclick="markTripCompleted(' + id + ')">[[icon:check]] Mark Completed</button>')) + '</div><div style="display:flex;gap:12px;flex-wrap:wrap"><button class="btn btn-primary" onclick="openAddVehicle(' + id + ')">+ Add Vehicle</button><button class="btn btn-secondary" onclick="openAddExpense(' + id + ')">+ Expense</button><button class="btn btn-secondary" onclick="openTripMap(' + id + ')">[[icon:map]] Trip Map</button>' + tripStatementButtonHtml + '</div></div>' +
         
         '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px"><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Date</div><div class="value" style="font-size:16px">' + formatDate(t.trip_date) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:150px;padding:12px 16px;background:#f3e8ff;cursor:pointer" onclick="openTripModal(' + id + ')"><div class="label">[[icon:calendar]] Pay Period [[icon:edit]]</div><div class="value" style="font-size:12px;color:#7c3aed">' + payPeriodText + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px;cursor:pointer" onclick="openAssignDriver(' + id + ')"><div class="label">Driver [[icon:edit]]</div><div class="value" style="font-size:14px">' + (d ? d.first_name + ' ' + d.last_name : 'Not Assigned') + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:80px;padding:12px 16px;cursor:pointer" onclick="openAssignTruck(' + id + ')"><div class="label">Truck [[icon:edit]]</div><div class="value" style="font-size:16px">' + (tr ? '#' + tr.truck_number : '-') + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:70px;padding:12px 16px"><div class="label">Cars</div><div class="value" style="font-size:16px">' + orders.length + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Broker Fees</div><div class="value" style="font-size:14px;color:#ef4444">' + formatMoney(f.brokerFee) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Local Fees</div><div class="value" style="font-size:14px;color:#ef4444">' + formatMoney(f.localFees) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Revenue</div><div class="value" style="font-size:14px">' + formatMoney(f.loadRevenue) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;background:#dbeafe"><div class="label">Clean Revenue</div><div class="value" style="font-size:14px;color:#1d4ed8">' + formatMoney(cleanRevenue) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;background:#fef3c7;border:2px solid #f59e0b"><div class="label">Driver Cut (' + (t.driver_cut_percent || 32) + '%)</div><div class="value" style="font-size:14px;color:#b45309">' + formatMoney(f.driverCut) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px;background:' + (f.netProfit >= 0 ? '#d1fae5' : '#fee2e2') + '"><div class="label">Net Profit</div><div class="value" style="font-size:14px">' + formatMoney(f.netProfit) + '</div></div></div>' +
         
@@ -19213,6 +19217,38 @@
         '<div class="card"><div class="card-header"><h3>[[icon:expense]] Expenses (' + expenses.length + ')</h3><button class="btn btn-primary btn-sm" onclick="openAddExpense(' + id + ')">+ Add Expense</button></div>' + (expenses.length === 0 ? '<div style="padding:40px;text-align:center">No expenses yet. Click "+ Add Expense" to record expenses.</div>' : '<div class="table-wrapper"><table><thead><tr><th>Category</th><th>Description</th><th>Amount</th><th>Actions</th></tr></thead><tbody>' + expenses.map(e => '<tr><td><span class="badge badge-blue">' + e.category + '</span></td><td>' + (e.description || '-') + '</td><td class="money negative">' + formatMoney(e.amount) + '</td><td><button class="action-btn delete" onclick="deleteExpense(' + e.id + ',' + id + ')">Delete</button></td></tr>').join('') + '</tbody></table></div>') + '</div>' +
         
         '<div class="card"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3>[[icon:route]] Trip Miles</h3><button class="btn btn-secondary btn-sm" onclick="openEditMiles(' + id + ')">[[icon:edit]] Edit Miles</button></div><div style="padding:20px;display:flex;align-items:center;gap:20px"><div style="font-size:32px;font-weight:700;color:#1e40af">' + (t.miles || 0).toLocaleString() + '</div><div style="color:var(--text-secondary)">miles</div></div></div>';
+    }
+
+    function openTripDriverStatement(tripId) {
+      const trip = appData.trips.find(t => String(t.id) === String(tripId));
+      if (!trip) {
+        showToast('Trip not found.', 'error');
+        return;
+      }
+
+      const status = String(trip.status || '').toUpperCase();
+      if (!['COMPLETED', 'DELIVERED'].includes(status)) {
+        showToast('Trip must be completed before generating statement.', 'warning');
+        return;
+      }
+
+      if (!trip.driver_id) {
+        showToast('Assign a driver first.', 'warning');
+        return;
+      }
+
+      const driver = appData.drivers.find(d => String(d.id) === String(trip.driver_id));
+      const options = {
+        preselectedTripIds: [trip.id],
+        lockTripSelection: true,
+        source: 'trip'
+      };
+
+      if (driver?.driver_type === 'OWNER_OP') {
+        openSettlementModal(trip.driver_id, options);
+      } else {
+        openPaystubModal(trip.driver_id, options);
+      }
     }
 
     function openEditMiles(tripId) {
@@ -21001,14 +21037,30 @@
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
+    function getLinkedLocalDriverIdSet() {
+      const linkedIds = (appData.local_drivers || [])
+        .map(ld => parseInt(ld?.linked_driver_id, 10))
+        .filter(id => Number.isFinite(id) && id > 0);
+      return new Set(linkedIds);
+    }
+
+    function isLinkedLocalDriverProfile(driverId) {
+      return getLinkedLocalDriverIdSet().has(parseInt(driverId, 10));
+    }
+
+    function getVisibleCompanyDrivers() {
+      return (appData.drivers || []).filter(d => !isLinkedLocalDriverProfile(d.id));
+    }
+
     function renderDrivers(c) {
       // Clear detail view flag when going back to drivers list
       currentDetailView = null;
+      const visibleDrivers = getVisibleCompanyDrivers();
       
       // Check for document expiration alerts
       const today = new Date();
       const alerts = [];
-      appData.drivers.forEach(d => {
+      visibleDrivers.forEach(d => {
         const driverFiles = (appData.driver_files || []).filter(f => f.driver_id === d.id && f.expiration_date);
         driverFiles.forEach(f => {
           const expDate = new Date(f.expiration_date);
@@ -21023,7 +21075,7 @@
       
       const alertsHtml = alerts.length > 0 ? '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--danger)">[[icon:alert]] Document Expiration Alerts</strong><div style="margin-top:12px">' + alerts.map(a => '<div style="padding:8px;background:white;border-radius:4px;margin-top:8px;display:flex;justify-content:space-between;align-items:center"><span><strong>' + a.driver + '</strong> - ' + a.doc + '</span><span class="badge ' + (a.expired ? 'badge-red' : 'badge-amber') + '">' + (a.expired ? 'EXPIRED ' + a.days + ' days ago' : a.days === 0 ? 'EXPIRES TODAY' : 'Expires in ' + a.days + ' days') + '</span></div>').join('') + '</div></div>' : '';
       
-      c.innerHTML = '<div class="header"><h2>[[icon:users]] Drivers</h2><div style="display:flex;gap:8px"><button class="btn btn-primary" onclick="openDriverModal()">+ New Driver</button><button class="btn btn-primary" style="background:#f59e0b" onclick="openDriverModal(null, \'OWNER_OP\')">+ Add Owner-OP</button></div></div>' + alertsHtml + '<div class="drivers-grid">' + (appData.drivers.length === 0 ? '<div style="text-align:center;padding:60px;grid-column:1/-1">No drivers yet</div>' : appData.drivers.map(d => { 
+      c.innerHTML = '<div class="header"><h2>[[icon:users]] Drivers</h2><div style="display:flex;gap:8px"><button class="btn btn-primary" onclick="openDriverModal()">+ New Driver</button><button class="btn btn-primary" style="background:#f59e0b" onclick="openDriverModal(null, \'OWNER_OP\')">+ Add Owner-OP</button></div></div>' + alertsHtml + '<div class="drivers-grid">' + (visibleDrivers.length === 0 ? '<div style="text-align:center;padding:60px;grid-column:1/-1">No drivers yet</div>' : visibleDrivers.map(d => { 
         const trips = appData.trips.filter(t => t.driver_id === d.id); 
         let earn = 0; 
         trips.forEach(t => earn += getTripFin(t.id).driverCut); 
@@ -22061,36 +22113,209 @@
 
     function openLocalDriverModal(id = null) {
       const ld = id ? (appData.local_drivers || []).find(x => x.id === id) : null;
+      const hasAuthLink = !!(ld?.auth_user_id && ld?.linked_driver_id);
+      const canCreateAccountNow = !!id;
+      const authStatusText = hasAuthLink ? 'Linked to app auth account' : 'Not linked yet';
+      const authStatusColor = hasAuthLink ? '#059669' : '#64748b';
+      const createAccountLabel = !canCreateAccountNow
+        ? 'Save Local Driver First'
+        : (hasAuthLink ? 'Re-link App Account' : 'Create App Account');
+      const createAccountHint = canCreateAccountNow
+        ? 'Requires a valid email.'
+        : 'Account actions become available after first save.';
+
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
-      m.innerHTML = '<div class="modal" style="max-width:450px"><div class="modal-header"><h3>' + (ld ? 'Edit' : 'Add') + ' Local Driver</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body">' +
+      m.innerHTML = '<div class="modal" style="max-width:560px"><div class="modal-header"><h3>' + (ld ? 'Edit' : 'Add') + ' Local Driver</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body">' +
         '<div class="form-group"><label>Name *</label><input id="ldName" value="' + (ld?.name || '') + '" placeholder="Driver name"></div>' +
         '<div class="form-row"><div class="form-group"><label>Phone</label><input id="ldPhone" value="' + (ld?.phone || '') + '" placeholder="(555) 123-4567"></div><div class="form-group"><label>Service Area</label><input id="ldArea" value="' + (ld?.service_area || '') + '" placeholder="e.g., NY/NJ"></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Driver App Email</label><input type="email" id="ldEmail" value="' + (ld?.email || '') + '" placeholder="localdriver@email.com"></div><div class="form-group"><label>Status</label><select id="ldStatus"><option value="ACTIVE"' + ((String(ld?.status || 'ACTIVE').toUpperCase() === 'ACTIVE') ? ' selected' : '') + '>ACTIVE</option><option value="INACTIVE"' + ((String(ld?.status || '').toUpperCase() === 'INACTIVE') ? ' selected' : '') + '>INACTIVE</option></select></div></div>' +
+        '<div class="form-group"><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="ldEnableAppAccess"' + (((ld?.app_access_enabled === true) || hasAuthLink) ? ' checked' : '') + '> Enable Driver App access</label><small style="color:var(--text-secondary)">When enabled, this local driver can sign in using email verification code.</small></div>' +
+        '<div class="form-row"><div class="form-group"><label>Auth Link</label><div id="ldAuthLinkStatus" style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-darker);font-size:12px;color:' + authStatusColor + ';font-weight:600">' + authStatusText + '</div></div><div class="form-group"><label>Account Action</label><button type="button" class="btn btn-secondary" id="ldCreateAuthAccountBtn" onclick="createLocalDriverAuthFromModal(' + (id || 0) + ')"' + (canCreateAccountNow ? '' : ' disabled') + '>' + createAccountLabel + '</button><div id="ldCreateAuthAccountMeta" style="margin-top:8px;padding:10px 12px;border:1px dashed var(--border);border-radius:8px;font-size:12px;color:#64748b">' + createAccountHint + '</div></div></div>' +
         '<div class="form-group"><label>Notes</label><textarea id="ldNotes" rows="2" placeholder="Any notes...">' + (ld?.notes || '') + '</textarea></div>' +
         '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveLocalDriver(' + id + ')">Save</button></div></div>';
       document.body.appendChild(m);
+
+      const emailInput = document.getElementById('ldEmail');
+      const createBtn = document.getElementById('ldCreateAuthAccountBtn');
+      const createMeta = document.getElementById('ldCreateAuthAccountMeta');
+      if (emailInput && createBtn && canCreateAccountNow) {
+        const refreshState = () => {
+          const value = (emailInput.value || '').trim().toLowerCase();
+          const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+          createBtn.disabled = !valid;
+          if (!valid) {
+            createMeta.textContent = 'Enter a valid email to enable account creation.';
+          } else if (hasAuthLink) {
+            createMeta.textContent = 'Ready to re-link app account.';
+          } else {
+            createMeta.textContent = 'Ready to create and link app account.';
+          }
+        };
+        emailInput.addEventListener('input', refreshState);
+        refreshState();
+      }
+    }
+
+    function setLocalDriverAuthLinkStatus(isLinked) {
+      const statusEl = document.getElementById('ldAuthLinkStatus');
+      if (!statusEl) return;
+      statusEl.textContent = isLinked ? 'Linked to app auth account' : 'Not linked yet';
+      statusEl.style.color = isLinked ? '#059669' : '#64748b';
+      statusEl.style.fontWeight = '600';
+    }
+
+    async function provisionLocalDriverAuthAccount(localDriverId, email) {
+      const normalizedEmail = (email || '').trim().toLowerCase();
+      if (!normalizedEmail) throw new Error('Local driver email is required.');
+
+      const { data, error } = await sb.functions.invoke('provision-driver-auth', {
+        body: {
+          local_driver_id: localDriverId,
+          email: normalizedEmail
+        }
+      });
+
+      if (error) {
+        let detailedMessage = '';
+        try {
+          const payload = await error?.context?.json?.();
+          detailedMessage = payload?.error || payload?.message || '';
+        } catch (_) {
+          detailedMessage = '';
+        }
+        throw new Error(detailedMessage || error.message || 'Failed to provision local driver app account.');
+      }
+
+      if (!data || data.success !== true || !data.auth_user_id) {
+        throw new Error((data && data.error) || 'Failed to provision local driver app account.');
+      }
+
+      return data;
+    }
+
+    async function createLocalDriverAuthFromModal(localDriverId) {
+      if (!localDriverId) {
+        showToast('Save local driver first, then create account.', 'error');
+        return;
+      }
+
+      const email = (document.getElementById('ldEmail')?.value || '').trim().toLowerCase();
+      if (!email) {
+        showToast('Local driver email is required to create account.', 'error');
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showToast('Please enter a valid email address.', 'error');
+        return;
+      }
+
+      const button = document.getElementById('ldCreateAuthAccountBtn');
+      const meta = document.getElementById('ldCreateAuthAccountMeta');
+      const appAccessCheckbox = document.getElementById('ldEnableAppAccess');
+
+      if (appAccessCheckbox) appAccessCheckbox.checked = true;
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Creating...';
+      }
+      if (meta) meta.textContent = 'Syncing local driver account with Supabase Auth...';
+
+      try {
+        const authData = await provisionLocalDriverAuthAccount(localDriverId, email);
+        setLocalDriverAuthLinkStatus(true);
+        if (meta) {
+          meta.textContent = authData.created
+            ? 'App account created and linked successfully.'
+            : 'Existing app account linked successfully.';
+        }
+
+        const localDriver = (appData.local_drivers || []).find(x => x.id === localDriverId);
+        if (localDriver) {
+          localDriver.email = email;
+          localDriver.auth_user_id = authData.auth_user_id;
+          localDriver.linked_driver_id = authData.linked_driver_id;
+          localDriver.app_access_enabled = true;
+        }
+
+        await logActivity('LOCAL_DRIVER_AUTH_LINKED', {
+          local_driver_id: localDriverId,
+          email,
+          linked_driver_id: authData.linked_driver_id,
+          created: !!authData.created
+        });
+
+        showToast(authData.created
+          ? 'Local driver app account created and linked.'
+          : 'Local driver app account linked.');
+      } catch (error) {
+        const message = error?.message || 'Failed to create local driver app account.';
+        if (meta) meta.textContent = message;
+        showToast(message, 'error');
+      } finally {
+        if (button) {
+          button.textContent = 'Re-link App Account';
+          button.disabled = false;
+        }
+      }
     }
 
     async function saveLocalDriver(id) {
       const name = document.getElementById('ldName').value.trim();
       if (!name) { showToast('Name is required', 'error'); return; }
-      
+
+      const email = (document.getElementById('ldEmail').value || '').trim().toLowerCase();
+      const enableAppAccess = document.getElementById('ldEnableAppAccess')?.checked === true;
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showToast('Please enter a valid email address.', 'error');
+        return;
+      }
+      if (enableAppAccess && !email) {
+        showToast('Email is required when app access is enabled.', 'error');
+        return;
+      }
+
       const data = {
         name: name,
         phone: document.getElementById('ldPhone').value || null,
         service_area: document.getElementById('ldArea').value || null,
-        notes: document.getElementById('ldNotes').value || null
+        notes: document.getElementById('ldNotes').value || null,
+        email: email || null,
+        status: document.getElementById('ldStatus').value || 'ACTIVE',
+        app_access_enabled: enableAppAccess
       };
-      
+
       try {
+        let savedLocalDriverId = id;
         if (id) {
           await dbUpdate('local_drivers', id, data);
-          await logActivity('LOCAL_DRIVER_UPDATED', { local_driver_id: id, driver_name: name });
+          await logActivity('LOCAL_DRIVER_UPDATED', { local_driver_id: id, driver_name: name, app_access_enabled: enableAppAccess });
         } else {
           const newDriver = await dbInsert('local_drivers', data);
-          await logActivity('LOCAL_DRIVER_CREATED', { local_driver_id: newDriver.id, driver_name: name, service_area: data.service_area });
+          savedLocalDriverId = newDriver.id;
+          await logActivity('LOCAL_DRIVER_CREATED', { local_driver_id: newDriver.id, driver_name: name, service_area: data.service_area, app_access_enabled: enableAppAccess });
         }
+
+        let saveMessage = 'Local driver saved!';
+        if (enableAppAccess) {
+          try {
+            const authData = await provisionLocalDriverAuthAccount(savedLocalDriverId, email);
+            saveMessage = authData.created
+              ? 'Local driver saved and app account created.'
+              : 'Local driver saved and app account linked.';
+            await logActivity('LOCAL_DRIVER_AUTH_LINKED', {
+              local_driver_id: savedLocalDriverId,
+              email,
+              linked_driver_id: authData.linked_driver_id
+            });
+          } catch (authError) {
+            const authMessage = authError?.message || String(authError);
+            saveMessage = 'Local driver saved, but app account sync failed: ' + authMessage;
+            showToast(saveMessage, 'warning');
+          }
+        }
+
         document.querySelector('.modal-overlay').remove();
-        showToast('Local driver saved!');
+        if (!(enableAppAccess && saveMessage.includes('sync failed'))) showToast(saveMessage);
         await loadAllData(true);
         renderLocalDrivers(document.getElementById('main-content'));
       } catch (e) { showToast(e.message, 'error'); }
@@ -28261,38 +28486,208 @@
     // Payroll year filter (default to current year)
     let payrollYear = new Date().getFullYear();
 
-    function renderPayroll(c) {
-      // Year filter for payroll
-      const yearStart = payrollYear + '-01-01';
-      const yearEnd = payrollYear + '-12-31';
+    function getDriverCompletedTripsForYear(driverId, year) {
+      const yearRange = buildPeriodRange({ type: 'year', year });
+      const completedTrips = (appData.trips || []).filter(t =>
+        String(t.driver_id) === String(driverId) &&
+        ['COMPLETED', 'DELIVERED'].includes(String(t.status || '').toUpperCase())
+      );
+      return filterTripsByRange(completedTrips, yearRange, { excludeUndated: true });
+    }
 
-      const payrollData = appData.drivers.map(driver => {
-        const driverTrips = appData.trips.filter(t => t.driver_id === driver.id && t.status === 'COMPLETED' && t.trip_date >= yearStart && t.trip_date <= yearEnd);
-        let grossEarnings = 0;
-        let cashCollected = 0;
-        let expenseReimbursements = 0;
+    function calculateCompanyDriverStatement({ driverId, tripIds = [], deductions = {}, bonuses = {} }) {
+      const driver = (appData.drivers || []).find(d => String(d.id) === String(driverId));
+      const selectedTripIds = Array.from(new Set((tripIds || []).map(id => parseInt(id, 10)).filter(id => Number.isFinite(id))));
+      const earnings = [];
+      let totalRevenue = 0;
+      let totalBrokerFee = 0;
+      let totalLocalFee = 0;
+      let totalCleanGross = 0;
+      let totalDriverCut = 0;
+      let totalCashCollected = 0;
+      let totalExpenses = 0;
 
-        driverTrips.forEach(trip => {
-          const fin = getTripFin(trip.id);
-          grossEarnings += fin.driverCut;
-          
-          const tripOrders = appData.orders.filter(o => o.trip_id === trip.id);
-          cashCollected += tripOrders
-            .filter(o => ['COD', 'COP', 'SPLIT'].includes(String(o.payment_type || '').toUpperCase()))
-            .reduce((sum, o) => sum + getOrderCashCollectedAmount(o), 0);
-          
-          const tripExpenses = appData.expenses.filter(e => e.trip_id === trip.id);
-          // Only reimburse OTHER category expenses
-          expenseReimbursements += tripExpenses.filter(e => e.category === 'OTHER').reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+      selectedTripIds.forEach(tripId => {
+        const trip = (appData.trips || []).find(t => String(t.id) === String(tripId));
+        if (!trip) return;
+        const cutPercent = toMoneyNumber(trip.driver_cut_percent ?? driver?.cut_percent ?? 32);
+        const tripOrders = (appData.orders || []).filter(o => String(o.trip_id) === String(tripId));
+        const tripExpenses = (appData.expenses || []).filter(e => String(e.trip_id) === String(tripId));
+
+        tripOrders.forEach(o => {
+          const revenue = toMoneyNumber(o.revenue);
+          const brokerFee = toMoneyNumber(o.broker_fee);
+          const localFee = toMoneyNumber(o.local_fee);
+          const cleanGross = Math.max(0, revenue - brokerFee - localFee);
+          const driverCut = cleanGross * (cutPercent / 100);
+          const paymentType = String(o.payment_type || '').toUpperCase();
+          const isCash = ['COD', 'COP', 'SPLIT'].includes(paymentType); // LOCAL_COD belongs to local driver
+          const cashOnHand = isCash ? getOrderCashCollectedAmount(o) : 0;
+          const vehicleInfo = [o.vehicle_year, o.vehicle_make].filter(Boolean).join(' ');
+          const orderVehicle = o.order_number ? (o.order_number + (vehicleInfo ? ' ' + vehicleInfo : '')) : (vehicleInfo || 'N/A');
+
+          earnings.push({
+            date: trip.trip_date,
+            tripNumber: trip.trip_number,
+            orderVehicle,
+            paymentType: o.payment_type || 'BILL',
+            revenue,
+            brokerFee,
+            localFee,
+            cleanGross,
+            driverCut,
+            cutPercent,
+            cashOnHand,
+            isCash
+          });
+
+          totalRevenue += revenue;
+          totalBrokerFee += brokerFee;
+          totalLocalFee += localFee;
+          totalCleanGross += cleanGross;
+          totalDriverCut += driverCut;
+          if (isCash) totalCashCollected += cashOnHand;
         });
 
-        const netPay = grossEarnings - cashCollected + expenseReimbursements;
-        return { driver, driverTrips, tripCount: driverTrips.length, grossEarnings, cashCollected, expenseReimbursements, netPay };
+        totalExpenses += tripExpenses
+          .filter(e => String(e.category || '').toUpperCase() === 'OTHER')
+          .reduce((sum, e) => sum + toMoneyNumber(e.amount), 0);
+      });
+
+      const totalDeductions = Object.values(deductions || {}).reduce((sum, value) =>
+        sum + (typeof value === 'number' ? toMoneyNumber(value) : 0), 0);
+      const totalBonuses = Object.values(bonuses || {}).reduce((sum, value) =>
+        sum + (typeof value === 'number' ? toMoneyNumber(value) : 0), 0);
+      const netPay = totalDriverCut - totalCashCollected + totalExpenses + totalBonuses - totalDeductions;
+
+      return {
+        driver,
+        tripIds: selectedTripIds,
+        earnings,
+        totalRevenue,
+        totalBrokerFee,
+        totalLocalFee,
+        totalCleanGross,
+        totalDriverCut,
+        totalCashCollected,
+        totalExpenses,
+        totalDeductions,
+        totalBonuses,
+        netPay
+      };
+    }
+
+    function calculateOwnerOpSettlementStatement({ driverId, tripIds = [], deductions = {} }) {
+      const driver = (appData.drivers || []).find(d => String(d.id) === String(driverId));
+      const dispatchFeePercent = toMoneyNumber(driver?.dispatch_fee_percent || 5);
+      const selectedTripIds = Array.from(new Set((tripIds || []).map(id => parseInt(id, 10)).filter(id => Number.isFinite(id))));
+      const tripDetails = [];
+      let totalRevenue = 0;
+      let totalBrokerFee = 0;
+      let totalLocalFee = 0;
+      let totalDispatchFee = 0;
+      let totalCashCollected = 0;
+
+      selectedTripIds.forEach(tripId => {
+        const trip = (appData.trips || []).find(t => String(t.id) === String(tripId));
+        if (!trip) return;
+        const tripOrders = (appData.orders || []).filter(o => String(o.trip_id) === String(tripId));
+
+        tripOrders.forEach(o => {
+          const revenue = toMoneyNumber(o.revenue);
+          const brokerFee = toMoneyNumber(o.broker_fee);
+          const localFee = toMoneyNumber(o.local_fee);
+          const cleanGross = Math.max(0, revenue - brokerFee - localFee);
+          const orderDispatchFee = cleanGross * (dispatchFeePercent / 100);
+          const paymentType = String(o.payment_type || '').toUpperCase();
+          const isCash = ['COD', 'COP', 'SPLIT'].includes(paymentType); // LOCAL_COD belongs to local driver
+          const cashCollected = isCash ? getOrderCashCollectedAmount(o) : 0;
+          const settlement = cleanGross - orderDispatchFee - cashCollected;
+          const vehicleInfo = [o.vehicle_year, o.vehicle_make].filter(Boolean).join(' ');
+          const orderVehicle = o.order_number ? (o.order_number + (vehicleInfo ? ' ' + vehicleInfo : '')) : (vehicleInfo || 'N/A');
+
+          totalRevenue += revenue;
+          totalBrokerFee += brokerFee;
+          totalLocalFee += localFee;
+          totalDispatchFee += orderDispatchFee;
+          totalCashCollected += cashCollected;
+
+          tripDetails.push({
+            tripNumber: trip.trip_number,
+            date: trip.trip_date,
+            orderVehicle,
+            paymentType: o.payment_type || 'BILL',
+            revenue,
+            brokerFee,
+            localFee,
+            cleanGross,
+            dispatchFee: orderDispatchFee,
+            cashCollected,
+            settlement
+          });
+        });
+      });
+
+      const totalCleanGross = totalRevenue - totalBrokerFee - totalLocalFee;
+      const totalDeductions = Object.values(deductions || {}).reduce((sum, value) => {
+        if (typeof value === 'number') return sum + toMoneyNumber(value);
+        if (value && typeof value === 'object' && typeof value.amount === 'number') {
+          return sum + toMoneyNumber(value.amount);
+        }
+        return sum;
+      }, 0);
+      const totalSettlement = totalCleanGross - totalDispatchFee - totalCashCollected - totalDeductions;
+
+      return {
+        driver,
+        tripIds: selectedTripIds,
+        dispatchFeePercent,
+        tripDetails,
+        totalRevenue,
+        totalBrokerFee,
+        totalLocalFee,
+        totalCleanGross,
+        totalDispatchFee,
+        totalCashCollected,
+        totalDeductions,
+        totalSettlement
+      };
+    }
+
+    function renderPayroll(c) {
+      const visibleDrivers = getVisibleCompanyDrivers();
+      const payrollData = visibleDrivers.map(driver => {
+        const driverTrips = getDriverCompletedTripsForYear(driver.id, payrollYear);
+        const tripIds = driverTrips.map(t => t.id);
+        if (driver.driver_type === 'OWNER_OP') {
+          const settlementSummary = calculateOwnerOpSettlementStatement({ driverId: driver.id, tripIds, deductions: {} });
+          const grossBeforeCash = Math.max(0, settlementSummary.totalCleanGross - settlementSummary.totalDispatchFee);
+          return {
+            driver,
+            driverTrips,
+            tripCount: driverTrips.length,
+            grossEarnings: grossBeforeCash,
+            cashCollected: settlementSummary.totalCashCollected,
+            expenseReimbursements: 0,
+            netPay: settlementSummary.totalSettlement
+          };
+        }
+        const companySummary = calculateCompanyDriverStatement({ driverId: driver.id, tripIds, deductions: {}, bonuses: {} });
+        return {
+          driver,
+          driverTrips,
+          tripCount: driverTrips.length,
+          grossEarnings: companySummary.totalDriverCut,
+          cashCollected: companySummary.totalCashCollected,
+          expenseReimbursements: companySummary.totalExpenses,
+          netPay: companySummary.netPay
+        };
       });
 
       // Year selector options
-      const currentYear = new Date().getFullYear();
-      const yearOptions = [currentYear, currentYear - 1, currentYear - 2, currentYear - 3].map(y =>
+      const payrollYearSet = new Set(getDataDrivenYearOptions((appData.trips || []).map(t => t.trip_date || t.period_start_date || t.created_at), true));
+      payrollYearSet.add(payrollYear);
+      const yearOptions = Array.from(payrollYearSet).sort((a, b) => b - a).map(y =>
         '<option value="' + y + '"' + (payrollYear === y ? ' selected' : '') + '>' + y + '</option>'
       ).join('');
 
@@ -28300,7 +28695,7 @@
         '<div style="background:var(--dim-blue);border:1px solid #93c5fd;border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--info)">[[icon:clipboard]] Formula:</strong><p style="color:var(--info);margin-top:8px">Net Pay = Gross Earnings − Cash Collected + Expense Reimbursements (OTHER only)</p><p style="color:var(--text-secondary);font-size:13px;margin-top:4px">Only COMPLETED trips are included. Only "OTHER" category expenses are reimbursed to drivers.</p></div>' +
         '<div class="card"><div class="table-wrapper"><table><thead><tr><th>Driver</th><th>Completed Trips</th><th>Gross Earnings</th><th>Cash Collected</th><th>Expense Reimb.</th><th>Net Pay</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
         (payrollData.length === 0 ? '<tr><td colspan="7" style="text-align:center;padding:40px">No drivers yet</td></tr>' :
-        payrollData.map(p => '<tr><td><strong>' + p.driver.first_name + ' ' + p.driver.last_name + '</strong><br><span style="color:var(--text-secondary);font-size:12px">' + p.driver.cut_percent + '% cut</span></td><td>' + p.tripCount + '</td><td class="money positive">' + formatMoney(p.grossEarnings) + '</td><td class="money negative">-' + formatMoney(p.cashCollected) + '</td><td class="money positive">+' + formatMoney(p.expenseReimbursements) + '</td><td class="money" style="font-size:16px;font-weight:700;color:' + (p.netPay >= 0 ? '#047857' : '#dc2626') + '">' + formatMoney(p.netPay) + '</td><td class="sticky-col"><button class="btn btn-primary btn-sm" onclick="openPaystubModal(' + p.driver.id + ')">[[icon:file]] Generate Paystub</button></td></tr>').join('')) +
+        payrollData.map(p => '<tr><td><strong>' + p.driver.first_name + ' ' + p.driver.last_name + '</strong><br><span style="color:var(--text-secondary);font-size:12px">' + (p.driver.driver_type === 'OWNER_OP' ? ((p.driver.dispatch_fee_percent || 5) + '% dispatch fee') : ((p.driver.cut_percent || 32) + '% cut')) + '</span></td><td>' + p.tripCount + '</td><td class="money positive">' + formatMoney(p.grossEarnings) + '</td><td class="money negative">-' + formatMoney(p.cashCollected) + '</td><td class="money positive">+' + formatMoney(p.expenseReimbursements) + '</td><td class="money" style="font-size:16px;font-weight:700;color:' + (p.netPay >= 0 ? '#047857' : '#dc2626') + '">' + formatMoney(p.netPay) + '</td><td class="sticky-col"><button class="btn btn-primary btn-sm" onclick="openPaystubModal(' + p.driver.id + ')">[[icon:file]] ' + (p.driver.driver_type === 'OWNER_OP' ? 'Generate Settlement' : 'Generate Paystub') + '</button></td></tr>').join('')) +
         '</tbody></table></div></div>' +
         '<div class="card"><div class="card-header"><h3>[[icon:chart]] Payroll Summary</h3></div><div style="padding:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:20px;text-align:center">' +
         '<div><div style="font-size:12px;color:#64748b">Total Gross</div><div style="font-size:20px;font-weight:700;color:#1e293b">' + formatMoney(payrollData.reduce((s,p) => s + p.grossEarnings, 0)) + '</div></div>' +
@@ -28311,11 +28706,13 @@
     }
 
     // Helper function to build detailed trip/order HTML for paystub and settlement modals
-    function buildTripOrdersHTML(tripId, valueType = 'driverCut') {
+    function buildTripOrdersHTML(tripId, valueType = 'driverCut', selection = {}) {
       const tripIdStr = String(tripId);
       const trip = appData.trips.find(t => String(t.id) === tripIdStr);
       const orders = appData.orders.filter(o => String(o.trip_id) === tripIdStr);
       const fin = getTripFin(tripId);
+      const isChecked = selection.checked === true;
+      const isDisabled = selection.disabled === true;
 
       if (!trip) return '';
 
@@ -28374,7 +28771,7 @@
       const checkboxClass = valueType === 'settlement' ? 'settlement-trip' : 'paystub-trip';
       return '<div style="border-bottom:1px solid #e2e8f0;padding:8px 0">' +
         '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500">' +
-        '<input type="checkbox" class="' + checkboxClass + '" value="' + trip.id + '">' +
+        '<input type="checkbox" class="' + checkboxClass + '" value="' + trip.id + '"' + (isChecked ? ' checked' : '') + (isDisabled ? ' disabled' : '') + '>' +
         '<span><strong>' + trip.trip_number + '</strong> - ' + formatDate(trip.trip_date) + '</span>' +
         '<span style="margin-left:auto;color:' + valueColor + ';font-weight:600">' + formatMoney(mainValue) + '</span>' +
         '</label>' +
@@ -28382,27 +28779,74 @@
         '</div>';
     }
 
-    function openPaystubModal(driverId) {
+    function normalizeStatementModalOptions(options = {}) {
+      const incoming = options && typeof options === 'object' ? options : {};
+      const preselectedTripIds = Array.from(new Set((incoming.preselectedTripIds || [])
+        .map(id => parseInt(id, 10))
+        .filter(id => Number.isFinite(id) && id > 0)));
+      return {
+        preselectedTripIds,
+        lockTripSelection: incoming.lockTripSelection === true,
+        source: incoming.source || 'payroll'
+      };
+    }
+
+    function getStatementModalOptions(modalOverlay) {
+      if (!modalOverlay) return normalizeStatementModalOptions();
+      const raw = modalOverlay.dataset.statementOptions;
+      if (!raw) return normalizeStatementModalOptions();
+      try {
+        return normalizeStatementModalOptions(JSON.parse(raw));
+      } catch (_) {
+        return normalizeStatementModalOptions();
+      }
+    }
+
+    function getStatementTripIdsFromModal(modalOverlay, checkboxClass) {
+      const options = getStatementModalOptions(modalOverlay);
+      if (options.lockTripSelection && options.preselectedTripIds.length > 0) {
+        return options.preselectedTripIds.slice();
+      }
+      if (!modalOverlay) {
+        return options.preselectedTripIds.slice();
+      }
+      return Array.from(modalOverlay.querySelectorAll('.' + checkboxClass + ':checked'))
+        .map(cb => parseInt(cb.value, 10))
+        .filter(id => Number.isFinite(id));
+    }
+
+    function openPaystubModal(driverId, options = {}) {
       const driver = appData.drivers.find(d => d.id === driverId);
+      if (!driver) {
+        showToast('Driver not found.', 'error');
+        return;
+      }
       const isOwnerOp = driver?.driver_type === 'OWNER_OP';
+      const modalOptions = normalizeStatementModalOptions(options);
 
       // If Owner-Operator, use different settlement modal
       if (isOwnerOp) {
-        openSettlementModal(driverId);
+        openSettlementModal(driverId, modalOptions);
         return;
       }
 
-      // Filter by payrollYear
-      const yearStart = payrollYear + '-01-01';
-      const yearEnd = payrollYear + '-12-31';
-      const completedTrips = appData.trips.filter(t => t.driver_id === driverId && t.status === 'COMPLETED' && t.trip_date >= yearStart && t.trip_date <= yearEnd);
+      const completedTrips = getDriverCompletedTripsForYear(driverId, payrollYear);
+      const selectedTripIdSet = new Set(modalOptions.preselectedTripIds);
+      const tripsForModal = modalOptions.lockTripSelection && selectedTripIdSet.size > 0
+        ? completedTrips.filter(t => selectedTripIdSet.has(parseInt(t.id, 10)))
+        : completedTrips;
 
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
+      m.dataset.statementOptions = JSON.stringify(modalOptions);
       m.innerHTML = '<div class="modal" style="max-width:650px;max-height:90vh;display:flex;flex-direction:column"><div class="modal-header"><h3>[[icon:file]] Generate Paystub</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
         '<div class="form-row"><div class="form-group"><label>Driver</label><input value="' + driver.first_name + ' ' + driver.last_name + '" readonly style="background:var(--surface-elevated)"></div><div class="form-group"><label>Driver Email</label><input type="email" id="driverEmail" value="' + (driver.email || '') + '" placeholder="driver@email.com"></div></div>' +
+        (modalOptions.lockTripSelection ? '<div style="margin-bottom:10px;font-size:12px;color:var(--text-secondary);background:var(--dim-blue);border:1px solid var(--info-border);padding:8px 10px;border-radius:8px">Trip selection is locked from Trip Detail.</div>' : '') +
         '<div class="form-group"><label>Select Trip(s) for Paystub</label><div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px">' +
-        (completedTrips.length === 0 ? '<p style="color:var(--text-secondary);text-align:center;padding:20px">No completed trips</p>' :
-        completedTrips.map(t => buildTripOrdersHTML(t.id, 'driverCut')).join('')) +
+        (tripsForModal.length === 0 ? '<p style="color:var(--text-secondary);text-align:center;padding:20px">No completed trips</p>' :
+        tripsForModal.map(t => buildTripOrdersHTML(t.id, 'driverCut', {
+          checked: modalOptions.lockTripSelection ? true : selectedTripIdSet.has(parseInt(t.id, 10)),
+          disabled: modalOptions.lockTripSelection
+        })).join('')) +
         '</div></div>' +
         '<div class="form-row"><div class="form-group"><label>Stub #</label><input type="number" id="stubNumber" value="' + (1000 + Math.floor(Math.random() * 9000)) + '"></div><div class="form-group"><label>Check #</label><input type="number" id="checkNumber" value="' + (10000 + Math.floor(Math.random() * 90000)) + '"></div></div>' +
         '<div class="form-row"><div class="form-group"><label>Period Starting</label><input type="date" id="periodStart" value="' + new Date().toISOString().split('T')[0] + '"></div><div class="form-group"><label>Period Ending</label><input type="date" id="periodEnd" value="' + new Date().toISOString().split('T')[0] + '"></div></div>' +
@@ -28433,25 +28877,37 @@
         
         '</div><div class="modal-footer" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="generatePaystub(' + driverId + ', \'print\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/><path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7z"/></svg>Print</button><button class="btn btn-primary" style="background:#059669" onclick="generatePaystub(' + driverId + ', \'email\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>Send Email</button><button class="btn btn-secondary" onclick="generatePaystub(' + driverId + ', \'both\')">Print & Email</button></div></div>';
       document.body.appendChild(m);
+      updatePaystubTotals();
     }
 
     // Owner-Operator Settlement Modal (different from Company Driver paystub)
-    function openSettlementModal(driverId) {
+    function openSettlementModal(driverId, options = {}) {
       const driver = appData.drivers.find(d => d.id === driverId);
+      if (!driver) {
+        showToast('Driver not found.', 'error');
+        return;
+      }
       const dispatchFeePercent = driver?.dispatch_fee_percent || 5;
+      const modalOptions = normalizeStatementModalOptions(options);
 
-      // Filter by payrollYear
-      const yearStart = payrollYear + '-01-01';
-      const yearEnd = payrollYear + '-12-31';
-      const completedTrips = appData.trips.filter(t => t.driver_id === driverId && t.status === 'COMPLETED' && t.trip_date >= yearStart && t.trip_date <= yearEnd);
+      const completedTrips = getDriverCompletedTripsForYear(driverId, payrollYear);
+      const selectedTripIdSet = new Set(modalOptions.preselectedTripIds);
+      const tripsForModal = modalOptions.lockTripSelection && selectedTripIdSet.size > 0
+        ? completedTrips.filter(t => selectedTripIdSet.has(parseInt(t.id, 10)))
+        : completedTrips;
 
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
+      m.dataset.statementOptions = JSON.stringify(modalOptions);
       m.innerHTML = '<div class="modal" style="max-width:650px;max-height:90vh;display:flex;flex-direction:column"><div class="modal-header" style="background:#f59e0b;color:white"><h3>[[icon:clipboard]] Generate Settlement Statement</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()" style="color:white">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
         '<div style="background:var(--dim-amber);padding:12px;border-radius:8px;margin-bottom:16px;border:2px solid #f59e0b"><div style="font-weight:600;color:#92400e">[[icon:truck]] Owner-Operator Settlement</div><div style="font-size:12px;color:#92400e">Dispatch Fee: ' + dispatchFeePercent + '%</div></div>' +
         '<div class="form-row"><div class="form-group"><label>Owner-Operator</label><input value="' + driver.first_name + ' ' + driver.last_name + '" readonly style="background:var(--surface-elevated)"></div><div class="form-group"><label>Email</label><input type="email" id="driverEmail" value="' + (driver.email || '') + '" placeholder="owner@email.com"></div></div>' +
+        (modalOptions.lockTripSelection ? '<div style="margin-bottom:10px;font-size:12px;color:#92400e;background:var(--dim-amber);border:1px solid #f59e0b;padding:8px 10px;border-radius:8px">Trip selection is locked from Trip Detail.</div>' : '') +
         '<div class="form-group"><label>Select Trip(s) for Settlement</label><div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px">' +
-        (completedTrips.length === 0 ? '<p style="color:var(--text-secondary);text-align:center;padding:20px">No completed trips</p>' :
-        completedTrips.map(t => buildTripOrdersHTML(t.id, 'settlement')).join('')) +
+        (tripsForModal.length === 0 ? '<p style="color:var(--text-secondary);text-align:center;padding:20px">No completed trips</p>' :
+        tripsForModal.map(t => buildTripOrdersHTML(t.id, 'settlement', {
+          checked: modalOptions.lockTripSelection ? true : selectedTripIdSet.has(parseInt(t.id, 10)),
+          disabled: modalOptions.lockTripSelection
+        })).join('')) +
         '</div></div>' +
         '<div class="form-row"><div class="form-group"><label>Settlement #</label><input type="number" id="settlementNumber" value="' + (1000 + Math.floor(Math.random() * 9000)) + '"></div><div class="form-group"><label>Check #</label><input type="number" id="checkNumber" value="' + (10000 + Math.floor(Math.random() * 90000)) + '"></div></div>' +
         '<div class="form-row"><div class="form-group"><label>Period Starting</label><input type="date" id="periodStart" value="' + new Date().toISOString().split('T')[0] + '"></div><div class="form-group"><label>Period Ending</label><input type="date" id="periodEnd" value="' + new Date().toISOString().split('T')[0] + '"></div></div>' +
@@ -28477,6 +28933,7 @@
 
         '</div><div class="modal-footer" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" style="background:#f59e0b" onclick="generateSettlement(' + driverId + ', \'print\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/><path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7z"/></svg>Print</button><button class="btn btn-primary" style="background:#059669" onclick="generateSettlement(' + driverId + ', \'email\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>Send Email</button></div></div>';
       document.body.appendChild(m);
+      updateSettlementTotals();
     }
 
     // Update settlement deductions total
@@ -28491,66 +28948,16 @@
     // Generate Owner-Operator Settlement
     async function generateSettlement(driverId, action = 'print') {
       const driver = appData.drivers.find(d => d.id === driverId);
-      const dispatchFeePercent = driver?.dispatch_fee_percent || 5;
-
-      // Get selected trips
-      const selectedTripIds = Array.from(document.querySelectorAll('.settlement-trip:checked')).map(cb => cb.value);
+      if (!driver) {
+        showToast('Driver not found.', 'error');
+        return;
+      }
+      const modalOverlay = document.querySelector('.modal-overlay');
+      const selectedTripIds = getStatementTripIdsFromModal(modalOverlay, 'settlement-trip');
       if (selectedTripIds.length === 0) {
         showToast('Please select at least one trip', 'error');
         return;
       }
-
-      // Calculate totals - now at ORDER level for detailed view
-      let totalRevenue = 0, totalBrokerFee = 0, totalLocalFee = 0, totalDispatchFee = 0, totalCashCollected = 0;
-      const tripDetails = [];
-
-      selectedTripIds.forEach(tripId => {
-        const trip = appData.trips.find(t => String(t.id) === String(tripId));
-        if (!trip) {
-          console.warn('Trip not found:', tripId);
-          return;
-        }
-        const orders = appData.orders.filter(o => String(o.trip_id) === String(tripId));
-
-        // Create one row per order for detailed view
-        orders.forEach(o => {
-          const revenue = parseFloat(o.revenue || 0);
-          const brokerFee = parseFloat(o.broker_fee || 0);
-          const localFee = parseFloat(o.local_fee || 0);
-          const cleanGross = revenue - brokerFee - localFee;
-          const orderDispatchFee = cleanGross * (dispatchFeePercent / 100);
-          const paymentType = String(o.payment_type || '').toUpperCase();
-          const isCash = paymentType === 'COD' || paymentType === 'COP' || paymentType === 'SPLIT'; // LOCAL_COD goes to local driver
-          const cashCollected = isCash ? getOrderCashCollectedAmount(o) : 0;
-          const settlement = cleanGross - orderDispatchFee - cashCollected;
-
-          // Build order/vehicle label
-          const vehicleInfo = [o.vehicle_year, o.vehicle_make].filter(Boolean).join(' ');
-          const orderVehicle = o.order_number ? (o.order_number + (vehicleInfo ? ' ' + vehicleInfo : '')) : (vehicleInfo || 'N/A');
-
-          totalRevenue += revenue;
-          totalBrokerFee += brokerFee;
-          totalLocalFee += localFee;
-          totalDispatchFee += orderDispatchFee;
-          totalCashCollected += cashCollected;
-
-          tripDetails.push({
-            tripNumber: trip.trip_number,
-            date: trip.trip_date,
-            orderVehicle,
-            paymentType: o.payment_type || 'BILL',
-            revenue,
-            brokerFee,
-            localFee,
-            cleanGross,
-            dispatchFee: orderDispatchFee,
-            cashCollected,
-            settlement
-          });
-        });
-      });
-
-      const totalCleanGross = totalRevenue - totalBrokerFee - totalLocalFee;
 
       // Get deductions from form
       const deductions = {
@@ -28567,9 +28974,21 @@
         custom2: { label: document.getElementById('settDedCustom2Label')?.value || '', amount: parseFloat(document.getElementById('settDedCustom2')?.value || 0) },
         custom3: { label: document.getElementById('settDedCustom3Label')?.value || '', amount: parseFloat(document.getElementById('settDedCustom3')?.value || 0) }
       };
-      const totalDeductions = deductions.ifta + deductions.eld + deductions.tolls + deductions.insurance + deductions.fuel + deductions.hut2290 + deductions.regRenewal + deductions.advances + deductions.other + deductions.custom1.amount + deductions.custom2.amount + deductions.custom3.amount;
-
-      const totalSettlement = totalCleanGross - totalDispatchFee - totalCashCollected - totalDeductions;
+      const statement = calculateOwnerOpSettlementStatement({
+        driverId,
+        tripIds: selectedTripIds,
+        deductions
+      });
+      const tripDetails = statement.tripDetails || [];
+      const totalRevenue = statement.totalRevenue || 0;
+      const totalBrokerFee = statement.totalBrokerFee || 0;
+      const totalLocalFee = statement.totalLocalFee || 0;
+      const totalCleanGross = statement.totalCleanGross || 0;
+      const totalDispatchFee = statement.totalDispatchFee || 0;
+      const totalCashCollected = statement.totalCashCollected || 0;
+      const totalDeductions = statement.totalDeductions || 0;
+      const totalSettlement = statement.totalSettlement || 0;
+      const dispatchFeePercent = statement.dispatchFeePercent || toMoneyNumber(driver?.dispatch_fee_percent || 5);
 
       const periodStart = document.getElementById('periodStart')?.value;
       const periodEnd = document.getElementById('periodEnd')?.value;
@@ -28829,7 +29248,10 @@
       try {
         const authToken = requireAuthToken();
         const base64 = await blobToBase64(pdfBlob);
-        const tripNumbers = tripIds.map(id => appData.trips.find(t => t.id === id)?.trip_number).filter(Boolean).join(', ');
+        const tripNumbers = (tripIds || [])
+          .map(id => appData.trips.find(t => String(t.id) === String(id))?.trip_number)
+          .filter(Boolean)
+          .join(', ');
 
         const response = await fetch(SUPABASE_URL + '/functions/v1/send-email', {
           method: 'POST',
@@ -29227,7 +29649,9 @@
     async function generatePaystub(driverId, action = 'print') {
       // action can be: 'print', 'email', or 'both'
       const driver = appData.drivers.find(d => d.id === driverId);
-      const selectedTripIds = Array.from(document.querySelectorAll('.paystub-trip:checked')).map(cb => parseInt(cb.value));
+      if (!driver) { showToast('Driver not found.', 'error'); return; }
+      const modalOverlay = document.querySelector('.modal-overlay');
+      const selectedTripIds = getStatementTripIdsFromModal(modalOverlay, 'paystub-trip');
       
       if (selectedTripIds.length === 0) { showToast('Please select at least one trip', 'error'); return; }
       
@@ -29259,68 +29683,21 @@
         other: parseFloat(document.getElementById('bonusOther').value) || 0
       };
       const totalBonuses = Object.values(bonuses).reduce((a, b) => a + b, 0);
-      
-      // For backward compatibility
-      const otherAdditions = totalBonuses;
-      const otherDeductions = totalDeductions;
-      
-      // Gather all order data for selected trips
-      let earnings = [];
-      let totalRevenue = 0, totalBrokerFee = 0, totalLocalFee = 0, totalCleanGross = 0, totalDriverCut = 0;
-      let totalCashCollected = 0, totalExpenses = 0;
-      
-      selectedTripIds.forEach(tripId => {
-        const trip = appData.trips.find(t => t.id === tripId);
-        const orders = appData.orders.filter(o => o.trip_id === tripId);
-        const expenses = appData.expenses.filter(e => e.trip_id === tripId);
-        const cutPercent = trip.driver_cut_percent || driver.cut_percent || 32;
-        
-        orders.forEach(o => {
-          const revenue = parseFloat(o.revenue || 0);
-          const brokerFee = parseFloat(o.broker_fee || 0);
-          const localFee = parseFloat(o.local_fee || 0);
-          const cleanGross = revenue - brokerFee - localFee;
-          const driverCut = cleanGross * (cutPercent / 100);
-          const paymentType = String(o.payment_type || '').toUpperCase();
-          const isCash = paymentType === 'COD' || paymentType === 'COP' || paymentType === 'SPLIT'; // LOCAL_COD goes to local driver
-          const cashOnHand = isCash ? getOrderCashCollectedAmount(o) : 0;
-          
-          // Build order/vehicle label
-          const vehicleInfo = [o.vehicle_year, o.vehicle_make].filter(Boolean).join(' ');
-          const orderVehicle = o.order_number ? (o.order_number + (vehicleInfo ? ' ' + vehicleInfo : '')) : (vehicleInfo || 'N/A');
-
-          earnings.push({
-            date: trip.trip_date,
-            tripNumber: trip.trip_number,
-            orderVehicle,
-            paymentType: o.payment_type || 'BILL',
-            revenue,
-            brokerFee,
-            localFee,
-            cleanGross,
-            driverCut,
-            cutPercent,
-            cashOnHand,
-            isCash
-          });
-          
-          totalRevenue += revenue;
-          totalBrokerFee += brokerFee;
-          totalLocalFee += localFee;
-          totalCleanGross += cleanGross;
-          totalDriverCut += driverCut;
-          if (isCash) totalCashCollected += cashOnHand;
-        });
-        
-        // Only reimburse OTHER category expenses
-        expenses.forEach(e => {
-          if (e.category === 'OTHER') {
-            totalExpenses += parseFloat(e.amount || 0);
-          }
-        });
+      const statement = calculateCompanyDriverStatement({
+        driverId,
+        tripIds: selectedTripIds,
+        deductions,
+        bonuses
       });
-      
-      const netPay = totalDriverCut - totalCashCollected + totalExpenses + otherAdditions - otherDeductions;
+      const earnings = statement.earnings || [];
+      const totalRevenue = statement.totalRevenue || 0;
+      const totalBrokerFee = statement.totalBrokerFee || 0;
+      const totalLocalFee = statement.totalLocalFee || 0;
+      const totalCleanGross = statement.totalCleanGross || 0;
+      const totalDriverCut = statement.totalDriverCut || 0;
+      const totalCashCollected = statement.totalCashCollected || 0;
+      const totalExpenses = statement.totalExpenses || 0;
+      const netPay = statement.netPay || 0;
       
       // Calculate additional metrics for the statement
       const avgEarningsPerTrip = selectedTripIds.length > 0 ? totalDriverCut / selectedTripIds.length : 0;
