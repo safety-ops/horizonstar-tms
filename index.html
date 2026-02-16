@@ -19758,22 +19758,11 @@
     }
 
     async function markTripCompleted(tripId, fromList = false) {
-      if (!confirm('Mark this trip as completed? Orders will NOT go to pending local deliveries.')) return;
+      if (!confirm('Mark this trip as completed?')) return;
       try {
         const today = new Date().toISOString().split('T')[0];
         const updateData = { status: 'COMPLETED', period_end_date: today };
         await dbUpdate('trips', tripId, updateData);
-
-        // Set not_for_local_delivery on qualifying local delivery orders so they don't appear in Pending Local Deliveries
-        const qualifyingOrders = appData.orders.filter(o =>
-          o.trip_id === tripId &&
-          parseFloat(o.local_fee || 0) > 0 &&
-          isLocalDeliveryState(o.destination, o.delivery_state) &&
-          (!o.local_driver_id || o.local_delivery_status === 'UNASSIGNED')
-        );
-        for (const order of qualifyingOrders) {
-          try { await dbUpdate('orders', order.id, { not_for_local_delivery: true }); } catch (e) { /* column may not exist yet */ }
-        }
 
         showToast('Trip marked as completed!');
 
