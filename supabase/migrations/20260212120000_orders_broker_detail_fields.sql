@@ -13,7 +13,6 @@ ALTER TABLE public.orders
   ADD COLUMN IF NOT EXISTS delivery_city text,
   ADD COLUMN IF NOT EXISTS delivery_state text,
   ADD COLUMN IF NOT EXISTS delivery_zip text;
-
 ALTER TABLE public.brokers
   ADD COLUMN IF NOT EXISTS email text,
   ADD COLUMN IF NOT EXISTS phone text,

@@ -9729,6 +9729,13 @@
       currentUser = null;
       localStorage.removeItem('horizonstar_user');
       localStorage.removeItem('last_activity');
+      if (typeof realtimeUiState !== 'undefined') {
+        realtimeUiState.pending = false;
+        realtimeUiState.pendingPayloads = [];
+        realtimeUiState.lastPendingAt = null;
+        realtimeUiState.applyInProgress = false;
+      }
+      renderRealtimePendingChip();
       showToast('Session expired. Please log in again.', 'warning');
       renderLogin();
     }
@@ -9773,6 +9780,117 @@
     // Debounce realtime updates to avoid too many refreshes
     let realtimeDebounceTimer = null;
     let pendingRealtimeUpdate = false;
+    let realtimeUiState = {
+      pending: false,
+      pendingPayloads: [],
+      lastPendingAt: null,
+      applyInProgress: false
+    };
+
+    function isRealtimeInterruptSensitiveState() {
+      if (currentDetailView) return true;
+      if (document.querySelector('.modal-overlay')) return true;
+
+      const active = document.activeElement;
+      if (!active) return false;
+      if (active.matches('input, textarea, select, [contenteditable="true"]')) return true;
+
+      return false;
+    }
+
+    function markRealtimeUpdatePending(payload) {
+      if (payload) realtimeUiState.pendingPayloads.push(payload);
+      realtimeUiState.pending = true;
+      realtimeUiState.lastPendingAt = Date.now();
+      renderRealtimePendingChip();
+    }
+
+    function renderRealtimePendingChip() {
+      const existing = document.getElementById('realtime-pending-chip');
+      if (!currentUser || !realtimeUiState.pending) {
+        if (existing) existing.remove();
+        return;
+      }
+
+      const count = realtimeUiState.pendingPayloads.length;
+      const label = count > 1 ? `Updates available (${count})` : 'Updates available';
+
+      if (existing) {
+        existing.textContent = label;
+        existing.disabled = realtimeUiState.applyInProgress;
+        return;
+      }
+
+      const chip = document.createElement('button');
+      chip.id = 'realtime-pending-chip';
+      chip.type = 'button';
+      chip.className = 'btn btn-secondary';
+      chip.style.position = 'fixed';
+      chip.style.top = '92px';
+      chip.style.right = '18px';
+      chip.style.zIndex = '1200';
+      chip.style.boxShadow = '0 8px 24px rgba(15,23,42,0.18)';
+      chip.style.border = '1px solid var(--info-border)';
+      chip.style.background = 'var(--dim-blue)';
+      chip.style.color = 'var(--info)';
+      chip.style.fontWeight = '700';
+      chip.style.padding = '10px 14px';
+      chip.style.borderRadius = '999px';
+      chip.textContent = label;
+      chip.onclick = () => applyPendingRealtimeUpdates({ force: true });
+      document.body.appendChild(chip);
+    }
+
+    async function restoreCurrentDetailView(savedDetailView) {
+      if (!savedDetailView) {
+        renderPage();
+        return;
+      }
+
+      if (savedDetailView.type === 'trip') {
+        viewTrip(savedDetailView.id);
+      } else if (savedDetailView.type === 'driver') {
+        viewDriverProfile(savedDetailView.id);
+      } else if (savedDetailView.type === 'truck') {
+        viewTruckCompliance(savedDetailView.id);
+      } else if (savedDetailView.type === 'local_driver') {
+        viewLocalDriverDetails(savedDetailView.id);
+      } else if (savedDetailView.type === 'order') {
+        await openOrderDetailPage(savedDetailView.id);
+      } else {
+        renderPage({ preserveDetailView: true });
+      }
+    }
+
+    async function applyPendingRealtimeUpdates({ force = false } = {}) {
+      if (realtimeUiState.applyInProgress) return;
+      if (!realtimeUiState.pending && !force) return;
+      if (!force && isRealtimeInterruptSensitiveState()) return;
+
+      const savedDetailView = currentDetailView ? { ...currentDetailView } : null;
+      const payloadsToApply = realtimeUiState.pendingPayloads.slice();
+      const hadPending = realtimeUiState.pending || payloadsToApply.length > 0;
+
+      realtimeUiState.pending = false;
+      realtimeUiState.pendingPayloads = [];
+      realtimeUiState.lastPendingAt = null;
+      realtimeUiState.applyInProgress = true;
+      renderRealtimePendingChip();
+
+      try {
+        if (hadPending) showToast('Data changed by another user', 'info');
+        await loadAllData(true);
+        await restoreCurrentDetailView(savedDetailView);
+      } catch (e) {
+        console.error('Realtime apply failed:', e);
+        showToast('Failed to apply live updates. Try again.', 'error');
+        realtimeUiState.pending = true;
+        realtimeUiState.pendingPayloads = payloadsToApply;
+      } finally {
+        realtimeUiState.applyInProgress = false;
+        renderRealtimePendingChip();
+      }
+    }
     
     function handleRealtimeChange(payload) {
       // Don't refresh if we just made the change ourselves (within last 3 seconds)
@@ -9789,33 +9907,9 @@
         if (!pendingRealtimeUpdate) return;
         pendingRealtimeUpdate = false;
 
-        // CRITICAL: Save current detail view BEFORE any async operations
-        // This prevents race conditions where async code could clear/modify currentDetailView
-        const savedDetailView = currentDetailView ? {...currentDetailView} : null;
-
-        // Show notification
-        showToast('[[icon:refresh]] Data changed by another user', 'info');
-
-        // Refresh data
-        await loadAllData(true);
-
-        // Respect SAVED detail view - don't navigate away
-        if (savedDetailView) {
-          // Re-render the detail view instead of the page list
-          if (savedDetailView.type === 'trip') {
-            viewTrip(savedDetailView.id);
-          } else if (savedDetailView.type === 'driver') {
-            viewDriverProfile(savedDetailView.id);
-          } else if (savedDetailView.type === 'truck') {
-            viewTruckCompliance(savedDetailView.id);
-          } else if (savedDetailView.type === 'local_driver') {
-            viewLocalDriverDetails(savedDetailView.id);
-          } else {
-            renderPage();
-          }
-        } else {
-          renderPage();
-        }
+        markRealtimeUpdatePending(payload);
+        if (isRealtimeInterruptSensitiveState()) return;
+        await applyPendingRealtimeUpdates();
       }, 1000); // Wait 1 second for any additional changes
     }
     
@@ -9839,6 +9933,13 @@
         realtimeChannel = null;
         console.log('Real-time sync stopped');
       }
+      if (typeof realtimeUiState !== 'undefined') {
+        realtimeUiState.pending = false;
+        realtimeUiState.pendingPayloads = [];
+        realtimeUiState.lastPendingAt = null;
+        realtimeUiState.applyInProgress = false;
+      }
+      renderRealtimePendingChip();
     }
     
     // Activity Logging
@@ -10245,6 +10346,75 @@
         return order.pickup_full_address || composeFullAddress(order.pickup_address, order.pickup_city, order.pickup_state, order.pickup_zip) || order.origin || '';
       }
       return order.delivery_full_address || composeFullAddress(order.delivery_address, order.delivery_city, order.delivery_state, order.delivery_zip) || order.destination || '';
+    }
+    function getInspectionEventDate(inspection) {
+      if (!inspection) return null;
+      return inspection.completed_at || inspection.created_at || inspection.started_at || null;
+    }
+    function isTerminalHandoffInspection(inspection, order = null) {
+      if (!inspection) return false;
+      const stage = String(inspection.workflow_stage || '').toUpperCase();
+      if (stage === 'TERMINAL_HANDOFF') return true;
+      const scope = String(inspection.visibility_scope || '').toUpperCase();
+      if (scope === 'INTERNAL_ONLY') return true;
+      const inferredType = String(inspection.inspection_type || '').toLowerCase();
+      if (inferredType !== 'delivery') return false;
+      const localType = String(order?.local_delivery_type || '').toUpperCase();
+      const localStatus = String(order?.local_delivery_status || '').toUpperCase();
+      return localType === 'FROM_TERMINAL' && localStatus === 'UNASSIGNED';
+    }
+    function isExternalVisibleInspection(inspection, order = null) {
+      if (!inspection) return false;
+      const scope = String(inspection.visibility_scope || '').toUpperCase();
+      if (scope === 'INTERNAL_ONLY') return false;
+      if (scope === 'EXTERNAL_ALLOWED') return true;
+      return !isTerminalHandoffInspection(inspection, order);
+    }
+    function resolveInspectionActor(inspection) {
+      const driverId = inspection?.driver_id;
+      if (driverId === null || driverId === undefined || driverId === '') {
+        return { name: 'Driver', role: 'Driver' };
+      }
+      const localDriver = (appData.local_drivers || []).find(ld => String(ld.linked_driver_id || '') === String(driverId));
+      if (localDriver) {
+        return { name: localDriver.name || 'Local Driver', role: 'Local Driver' };
+      }
+      const companyDriver = (appData.drivers || []).find(d => String(d.id) === String(driverId));
+      if (companyDriver) {
+        const name = ((companyDriver.first_name || '') + ' ' + (companyDriver.last_name || '')).trim() || ('Driver #' + driverId);
+        return { name, role: 'Driver' };
+      }
+      return { name: 'Driver #' + driverId, role: 'Driver' };
+    }
+    function buildOrderInspectionEvents(order, inspections = []) {
+      return (inspections || [])
+        .filter(i => String(i?.status || '').toLowerCase() === 'completed')
+        .map(inspection => {
+          const actor = resolveInspectionActor(inspection);
+          const isHandoff = isTerminalHandoffInspection(inspection, order);
+          const inspectionType = String(inspection?.inspection_type || '').toLowerCase();
+          let kind = inspectionType;
+          let icon = inspectionType === 'pickup' ? '[[icon:download]]' : '[[icon:upload]]';
+          let label = inspectionType === 'pickup' ? 'Pickup Inspection Completed' : 'Delivery Inspection Completed';
+          let text = inspectionType === 'pickup' ? 'Pickup inspection completed' : 'Delivery inspection completed';
+          if (isHandoff) {
+            kind = 'handoff';
+            icon = '[[icon:route]]';
+            label = 'Terminal Handoff Inspection Completed';
+            text = 'Terminal handoff inspection completed';
+          }
+          return {
+            kind,
+            date: getInspectionEventDate(inspection),
+            icon,
+            label,
+            text,
+            user: actor.name + (actor.role === 'Local Driver' ? ' (Local Driver)' : ''),
+            inspection
+          };
+        })
+        .filter(event => !!event.date)
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
     }
     function getLocalConfirmationDisplay(status = 'pending') {
       const normalized = String(status || 'pending').toLowerCase();
@@ -12909,7 +13079,7 @@
     }
 
     // Track if we're viewing a detail (trip, driver, truck, etc.)
-    let currentDetailView = null; // { type: 'trip', id: 123 } or null
+    var currentDetailView = null; // { type: 'trip', id: 123 } or null
     
     async function loadAllData(forceReload = false) {
       try {
@@ -15306,6 +15476,8 @@
         return;
       }
 
+      currentDetailView = { type: 'order', id: orderId };
+
       // Track previous page for back navigation
       previousPage = currentPage;
       currentPage = 'order-detail';
@@ -15346,17 +15518,69 @@
         console.log('Could not load inspections:', e);
       }
 
-      const pickupInspection = inspections.find(i => i.inspection_type === 'pickup');
-      const deliveryInspection = inspections.find(i => i.inspection_type === 'delivery');
-      const pickupPhotos = photos.filter(p => p.inspection_id === pickupInspection?.id);
-      const deliveryPhotos = photos.filter(p => p.inspection_id === deliveryInspection?.id);
-      const pickupDamages = damages.filter(d => d.inspection_id === pickupInspection?.id);
-      const deliveryDamages = damages.filter(d => d.inspection_id === deliveryInspection?.id);
-      const pickupVideos = videos.filter(v => v.inspection_id === pickupInspection?.id);
-      const deliveryVideos = videos.filter(v => v.inspection_id === deliveryInspection?.id);
+      const sortedInspections = [...inspections].sort((a, b) => {
+        const aTs = new Date(getInspectionEventDate(a) || 0).getTime();
+        const bTs = new Date(getInspectionEventDate(b) || 0).getTime();
+        return aTs - bTs;
+      });
+      const pickupInspections = sortedInspections.filter(i => String(i.inspection_type || '').toLowerCase() === 'pickup');
+      const deliveryInspections = sortedInspections.filter(i => String(i.inspection_type || '').toLowerCase() === 'delivery');
+      const handoffInspections = deliveryInspections.filter(i => isTerminalHandoffInspection(i, order));
+      const finalDeliveryInspections = deliveryInspections.filter(i => !isTerminalHandoffInspection(i, order));
+      const pickupInspection = pickupInspections.length > 0 ? pickupInspections[pickupInspections.length - 1] : null;
+      const deliveryInspection = finalDeliveryInspections.length > 0 ? finalDeliveryInspections[finalDeliveryInspections.length - 1] : null;
+      const pickupPhotos = pickupInspection ? photos.filter(p => p.inspection_id === pickupInspection.id) : [];
+      const deliveryPhotos = deliveryInspection ? photos.filter(p => p.inspection_id === deliveryInspection.id) : [];
+      const pickupDamages = pickupInspection ? damages.filter(d => d.inspection_id === pickupInspection.id) : [];
+      const deliveryDamages = deliveryInspection ? damages.filter(d => d.inspection_id === deliveryInspection.id) : [];
+      const pickupVideos = pickupInspection ? videos.filter(v => v.inspection_id === pickupInspection.id) : [];
+      const deliveryVideos = deliveryInspection ? videos.filter(v => v.inspection_id === deliveryInspection.id) : [];
 
-      // Store photos for gallery
-      orderDetailPhotos = [...pickupPhotos, ...deliveryPhotos];
+      // Store all photos for gallery navigation (including handoff inspections)
+      orderDetailPhotos = [...photos];
+
+      const pickupInspectionHtml = pickupInspections.length > 0
+        ? pickupInspections.map((inspection, idx) => renderInspectionCard(
+            'pickup',
+            inspection,
+            photos.filter(p => p.inspection_id === inspection.id),
+            damages.filter(d => d.inspection_id === inspection.id),
+            videos.filter(v => v.inspection_id === inspection.id),
+            { label: pickupInspections.length > 1 ? ('Pickup Inspection #' + (idx + 1)) : 'Pickup Inspection' }
+          )).join('')
+        : renderInspectionCard('pickup', null, [], [], [], { label: 'Pickup Inspection' });
+
+      const handoffInspectionHtml = handoffInspections.length > 0
+        ? handoffInspections.map((inspection, idx) => renderInspectionCard(
+            'delivery',
+            inspection,
+            photos.filter(p => p.inspection_id === inspection.id),
+            damages.filter(d => d.inspection_id === inspection.id),
+            videos.filter(v => v.inspection_id === inspection.id),
+            {
+              label: handoffInspections.length > 1
+                ? ('Terminal Handoff Inspection #' + (idx + 1))
+                : 'Terminal Handoff Inspection',
+              icon: '[[icon:route]]',
+              headerBg: 'var(--warning)'
+            }
+          )).join('')
+        : '';
+
+      const finalDeliveryInspectionHtml = finalDeliveryInspections.length > 0
+        ? finalDeliveryInspections.map((inspection, idx) => renderInspectionCard(
+            'delivery',
+            inspection,
+            photos.filter(p => p.inspection_id === inspection.id),
+            damages.filter(d => d.inspection_id === inspection.id),
+            videos.filter(v => v.inspection_id === inspection.id),
+            {
+              label: (handoffInspections.length > 0 || finalDeliveryInspections.length > 1)
+                ? ('Final Delivery Inspection' + (finalDeliveryInspections.length > 1 ? (' #' + (idx + 1)) : ''))
+                : 'Delivery Inspection'
+            }
+          )).join('')
+        : renderInspectionCard('delivery', null, [], [], [], { label: handoffInspections.length > 0 ? 'Final Delivery Inspection' : 'Delivery Inspection' });
 
       // Build the modal content
       const vehicleTitle = order.vehicle_year + ' ' + order.vehicle_make + ' ' + order.vehicle_model;
@@ -15488,8 +15712,9 @@
 
             <!-- Inspections Section -->
             <div class="inspections-grid">
-              ${renderInspectionCard('pickup', pickupInspection, pickupPhotos, pickupDamages, pickupVideos)}
-              ${renderInspectionCard('delivery', deliveryInspection, deliveryPhotos, deliveryDamages, deliveryVideos)}
+              ${pickupInspectionHtml}
+              ${handoffInspectionHtml}
+              ${finalDeliveryInspectionHtml}
             </div>
 
           </div>
@@ -15615,7 +15840,7 @@
                 <span>[[icon:chart]] Activity</span>
               </div>
               <div class="order-detail-card-body">
-                ${renderActivityFeedSidebar(order, trip, driver, pickupInspection, deliveryInspection)}
+                ${renderActivityFeedSidebar(order, trip, driver, sortedInspections)}
               </div>
             </div>
 
@@ -15698,11 +15923,11 @@
       return `<span style="background:${s.bg};color:${s.color};padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600">${s.label}</span>`;
     }
 
-    function renderInspectionCard(type, inspection, photos, damages, videos = []) {
+    function renderInspectionCard(type, inspection, photos, damages, videos = [], options = {}) {
       const isPickup = type === 'pickup';
-      const icon = isPickup ? '[[icon:download]]' : '[[icon:upload]]';
-      const label = isPickup ? 'Pickup Inspection' : 'Delivery Inspection';
-      const headerBg = isPickup ? 'var(--success)' : 'var(--info)';
+      const icon = options.icon || (isPickup ? '[[icon:download]]' : '[[icon:upload]]');
+      const label = options.label || (isPickup ? 'Pickup Inspection' : 'Delivery Inspection');
+      const headerBg = options.headerBg || (isPickup ? 'var(--success)' : 'var(--info)');
 
       if (!inspection) {
         return `
@@ -15852,8 +16077,12 @@
       showToast('Downloaded ' + photos.length + ' photos', 'success');
     }
 
-    function renderActivityTimeline(order, trip, pickupInsp, deliveryInsp) {
+    function renderActivityTimeline(order, trip, inspections = []) {
       const events = [];
+      const inspectionEvents = buildOrderInspectionEvents(order, inspections);
+      const latestPickup = inspectionEvents.filter(e => e.kind === 'pickup').slice(-1)[0] || null;
+      const latestHandoff = inspectionEvents.filter(e => e.kind === 'handoff').slice(-1)[0] || null;
+      const latestDelivery = inspectionEvents.filter(e => e.kind === 'delivery').slice(-1)[0] || null;
 
       // Order created
       if (order.created_at) {
@@ -15866,27 +16095,32 @@
       }
 
       // Pickup inspection
-      if (pickupInsp) {
-        events.push({ date: pickupInsp.created_at, icon: '[[icon:download]]', label: 'Pickup Inspection Completed', status: 'completed' });
+      if (latestPickup) {
+        events.push({ date: latestPickup.date, icon: latestPickup.icon, label: latestPickup.label, status: 'completed' });
       } else if (order.delivery_status === 'pending') {
         events.push({ date: null, icon: '[[icon:download]]', label: 'Pickup Inspection', status: 'pending' });
       }
 
       // In transit
       if (order.delivery_status === 'picked_up' || order.delivery_status === 'delivered') {
-        events.push({ date: pickupInsp?.created_at, icon: '[[icon:route]]', label: 'In Transit', status: order.delivery_status === 'picked_up' ? 'current' : 'completed' });
+        events.push({ date: latestPickup?.date, icon: '[[icon:route]]', label: 'In Transit', status: order.delivery_status === 'picked_up' ? 'current' : 'completed' });
       }
 
-      // Delivery inspection
-      if (deliveryInsp) {
-        events.push({ date: deliveryInsp.created_at, icon: '[[icon:upload]]', label: 'Delivery Inspection Completed', status: 'completed' });
+      // Terminal handoff inspection
+      if (latestHandoff) {
+        events.push({ date: latestHandoff.date, icon: latestHandoff.icon, label: latestHandoff.label, status: 'completed' });
+      }
+
+      // Final delivery inspection
+      if (latestDelivery) {
+        events.push({ date: latestDelivery.date, icon: latestDelivery.icon, label: latestDelivery.label, status: 'completed' });
       } else if (order.delivery_status !== 'delivered') {
         events.push({ date: null, icon: '[[icon:upload]]', label: 'Delivery Inspection', status: 'pending' });
       }
 
       // Delivered
       if (order.delivery_status === 'delivered') {
-        events.push({ date: deliveryInsp?.created_at || order.updated_at, icon: '[[icon:check_circle]]', label: 'Delivered', status: 'completed' });
+        events.push({ date: latestDelivery?.date || order.updated_at, icon: '[[icon:check_circle]]', label: 'Delivered', status: 'completed' });
       }
 
       return `
@@ -15906,9 +16140,11 @@
     }
 
     // Sidebar Activity Feed - More compact format with user attribution
-    function renderActivityFeedSidebar(order, trip, driver, pickupInsp, deliveryInsp) {
+    function renderActivityFeedSidebar(order, trip, driver, inspections = []) {
       const events = [];
       const driverName = driver ? driver.first_name + ' ' + driver.last_name : null;
+      const inspectionEvents = buildOrderInspectionEvents(order, inspections);
+      const latestDelivery = inspectionEvents.filter(e => e.kind === 'delivery').slice(-1)[0] || null;
 
       // Order created
       if (order.created_at) {
@@ -15928,49 +16164,32 @@
         });
       }
 
-      // Pickup inspection
-      if (pickupInsp) {
+      inspectionEvents.forEach(event => {
         events.push({
-          date: pickupInsp.created_at,
-          text: 'Pickup inspection completed',
-          user: driverName
+          date: event.date,
+          text: event.text,
+          user: event.user
         });
-        if (pickupInsp.customer_name) {
+        if (event.inspection?.customer_name) {
           events.push({
-            date: pickupInsp.customer_signed_at || pickupInsp.created_at,
-            text: 'Signed by ' + pickupInsp.customer_name,
+            date: event.inspection.customer_signed_at || event.date,
+            text: 'Signed by ' + event.inspection.customer_name,
             user: null
           });
         }
-      }
-
-      // Delivery inspection
-      if (deliveryInsp) {
-        events.push({
-          date: deliveryInsp.created_at,
-          text: 'Delivery inspection completed',
-          user: driverName
-        });
-        if (deliveryInsp.customer_name) {
-          events.push({
-            date: deliveryInsp.customer_signed_at || deliveryInsp.created_at,
-            text: 'Signed by ' + deliveryInsp.customer_name,
-            user: null
-          });
-        }
-      }
+      });
 
       // Delivered
       if (order.delivery_status === 'delivered') {
         events.push({
-          date: deliveryInsp?.created_at || order.updated_at,
+          date: latestDelivery?.date || order.updated_at,
           text: 'Order marked as delivered',
-          user: driverName
+          user: latestDelivery?.user || driverName
         });
       }
 
       // Sort by date descending (most recent first)
-      events.sort((a, b) => new Date(b.date) - new Date(a.date));
+      events.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
 
       if (events.length === 0) {
         return '<p class="muted" style="font-size:13px;text-align:center;padding:12px 0">No activity yet</p>';
@@ -16165,9 +16384,11 @@
       }
     }
 
-    function renderPage() {
-      // Clear detail view flag when rendering a page (navigating away from detail)
-      currentDetailView = null;
+    function renderPage(options = {}) {
+      // Clear detail view when rendering a page unless caller explicitly preserves it.
+      if (!options.preserveDetailView) {
+        currentDetailView = null;
+      }
 
       const m = document.getElementById('main-content');
 
@@ -22461,7 +22682,8 @@
           local_driver_id: localDriverId, 
           local_delivery_status: 'ASSIGNED',
           local_delivery_type: localType,
-          local_assigned_date: assignedDate || new Date().toISOString().split('T')[0]
+          local_assigned_date: assignedDate || new Date().toISOString().split('T')[0],
+          local_confirmation_status: 'pending'
         });
         document.querySelector('.modal-overlay').remove();
         showToast('Local driver assigned!');
@@ -22572,7 +22794,12 @@
     async function unassignLocalDriver(orderId, localDriverId) {
       if (!confirm('Unassign this order from local driver?')) return;
       try {
-        await dbUpdate('orders', orderId, { local_delivery_status: 'UNASSIGNED' });
+        await dbUpdate('orders', orderId, {
+          local_delivery_status: 'UNASSIGNED',
+          local_driver_id: null,
+          local_assigned_date: null,
+          local_confirmation_status: 'pending'
+        });
         showToast('Unassigned');
         await loadAllData(true);
         viewLocalDriverDetails(localDriverId);
@@ -31717,9 +31944,13 @@
             allowUnauthenticated: true,
             filter: { order_id: 'eq.' + order.id }
           });
-          if (inspections && inspections.length > 0) {
-            pickupInspection = inspections.find(i => i.inspection_type === 'pickup' && i.status === 'completed');
-            deliveryInspection = inspections.find(i => i.inspection_type === 'delivery' && i.status === 'completed');
+          const visibleInspections = (inspections || [])
+            .filter(i => String(i?.status || '').toLowerCase() === 'completed')
+            .filter(i => isExternalVisibleInspection(i, order))
+            .sort((a, b) => new Date(getInspectionEventDate(a) || 0) - new Date(getInspectionEventDate(b) || 0));
+          if (visibleInspections.length > 0) {
+            pickupInspection = visibleInspections.filter(i => String(i.inspection_type || '').toLowerCase() === 'pickup').slice(-1)[0] || null;
+            deliveryInspection = visibleInspections.filter(i => String(i.inspection_type || '').toLowerCase() === 'delivery').slice(-1)[0] || null;
           }
         } catch (e) {
           console.log('Could not fetch inspections for tracking');
@@ -31752,8 +31983,12 @@
       (async () => {
         try {
           const inspections = await dbFetch('vehicle_inspections', { filter: { order_id: 'eq.' + order.id } }) || [];
-          const pickupInspection = inspections.find(i => i.inspection_type === 'pickup' && i.status === 'completed');
-          const deliveryInspection = inspections.find(i => i.inspection_type === 'delivery' && i.status === 'completed');
+          const visibleInspections = inspections
+            .filter(i => String(i?.status || '').toLowerCase() === 'completed')
+            .filter(i => isExternalVisibleInspection(i, order))
+            .sort((a, b) => new Date(getInspectionEventDate(a) || 0) - new Date(getInspectionEventDate(b) || 0));
+          const pickupInspection = visibleInspections.filter(i => String(i.inspection_type || '').toLowerCase() === 'pickup').slice(-1)[0] || null;
+          const deliveryInspection = visibleInspections.filter(i => String(i.inspection_type || '').toLowerCase() === 'delivery').slice(-1)[0] || null;
           renderTrackingPortalHTML(order, trip, driver, pickupInspection, deliveryInspection, container);
         } catch (e) {
           console.log('Could not fetch inspections for tracking portal');
