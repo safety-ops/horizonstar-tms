@@ -29362,6 +29362,14 @@
 
       y = doc.lastAutoTable.finalY + 8;
 
+      // Check if remaining content fits on current page — if not, add new page
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const remainingContentHeight = (totalDeductions > 0 ? 36 : 0) + (totalDeductions > 0 ? 56 : 50) + 20;
+      if (y + remainingContentHeight > pageHeight - 15) {
+        doc.addPage();
+        y = margin;
+      }
+
       // Deductions Section (only if there are deductions)
       if (totalDeductions > 0) {
         const red = [220, 38, 38];
