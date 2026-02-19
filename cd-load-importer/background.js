@@ -1,4 +1,4 @@
-// CD Load Importer - Background Service Worker v5
+// CD Load Importer - Background Service Worker v6
 // Handles Supabase API calls for load import and trip fetching
 
 const DEBUG = true;
@@ -33,10 +33,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Get Supabase config from storage
 async function getSupabaseConfig() {
-  const result = await chrome.storage.sync.get(['supabaseUrl', 'supabaseKey']);
+  const result = await chrome.storage.sync.get(['supabaseUrl', 'supabaseKey', 'dispatcherId']);
   return {
     url: result.supabaseUrl || DEFAULT_SUPABASE_URL,
-    key: result.supabaseKey || ''
+    key: result.supabaseKey || '',
+    dispatcherId: result.dispatcherId ? parseInt(result.dispatcherId, 10) : null
   };
 }
 
@@ -84,6 +85,55 @@ async function handleGetTrips() {
   };
 }
 
+// Resolve broker name to broker_id, creating if needed
+async function resolveOrCreateBroker(brokerName, config) {
+  if (!brokerName) return { brokerId: null, brokerName: null };
+
+  try {
+    // Look up existing broker by name (case-insensitive)
+    const lookupUrl = `${config.url}/rest/v1/brokers?name=ilike.${encodeURIComponent(brokerName)}&select=id,name&limit=1`;
+    const lookupResponse = await fetch(lookupUrl, {
+      headers: {
+        'apikey': config.key,
+        'Authorization': `Bearer ${config.key}`
+      }
+    });
+
+    if (lookupResponse.ok) {
+      const brokers = await lookupResponse.json();
+      if (brokers.length > 0) {
+        log('Found existing broker:', brokers[0].id, brokers[0].name);
+        return { brokerId: brokers[0].id, brokerName: brokers[0].name };
+      }
+    }
+
+    // Create new broker
+    const createResponse = await fetch(`${config.url}/rest/v1/brokers`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': config.key,
+        'Authorization': `Bearer ${config.key}`,
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({ name: brokerName })
+    });
+
+    if (createResponse.ok) {
+      const created = await createResponse.json();
+      const broker = created[0] || created;
+      log('Created new broker:', broker.id, broker.name);
+      return { brokerId: broker.id, brokerName: broker.name };
+    }
+
+    log('Broker create failed, continuing with name only');
+  } catch (e) {
+    log('Broker resolution error:', e.message);
+  }
+
+  return { brokerId: null, brokerName: brokerName };
+}
+
 // Import load to Supabase
 async function handleImportLoad(loadData) {
   log('Importing load:', loadData);
@@ -94,10 +144,21 @@ async function handleImportLoad(loadData) {
     throw new Error('Supabase API key not configured. Please open extension settings.');
   }
 
+  // Resolve broker name to broker_id
+  let brokerId = null;
+  let resolvedBrokerName = loadData.broker_name || null;
+  if (resolvedBrokerName) {
+    const brokerResult = await resolveOrCreateBroker(resolvedBrokerName, config);
+    brokerId = brokerResult.brokerId;
+    resolvedBrokerName = brokerResult.brokerName || resolvedBrokerName;
+  }
+
   // Prepare order data for Supabase
   const orderData = {
     order_number: loadData.order_number || `CD-${Date.now()}`,
-    broker_name: loadData.broker_name || null,
+    status: 'PENDING',
+    broker_id: brokerId,
+    broker_name: resolvedBrokerName,
     revenue: loadData.revenue || null,
     payment_type: loadData.payment_type || null,
     payment_terms: loadData.payment_terms || null,
@@ -108,17 +169,26 @@ async function handleImportLoad(loadData) {
     vehicle_color: loadData.vehicle_color || null,
     origin: loadData.origin || null,
     pickup_full_address: loadData.pickup_full_address || null,
+    pickup_city: loadData.pickup_city || null,
+    pickup_state: loadData.pickup_state || null,
+    pickup_zip: loadData.pickup_zip || null,
     pickup_phone: loadData.pickup_phone || null,
+    pickup_contact_name: loadData.pickup_contact_name || null,
     pickup_contact_phone: loadData.pickup_phone || null,
     pickup_date: loadData.pickup_date || null,
     destination: loadData.destination || null,
     delivery_full_address: loadData.delivery_full_address || null,
+    delivery_city: loadData.delivery_city || null,
+    delivery_state: loadData.delivery_state || null,
+    delivery_zip: loadData.delivery_zip || null,
     delivery_phone: loadData.delivery_phone || null,
+    delivery_contact_name: loadData.delivery_contact_name || null,
     delivery_contact_phone: loadData.delivery_phone || null,
-    delivery_date: loadData.delivery_date || null,
+    dropoff_date: loadData.dropoff_date || null,
     dispatcher_notes: loadData.dispatcher_notes || 'Imported from Central Dispatch',
+    dispatcher_id: config.dispatcherId || null,
     delivery_status: 'pending',
-    // New fields for Future Cars / Trip assignment
+    // Fields for Future Cars / Trip assignment
     load_category: loadData.load_category || null,
     load_subcategory: loadData.load_subcategory || null,
     trip_id: loadData.trip_id || null,
@@ -138,6 +208,23 @@ async function handleImportLoad(loadData) {
   }
 
   log('Order data to insert:', orderData);
+
+  // Pre-check for duplicate order number
+  if (orderData.order_number) {
+    const checkUrl = `${config.url}/rest/v1/orders?order_number=eq.${encodeURIComponent(orderData.order_number)}&select=id&limit=1`;
+    const checkResponse = await fetch(checkUrl, {
+      headers: {
+        'apikey': config.key,
+        'Authorization': `Bearer ${config.key}`
+      }
+    });
+    if (checkResponse.ok) {
+      const existing = await checkResponse.json();
+      if (existing.length > 0) {
+        throw new Error('This load has already been imported to TMS (Order #' + orderData.order_number + ')');
+      }
+    }
+  }
 
   // Make Supabase API call
   const response = await fetch(`${config.url}/rest/v1/orders`, {
@@ -193,8 +280,7 @@ async function testSupabaseConnection() {
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
     log('Extension installed');
-    // Could open options page here
   }
 });
 
-log('Background service worker v5 started');
+log('Background service worker v6 started');

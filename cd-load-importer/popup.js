@@ -5,6 +5,7 @@ const DEFAULT_SUPABASE_URL = 'https://yrrczhlzulwvdqjwvhtu.supabase.co';
 // DOM elements
 const supabaseUrlInput = document.getElementById('supabaseUrl');
 const supabaseKeyInput = document.getElementById('supabaseKey');
+const dispatcherIdInput = document.getElementById('dispatcherId');
 const saveBtn = document.getElementById('saveBtn');
 const testBtn = document.getElementById('testBtn');
 const statusIcon = document.getElementById('statusIcon');
@@ -14,10 +15,11 @@ const toast = document.getElementById('toast');
 
 // Load saved settings
 async function loadSettings() {
-  const result = await chrome.storage.sync.get(['supabaseUrl', 'supabaseKey', 'connected']);
+  const result = await chrome.storage.sync.get(['supabaseUrl', 'supabaseKey', 'dispatcherId', 'connected']);
 
   supabaseUrlInput.value = result.supabaseUrl || DEFAULT_SUPABASE_URL;
   supabaseKeyInput.value = result.supabaseKey || '';
+  dispatcherIdInput.value = result.dispatcherId || '';
 
   if (result.connected) {
     updateStatus('connected');
@@ -49,7 +51,8 @@ async function saveSettings() {
   try {
     await chrome.storage.sync.set({
       supabaseUrl: url,
-      supabaseKey: key
+      supabaseKey: key,
+      dispatcherId: dispatcherIdInput.value.trim() || null
     });
 
     showToast('Settings saved!', 'success');

@@ -45,6 +45,11 @@
   // Payment types
   const PAYMENT_TYPES = ['COD', 'COP', 'BILL', 'CHECK', 'ACH'];
 
+  // Escape string for use in HTML attributes
+  function escapeAttr(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
   // Check if we're on a Central Dispatch page
   function isCentralDispatchPage() {
     return window.location.href.includes('centraldispatch.com');
@@ -177,12 +182,20 @@
       vehicle_color: '',
       origin: '',
       pickup_full_address: '',
+      pickup_city: '',
+      pickup_state: '',
+      pickup_zip: '',
       pickup_phone: '',
+      pickup_contact_name: '',
       pickup_date: '',
       destination: '',
       delivery_full_address: '',
+      delivery_city: '',
+      delivery_state: '',
+      delivery_zip: '',
       delivery_phone: '',
-      delivery_date: '',
+      delivery_contact_name: '',
+      dropoff_date: '',
       dispatcher_notes: ''
     };
 
@@ -240,7 +253,7 @@
       log('Found Payment Terms: QUICK_PAY');
     } else if (netTermsMatch) {
       const days = parseInt(netTermsMatch[1]);
-      const termsMapping = { 7: 'NET7', 10: 'NET10', 15: 'NET15', 30: 'NET30', 45: 'NET45', 60: 'NET60' };
+      const termsMapping = { 5: 'NET5', 7: 'NET7', 10: 'NET10', 15: 'NET15', 21: 'NET21', 30: 'NET30', 45: 'NET45', 60: 'NET60' };
       data.payment_terms = termsMapping[days] || 'NET30';
       log('Found Payment Terms:', data.payment_terms);
     } else if (data.payment_type === 'BILL') {
@@ -259,7 +272,7 @@
       const altVehicleMatch = cardText.match(/(\d{4})\s+([A-Za-z]+)\s+(\d+\s*Series|[A-Za-z0-9]+[A-Za-z0-9\s]*?)(?:\n|VIN|Sedan|Coupe|SUV|$)/i);
       if (altVehicleMatch) {
         const year = parseInt(altVehicleMatch[1]);
-        if (year >= 1900 && year <= 2030) {
+        if (year >= 1900 && year <= new Date().getFullYear() + 2) {
           data.vehicle_year = year;
           data.vehicle_make = altVehicleMatch[2].trim();
           data.vehicle_model = altVehicleMatch[3].trim().substring(0, 50);
@@ -285,17 +298,21 @@
     const originMatch = cardText.match(/origin\s*info[\s\S]*?\n([A-Z][a-zA-Z\s]+),\s*([A-Z]{2})\s+(\d{5})/);
     if (originMatch) {
       let city = originMatch[1].trim();
+      let state = originMatch[2];
+      let zip = originMatch[3];
       if (!/^[A-Z][a-z]/.test(city)) {
         const altOrigin = cardText.match(/origin\s*info[\s\S]*?\n([A-Z][a-z][a-zA-Z\s]+),\s*([A-Z]{2})\s+(\d{5})/);
         if (altOrigin) {
           city = altOrigin[1].trim();
-          data.origin = `${city}, ${altOrigin[2]}`;
-          data.pickup_full_address = `${city}, ${altOrigin[2]} ${altOrigin[3]}`;
+          state = altOrigin[2];
+          zip = altOrigin[3];
         }
-      } else {
-        data.origin = `${city}, ${originMatch[2]}`;
-        data.pickup_full_address = `${city}, ${originMatch[2]} ${originMatch[3]}`;
       }
+      data.origin = `${city}, ${state}`;
+      data.pickup_full_address = `${city}, ${state} ${zip}`;
+      data.pickup_city = city;
+      data.pickup_state = state;
+      data.pickup_zip = zip;
       log('Found Origin:', data.origin);
     }
 
@@ -303,17 +320,21 @@
     const destMatch = cardText.match(/destination\s*info[\s\S]*?\n([A-Z][a-zA-Z\s]+),\s*([A-Z]{2})\s+(\d{5})/);
     if (destMatch) {
       let city = destMatch[1].trim();
+      let state = destMatch[2];
+      let zip = destMatch[3];
       if (!/^[A-Z][a-z]/.test(city)) {
         const altDest = cardText.match(/destination\s*info[\s\S]*?\n([A-Z][a-z][a-zA-Z\s]+),\s*([A-Z]{2})\s+(\d{5})/);
         if (altDest) {
           city = altDest[1].trim();
-          data.destination = `${city}, ${altDest[2]}`;
-          data.delivery_full_address = `${city}, ${altDest[2]} ${altDest[3]}`;
+          state = altDest[2];
+          zip = altDest[3];
         }
-      } else {
-        data.destination = `${city}, ${destMatch[2]}`;
-        data.delivery_full_address = `${city}, ${destMatch[2]} ${destMatch[3]}`;
       }
+      data.destination = `${city}, ${state}`;
+      data.delivery_full_address = `${city}, ${state} ${zip}`;
+      data.delivery_city = city;
+      data.delivery_state = state;
+      data.delivery_zip = zip;
       log('Found Destination:', data.destination);
     }
 
@@ -326,6 +347,19 @@
     const destPhoneMatch = cardText.match(/destination\s*info[\s\S]*?Contact\s*Info[\s\S]*?\((\d{3})\)\s*(\d{3})-(\d{4})/i);
     if (destPhoneMatch) {
       data.delivery_phone = `(${destPhoneMatch[1]}) ${destPhoneMatch[2]}-${destPhoneMatch[3]}`;
+    }
+
+    // CONTACT NAMES
+    const originContactMatch = cardText.match(/origin\s*info[\s\S]*?Contact\s*(?:Name)?\s*\n?\s*([A-Za-z][A-Za-z\s.'-]+?)(?:\n|Contact\s*Info|$)/i);
+    if (originContactMatch) {
+      data.pickup_contact_name = originContactMatch[1].trim();
+      log('Found Pickup Contact:', data.pickup_contact_name);
+    }
+
+    const destContactMatch = cardText.match(/destination\s*info[\s\S]*?Contact\s*(?:Name)?\s*\n?\s*([A-Za-z][A-Za-z\s.'-]+?)(?:\n|Contact\s*Info|$)/i);
+    if (destContactMatch) {
+      data.delivery_contact_name = destContactMatch[1].trim();
+      log('Found Delivery Contact:', data.delivery_contact_name);
     }
 
     // PICKUP DATE
@@ -357,8 +391,8 @@
       if (match) {
         const parts = match[1].split('/');
         if (parts.length === 3) {
-          data.delivery_date = `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
-          log('Found Delivery Date:', data.delivery_date);
+          data.dropoff_date = `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+          log('Found Delivery Date:', data.dropoff_date);
           break;
         }
       }
@@ -434,7 +468,7 @@
                 <!-- Order Number -->
                 <div>
                   <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Order #</label>
-                  <input type="text" id="tms-order-number" value="${loadData.order_number || ''}" style="
+                  <input type="text" id="tms-order-number" value="${escapeAttr(loadData.order_number)}" style="
                     width: 100%;
                     padding: 8px 12px;
                     background: #0f172a;
@@ -450,7 +484,7 @@
                 <div style="display: grid; grid-template-columns: 80px 1fr 1fr; gap: 8px;">
                   <div>
                     <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Year</label>
-                    <input type="number" id="tms-vehicle-year" value="${loadData.vehicle_year || ''}" style="
+                    <input type="number" id="tms-vehicle-year" value="${escapeAttr(loadData.vehicle_year)}" style="
                       width: 100%;
                       padding: 8px 12px;
                       background: #0f172a;
@@ -463,7 +497,7 @@
                   </div>
                   <div>
                     <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Make</label>
-                    <input type="text" id="tms-vehicle-make" value="${loadData.vehicle_make || ''}" style="
+                    <input type="text" id="tms-vehicle-make" value="${escapeAttr(loadData.vehicle_make)}" style="
                       width: 100%;
                       padding: 8px 12px;
                       background: #0f172a;
@@ -476,7 +510,7 @@
                   </div>
                   <div>
                     <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Model</label>
-                    <input type="text" id="tms-vehicle-model" value="${loadData.vehicle_model || ''}" style="
+                    <input type="text" id="tms-vehicle-model" value="${escapeAttr(loadData.vehicle_model)}" style="
                       width: 100%;
                       padding: 8px 12px;
                       background: #0f172a;
@@ -492,7 +526,7 @@
                 <!-- VIN Row -->
                 <div>
                   <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">VIN</label>
-                  <input type="text" id="tms-vehicle-vin" value="${loadData.vehicle_vin || ''}" maxlength="17" placeholder="17-character VIN" style="
+                  <input type="text" id="tms-vehicle-vin" value="${escapeAttr(loadData.vehicle_vin)}" maxlength="17" placeholder="17-character VIN" style="
                     width: 100%;
                     padding: 8px 12px;
                     background: #0f172a;
@@ -510,7 +544,7 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                   <div>
                     <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Origin</label>
-                    <input type="text" id="tms-origin" value="${loadData.origin || ''}" style="
+                    <input type="text" id="tms-origin" value="${escapeAttr(loadData.origin)}" style="
                       width: 100%;
                       padding: 8px 12px;
                       background: #0f172a;
@@ -523,7 +557,7 @@
                   </div>
                   <div>
                     <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Destination</label>
-                    <input type="text" id="tms-destination" value="${loadData.destination || ''}" style="
+                    <input type="text" id="tms-destination" value="${escapeAttr(loadData.destination)}" style="
                       width: 100%;
                       padding: 8px 12px;
                       background: #0f172a;
@@ -540,7 +574,7 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                   <div>
                     <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Price ($)</label>
-                    <input type="number" id="tms-revenue" value="${loadData.revenue || ''}" style="
+                    <input type="number" id="tms-revenue" value="${escapeAttr(loadData.revenue)}" style="
                       width: 100%;
                       padding: 8px 12px;
                       background: #0f172a;
@@ -580,9 +614,11 @@
                       box-sizing: border-box;
                     ">
                       <option value="QUICK_PAY" ${loadData.payment_terms === 'QUICK_PAY' ? 'selected' : ''}>Quick Pay (3 days)</option>
+                      <option value="NET5" ${loadData.payment_terms === 'NET5' ? 'selected' : ''}>Net 5</option>
                       <option value="NET7" ${loadData.payment_terms === 'NET7' ? 'selected' : ''}>Net 7</option>
                       <option value="NET10" ${loadData.payment_terms === 'NET10' ? 'selected' : ''}>Net 10</option>
                       <option value="NET15" ${loadData.payment_terms === 'NET15' ? 'selected' : ''}>Net 15</option>
+                      <option value="NET21" ${loadData.payment_terms === 'NET21' ? 'selected' : ''}>Net 21</option>
                       <option value="NET30" ${loadData.payment_terms === 'NET30' || !loadData.payment_terms ? 'selected' : ''}>Net 30</option>
                       <option value="NET45" ${loadData.payment_terms === 'NET45' ? 'selected' : ''}>Net 45</option>
                       <option value="NET60" ${loadData.payment_terms === 'NET60' ? 'selected' : ''}>Net 60</option>
@@ -594,7 +630,7 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                   <div>
                     <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Broker</label>
-                    <input type="text" id="tms-broker" value="${loadData.broker_name || ''}" style="
+                    <input type="text" id="tms-broker" value="${escapeAttr(loadData.broker_name)}" style="
                       width: 100%;
                       padding: 8px 12px;
                       background: #0f172a;
@@ -607,7 +643,7 @@
                   </div>
                   <div>
                     <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Pickup Date</label>
-                    <input type="date" id="tms-pickup-date" value="${loadData.pickup_date || ''}" style="
+                    <input type="date" id="tms-pickup-date" value="${escapeAttr(loadData.pickup_date)}" style="
                       width: 100%;
                       padding: 8px 12px;
                       background: #0f172a;
@@ -886,11 +922,19 @@
         payment_terms: document.getElementById('tms-payment-terms')?.value || null,
         broker_name: document.getElementById('tms-broker').value.trim(),
         pickup_date: document.getElementById('tms-pickup-date').value,
-        delivery_date: loadData.delivery_date || null,
+        dropoff_date: loadData.dropoff_date || null,
         pickup_phone: loadData.pickup_phone,
+        pickup_contact_name: loadData.pickup_contact_name || null,
         delivery_phone: loadData.delivery_phone,
+        delivery_contact_name: loadData.delivery_contact_name || null,
         pickup_full_address: loadData.pickup_full_address,
+        pickup_city: loadData.pickup_city || null,
+        pickup_state: loadData.pickup_state || null,
+        pickup_zip: loadData.pickup_zip || null,
         delivery_full_address: loadData.delivery_full_address,
+        delivery_city: loadData.delivery_city || null,
+        delivery_state: loadData.delivery_state || null,
+        delivery_zip: loadData.delivery_zip || null,
         dispatcher_notes: 'Imported from Central Dispatch'
       };
 
