@@ -15852,7 +15852,7 @@
               <div class="order-detail-card-body">
                 <div class="quick-actions-grid" style="grid-template-columns: repeat(3, 1fr);">
                   <button class="btn btn-secondary" onclick="openOrderModal(${order.id})">[[icon:edit]] Edit Order</button>
-                  <button class="btn btn-secondary" onclick="generateBOLPDF(${order.id})">[[icon:file]] View BOL</button>
+                  <button class="btn btn-secondary" onclick="viewOrGenerateBOL(${order.id})">[[icon:file]] View BOL</button>
                   <button class="btn btn-secondary" onclick="generateInvoicePDF(${order.id})">[[icon:dollar]] View Invoice</button>
                   <button class="btn btn-secondary" onclick="openOrderAttachmentsModal(${order.id})">[[icon:paperclip]] Attachments</button>
                   <button class="btn btn-secondary" onclick="generateRouteSheetPDF(${order.id})">[[icon:map]] Route Sheet</button>
@@ -21055,6 +21055,14 @@
     function openOrderModal(id = null) {
       const o = id ? appData.orders.find(x => x.id === id) : null;
       const existingBroker = o?.broker_id ? (appData.brokers || []).find(b => String(b.id) === String(o.broker_id)) : null;
+      let orderModalDispatcher = appData.dispatchers.find(d => d.user_id === currentUser.id);
+      if (!orderModalDispatcher) {
+        orderModalDispatcher = appData.dispatchers.find(d => d.email && d.email.toLowerCase() === currentUser.email.toLowerCase());
+      }
+      if (!orderModalDispatcher) {
+        const fullName = (currentUser.first_name + ' ' + currentUser.last_name).toLowerCase();
+        orderModalDispatcher = appData.dispatchers.find(d => d.name && d.name.toLowerCase() === fullName);
+      }
       const pickupAddress = hydrateOrderAddressParts(o, 'pickup');
       const deliveryAddress = hydrateOrderAddressParts(o, 'delivery');
       const orderSplitLike = isOrderSplitLike(o);
@@ -21109,6 +21117,11 @@
         '</div>' +
         '<div class="form-group"><label>[[icon:note]] Notes for Dispatchers</label><textarea id="orderNotes" rows="2" placeholder="Internal notes for dispatch team..." style="resize:vertical">' + (o?.dispatcher_notes || '') + '</textarea></div>' +
         '<div class="form-group"><label>[[icon:receipt]] Notes for Driver</label><textarea id="orderDriverNotes" rows="2" placeholder="Driver-facing instructions..." style="resize:vertical">' + getOrderDriverNotes(o) + '</textarea></div>' +
+        '<div class="form-group"><label>Booked By</label>' +
+        (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER'
+          ? '<select id="orderModalDispatcher"><option value="">Select Dispatcher</option>' + appData.dispatchers.map(d => '<option value="' + d.id + '"' + ((o?.dispatcher_id === d.id || (!o && orderModalDispatcher && orderModalDispatcher.id === d.id)) ? ' selected' : '') + '>' + d.name + '</option>').join('') + '</select>'
+          : '<input type="text" value="' + (orderModalDispatcher ? orderModalDispatcher.name : currentUser.first_name + ' ' + currentUser.last_name) + '" readonly style="background:var(--surface-elevated);cursor:not-allowed"><input type="hidden" id="orderModalDispatcher" value="' + (orderModalDispatcher ? orderModalDispatcher.id : '') + '">') +
+        '</div>' +
         '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="clearEditing(\'orders\',' + id + ');this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveOrder(' + id + ')">Save</button></div></div>';
       document.body.appendChild(m);
       setupBrokerAutocomplete('orderBrokerInput');
@@ -21210,7 +21223,8 @@
         pickup_eta: pickupEtaVal ? new Date(pickupEtaVal).toISOString() : null,
         delivery_eta: deliveryEtaVal ? new Date(deliveryEtaVal).toISOString() : null,
         dispatcher_notes: document.getElementById('orderNotes').value || null,
-        notes: document.getElementById('orderDriverNotes')?.value || null
+        notes: document.getElementById('orderDriverNotes')?.value || null,
+        dispatcher_id: parseInt(document.getElementById('orderModalDispatcher').value, 10) || null
       };
       try {
         if (id) {
@@ -30518,6 +30532,74 @@
       }
     }
 
+    // ============ VIEW OR FETCH STORED BOL ============
+    async function viewOrGenerateBOL(orderId) {
+      // Try to fetch the BOL that was uploaded by the iOS driver app
+      try {
+        const attachments = await dbFetch('order_attachments', {
+          filter: { order_id: 'eq.' + orderId },
+          order: 'uploaded_at.desc'
+        });
+
+        const bolAttachment = attachments?.find(a =>
+          a.file_name?.startsWith('BOL_') || a.notes === 'Bill of Lading'
+        );
+
+        if (bolAttachment) {
+          const storagePath = bolAttachment.storage_path ||
+            extractStoragePathFromUrl(bolAttachment.file_url, 'order-attachments');
+
+          if (storagePath) {
+            const signedMap = await requestSignedUrls('order-attachments', [storagePath], 900);
+            const signedUrl = signedMap[storagePath];
+            if (signedUrl) {
+              window.open(signedUrl, '_blank');
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        console.log('Could not fetch stored BOL, generating fresh:', e);
+      }
+
+      // Fallback: generate a new BOL if no stored one found
+      generateBOLPDF(orderId);
+    }
+
+    async function fetchStoredBOLBase64(orderId) {
+      try {
+        const attachments = await dbFetch('order_attachments', {
+          filter: { order_id: 'eq.' + orderId },
+          order: 'uploaded_at.desc'
+        });
+
+        const bolAtt = attachments?.find(a =>
+          a.file_name?.startsWith('BOL_') || a.notes === 'Bill of Lading'
+        );
+
+        if (bolAtt) {
+          const sp = bolAtt.storage_path ||
+            extractStoragePathFromUrl(bolAtt.file_url, 'order-attachments');
+          if (sp) {
+            const signedMap = await requestSignedUrls('order-attachments', [sp], 900);
+            const url = signedMap[sp];
+            if (url) {
+              const resp = await fetch(url);
+              const blob = await resp.blob();
+              return await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                reader.readAsDataURL(blob);
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.log('Stored BOL fetch failed:', e);
+      }
+      return null;
+    }
+
     // ============ BILL OF LADING (BOL) PDF GENERATION ============
     async function generateBOLPDF(orderId, returnBase64 = false) {
       const order = appData.orders.find(o => o.id === orderId);
@@ -31305,12 +31387,14 @@
           return;
         }
 
-        // Generate BOL PDF as base64 (may fail if no inspection data, that's ok)
-        let bolBase64 = null;
-        try {
-          bolBase64 = await generateBOLPDF(orderId, true);
-        } catch (e) {
-          console.log('BOL generation skipped:', e.message);
+        // Try fetching stored BOL from driver app first, fall back to generating
+        let bolBase64 = await fetchStoredBOLBase64(orderId);
+        if (!bolBase64) {
+          try {
+            bolBase64 = await generateBOLPDF(orderId, true);
+          } catch (e) {
+            console.log('BOL generation skipped:', e.message);
+          }
         }
 
         // Calculate amounts for email
