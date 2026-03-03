@@ -13091,12 +13091,12 @@
         
         // Load essential data first (what dashboard needs - including tasks)
         const [users, trucks, drivers, dispatchers, trips, orders, brokers, tasks] = await Promise.all([
-          dbFetch('users'), 
-          dbFetch('trucks', { order: 'truck_number' }), 
-          dbFetch('drivers'), 
-          dbFetch('dispatchers'), 
-          dbFetch('trips', { order: 'trip_date.desc' }), 
-          dbFetch('orders', { order: 'id.desc' }), 
+          dbFetch('users'),
+          dbFetch('trucks', { order: 'truck_number' }),
+          dbFetch('drivers'),
+          dbFetch('dispatchers'),
+          dbFetchAll('trips', { order: 'trip_date.desc' }),
+          dbFetchAll('orders', { order: 'id.desc' }),
           dbFetch('brokers', { order: 'name' }),
           dbFetch('tasks', { order: 'due_date.asc' })
         ]);

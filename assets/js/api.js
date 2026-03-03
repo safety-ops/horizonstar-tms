@@ -48,9 +48,30 @@ async function dbFetch(table, options = {}) {
     query = query.order(column, { ascending: direction !== 'desc' });
   }
 
+  if (options.range) {
+    query = query.range(options.range[0], options.range[1]);
+  }
+
   const { data, error } = await query;
   if (error) throw error;
   return data || [];
+}
+
+/**
+ * Fetch ALL rows from a table, paginating through Supabase's 1000-row default limit.
+ * Use this for tables that may exceed 1000 rows (e.g., orders, trips).
+ */
+async function dbFetchAll(table, options = {}) {
+  const PAGE_SIZE = 1000;
+  let allData = [];
+  let from = 0;
+  while (true) {
+    const page = await dbFetch(table, { ...options, range: [from, from + PAGE_SIZE - 1] });
+    allData = allData.concat(page);
+    if (page.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+  return allData;
 }
 
 /**
@@ -299,8 +320,8 @@ async function loadAllData(forceReload = false) {
       dbFetch('trucks', { order: 'truck_number' }),
       dbFetch('drivers'),
       dbFetch('dispatchers'),
-      dbFetch('trips', { order: 'trip_date.desc' }),
-      dbFetch('orders', { order: 'id.desc' }),
+      dbFetchAll('trips', { order: 'trip_date.desc' }),
+      dbFetchAll('orders', { order: 'id.desc' }),
       dbFetch('brokers', { order: 'name' }),
       dbFetch('tasks', { order: 'due_date.asc' })
     ]);
