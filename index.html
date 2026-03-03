@@ -9925,8 +9925,6 @@
         pendingRealtimeUpdate = false;
 
         markRealtimeUpdatePending(payload);
-        if (isRealtimeInterruptSensitiveState()) return;
-        await applyPendingRealtimeUpdates();
       }, 1000); // Wait 1 second for any additional changes
     }
     
@@ -15425,6 +15423,14 @@
         }
       }
       currentPage = page;
+      // Silently apply any pending realtime updates — user expects a page transition anyway
+      if (realtimeUiState.pending) {
+        realtimeUiState.pending = false;
+        realtimeUiState.pendingPayloads = [];
+        realtimeUiState.lastPendingAt = null;
+        renderRealtimePendingChip();
+        loadAllData(true);
+      }
       // Reset pagination to page 1 when navigating to a new page
       Object.keys(pagination).forEach(key => { pagination[key].page = 1; });
       // Save current page to localStorage for persistence across refresh
