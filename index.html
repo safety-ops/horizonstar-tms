@@ -9507,10 +9507,27 @@
         const [column, direction] = options.order.split('.');
         query = query.order(column, { ascending: direction !== 'desc' });
       }
-      
+
+      if (options.range) {
+        query = query.range(options.range[0], options.range[1]);
+      }
+
       const { data, error } = await query;
       if (error) throw error;
       return data || [];
+    }
+
+    async function dbFetchAll(table, options = {}) {
+      const PAGE_SIZE = 1000;
+      let allData = [];
+      let from = 0;
+      while (true) {
+        const page = await dbFetch(table, { ...options, range: [from, from + PAGE_SIZE - 1] });
+        allData = allData.concat(page);
+        if (page.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
+      return allData;
     }
 
     // Generate a unique dealer code from company name
