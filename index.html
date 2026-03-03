@@ -20883,6 +20883,8 @@
     const debouncedOrderSearch = debounce((value) => {
       ordersFilter.search = value;
       renderOrders(document.getElementById('main-content'));
+      const si = document.getElementById('orderSearch');
+      if (si) { si.focus(); si.setSelectionRange(si.value.length, si.value.length); }
     }, 300);
     
     const debouncedTripSearch = debounce((value) => {
