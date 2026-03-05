@@ -28701,16 +28701,113 @@
       document.body.appendChild(m);
     }
 
-    // Payroll year filter (default to current year)
+    // Payroll year filter (default to current year) — kept for backward compat with modals
     let payrollYear = new Date().getFullYear();
 
-    function getDriverCompletedTripsForYear(driverId, year) {
-      const yearRange = buildPeriodRange({ type: 'year', year });
+    // Enhanced payroll period state
+    let payrollPeriod = { type: 'week', year: new Date().getFullYear(), week: getCurrentPayrollWeek(), start: null, end: null };
+    let payrollSearch = '';
+    let payrollFilter = 'all'; // 'all' | 'company' | 'owner_op'
+    let payrollTab = 'current'; // 'current' | 'history'
+
+    function getCurrentPayrollWeek() {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 1);
+      const diff = now - start;
+      return Math.ceil((diff / 86400000 + start.getDay() + 1) / 7);
+    }
+
+    function getWeekRange(year, week) {
+      // ISO week: find Monday of the given week
+      const jan4 = new Date(year, 0, 4);
+      const dayOfWeek = jan4.getDay() || 7;
+      const monday = new Date(jan4);
+      monday.setDate(jan4.getDate() - dayOfWeek + 1 + (week - 1) * 7);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      const fmt = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      return { start: fmt(monday), end: fmt(sunday), monday, sunday };
+    }
+
+    function getBiweeklyRange(year, period) {
+      // Biweekly periods starting from Jan 1
+      const jan1 = new Date(year, 0, 1);
+      const dayOfWeek = jan1.getDay() || 7;
+      const firstMonday = new Date(jan1);
+      firstMonday.setDate(jan1.getDate() + (dayOfWeek === 1 ? 0 : 8 - dayOfWeek));
+      const startDate = new Date(firstMonday);
+      startDate.setDate(firstMonday.getDate() + (period - 1) * 14);
+      const endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 13);
+      const fmt = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      return { start: fmt(startDate), end: fmt(endDate), startDate, endDate };
+    }
+
+    function getCurrentBiweeklyPeriod() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const jan1 = new Date(year, 0, 1);
+      const dayOfWeek = jan1.getDay() || 7;
+      const firstMonday = new Date(jan1);
+      firstMonday.setDate(jan1.getDate() + (dayOfWeek === 1 ? 0 : 8 - dayOfWeek));
+      const diff = Math.floor((now - firstMonday) / 86400000);
+      return Math.max(1, Math.floor(diff / 14) + 1);
+    }
+
+    function buildPayrollPeriodRange(periodCtx) {
+      const type = periodCtx.type;
+      if (type === 'week') {
+        const wr = getWeekRange(periodCtx.year, periodCtx.week);
+        return { type: 'week', start: wr.start, end: wr.end, year: periodCtx.year };
+      }
+      if (type === 'biweekly') {
+        const br = getBiweeklyRange(periodCtx.year, periodCtx.biweekly || 1);
+        return { type: 'biweekly', start: br.start, end: br.end, year: periodCtx.year };
+      }
+      if (type === 'custom') {
+        return { type: 'custom', start: periodCtx.start || null, end: periodCtx.end || null, year: periodCtx.year };
+      }
+      // month and year fall through to existing buildPeriodRange
+      return buildPeriodRange(periodCtx);
+    }
+
+    function getPayrollPeriodLabel(periodCtx) {
+      const range = buildPayrollPeriodRange(periodCtx);
+      if (range.type === 'week') {
+        const wr = getWeekRange(periodCtx.year, periodCtx.week);
+        const fmtShort = d => (d.getMonth() + 1) + '/' + d.getDate();
+        return 'Week ' + periodCtx.week + ' (' + fmtShort(wr.monday) + ' - ' + fmtShort(wr.sunday) + ')';
+      }
+      if (range.type === 'biweekly') {
+        const br = getBiweeklyRange(periodCtx.year, periodCtx.biweekly);
+        const fmtShort = d => (d.getMonth() + 1) + '/' + d.getDate();
+        return 'Period ' + periodCtx.biweekly + ' (' + fmtShort(br.startDate) + ' - ' + fmtShort(br.endDate) + ')';
+      }
+      if (range.type === 'custom') {
+        if (range.start && range.end) return formatDate(range.start) + ' - ' + formatDate(range.end);
+        return 'Custom Range';
+      }
+      return getPeriodLabel(periodCtx);
+    }
+
+    function getMaxPayrollPeriod(type, year) {
+      if (type === 'week') return 53;
+      if (type === 'biweekly') return 27;
+      if (type === 'month') return 12;
+      return 1;
+    }
+
+    function getDriverCompletedTripsForPeriod(driverId, periodCtx) {
+      const range = buildPayrollPeriodRange(periodCtx);
       const completedTrips = (appData.trips || []).filter(t =>
         String(t.driver_id) === String(driverId) &&
         ['COMPLETED', 'DELIVERED'].includes(String(t.status || '').toUpperCase())
       );
-      return filterTripsByRange(completedTrips, yearRange, { excludeUndated: true });
+      return filterTripsByRange(completedTrips, range, { excludeUndated: true });
+    }
+
+    function getDriverCompletedTripsForYear(driverId, year) {
+      return getDriverCompletedTripsForPeriod(driverId, { type: 'year', year });
     }
 
     function calculateCompanyDriverStatement({ driverId, tripIds = [], deductions = {}, bonuses = {} }) {
@@ -28873,9 +28970,12 @@
     }
 
     function renderPayroll(c) {
+      // Sync payrollYear with payrollPeriod
+      payrollYear = payrollPeriod.year;
+
       const visibleDrivers = getVisibleCompanyDrivers();
-      const payrollData = visibleDrivers.map(driver => {
-        const driverTrips = getDriverCompletedTripsForYear(driver.id, payrollYear);
+      const allPayrollData = visibleDrivers.map(driver => {
+        const driverTrips = getDriverCompletedTripsForPeriod(driver.id, payrollPeriod);
         const tripIds = driverTrips.map(t => t.id);
         if (driver.driver_type === 'OWNER_OP') {
           const settlementSummary = calculateOwnerOpSettlementStatement({ driverId: driver.id, tripIds, deductions: {} });
@@ -28902,25 +29002,483 @@
         };
       });
 
+      // Apply search and filter
+      const searchLower = payrollSearch.toLowerCase().trim();
+      const payrollData = allPayrollData.filter(p => {
+        if (payrollFilter === 'company' && p.driver.driver_type === 'OWNER_OP') return false;
+        if (payrollFilter === 'owner_op' && p.driver.driver_type !== 'OWNER_OP') return false;
+        if (searchLower) {
+          const name = (p.driver.first_name + ' ' + p.driver.last_name).toLowerCase();
+          if (!name.includes(searchLower)) return false;
+        }
+        return true;
+      });
+
+      // Totals from ALL data (unfiltered) for summary cards
+      const totalGross = allPayrollData.reduce((s, p) => s + p.grossEarnings, 0);
+      const totalCash = allPayrollData.reduce((s, p) => s + p.cashCollected, 0);
+      const totalReimb = allPayrollData.reduce((s, p) => s + p.expenseReimbursements, 0);
+      const totalNet = allPayrollData.reduce((s, p) => s + p.netPay, 0);
+      const activeDriverCount = allPayrollData.filter(p => p.tripCount > 0).length;
+
       // Year selector options
       const payrollYearSet = new Set(getDataDrivenYearOptions((appData.trips || []).map(t => t.trip_date || t.period_start_date || t.created_at), true));
-      payrollYearSet.add(payrollYear);
+      payrollYearSet.add(payrollPeriod.year);
       const yearOptions = Array.from(payrollYearSet).sort((a, b) => b - a).map(y =>
-        '<option value="' + y + '"' + (payrollYear === y ? ' selected' : '') + '>' + y + '</option>'
+        '<option value="' + y + '"' + (payrollPeriod.year === y ? ' selected' : '') + '>' + y + '</option>'
       ).join('');
 
-      c.innerHTML = '<div class="header"><h2>[[icon:money]] Driver Payroll</h2><div style="display:flex;align-items:center;gap:12px"><div style="display:flex;align-items:center;gap:8px;background:var(--surface-elevated);padding:8px 12px;border-radius:6px;border:1px solid var(--border)"><label style="font-weight:600;color:var(--text-secondary);font-size:13px">Year:</label><select onchange="payrollYear=parseInt(this.value);renderPayroll(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px">' + yearOptions + '</select></div><button class="btn btn-secondary" onclick="window.print()">[[icon:print]] Print</button></div></div>' +
-        '<div style="background:var(--dim-blue);border:1px solid #93c5fd;border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--info)">[[icon:clipboard]] Formula:</strong><p style="color:var(--info);margin-top:8px">Net Pay = Gross Earnings − Cash Collected + Expense Reimbursements (OTHER only)</p><p style="color:var(--text-secondary);font-size:13px;margin-top:4px">Only COMPLETED trips are included. Only "OTHER" category expenses are reimbursed to drivers.</p></div>' +
-        '<div class="card"><div class="table-wrapper"><table><thead><tr><th>Driver</th><th>Completed Trips</th><th>Gross Earnings</th><th>Cash Collected</th><th>Expense Reimb.</th><th>Net Pay</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
-        (payrollData.length === 0 ? '<tr><td colspan="7" style="text-align:center;padding:40px">No drivers yet</td></tr>' :
-        payrollData.map(p => '<tr><td><strong>' + p.driver.first_name + ' ' + p.driver.last_name + '</strong><br><span style="color:var(--text-secondary);font-size:12px">' + (p.driver.driver_type === 'OWNER_OP' ? ((p.driver.dispatch_fee_percent || 5) + '% dispatch fee') : ((p.driver.cut_percent || 32) + '% cut')) + '</span></td><td>' + p.tripCount + '</td><td class="money positive">' + formatMoney(p.grossEarnings) + '</td><td class="money negative">-' + formatMoney(p.cashCollected) + '</td><td class="money positive">+' + formatMoney(p.expenseReimbursements) + '</td><td class="money" style="font-size:16px;font-weight:700;color:' + (p.netPay >= 0 ? '#047857' : '#dc2626') + '">' + formatMoney(p.netPay) + '</td><td class="sticky-col"><button class="btn btn-primary btn-sm" onclick="openPaystubModal(' + p.driver.id + ')">[[icon:file]] ' + (p.driver.driver_type === 'OWNER_OP' ? 'Generate Settlement' : 'Generate Paystub') + '</button></td></tr>').join('')) +
-        '</tbody></table></div></div>' +
-        '<div class="card"><div class="card-header"><h3>[[icon:chart]] Payroll Summary</h3></div><div style="padding:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:20px;text-align:center">' +
-        '<div><div style="font-size:12px;color:#64748b">Total Gross</div><div style="font-size:20px;font-weight:700;color:#1e293b">' + formatMoney(payrollData.reduce((s,p) => s + p.grossEarnings, 0)) + '</div></div>' +
-        '<div><div style="font-size:12px;color:#64748b">Total Cash Collected</div><div style="font-size:20px;font-weight:700;color:#ef4444">' + formatMoney(payrollData.reduce((s,p) => s + p.cashCollected, 0)) + '</div></div>' +
-        '<div><div style="font-size:12px;color:#64748b">Total Reimbursements</div><div style="font-size:20px;font-weight:700;color:#10b981">' + formatMoney(payrollData.reduce((s,p) => s + p.expenseReimbursements, 0)) + '</div></div>' +
-        '<div style="background:var(--dim-green);padding:16px;border-radius:8px"><div style="font-size:12px;color:#064e3b">Total Net Payroll</div><div style="font-size:20px;font-weight:700;color:#047857">' + formatMoney(payrollData.reduce((s,p) => s + p.netPay, 0)) + '</div></div>' +
+      // Period type tabs
+      const periodTypes = [
+        { key: 'week', label: 'Weekly' },
+        { key: 'biweekly', label: 'Bi-Weekly' },
+        { key: 'month', label: 'Monthly' },
+        { key: 'year', label: 'Year' },
+        { key: 'custom', label: 'Custom' }
+      ];
+      const periodTabsHTML = periodTypes.map(pt =>
+        '<button class="btn btn-sm' + (payrollPeriod.type === pt.key ? ' btn-primary' : ' btn-secondary') + '" onclick="switchPayrollPeriodType(\'' + pt.key + '\')" style="font-size:12px;padding:6px 14px">' + pt.label + '</button>'
+      ).join('');
+
+      // Period navigation (prev/next arrows + label) for week/biweekly/month
+      const periodLabel = getPayrollPeriodLabel(payrollPeriod);
+      const showNav = ['week', 'biweekly', 'month'].includes(payrollPeriod.type);
+      const periodNavHTML = showNav
+        ? '<div style="display:flex;align-items:center;gap:8px">' +
+          '<button class="btn btn-secondary btn-sm" onclick="navigatePayrollPeriod(-1)" style="padding:4px 10px;font-size:16px">&larr;</button>' +
+          '<span style="font-weight:600;font-size:14px;min-width:180px;text-align:center;color:var(--text-primary)">' + escapeHtml(periodLabel) + '</span>' +
+          '<button class="btn btn-secondary btn-sm" onclick="navigatePayrollPeriod(1)" style="padding:4px 10px;font-size:16px">&rarr;</button>' +
+          '</div>'
+        : (payrollPeriod.type === 'year'
+          ? '<div style="display:flex;align-items:center;gap:8px"><select onchange="payrollPeriod.year=parseInt(this.value);payrollYear=payrollPeriod.year;renderPayroll(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px;background:var(--bg-primary);color:var(--text-primary)">' + yearOptions + '</select></div>'
+          : '<div style="display:flex;align-items:center;gap:8px">' +
+            '<input type="date" id="payrollCustomStart" value="' + (payrollPeriod.start || new Date().toISOString().split('T')[0]) + '" onchange="payrollPeriod.start=this.value;renderPayroll(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--bg-primary);color:var(--text-primary)">' +
+            '<span style="color:var(--text-secondary)">to</span>' +
+            '<input type="date" id="payrollCustomEnd" value="' + (payrollPeriod.end || new Date().toISOString().split('T')[0]) + '" onchange="payrollPeriod.end=this.value;renderPayroll(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--bg-primary);color:var(--text-primary)">' +
+            '</div>');
+
+      // Filter pills
+      const filterPills = [
+        { key: 'all', label: 'All Drivers' },
+        { key: 'company', label: 'Company' },
+        { key: 'owner_op', label: 'Owner-OP' }
+      ];
+      const filterPillsHTML = filterPills.map(fp =>
+        '<button class="btn btn-sm' + (payrollFilter === fp.key ? ' btn-primary' : ' btn-secondary') + '" onclick="payrollFilter=\'' + fp.key + '\';renderPayroll(document.getElementById(\'main-content\'))" style="font-size:11px;padding:4px 12px">' + fp.label + '</button>'
+      ).join('');
+
+      // Payroll history records (load gracefully)
+      const payrollRecords = appData.payroll_records || [];
+
+      // Tab toggle: Current vs History
+      const tabToggleHTML = '<div style="display:flex;gap:4px;background:var(--surface-elevated);padding:3px;border-radius:8px;border:1px solid var(--border)">' +
+        '<button class="btn btn-sm' + (payrollTab === 'current' ? ' btn-primary' : '') + '" onclick="payrollTab=\'current\';renderPayroll(document.getElementById(\'main-content\'))" style="font-size:12px;padding:6px 16px;border-radius:6px">Current Period</button>' +
+        '<button class="btn btn-sm' + (payrollTab === 'history' ? ' btn-primary' : '') + '" onclick="payrollTab=\'history\';renderPayroll(document.getElementById(\'main-content\'))" style="font-size:12px;padding:6px 16px;border-radius:6px">History' + (payrollRecords.length > 0 ? ' (' + payrollRecords.length + ')' : '') + '</button>' +
+        '</div>';
+
+      // Build stat cards
+      const statCardsHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px">' +
+        '<div class="stat-card" style="border-left:4px solid var(--success)"><div class="stat-icon green">[[icon:money]]</div><div class="stat-content"><div class="label">Total Net Payroll</div><div class="value' + (totalNet >= 0 ? ' green' : ' red') + '">' + formatMoney(totalNet) + '</div></div></div>' +
+        '<div class="stat-card" style="border-left:4px solid var(--info)"><div class="stat-icon blue">[[icon:trend_up]]</div><div class="stat-content"><div class="label">Total Gross Earnings</div><div class="value">' + formatMoney(totalGross) + '</div></div></div>' +
+        '<div class="stat-card" style="border-left:4px solid var(--danger)"><div class="stat-icon red">[[icon:dollar]]</div><div class="stat-content"><div class="label">Total Cash Collected</div><div class="value red">' + formatMoney(totalCash) + '</div></div></div>' +
+        '<div class="stat-card" style="border-left:4px solid var(--warning)"><div class="stat-icon orange">[[icon:plus]]</div><div class="stat-content"><div class="label">Reimbursements</div><div class="value">' + formatMoney(totalReimb) + '</div></div></div>' +
+        '<div class="stat-card" style="border-left:4px solid #8b5cf6"><div class="stat-icon" style="background:rgba(139,92,246,0.12);color:#8b5cf6">[[icon:users]]</div><div class="stat-content"><div class="label">Active Drivers</div><div class="value">' + activeDriverCount + '</div><div style="font-size:11px;color:var(--text-muted)">' + allPayrollData.length + ' total</div></div></div>' +
+        '</div>';
+
+      // Build driver rows
+      let driverRowsHTML = '';
+      if (payrollData.length === 0) {
+        driverRowsHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)">No drivers match your filters</div>';
+      } else {
+        driverRowsHTML = payrollData.map(p => {
+          const d = p.driver;
+          const initials = (d.first_name || '')[0] + (d.last_name || '')[0];
+          const isOwnerOp = d.driver_type === 'OWNER_OP';
+          const typeBadge = isOwnerOp
+            ? '<span style="background:#f59e0b;color:white;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600">Owner-OP</span>'
+            : '<span style="background:var(--info);color:white;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600">Company</span>';
+          const percentLabel = isOwnerOp ? (d.dispatch_fee_percent || 5) + '% dispatch fee' : (d.cut_percent || 32) + '% cut';
+          const tripBadge = p.tripCount > 0
+            ? '<span style="background:var(--dim-blue);color:var(--info);padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600">' + p.tripCount + ' trip' + (p.tripCount !== 1 ? 's' : '') + '</span>'
+            : '<span style="background:var(--surface-elevated);color:var(--text-muted);padding:2px 10px;border-radius:12px;font-size:11px">0 trips</span>';
+          const netColor = p.netPay >= 0 ? 'var(--success)' : 'var(--danger)';
+          const lastPaid = payrollRecords.filter(r => String(r.driver_id) === String(d.id)).sort((a, b) => (b.pay_date || '').localeCompare(a.pay_date || ''))[0];
+          const lastPaidLabel = lastPaid ? '<span style="font-size:11px;color:var(--text-muted)">Last paid: ' + formatDate(lastPaid.pay_date) + '</span>' : '';
+
+          // Mark as Paid button (show only if there are payroll records for this driver in this period)
+          const periodRange = buildPayrollPeriodRange(payrollPeriod);
+          const periodRecords = payrollRecords.filter(r =>
+            String(r.driver_id) === String(d.id) &&
+            r.period_start === periodRange.start &&
+            r.period_end === periodRange.end
+          );
+          const hasDraftRecord = periodRecords.some(r => r.status !== 'paid');
+          const isPaid = periodRecords.some(r => r.status === 'paid');
+          const markPaidBtn = isPaid
+            ? '<span style="background:var(--dim-green);color:var(--success);padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600">Paid</span>'
+            : (hasDraftRecord
+              ? '<button class="btn btn-sm" style="background:var(--dim-green);color:var(--success);border:1px solid var(--success);font-size:11px;padding:4px 10px" onclick="markPayrollPaid(' + d.id + ')">Mark Paid</button>'
+              : '');
+
+          return '<div class="driver-card" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">' +
+            '<div style="display:flex;align-items:center;gap:12px;flex:1;min-width:200px">' +
+              '<div class="driver-avatar">' + initials + '</div>' +
+              '<div style="flex:1;min-width:0">' +
+                '<h4 style="margin:0;font-size:15px;font-weight:700">' + escapeHtml(d.first_name + ' ' + d.last_name) + ' ' + typeBadge + '</h4>' +
+                '<p style="color:var(--text-muted);font-size:12px;margin:2px 0 0">' + percentLabel + '</p>' +
+                lastPaidLabel +
+              '</div>' +
+            '</div>' +
+            '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">' +
+              tripBadge +
+              '<div style="text-align:right;min-width:80px"><div style="font-size:11px;color:var(--text-muted)">Gross</div><div style="font-weight:600;font-size:14px">' + formatMoney(p.grossEarnings) + '</div></div>' +
+              '<div style="text-align:right;min-width:80px"><div style="font-size:11px;color:var(--text-muted)">Cash</div><div style="font-weight:600;font-size:14px;color:var(--danger)">-' + formatMoney(p.cashCollected) + '</div></div>' +
+              '<div style="text-align:right;min-width:80px"><div style="font-size:11px;color:var(--text-muted)">Reimb.</div><div style="font-weight:600;font-size:14px;color:var(--success)">+' + formatMoney(p.expenseReimbursements) + '</div></div>' +
+              '<div style="text-align:right;min-width:90px"><div style="font-size:11px;color:var(--text-muted)">Net Pay</div><div style="font-weight:700;font-size:18px;color:' + netColor + '">' + formatMoney(p.netPay) + '</div></div>' +
+              markPaidBtn +
+              '<button class="btn btn-primary btn-sm" onclick="openPaystubModal(' + d.id + ')" style="white-space:nowrap">[[icon:file]] ' + (isOwnerOp ? 'Settlement' : 'Paystub') + '</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }
+
+      // History tab content
+      let historyHTML = '';
+      if (payrollTab === 'history') {
+        const sortedRecords = [...payrollRecords].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+        if (sortedRecords.length === 0) {
+          historyHTML = '<div class="card"><div style="text-align:center;padding:40px;color:var(--text-muted)">No payroll history yet. Generate paystubs or settlements to see them here.</div></div>';
+        } else {
+          historyHTML = '<div class="card"><div class="card-header"><h3>[[icon:clock]] Payroll History</h3></div><div class="table-wrapper"><table><thead><tr><th>Date</th><th>Driver</th><th>Type</th><th>Period</th><th>Gross</th><th>Cash</th><th>Net Pay</th><th>Status</th><th>Actions</th></tr></thead><tbody>' +
+            sortedRecords.map(r => {
+              const drv = (appData.drivers || []).find(d => String(d.id) === String(r.driver_id));
+              const driverName = drv ? drv.first_name + ' ' + drv.last_name : 'Unknown';
+              const statusBadge = r.status === 'paid'
+                ? '<span class="badge badge-green">Paid</span>'
+                : '<span class="badge badge-amber">' + (r.status || 'finalized') + '</span>';
+              return '<tr>' +
+                '<td>' + formatDate(r.pay_date || r.created_at) + '</td>' +
+                '<td><strong>' + escapeHtml(driverName) + '</strong></td>' +
+                '<td>' + (r.type === 'settlement' ? '<span style="color:#f59e0b;font-weight:600">Settlement</span>' : 'Paystub') + '</td>' +
+                '<td style="font-size:12px">' + formatDate(r.period_start) + ' - ' + formatDate(r.period_end) + '</td>' +
+                '<td class="money">' + formatMoney(r.gross_earnings || 0) + '</td>' +
+                '<td class="money" style="color:var(--danger)">-' + formatMoney(r.cash_collected || 0) + '</td>' +
+                '<td class="money" style="font-weight:700;color:' + ((r.net_pay || 0) >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + formatMoney(r.net_pay || 0) + '</td>' +
+                '<td>' + statusBadge + '</td>' +
+                '<td><button class="btn btn-secondary btn-sm" onclick="reprintPayrollRecord(' + r.id + ')" style="font-size:11px">Reprint</button></td>' +
+                '</tr>';
+            }).join('') +
+            '</tbody></table></div></div>';
+        }
+      }
+
+      // Assemble the page
+      c.innerHTML =
+        // Header
+        '<div class="header"><h2>[[icon:money]] Driver Payroll</h2>' +
+        '<div style="display:flex;align-items:center;gap:12px">' +
+        tabToggleHTML +
+        '<button class="btn btn-primary btn-sm" onclick="openBatchPayrollModal()" style="white-space:nowrap">[[icon:users]] Generate All</button>' +
+        '<button class="btn btn-secondary btn-sm" onclick="window.print()">[[icon:print]] Print</button>' +
+        '</div></div>' +
+
+        // Period type tabs
+        '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">' +
+        '<div style="display:flex;gap:4px">' + periodTabsHTML + '</div>' +
+        periodNavHTML +
+        '</div>' +
+
+        // Search + Filter pills
+        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">' +
+        '<div style="flex:1;min-width:200px;max-width:300px;position:relative">' +
+        '<input type="text" placeholder="Search drivers..." value="' + escapeHtml(payrollSearch) + '" oninput="payrollSearchDebounced(this.value)" style="width:100%;padding:8px 12px 8px 34px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg-primary);color:var(--text-primary)">' +
+        '<span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px">[[icon:search]]</span>' +
+        '</div>' +
+        '<div style="display:flex;gap:4px">' + filterPillsHTML + '</div>' +
+        '</div>' +
+
+        // Formula info
+        '<div style="background:var(--dim-blue);border:1px solid var(--info-border, #93c5fd);border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:var(--text-secondary)">' +
+        '<strong style="color:var(--info)">Formula:</strong> Net Pay = Gross Earnings - Cash Collected + Expense Reimbursements (OTHER only). Only COMPLETED trips included.' +
+        '</div>' +
+
+        // Stat cards
+        statCardsHTML +
+
+        // Main content: Current period or History
+        (payrollTab === 'history' ? historyHTML : (
+          '<div class="card" style="padding:0">' +
+          '<div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">' +
+          '<h3 style="margin:0;font-size:15px;font-weight:600">[[icon:users]] Driver Payroll - ' + escapeHtml(periodLabel) + '</h3>' +
+          '<span style="font-size:12px;color:var(--text-muted)">' + payrollData.length + ' driver' + (payrollData.length !== 1 ? 's' : '') + '</span>' +
+          '</div>' +
+          '<div style="padding:8px 16px">' + driverRowsHTML + '</div>' +
+          '</div>'
+        ));
+    }
+
+    // Payroll period navigation helpers
+    function switchPayrollPeriodType(type) {
+      const year = payrollPeriod.year;
+      if (type === 'week') {
+        payrollPeriod = { type: 'week', year, week: getCurrentPayrollWeek() };
+      } else if (type === 'biweekly') {
+        payrollPeriod = { type: 'biweekly', year, biweekly: getCurrentBiweeklyPeriod() };
+      } else if (type === 'month') {
+        payrollPeriod = { type: 'month', year, month: new Date().getMonth() + 1 };
+      } else if (type === 'year') {
+        payrollPeriod = { type: 'year', year };
+      } else if (type === 'custom') {
+        const today = new Date().toISOString().split('T')[0];
+        payrollPeriod = { type: 'custom', year, start: today, end: today };
+      }
+      payrollYear = payrollPeriod.year;
+      renderPayroll(document.getElementById('main-content'));
+    }
+
+    function navigatePayrollPeriod(direction) {
+      const type = payrollPeriod.type;
+      if (type === 'week') {
+        payrollPeriod.week += direction;
+        if (payrollPeriod.week < 1) { payrollPeriod.year--; payrollPeriod.week = 52; }
+        if (payrollPeriod.week > 53) { payrollPeriod.year++; payrollPeriod.week = 1; }
+      } else if (type === 'biweekly') {
+        payrollPeriod.biweekly = (payrollPeriod.biweekly || 1) + direction;
+        if (payrollPeriod.biweekly < 1) { payrollPeriod.year--; payrollPeriod.biweekly = 26; }
+        if (payrollPeriod.biweekly > 27) { payrollPeriod.year++; payrollPeriod.biweekly = 1; }
+      } else if (type === 'month') {
+        payrollPeriod.month = (payrollPeriod.month || 1) + direction;
+        if (payrollPeriod.month < 1) { payrollPeriod.year--; payrollPeriod.month = 12; }
+        if (payrollPeriod.month > 12) { payrollPeriod.year++; payrollPeriod.month = 1; }
+      }
+      payrollYear = payrollPeriod.year;
+      renderPayroll(document.getElementById('main-content'));
+    }
+
+    // Debounced search for payroll
+    let _payrollSearchTimer = null;
+    function payrollSearchDebounced(value) {
+      clearTimeout(_payrollSearchTimer);
+      _payrollSearchTimer = setTimeout(() => {
+        payrollSearch = value;
+        renderPayroll(document.getElementById('main-content'));
+      }, 250);
+    }
+
+    // Mark payroll record as paid
+    async function markPayrollPaid(driverId) {
+      const periodRange = buildPayrollPeriodRange(payrollPeriod);
+      const records = (appData.payroll_records || []).filter(r =>
+        String(r.driver_id) === String(driverId) &&
+        r.period_start === periodRange.start &&
+        r.period_end === periodRange.end &&
+        r.status !== 'paid'
+      );
+      for (const r of records) {
+        try {
+          await dbUpdate('payroll_records', r.id, { status: 'paid' });
+          r.status = 'paid';
+        } catch (e) {
+          console.error('Failed to mark paid:', e);
+        }
+      }
+      showToast('Marked as paid', 'success');
+      renderPayroll(document.getElementById('main-content'));
+    }
+
+    // Reprint a payroll record
+    async function reprintPayrollRecord(recordId) {
+      const record = (appData.payroll_records || []).find(r => r.id === recordId);
+      if (!record) { showToast('Record not found', 'error'); return; }
+      const driver = (appData.drivers || []).find(d => String(d.id) === String(record.driver_id));
+      if (!driver) { showToast('Driver not found', 'error'); return; }
+      // Re-open the appropriate modal with preselected trips
+      const tripIds = record.trip_ids || [];
+      openPaystubModal(driver.id, { preselectedTripIds: tripIds, source: 'history' });
+    }
+
+    // Batch payroll generation modal
+    function openBatchPayrollModal() {
+      const visibleDrivers = getVisibleCompanyDrivers();
+      const periodRange = buildPayrollPeriodRange(payrollPeriod);
+      const periodLabel = getPayrollPeriodLabel(payrollPeriod);
+      const driversWithTrips = visibleDrivers.map(d => {
+        const trips = getDriverCompletedTripsForPeriod(d.id, payrollPeriod);
+        return { driver: d, tripCount: trips.length, tripIds: trips.map(t => t.id) };
+      }).filter(d => d.tripCount > 0);
+
+      if (driversWithTrips.length === 0) {
+        showToast('No drivers have completed trips in this period', 'warning');
+        return;
+      }
+
+      const m = document.createElement('div');
+      m.className = 'modal-overlay';
+      m.onclick = e => { if (e.target === m) m.remove(); };
+      m.innerHTML = '<div class="modal" style="max-width:600px;max-height:90vh;display:flex;flex-direction:column">' +
+        '<div class="modal-header"><h3>[[icon:users]] Batch Payroll Generation</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div>' +
+        '<div class="modal-body" style="overflow-y:auto;flex:1">' +
+        '<div style="background:var(--dim-blue);padding:12px;border-radius:8px;margin-bottom:16px;font-size:13px;color:var(--text-secondary)">' +
+        '<strong>Period:</strong> ' + escapeHtml(periodLabel) + '<br>' +
+        '<strong>Drivers with trips:</strong> ' + driversWithTrips.length +
+        '</div>' +
+        '<div style="margin-bottom:12px;display:flex;gap:8px">' +
+        '<button class="btn btn-secondary btn-sm" onclick="document.querySelectorAll(\'.batch-driver-cb\').forEach(cb=>cb.checked=true)">Select All</button>' +
+        '<button class="btn btn-secondary btn-sm" onclick="document.querySelectorAll(\'.batch-driver-cb\').forEach(cb=>cb.checked=false)">Deselect All</button>' +
+        '</div>' +
+        '<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">' +
+        driversWithTrips.map(dw => {
+          const d = dw.driver;
+          const isOwnerOp = d.driver_type === 'OWNER_OP';
+          const initials = (d.first_name || '')[0] + (d.last_name || '')[0];
+          return '<label style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer">' +
+            '<input type="checkbox" class="batch-driver-cb" value="' + d.id + '" checked data-trip-ids=\'' + JSON.stringify(dw.tripIds) + '\'>' +
+            '<div class="driver-avatar" style="width:32px;height:32px;font-size:12px">' + initials + '</div>' +
+            '<div style="flex:1"><strong>' + escapeHtml(d.first_name + ' ' + d.last_name) + '</strong>' +
+            (isOwnerOp ? ' <span style="background:#f59e0b;color:white;padding:1px 6px;border-radius:3px;font-size:9px">OO</span>' : '') +
+            '<div style="font-size:12px;color:var(--text-muted)">' + dw.tripCount + ' trip' + (dw.tripCount !== 1 ? 's' : '') + '</div></div>' +
+            '</label>';
+        }).join('') +
+        '</div>' +
+        '<div style="margin-top:12px"><label style="font-size:13px;color:var(--text-secondary)"><input type="checkbox" id="batchUseDefaults" checked> Use saved deduction defaults</label></div>' +
+        '</div>' +
+        '<div class="modal-footer" style="gap:8px">' +
+        '<button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>' +
+        '<button class="btn btn-primary" onclick="executeBatchPayroll(\'print\')">[[icon:print]] Generate & Print All</button>' +
+        '<button class="btn btn-primary" style="background:#059669" onclick="executeBatchPayroll(\'email\')">[[icon:mail]] Generate & Email All</button>' +
         '</div></div>';
+      document.body.appendChild(m);
+    }
+
+    // Execute batch payroll
+    async function executeBatchPayroll(action) {
+      const checkboxes = document.querySelectorAll('.batch-driver-cb:checked');
+      if (checkboxes.length === 0) {
+        showToast('Please select at least one driver', 'error');
+        return;
+      }
+      const useDefaults = document.getElementById('batchUseDefaults')?.checked;
+      const periodRange = buildPayrollPeriodRange(payrollPeriod);
+      let generated = 0;
+      let errors = 0;
+
+      showToast('Generating payroll for ' + checkboxes.length + ' driver(s)...', 'info');
+
+      for (const cb of checkboxes) {
+        const driverId = parseInt(cb.value, 10);
+        const tripIds = JSON.parse(cb.dataset.tripIds || '[]');
+        const driver = (appData.drivers || []).find(d => d.id === driverId);
+        if (!driver || tripIds.length === 0) continue;
+
+        try {
+          const isOwnerOp = driver.driver_type === 'OWNER_OP';
+          const defaults = useDefaults && driver.default_deductions ? driver.default_deductions : {};
+          const deductions = typeof defaults === 'object' && defaults !== null ? defaults : {};
+
+          if (isOwnerOp) {
+            const statement = calculateOwnerOpSettlementStatement({ driverId, tripIds, deductions });
+            const pdfBlob = await generateSettlementPDF(driver, statement.tripDetails,
+              statement.totalRevenue, statement.totalBrokerFee, statement.totalLocalFee,
+              statement.totalCleanGross, statement.totalDispatchFee, statement.totalCashCollected,
+              statement.totalSettlement, statement.dispatchFeePercent,
+              periodRange.start, periodRange.end, new Date().toISOString().split('T')[0],
+              String(1000 + Math.floor(Math.random() * 9000)),
+              String(10000 + Math.floor(Math.random() * 90000)),
+              deductions, statement.totalDeductions);
+
+            if (action === 'print') {
+              const url = URL.createObjectURL(pdfBlob);
+              window.open(url, '_blank');
+            } else if (action === 'email' && driver.email) {
+              await sendSettlementEmail(pdfBlob, driver.email, driver, tripIds,
+                new Date().toISOString().split('T')[0], statement.totalSettlement);
+            }
+            // Save to payroll_records
+            await savePayrollRecord(driver, 'settlement', tripIds, periodRange,
+              statement.totalCleanGross - statement.totalDispatchFee,
+              statement.totalCashCollected, 0, statement.totalSettlement, deductions, {});
+          } else {
+            const bonuses = {};
+            const statement = calculateCompanyDriverStatement({ driverId, tripIds, deductions, bonuses });
+            const avgPerTrip = tripIds.length > 0 ? statement.totalDriverCut / tripIds.length : 0;
+            const stubNum = String(1000 + Math.floor(Math.random() * 9000));
+            const checkNum = String(10000 + Math.floor(Math.random() * 90000));
+            const payDate = new Date().toISOString().split('T')[0];
+
+            const pdfBlob = await generatePaystubPDF(driver, statement.earnings, tripIds,
+              statement.netPay, statement.totalDriverCut, statement.totalCashCollected,
+              statement.totalExpenses, statement.totalRevenue,
+              periodRange.start, periodRange.end, payDate, stubNum, checkNum,
+              deductions, bonuses, statement.totalDeductions, statement.totalBonuses,
+              statement.totalBrokerFee, statement.totalLocalFee, statement.totalCleanGross, avgPerTrip);
+
+            if (action === 'print') {
+              const url = URL.createObjectURL(pdfBlob);
+              window.open(url, '_blank');
+            } else if (action === 'email' && driver.email) {
+              const base64Pdf = await blobToBase64(pdfBlob);
+              await sendEarningsEmail(driver.email, driver.first_name + ' ' + driver.last_name,
+                'Earnings Statement - ' + driver.first_name + ' ' + driver.last_name,
+                null, 'Your earnings statement is attached.', {
+                  filename: 'Earnings_' + driver.last_name + '_' + payDate + '.pdf',
+                  content: base64Pdf
+                });
+            }
+            await savePayrollRecord(driver, 'paystub', tripIds, periodRange,
+              statement.totalDriverCut, statement.totalCashCollected,
+              statement.totalExpenses, statement.netPay, deductions, bonuses);
+          }
+          generated++;
+        } catch (e) {
+          console.error('Batch payroll error for driver ' + driverId + ':', e);
+          errors++;
+        }
+      }
+
+      document.querySelector('.modal-overlay')?.remove();
+      if (errors > 0) {
+        showToast('Generated ' + generated + ' paystubs, ' + errors + ' errors', 'warning');
+      } else {
+        showToast('Generated ' + generated + ' paystub(s) successfully!', 'success');
+      }
+      // Reload payroll records
+      try {
+        appData.payroll_records = await dbFetch('payroll_records');
+      } catch (e) { /* table may not exist yet */ }
+      renderPayroll(document.getElementById('main-content'));
+    }
+
+    // Save a payroll record to database
+    async function savePayrollRecord(driver, type, tripIds, periodRange, gross, cash, reimb, net, deductions, bonuses) {
+      try {
+        const record = {
+          driver_id: driver.id,
+          type: type,
+          period_start: periodRange.start,
+          period_end: periodRange.end,
+          pay_date: new Date().toISOString().split('T')[0],
+          stub_number: String(1000 + Math.floor(Math.random() * 9000)),
+          check_number: String(10000 + Math.floor(Math.random() * 90000)),
+          trip_ids: tripIds,
+          gross_earnings: gross,
+          cash_collected: cash,
+          reimbursements: reimb,
+          net_pay: net,
+          deductions: deductions || {},
+          bonuses: bonuses || {},
+          status: 'finalized',
+          company_id: currentUser?.company_id || null
+        };
+        const result = await dbInsert('payroll_records', record);
+        if (result) {
+          if (!appData.payroll_records) appData.payroll_records = [];
+          appData.payroll_records.push(result);
+        }
+        return result;
+      } catch (e) {
+        console.warn('Could not save payroll record (table may not exist):', e);
+        return null;
+      }
     }
 
     // Helper function to build detailed trip/order HTML for paystub and settlement modals
@@ -29048,11 +29606,20 @@
         return;
       }
 
-      const completedTrips = getDriverCompletedTripsForYear(driverId, payrollYear);
+      const completedTrips = getDriverCompletedTripsForPeriod(driverId, payrollPeriod);
       const selectedTripIdSet = new Set(modalOptions.preselectedTripIds);
       const tripsForModal = modalOptions.lockTripSelection && selectedTripIdSet.size > 0
         ? completedTrips.filter(t => selectedTripIdSet.has(parseInt(t.id, 10)))
         : completedTrips;
+
+      // Load saved deduction defaults
+      const savedDed = driver.default_deductions && typeof driver.default_deductions === 'object' ? driver.default_deductions : {};
+      const dedVal = (key) => parseFloat(savedDed[key] || 0) || 0;
+
+      // Auto-fill period dates from payroll period
+      const periodRange = buildPayrollPeriodRange(payrollPeriod);
+      const pStart = periodRange.start || new Date().toISOString().split('T')[0];
+      const pEnd = periodRange.end || new Date().toISOString().split('T')[0];
 
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
       m.dataset.statementOptions = JSON.stringify(modalOptions);
@@ -29067,23 +29634,24 @@
         })).join('')) +
         '</div></div>' +
         '<div class="form-row"><div class="form-group"><label>Stub #</label><input type="number" id="stubNumber" value="' + (1000 + Math.floor(Math.random() * 9000)) + '"></div><div class="form-group"><label>Check #</label><input type="number" id="checkNumber" value="' + (10000 + Math.floor(Math.random() * 90000)) + '"></div></div>' +
-        '<div class="form-row"><div class="form-group"><label>Period Starting</label><input type="date" id="periodStart" value="' + new Date().toISOString().split('T')[0] + '"></div><div class="form-group"><label>Period Ending</label><input type="date" id="periodEnd" value="' + new Date().toISOString().split('T')[0] + '"></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Period Starting</label><input type="date" id="periodStart" value="' + pStart + '"></div><div class="form-group"><label>Period Ending</label><input type="date" id="periodEnd" value="' + pEnd + '"></div></div>' +
         '<div class="form-group"><label>Pay Date</label><input type="date" id="payDate" value="' + new Date().toISOString().split('T')[0] + '"></div>' +
-        
-        // Deductions Section
+
+        // Deductions Section (pre-filled from saved defaults)
         '<div style="background:var(--dim-red);padding:12px;border-radius:8px;margin-top:12px">' +
-        '<label style="font-weight:600;margin-bottom:8px;display:block;color:#dc2626">[[icon:minus]] DEDUCTIONS</label>' +
-        '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Insurance (Cargo/Liab/Phys)</label><input type="number" id="dedInsurance" value="0" class="deduction-input" onchange="updatePaystubTotals()"></div>' +
-        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Fuel</label><input type="number" id="dedFuel" value="0" class="deduction-input" onchange="updatePaystubTotals()"></div>' +
-        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Fuel Deposit</label><input type="number" id="dedFuelDeposit" value="0" class="deduction-input" onchange="updatePaystubTotals()"></div></div>' +
-        '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">ELD</label><input type="number" id="dedELD" value="0" class="deduction-input" onchange="updatePaystubTotals()"></div>' +
-        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Tolls</label><input type="number" id="dedTolls" value="0" class="deduction-input" onchange="updatePaystubTotals()"></div>' +
-        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">IFTA</label><input type="number" id="dedIFTA" value="0" class="deduction-input" onchange="updatePaystubTotals()"></div></div>' +
-        '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Highway Use Tax (2290)</label><input type="number" id="ded2290" value="0" class="deduction-input" onchange="updatePaystubTotals()"></div>' +
-        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Reg Renewal</label><input type="number" id="dedRegRenewal" value="0" class="deduction-input" onchange="updatePaystubTotals()"></div>' +
-        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Other Deductions</label><input type="number" id="dedOther" value="0" class="deduction-input" onchange="updatePaystubTotals()"></div></div>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><label style="font-weight:600;color:#dc2626">[[icon:minus]] DEDUCTIONS</label>' +
+        '<button class="btn btn-sm btn-secondary" onclick="savePaystubDeductionDefaults(' + driverId + ')" style="font-size:10px;padding:3px 8px">Save as Default</button></div>' +
+        '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Insurance (Cargo/Liab/Phys)</label><input type="number" id="dedInsurance" value="' + dedVal('insurance') + '" class="deduction-input" onchange="updatePaystubTotals()"></div>' +
+        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Fuel</label><input type="number" id="dedFuel" value="' + dedVal('fuel') + '" class="deduction-input" onchange="updatePaystubTotals()"></div>' +
+        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Fuel Deposit</label><input type="number" id="dedFuelDeposit" value="' + dedVal('fuelDeposit') + '" class="deduction-input" onchange="updatePaystubTotals()"></div></div>' +
+        '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">ELD</label><input type="number" id="dedELD" value="' + dedVal('eld') + '" class="deduction-input" onchange="updatePaystubTotals()"></div>' +
+        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Tolls</label><input type="number" id="dedTolls" value="' + dedVal('tolls') + '" class="deduction-input" onchange="updatePaystubTotals()"></div>' +
+        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">IFTA</label><input type="number" id="dedIFTA" value="' + dedVal('ifta') + '" class="deduction-input" onchange="updatePaystubTotals()"></div></div>' +
+        '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Highway Use Tax (2290)</label><input type="number" id="ded2290" value="' + dedVal('hut2290') + '" class="deduction-input" onchange="updatePaystubTotals()"></div>' +
+        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Reg Renewal</label><input type="number" id="dedRegRenewal" value="' + dedVal('regRenewal') + '" class="deduction-input" onchange="updatePaystubTotals()"></div>' +
+        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Other Deductions</label><input type="number" id="dedOther" value="' + dedVal('other') + '" class="deduction-input" onchange="updatePaystubTotals()"></div></div>' +
         '<div style="text-align:right;margin-top:8px;font-weight:600;color:#dc2626">Total Deductions: $<span id="totalDeductionsDisplay">0.00</span></div></div>' +
-        
+
         // Bonuses Section
         '<div style="background:var(--dim-green);padding:12px;border-radius:8px;margin-top:12px">' +
         '<label style="font-weight:600;margin-bottom:8px;display:block;color:#059669">[[icon:plus]] BONUSES</label>' +
@@ -29092,10 +29660,34 @@
         '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Level III Inspection</label><input type="number" id="bonusLevel3" value="0" class="bonus-input" onchange="updatePaystubTotals()"></div></div>' +
         '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:0"><label style="font-size:12px">Other Bonus</label><input type="number" id="bonusOther" value="0" class="bonus-input" onchange="updatePaystubTotals()"></div></div>' +
         '<div style="text-align:right;margin-top:8px;font-weight:600;color:#059669">Total Bonuses: $<span id="totalBonusesDisplay">0.00</span></div></div>' +
-        
+
         '</div><div class="modal-footer" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="generatePaystub(' + driverId + ', \'print\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/><path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7z"/></svg>Print</button><button class="btn btn-primary" style="background:#059669" onclick="generatePaystub(' + driverId + ', \'email\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>Send Email</button><button class="btn btn-secondary" onclick="generatePaystub(' + driverId + ', \'both\')">Print & Email</button></div></div>';
       document.body.appendChild(m);
       updatePaystubTotals();
+    }
+
+    // Save paystub deduction defaults to driver record
+    async function savePaystubDeductionDefaults(driverId) {
+      const defaults = {
+        insurance: parseFloat(document.getElementById('dedInsurance')?.value) || 0,
+        fuel: parseFloat(document.getElementById('dedFuel')?.value) || 0,
+        fuelDeposit: parseFloat(document.getElementById('dedFuelDeposit')?.value) || 0,
+        eld: parseFloat(document.getElementById('dedELD')?.value) || 0,
+        tolls: parseFloat(document.getElementById('dedTolls')?.value) || 0,
+        ifta: parseFloat(document.getElementById('dedIFTA')?.value) || 0,
+        hut2290: parseFloat(document.getElementById('ded2290')?.value) || 0,
+        regRenewal: parseFloat(document.getElementById('dedRegRenewal')?.value) || 0,
+        other: parseFloat(document.getElementById('dedOther')?.value) || 0
+      };
+      try {
+        await dbUpdate('drivers', driverId, { default_deductions: defaults });
+        const driver = (appData.drivers || []).find(d => d.id === driverId);
+        if (driver) driver.default_deductions = defaults;
+        showToast('Deduction defaults saved for this driver', 'success');
+      } catch (e) {
+        console.error('Failed to save defaults:', e);
+        showToast('Could not save defaults (column may not exist yet)', 'warning');
+      }
     }
 
     // Owner-Operator Settlement Modal (different from Company Driver paystub)
@@ -29108,11 +29700,20 @@
       const dispatchFeePercent = driver?.dispatch_fee_percent || 5;
       const modalOptions = normalizeStatementModalOptions(options);
 
-      const completedTrips = getDriverCompletedTripsForYear(driverId, payrollYear);
+      const completedTrips = getDriverCompletedTripsForPeriod(driverId, payrollPeriod);
       const selectedTripIdSet = new Set(modalOptions.preselectedTripIds);
       const tripsForModal = modalOptions.lockTripSelection && selectedTripIdSet.size > 0
         ? completedTrips.filter(t => selectedTripIdSet.has(parseInt(t.id, 10)))
         : completedTrips;
+
+      // Load saved deduction defaults for owner-operators
+      const savedDed = driver.default_deductions && typeof driver.default_deductions === 'object' ? driver.default_deductions : {};
+      const dedVal = (key) => parseFloat(savedDed[key] || 0) || 0;
+
+      // Auto-fill period dates from payroll period
+      const periodRange = buildPayrollPeriodRange(payrollPeriod);
+      const pStart = periodRange.start || new Date().toISOString().split('T')[0];
+      const pEnd = periodRange.end || new Date().toISOString().split('T')[0];
 
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
       m.dataset.statementOptions = JSON.stringify(modalOptions);
@@ -29128,21 +29729,22 @@
         })).join('')) +
         '</div></div>' +
         '<div class="form-row"><div class="form-group"><label>Settlement #</label><input type="number" id="settlementNumber" value="' + (1000 + Math.floor(Math.random() * 9000)) + '"></div><div class="form-group"><label>Check #</label><input type="number" id="checkNumber" value="' + (10000 + Math.floor(Math.random() * 90000)) + '"></div></div>' +
-        '<div class="form-row"><div class="form-group"><label>Period Starting</label><input type="date" id="periodStart" value="' + new Date().toISOString().split('T')[0] + '"></div><div class="form-group"><label>Period Ending</label><input type="date" id="periodEnd" value="' + new Date().toISOString().split('T')[0] + '"></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Period Starting</label><input type="date" id="periodStart" value="' + pStart + '"></div><div class="form-group"><label>Period Ending</label><input type="date" id="periodEnd" value="' + pEnd + '"></div></div>' +
         '<div class="form-group"><label>Settlement Date</label><input type="date" id="payDate" value="' + new Date().toISOString().split('T')[0] + '"></div>' +
 
-        // Deductions Section for Owner-Operators
+        // Deductions Section for Owner-Operators (pre-filled from saved defaults)
         '<div style="background:var(--dim-red);padding:12px;border-radius:8px;margin-top:12px">' +
-        '<label style="font-weight:600;margin-bottom:8px;display:block;color:#dc2626">[[icon:minus]] DEDUCTIONS</label>' +
-        '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">IFTA</label><input type="number" id="settDedIFTA" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div>' +
-        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">ELD</label><input type="number" id="settDedELD" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div>' +
-        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Tolls</label><input type="number" id="settDedTolls" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
-        '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Insurance</label><input type="number" id="settDedInsurance" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div>' +
-        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Fuel</label><input type="number" id="settDedFuel" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div>' +
-        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">HUT 2290</label><input type="number" id="settDed2290" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
-        '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Reg Renewal</label><input type="number" id="settDedReg" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div>' +
-        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Advances</label><input type="number" id="settDedAdvances" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div>' +
-        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Other</label><input type="number" id="settDedOther" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><label style="font-weight:600;color:#dc2626">[[icon:minus]] DEDUCTIONS</label>' +
+        '<button class="btn btn-sm btn-secondary" onclick="saveSettlementDeductionDefaults(' + driverId + ')" style="font-size:10px;padding:3px 8px">Save as Default</button></div>' +
+        '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">IFTA</label><input type="number" id="settDedIFTA" value="' + dedVal('ifta') + '" class="settlement-ded" onchange="updateSettlementTotals()"></div>' +
+        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">ELD</label><input type="number" id="settDedELD" value="' + dedVal('eld') + '" class="settlement-ded" onchange="updateSettlementTotals()"></div>' +
+        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Tolls</label><input type="number" id="settDedTolls" value="' + dedVal('tolls') + '" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
+        '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Insurance</label><input type="number" id="settDedInsurance" value="' + dedVal('insurance') + '" class="settlement-ded" onchange="updateSettlementTotals()"></div>' +
+        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Fuel</label><input type="number" id="settDedFuel" value="' + dedVal('fuel') + '" class="settlement-ded" onchange="updateSettlementTotals()"></div>' +
+        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">HUT 2290</label><input type="number" id="settDed2290" value="' + dedVal('hut2290') + '" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
+        '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Reg Renewal</label><input type="number" id="settDedReg" value="' + dedVal('regRenewal') + '" class="settlement-ded" onchange="updateSettlementTotals()"></div>' +
+        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Advances</label><input type="number" id="settDedAdvances" value="' + dedVal('advances') + '" class="settlement-ded" onchange="updateSettlementTotals()"></div>' +
+        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Other</label><input type="number" id="settDedOther" value="' + dedVal('other') + '" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
         '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #fca5a5"><label style="font-size:11px;color:#dc2626;font-weight:600">Custom Deductions:</label></div>' +
         '<div class="form-row" style="gap:8px;margin-top:4px"><div class="form-group" style="margin-bottom:4px;flex:2"><input type="text" id="settDedCustom1Label" placeholder="Description" style="font-size:12px"></div><div class="form-group" style="margin-bottom:4px;flex:1"><input type="number" id="settDedCustom1" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
         '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:4px;flex:2"><input type="text" id="settDedCustom2Label" placeholder="Description" style="font-size:12px"></div><div class="form-group" style="margin-bottom:4px;flex:1"><input type="number" id="settDedCustom2" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
@@ -29152,6 +29754,30 @@
         '</div><div class="modal-footer" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" style="background:#f59e0b" onclick="generateSettlement(' + driverId + ', \'print\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/><path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7z"/></svg>Print</button><button class="btn btn-primary" style="background:#059669" onclick="generateSettlement(' + driverId + ', \'email\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>Send Email</button></div></div>';
       document.body.appendChild(m);
       updateSettlementTotals();
+    }
+
+    // Save settlement deduction defaults to driver record
+    async function saveSettlementDeductionDefaults(driverId) {
+      const defaults = {
+        ifta: parseFloat(document.getElementById('settDedIFTA')?.value) || 0,
+        eld: parseFloat(document.getElementById('settDedELD')?.value) || 0,
+        tolls: parseFloat(document.getElementById('settDedTolls')?.value) || 0,
+        insurance: parseFloat(document.getElementById('settDedInsurance')?.value) || 0,
+        fuel: parseFloat(document.getElementById('settDedFuel')?.value) || 0,
+        hut2290: parseFloat(document.getElementById('settDed2290')?.value) || 0,
+        regRenewal: parseFloat(document.getElementById('settDedReg')?.value) || 0,
+        advances: parseFloat(document.getElementById('settDedAdvances')?.value) || 0,
+        other: parseFloat(document.getElementById('settDedOther')?.value) || 0
+      };
+      try {
+        await dbUpdate('drivers', driverId, { default_deductions: defaults });
+        const driver = (appData.drivers || []).find(d => d.id === driverId);
+        if (driver) driver.default_deductions = defaults;
+        showToast('Deduction defaults saved for this driver', 'success');
+      } catch (e) {
+        console.error('Failed to save defaults:', e);
+        showToast('Could not save defaults (column may not exist yet)', 'warning');
+      }
     }
 
     // Update settlement deductions total
@@ -29230,6 +29856,12 @@
         }
         await sendSettlementEmail(pdfBlob, driverEmail, driver, selectedTripIds, payDate, totalSettlement);
       }
+
+      // Save payroll record
+      const periodRange = buildPayrollPeriodRange(payrollPeriod);
+      await savePayrollRecord(driver, 'settlement', selectedTripIds, { start: periodStart, end: periodEnd },
+        totalCleanGross - totalDispatchFee, totalCashCollected, 0, totalSettlement, deductions, {});
+      try { appData.payroll_records = await dbFetch('payroll_records'); } catch (e) { /* table may not exist */ }
 
       document.querySelector('.modal-overlay')?.remove();
     }
@@ -30510,6 +31142,11 @@
         }
       }
       
+      // Save payroll record
+      await savePayrollRecord(driver, 'paystub', selectedTripIds, { start: periodStart, end: periodEnd },
+        totalDriverCut, totalCashCollected, totalExpenses, netPay, deductions, bonuses);
+      try { appData.payroll_records = await dbFetch('payroll_records'); } catch (e) { /* table may not exist */ }
+
       document.querySelector('.modal-overlay').remove();
       if (shouldPrint && !shouldEmail) {
         showToast('Paystub generated! Print window opened.');

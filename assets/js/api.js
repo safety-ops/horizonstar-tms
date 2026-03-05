@@ -334,7 +334,8 @@ async function loadAllData(forceReload = false) {
       driver_files: [], truck_files: [], fuel_transactions: [],
       maintenance_records: [], claims: [], tickets: [], violations: [],
       ticket_files: [], violation_files: [], claim_files: [], compliance_tasks: [], accidents: [],
-      company_files: []
+      company_files: [],
+      payroll_records: []
     };
 
     // Load secondary data in background (non-blocking)
@@ -431,6 +432,11 @@ async function loadSecondaryData() {
 
     // Update appData with dealers
     appData.dealers = dealers;
+
+    // Try to load payroll records
+    let payroll_records = [];
+    try { payroll_records = await dbFetch('payroll_records', { order: 'created_at.desc' }) || []; } catch(e) { payroll_records = []; }
+    appData.payroll_records = payroll_records;
 
     // Update cache
     dataCache.set('appData', appData);
