@@ -31280,10 +31280,8 @@
       // Period type tabs
       const periodTypes = [
         { key: 'week', label: 'Weekly' },
-        { key: 'biweekly', label: 'Bi-Weekly' },
         { key: 'month', label: 'Monthly' },
-        { key: 'year', label: 'Year' },
-        { key: 'custom', label: 'Custom' }
+        { key: 'year', label: 'Year' }
       ];
       const periodTabsHTML = periodTypes.map(pt =>
         '<button class="btn btn-sm' + (payrollPeriod.type === pt.key ? ' btn-primary' : ' btn-secondary') + '" onclick="switchPayrollPeriodType(\'' + pt.key + '\')" style="font-size:12px;padding:6px 14px">' + pt.label + '</button>'
@@ -31291,20 +31289,14 @@
 
       // Period navigation (prev/next arrows + label) for week/biweekly/month
       const periodLabel = getPayrollPeriodLabel(payrollPeriod);
-      const showNav = ['week', 'biweekly', 'month'].includes(payrollPeriod.type);
+      const showNav = ['week', 'month'].includes(payrollPeriod.type);
       const periodNavHTML = showNav
         ? '<div style="display:flex;align-items:center;gap:8px">' +
           '<button class="btn btn-secondary btn-sm" onclick="navigatePayrollPeriod(-1)" style="padding:4px 10px;font-size:16px">&larr;</button>' +
           '<span style="font-weight:600;font-size:14px;min-width:180px;text-align:center;color:var(--text-primary)">' + escapeHtml(periodLabel) + '</span>' +
           '<button class="btn btn-secondary btn-sm" onclick="navigatePayrollPeriod(1)" style="padding:4px 10px;font-size:16px">&rarr;</button>' +
           '</div>'
-        : (payrollPeriod.type === 'year'
-          ? '<div style="display:flex;align-items:center;gap:8px"><select onchange="payrollPeriod.year=parseInt(this.value);payrollYear=payrollPeriod.year;renderPayroll(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px;background:var(--bg-primary);color:var(--text-primary)">' + yearOptions + '</select></div>'
-          : '<div style="display:flex;align-items:center;gap:8px">' +
-            '<input type="date" id="payrollCustomStart" value="' + (payrollPeriod.start || new Date().toISOString().split('T')[0]) + '" onchange="payrollPeriod.start=this.value;renderPayroll(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--bg-primary);color:var(--text-primary)">' +
-            '<span style="color:var(--text-secondary)">to</span>' +
-            '<input type="date" id="payrollCustomEnd" value="' + (payrollPeriod.end || new Date().toISOString().split('T')[0]) + '" onchange="payrollPeriod.end=this.value;renderPayroll(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--bg-primary);color:var(--text-primary)">' +
-            '</div>');
+        : '<div style="display:flex;align-items:center;gap:8px"><select onchange="payrollPeriod.year=parseInt(this.value);payrollYear=payrollPeriod.year;renderPayroll(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px;background:var(--bg-primary);color:var(--text-primary)">' + yearOptions + '</select></div>';
 
       // Filter pills
       const filterPills = [
@@ -31379,12 +31371,9 @@
       // Build driver cards
       let driverRowsHTML = '';
       if (payrollData.length === 0) {
-        const noTripsInPeriod = activeDriverCount === 0;
         driverRowsHTML = '<div style="text-align:center;padding:40px 24px;color:var(--text-muted)">' +
-          '<div style="font-size:18px;font-weight:700;color:var(--text-primary);margin-bottom:8px">' + (noTripsInPeriod ? 'No completed trips in this period' : 'No drivers match your filters') + '</div>' +
-          '<div style="font-size:13px;max-width:520px;margin:0 auto;line-height:1.6">' + (noTripsInPeriod
-            ? 'Run Payroll only shows drivers with trips marked Completed or Delivered inside the selected payroll period. Change the week/month above or complete the trip first.'
-            : 'The current search or driver type filter is hiding all results. Clear the filters or switch back to All Drivers.') + '</div>' +
+          '<div style="font-size:18px;font-weight:700;color:var(--text-primary);margin-bottom:8px">No drivers match your filters</div>' +
+          '<div style="font-size:13px;max-width:520px;margin:0 auto;line-height:1.6">The current search or driver type filter is hiding all results. Clear the filters or switch back to All Drivers.</div>' +
         '</div>';
       } else {
         driverRowsHTML = payrollData.map(p => {
@@ -31558,7 +31547,7 @@
         '<div style="margin-bottom:14px;font-size:13px;color:var(--text-secondary)">' +
         (payrollTab === 'history'
           ? 'Paystub History shows statements that were already generated.'
-          : 'Run Payroll shows only drivers with completed trips in the selected period.') +
+          : 'All drivers are shown below. The selected period scopes the payroll estimate numbers on each card.') +
         '</div>' +
 
         // Period type tabs
@@ -31588,7 +31577,7 @@
         '<div style="background:var(--dim-blue);border:1px solid var(--info-border, #93c5fd);border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:var(--text-secondary)">' +
         '<strong style="color:var(--info)">' + (payrollTab === 'history' ? 'History:' : 'How this works:') + '</strong> ' + (payrollTab === 'history'
           ? 'This page shows statements that were already generated. If it looks empty, the filters above are hiding the records.'
-          : 'Only completed trips appear here. Review the driver, then generate the paystub or settlement for that period.') +
+          : 'All drivers shown. Completed trip totals update based on the selected period. Review a driver, then generate the paystub or settlement.') +
         '</div>' +
 
         // Stat cards
@@ -31612,15 +31601,10 @@
       const year = payrollPeriod.year;
       if (type === 'week') {
         payrollPeriod = { type: 'week', year, week: getCurrentPayrollWeek() };
-      } else if (type === 'biweekly') {
-        payrollPeriod = { type: 'biweekly', year, biweekly: getCurrentBiweeklyPeriod() };
       } else if (type === 'month') {
         payrollPeriod = { type: 'month', year, month: new Date().getMonth() + 1 };
       } else if (type === 'year') {
         payrollPeriod = { type: 'year', year };
-      } else if (type === 'custom') {
-        const today = new Date().toISOString().split('T')[0];
-        payrollPeriod = { type: 'custom', year, start: today, end: today };
       }
       payrollYear = payrollPeriod.year;
       renderPayroll(document.getElementById('main-content'));
@@ -31632,10 +31616,6 @@
         payrollPeriod.week += direction;
         if (payrollPeriod.week < 1) { payrollPeriod.year--; payrollPeriod.week = 52; }
         if (payrollPeriod.week > 53) { payrollPeriod.year++; payrollPeriod.week = 1; }
-      } else if (type === 'biweekly') {
-        payrollPeriod.biweekly = (payrollPeriod.biweekly || 1) + direction;
-        if (payrollPeriod.biweekly < 1) { payrollPeriod.year--; payrollPeriod.biweekly = 26; }
-        if (payrollPeriod.biweekly > 27) { payrollPeriod.year++; payrollPeriod.biweekly = 1; }
       } else if (type === 'month') {
         payrollPeriod.month = (payrollPeriod.month || 1) + direction;
         if (payrollPeriod.month < 1) { payrollPeriod.year--; payrollPeriod.month = 12; }
