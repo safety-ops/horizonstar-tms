@@ -30568,6 +30568,14 @@
       return filterTripsByRange(completedTrips, range, { excludeUndated: true });
     }
 
+    function getDriverAllTripsForPeriod(driverId, periodCtx) {
+      const range = buildPayrollPeriodRange(periodCtx);
+      const allTrips = (appData.trips || []).filter(t =>
+        String(t.driver_id) === String(driverId)
+      );
+      return filterTripsByRange(allTrips, range, { excludeUndated: true });
+    }
+
     function getDriverCompletedTripsForYear(driverId, year) {
       return getDriverCompletedTripsForPeriod(driverId, { type: 'year', year });
     }
@@ -31011,7 +31019,10 @@
 
     function getPayrollDriverStatus(driverId, periodRange = buildPayrollPeriodRange(payrollPeriod)) {
       const records = getPayrollPeriodRecordsForDriver(driverId, periodRange);
-      if (records.some(r => String(r.status || '').toLowerCase() === 'paid')) return 'paid';
+      const allPaid = records.length > 0 && records.every(r => String(r.status || '').toLowerCase() === 'paid');
+      if (allPaid) return 'paid';
+      if (records.some(r => toMoneyNumber(r.amount_paid) > 0 && String(r.status || '').toLowerCase() !== 'paid')) return 'partial';
+      if (records.some(r => String(r.status || '').toLowerCase() === 'paid')) return 'partial';
       if (records.some(r => String(r.status || '').toLowerCase() === 'emailed')) return 'emailed';
       if (records.some(r => String(r.status || '').toLowerCase() === 'finalized')) return 'finalized';
       return 'ready';
@@ -31023,6 +31034,7 @@
         ready: { label: 'Ready', bg: 'var(--dim-amber)', color: 'var(--warning)' },
         finalized: { label: 'Finalized', bg: 'var(--dim-blue)', color: 'var(--info)' },
         emailed: { label: 'Emailed', bg: 'var(--dim-blue)', color: 'var(--info)' },
+        partial: { label: 'Partial', bg: 'var(--dim-amber)', color: 'var(--warning)' },
         paid: { label: 'Paid', bg: 'var(--dim-green)', color: 'var(--success)' }
       }[normalized] || { label: normalized, bg: 'var(--surface-elevated)', color: 'var(--text-secondary)' };
       return '<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:' + config.bg + ';color:' + config.color + ';font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">' + config.label + '</span>';
@@ -31040,12 +31052,18 @@
     }
 
     function getPayrollRecordMetadataRows(record) {
+      const netPay = toMoneyNumber((record.totals && record.totals.netPay) || record.net_pay);
+      const amountPaid = toMoneyNumber(record.amount_paid);
+      const balance = Math.max(0, netPay - amountPaid);
       const items = [
         ['Record', getPayrollRecordDisplayNumber(record)],
         ['Type', record.type === 'settlement' ? 'Settlement' : 'Paystub'],
         ['Status', String(record.status || 'finalized')],
         ['Pay Date', formatDate(record.pay_date || record.created_at)],
         ['Printed/Created', formatDate(record.created_at)],
+        ['Net Pay', formatMoney(netPay)],
+        ['Amount Paid', formatMoney(amountPaid)],
+        ['Balance', formatMoney(balance)],
         ['Emailed', record.emailed_at ? formatDate(record.emailed_at) : 'Not emailed'],
         ['Paid', record.paid_at ? formatDate(record.paid_at) : 'Not paid']
       ];
@@ -31108,6 +31126,84 @@
         '</div>' +
         '</div>' +
         '<div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Close</button><button class="btn btn-primary" onclick="this.closest(\'.modal-overlay\').remove();openPaystubModal(' + driverId + ')">' + (driver.driver_type === 'OWNER_OP' ? 'Generate Settlement' : 'Generate Paystub') + '</button></div>' +
+        '</div>';
+      document.body.appendChild(m);
+    }
+
+    function openPayrollPreviewModal(driverId) {
+      const driver = (appData.drivers || []).find(d => String(d.id) === String(driverId));
+      if (!driver) { showToast('Driver not found.', 'error'); return; }
+      const allTrips = getDriverAllTripsForPeriod(driverId, payrollPeriod);
+      const completedTrips = allTrips.filter(t => ['COMPLETED', 'DELIVERED'].includes(String(t.status || '').toUpperCase()));
+      const inProgressTrips = allTrips.filter(t => !['COMPLETED', 'DELIVERED'].includes(String(t.status || '').toUpperCase()));
+      const tripIds = allTrips.map(t => t.id);
+      const snapshot = getPayrollEstimateSnapshot(driverId, tripIds);
+      const completedSet = new Set(completedTrips.map(t => String(t.id)));
+
+      const tripStatusBadge = function(trip) {
+        const s = String(trip.status || 'UNKNOWN').toUpperCase();
+        if (['COMPLETED', 'DELIVERED'].includes(s)) return '<span style="background:var(--dim-green);color:var(--success);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600">' + escapeHtml(s) + '</span>';
+        return '<span style="background:var(--dim-amber);color:var(--warning);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600">' + escapeHtml(s) + '</span>';
+      };
+
+      const tripRows = allTrips.map(trip => {
+        const tripItem = (snapshot.lineItems?.trips || []).find(t => String(t.tripId) === String(trip.id));
+        const isInProgress = !completedSet.has(String(trip.id));
+        const rowBg = isInProgress ? 'background:var(--dim-amber)' : '';
+        return '<tr style="' + rowBg + '">' +
+          '<td><strong>' + escapeHtml(trip.trip_number || 'Trip') + '</strong></td>' +
+          '<td>' + escapeHtml((trip.origin || '-') + ' → ' + (trip.destination || '-')) + '</td>' +
+          '<td>' + tripStatusBadge(trip) + '</td>' +
+          '<td class="money">' + formatMoney(tripItem?.cashCollected || tripItem?.expectedCashCollected || 0) + '</td>' +
+          '<td class="money" style="font-weight:700">' + formatMoney(tripItem?.settlementAmount || tripItem?.driverCut || 0) + '</td>' +
+          '</tr>';
+      }).join('');
+
+      const orderRows = (snapshot.lineItems?.orders || []).slice(0, 12).map(order =>
+        '<tr><td>' + escapeHtml(order.orderNumber || 'Order') + '</td><td>' + escapeHtml(order.vehicleDescription || 'Vehicle') + '</td><td>' + escapeHtml(order.paymentType || 'BILL') + '</td><td class="money">' + formatMoney(order.cashCollected || order.expectedCashCollected || 0) + '</td><td class="money">' + formatMoney(order.driverCut || order.settlementAmount || 0) + '</td></tr>'
+      ).join('');
+
+      const m = document.createElement('div');
+      m.className = 'modal-overlay';
+      m.onclick = e => { if (e.target === m) m.remove(); };
+      m.innerHTML =
+        '<div class="modal" style="max-width:980px;max-height:92vh;display:flex;flex-direction:column">' +
+        '<div class="modal-header"><h3>[[icon:file]] Payroll Preview</h3><span style="background:var(--dim-amber);color:var(--warning);padding:4px 12px;border-radius:999px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-left:12px">Preview</span><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()" style="margin-left:auto">×</button></div>' +
+        '<div class="modal-body" style="overflow:auto">' +
+        // Driver info
+        '<div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px">' +
+          '<div><div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em">Driver</div><div style="font-size:22px;font-weight:800">' + escapeHtml(driver.first_name + ' ' + driver.last_name) + '</div><div style="font-size:13px;color:var(--text-secondary)">' + escapeHtml(driver.driver_type === 'OWNER_OP' ? 'Owner-Operator settlement preview' : 'Company driver paystub preview') + '</div></div>' +
+        '</div>' +
+        // Banner
+        '<div style="margin-bottom:16px;padding:12px 16px;border-radius:12px;background:var(--dim-amber);border:1px solid #f59e0b">' +
+          '<div style="font-size:13px;font-weight:700;color:#92400e">This is an estimate — not a finalized statement.</div>' +
+          '<div style="font-size:12px;color:#92400e;margin-top:4px">' + inProgressTrips.length + ' of ' + allTrips.length + ' trip' + (allTrips.length !== 1 ? 's' : '') + ' are still in progress. Amounts may change when trips are completed.</div>' +
+        '</div>' +
+        // Stat cards
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px">' +
+          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Trips</div><div style="font-size:22px;font-weight:800">' + allTrips.length + ' <span style="font-size:13px;font-weight:600;color:var(--text-muted)">(' + completedTrips.length + ' done)</span></div></div>' +
+          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Gross</div><div style="font-size:22px;font-weight:800">' + formatMoney(snapshot.totals?.grossEarnings || 0) + '</div></div>' +
+          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Cash Deduction</div><div style="font-size:22px;font-weight:800;color:var(--danger)">-' + formatMoney(snapshot.totals?.expectedCashCollected || 0) + '</div></div>' +
+          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Reimbursements</div><div style="font-size:22px;font-weight:800;color:var(--success)">' + formatMoney(snapshot.totals?.reimbursements || 0) + '</div></div>' +
+          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Est. Net Pay</div><div style="font-size:22px;font-weight:800;color:' + ((snapshot.totals?.netPay || 0) >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + formatMoney(snapshot.totals?.netPay || 0) + '</div></div>' +
+        '</div>' +
+        // Tables
+        '<div style="display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:16px">' +
+          '<div>' +
+            '<div class="card" style="padding:0;margin-bottom:14px"><div class="card-header"><h3>Trips</h3></div><div class="table-wrapper"><table><thead><tr><th>Trip</th><th>Route</th><th>Status</th><th>Cash</th><th>Amount</th></tr></thead><tbody>' + (tripRows || '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">No trips in this period.</td></tr>') + '</tbody></table></div></div>' +
+            '<div class="card" style="padding:0"><div class="card-header"><h3>Orders Preview</h3></div><div class="table-wrapper"><table><thead><tr><th>Order</th><th>Vehicle</th><th>Type</th><th>Cash</th><th>Amount</th></tr></thead><tbody>' + (orderRows || '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">No order line items.</td></tr>') + '</tbody></table></div></div>' +
+          '</div>' +
+          '<div class="card" style="padding:16px">' +
+            '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Period Snapshot</div>' +
+            '<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text-muted)">Period</span><span style="font-size:12px;font-weight:600">' + escapeHtml(getPayrollPeriodLabel(payrollPeriod)) + '</span></div>' +
+            '<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text-muted)">Driver Type</span><span style="font-size:12px;font-weight:600">' + escapeHtml(driver.driver_type === 'OWNER_OP' ? 'Owner-Operator' : 'Company Driver') + '</span></div>' +
+            '<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text-muted)">Completed Trips</span><span style="font-size:12px;font-weight:600">' + completedTrips.length + '</span></div>' +
+            '<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text-muted)">In-Progress Trips</span><span style="font-size:12px;font-weight:600;color:var(--warning)">' + inProgressTrips.length + '</span></div>' +
+            '<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0"><span style="font-size:12px;color:var(--text-muted)">Mode</span><span style="font-size:12px;font-weight:700;color:var(--warning)">PREVIEW</span></div>' +
+          '</div>' +
+        '</div>' +
+        '</div>' +
+        '<div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Close</button></div>' +
         '</div>';
       document.body.appendChild(m);
     }
@@ -31307,11 +31403,18 @@
           const status = getPayrollDriverStatus(d.id, currentPeriodRange);
           const hasDraftRecord = periodRecords.some(r => r.status !== 'paid');
           const isPaid = periodRecords.some(r => r.status === 'paid');
-          const markPaidBtn = isPaid
+          const totalNetForDriver = periodRecords.reduce((sum, r) => sum + toMoneyNumber((r.totals && r.totals.netPay) || r.net_pay), 0);
+          const totalPaidForDriver = periodRecords.reduce((sum, r) => sum + toMoneyNumber(r.amount_paid), 0);
+          const allFullyPaid = periodRecords.length > 0 && periodRecords.every(r => String(r.status || '').toLowerCase() === 'paid');
+          const hasPartialPayment = totalPaidForDriver > 0 && !allFullyPaid;
+          const markPaidBtn = allFullyPaid
             ? '<span style="background:var(--dim-green);color:var(--success);padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600">Paid</span>'
-            : (hasDraftRecord
-              ? '<button class="btn btn-sm" style="background:var(--dim-green);color:var(--success);border:1px solid var(--success);font-size:11px;padding:4px 10px" onclick="markPayrollPaid(' + d.id + ')">Mark Paid</button>'
-              : '');
+            : hasPartialPayment
+              ? '<span style="background:var(--dim-amber);color:var(--warning);padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600">' + formatMoney(totalPaidForDriver) + ' / ' + formatMoney(totalNetForDriver) + '</span>' +
+                '<button class="btn btn-sm" style="background:var(--dim-green);color:var(--success);border:1px solid var(--success);font-size:11px;padding:4px 10px" onclick="openRecordPaymentModal(' + d.id + ')">Record Payment</button>'
+              : (hasDraftRecord
+                ? '<button class="btn btn-sm" style="background:var(--dim-green);color:var(--success);border:1px solid var(--success);font-size:11px;padding:4px 10px" onclick="openRecordPaymentModal(' + d.id + ')">Record Payment</button>'
+                : '');
 
           return '<div class="card" style="padding:18px;border:1px solid var(--border);margin-bottom:14px">' +
             '<div style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px">' +
@@ -31333,6 +31436,7 @@
               '<div style="padding:12px;border-radius:12px;background:var(--surface-elevated)"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Net Pay</div><div style="font-weight:800;font-size:22px;color:' + netColor + '">' + formatMoney(p.netPay) + '</div></div>' +
             '</div>' +
             '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+              '<button class="btn btn-secondary btn-sm" onclick="openPayrollPreviewModal(' + d.id + ')">Preview</button>' +
               '<button class="btn btn-secondary btn-sm" onclick="openPayrollReviewModal(' + d.id + ')">Review</button>' +
               '<button class="btn btn-primary btn-sm" onclick="openPaystubModal(' + d.id + ')">' + (isOwnerOp ? 'Generate Settlement' : 'Generate Paystub') + '</button>' +
               '<button class="btn btn-secondary btn-sm" onclick="openDriverPayrollLedger(' + d.id + ')">History</button>' +
@@ -31357,7 +31461,11 @@
             return true;
           })
           .filter(r => payrollHistoryTypeFilter === 'all' ? true : String(r.type || '').toLowerCase() === payrollHistoryTypeFilter)
-          .filter(r => payrollHistoryStatusFilter === 'all' ? true : String(r.status || 'finalized').toLowerCase() === payrollHistoryStatusFilter)
+          .filter(r => {
+            if (payrollHistoryStatusFilter === 'all') return true;
+            if (payrollHistoryStatusFilter === 'partial') return toMoneyNumber(r.amount_paid) > 0 && String(r.status || '').toLowerCase() !== 'paid';
+            return String(r.status || 'finalized').toLowerCase() === payrollHistoryStatusFilter;
+          })
           .filter(r => payrollLedgerUnpaidOnly ? String(r.status || '').toLowerCase() !== 'paid' : true)
           .filter(r => {
             if (!searchLower) return true;
@@ -31404,14 +31512,19 @@
                 '</div>' +
               '</div>' +
               '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="btn btn-secondary btn-sm" onclick="openDriverPayrollLedger(' + driverId + ')">Open History</button><button class="btn btn-primary btn-sm" onclick="openPaystubModal(' + driverId + ')">' + (driver?.driver_type === 'OWNER_OP' ? 'New Settlement' : 'New Paystub') + '</button></div>' +
-              '<div class="table-wrapper"><table><thead><tr><th>Record</th><th>Date</th><th>Type</th><th>Period</th><th>Gross</th><th>Cash</th><th>Net</th><th>Status</th><th>Actions</th></tr></thead><tbody>' +
+              '<div class="table-wrapper"><table><thead><tr><th>Record</th><th>Date</th><th>Type</th><th>Period</th><th>Gross</th><th>Cash</th><th>Net</th><th>Paid</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead><tbody>' +
                 records.map(r => {
                   const status = String(r.status || 'finalized').toLowerCase();
+                  const rNetPay = toMoneyNumber((r.totals && r.totals.netPay) || r.net_pay);
+                  const rAmountPaid = toMoneyNumber(r.amount_paid);
+                  const rBalance = Math.max(0, rNetPay - rAmountPaid);
                   const statusBadge = status === 'paid'
                     ? '<span class="badge badge-green">Paid</span>'
-                    : status === 'emailed'
-                      ? '<span class="badge badge-blue">Emailed</span>'
-                      : '<span class="badge badge-amber">' + escapeHtml(status) + '</span>';
+                    : rAmountPaid > 0
+                      ? '<span class="badge badge-amber">Partial</span>'
+                      : status === 'emailed'
+                        ? '<span class="badge badge-blue">Emailed</span>'
+                        : '<span class="badge badge-amber">' + escapeHtml(status) + '</span>';
                   return '<tr>' +
                     '<td><strong>' + escapeHtml(getPayrollRecordDisplayNumber(r)) + '</strong></td>' +
                     '<td>' + formatDate(r.pay_date || r.created_at) + '</td>' +
@@ -31419,7 +31532,9 @@
                     '<td style="font-size:12px">' + formatDate(r.period_start) + ' - ' + formatDate(r.period_end) + '</td>' +
                     '<td class="money">' + formatMoney((r.totals && r.totals.grossEarnings) || r.gross_earnings || 0) + '</td>' +
                     '<td class="money" style="color:var(--danger)">-' + formatMoney((r.totals && r.totals.cashCollected) || r.cash_collected || 0) + '</td>' +
-                    '<td class="money" style="font-weight:700;color:' + (toMoneyNumber((r.totals && r.totals.netPay) || r.net_pay) >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + formatMoney((r.totals && r.totals.netPay) || r.net_pay || 0) + '</td>' +
+                    '<td class="money" style="font-weight:700;color:' + (rNetPay >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + formatMoney(rNetPay) + '</td>' +
+                    '<td class="money" style="color:var(--success)">' + formatMoney(rAmountPaid) + '</td>' +
+                    '<td class="money" style="color:' + (rBalance > 0 ? 'var(--danger)' : 'var(--success)') + '">' + formatMoney(rBalance) + '</td>' +
                     '<td>' + statusBadge + '</td>' +
                     '<td><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-secondary btn-sm" onclick="openPayrollRecordPreview(' + r.id + ')" style="font-size:11px">Preview</button><button class="btn btn-secondary btn-sm" onclick="reprintPayrollRecord(' + r.id + ')" style="font-size:11px">Print</button></div></td>' +
                     '</tr>';
@@ -31462,7 +31577,7 @@
         (payrollTab === 'history'
           ? '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
             '<select onchange="payrollHistoryTypeFilter=this.value;renderPayroll(document.getElementById(\'main-content\'))" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);color:var(--text-primary);font-size:13px"><option value="all"' + (payrollHistoryTypeFilter === 'all' ? ' selected' : '') + '>All Types</option><option value="paystub"' + (payrollHistoryTypeFilter === 'paystub' ? ' selected' : '') + '>Paystubs</option><option value="settlement"' + (payrollHistoryTypeFilter === 'settlement' ? ' selected' : '') + '>Settlements</option></select>' +
-            '<select onchange="payrollHistoryStatusFilter=this.value;renderPayroll(document.getElementById(\'main-content\'))" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);color:var(--text-primary);font-size:13px"><option value="all"' + (payrollHistoryStatusFilter === 'all' ? ' selected' : '') + '>All Statuses</option><option value="finalized"' + (payrollHistoryStatusFilter === 'finalized' ? ' selected' : '') + '>Finalized</option><option value="emailed"' + (payrollHistoryStatusFilter === 'emailed' ? ' selected' : '') + '>Emailed</option><option value="paid"' + (payrollHistoryStatusFilter === 'paid' ? ' selected' : '') + '>Paid</option></select>' +
+            '<select onchange="payrollHistoryStatusFilter=this.value;renderPayroll(document.getElementById(\'main-content\'))" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);color:var(--text-primary);font-size:13px"><option value="all"' + (payrollHistoryStatusFilter === 'all' ? ' selected' : '') + '>All Statuses</option><option value="finalized"' + (payrollHistoryStatusFilter === 'finalized' ? ' selected' : '') + '>Finalized</option><option value="emailed"' + (payrollHistoryStatusFilter === 'emailed' ? ' selected' : '') + '>Emailed</option><option value="partial"' + (payrollHistoryStatusFilter === 'partial' ? ' selected' : '') + '>Partial</option><option value="paid"' + (payrollHistoryStatusFilter === 'paid' ? ' selected' : '') + '>Paid</option></select>' +
             '<select onchange="payrollLedgerDateFilter=this.value;renderPayroll(document.getElementById(\'main-content\'))" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);color:var(--text-primary);font-size:13px"><option value="all"' + (payrollLedgerDateFilter === 'all' ? ' selected' : '') + '>All Dates</option><option value="30d"' + (payrollLedgerDateFilter === '30d' ? ' selected' : '') + '>Last 30 Days</option><option value="90d"' + (payrollLedgerDateFilter === '90d' ? ' selected' : '') + '>Last 90 Days</option><option value="ytd"' + (payrollLedgerDateFilter === 'ytd' ? ' selected' : '') + '>Year to Date</option></select>' +
             '<label style="display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg-primary);color:var(--text-primary)"><input type="checkbox" ' + (payrollLedgerUnpaidOnly ? 'checked ' : '') + 'onchange="payrollLedgerUnpaidOnly=this.checked;renderPayroll(document.getElementById(\'main-content\'))">Unpaid Only</label>' +
             '<button class="btn btn-secondary btn-sm" onclick="resetPayrollHistoryFilters()">Clear Filters</button>' +
@@ -31540,8 +31655,10 @@
       }, 250);
     }
 
-    // Mark payroll record as paid
-    async function markPayrollPaid(driverId) {
+    // Record payment modal (supports partial payments)
+    function openRecordPaymentModal(driverId) {
+      const driver = (appData.drivers || []).find(d => String(d.id) === String(driverId));
+      if (!driver) { showToast('Driver not found.', 'error'); return; }
       const periodRange = buildPayrollPeriodRange(payrollPeriod);
       const records = (appData.payroll_records || []).filter(r =>
         String(r.driver_id) === String(driverId) &&
@@ -31549,18 +31666,89 @@
         r.period_end === periodRange.end &&
         r.status !== 'paid'
       );
-      for (const r of records) {
-        try {
-          const paidAt = new Date().toISOString();
-          await dbUpdate('payroll_records', r.id, { status: 'paid', paid_at: paidAt });
-          r.status = 'paid';
-          r.paid_at = paidAt;
-        } catch (e) {
-          console.error('Failed to mark paid:', e);
-        }
+      if (records.length === 0) { showToast('No unpaid records found for this period.', 'warning'); return; }
+
+      const recordRows = records.map(r => {
+        const netPay = toMoneyNumber((r.totals && r.totals.netPay) || r.net_pay);
+        const amountPaid = toMoneyNumber(r.amount_paid);
+        const remaining = Math.max(0, netPay - amountPaid);
+        return '<div class="card" style="padding:14px;margin-bottom:10px">' +
+          '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px">' +
+            '<div><strong>' + escapeHtml(getPayrollRecordDisplayNumber(r)) + '</strong><span style="font-size:12px;color:var(--text-muted);margin-left:8px">' + (r.type === 'settlement' ? 'Settlement' : 'Paystub') + '</span></div>' +
+            (amountPaid > 0 ? '<span style="background:var(--dim-amber);color:var(--warning);padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700">PARTIAL</span>' : '') +
+          '</div>' +
+          '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">' +
+            '<div style="padding:8px;border-radius:8px;background:var(--surface-elevated)"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase">Net Pay</div><div style="font-weight:700">' + formatMoney(netPay) + '</div></div>' +
+            '<div style="padding:8px;border-radius:8px;background:var(--surface-elevated)"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase">Paid So Far</div><div style="font-weight:700;color:var(--success)">' + formatMoney(amountPaid) + '</div></div>' +
+            '<div style="padding:8px;border-radius:8px;background:var(--surface-elevated)"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase">Remaining</div><div style="font-weight:700;color:' + (remaining > 0 ? 'var(--danger)' : 'var(--success)') + '">' + formatMoney(remaining) + '</div></div>' +
+          '</div>' +
+          '<div style="display:flex;gap:8px;align-items:center">' +
+            '<div style="flex:1"><input type="number" id="payment-input-' + r.id + '" value="' + remaining.toFixed(2) + '" min="0.01" max="' + remaining.toFixed(2) + '" step="0.01" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--bg-primary);color:var(--text-primary)" placeholder="Payment amount"></div>' +
+            '<button class="btn btn-primary btn-sm" onclick="recordPartialPayment(' + r.id + ')" style="white-space:nowrap;padding:8px 16px">Record Payment</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      const m = document.createElement('div');
+      m.className = 'modal-overlay';
+      m.onclick = e => { if (e.target === m) m.remove(); };
+      m.innerHTML =
+        '<div class="modal" style="max-width:500px">' +
+        '<div class="modal-header"><h3>[[icon:money]] Record Payment</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div>' +
+        '<div class="modal-body">' +
+        '<div style="margin-bottom:14px;padding:10px 14px;border-radius:8px;background:var(--surface-elevated)">' +
+          '<div style="font-size:12px;color:var(--text-muted)">Driver</div>' +
+          '<div style="font-weight:700">' + escapeHtml(driver.first_name + ' ' + driver.last_name) + '</div>' +
+          '<div style="font-size:12px;color:var(--text-secondary)">' + escapeHtml(getPayrollPeriodLabel(payrollPeriod)) + '</div>' +
+        '</div>' +
+        recordRows +
+        '</div>' +
+        '<div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Close</button></div>' +
+        '</div>';
+      document.body.appendChild(m);
+    }
+
+    async function recordPartialPayment(recordId) {
+      const record = (appData.payroll_records || []).find(r => r.id === recordId);
+      if (!record) { showToast('Record not found.', 'error'); return; }
+      const input = document.getElementById('payment-input-' + recordId);
+      if (!input) return;
+      const paymentAmount = toMoneyNumber(parseFloat(input.value));
+      if (!paymentAmount || paymentAmount <= 0) { showToast('Please enter a valid payment amount.', 'error'); return; }
+
+      const netPay = toMoneyNumber((record.totals && record.totals.netPay) || record.net_pay);
+      const currentPaid = toMoneyNumber(record.amount_paid);
+      const remaining = Math.max(0, netPay - currentPaid);
+      const cappedPayment = Math.min(paymentAmount, remaining);
+      if (cappedPayment <= 0) { showToast('This record is already fully paid.', 'warning'); return; }
+
+      const newAmountPaid = currentPaid + cappedPayment;
+      const isFullyPaid = newAmountPaid >= netPay;
+      const updateData = { amount_paid: newAmountPaid };
+      if (isFullyPaid) {
+        updateData.status = 'paid';
+        updateData.paid_at = new Date().toISOString();
       }
-      showToast('Marked as paid', 'success');
-      renderPayroll(document.getElementById('main-content'));
+
+      try {
+        await dbUpdate('payroll_records', recordId, updateData);
+        record.amount_paid = newAmountPaid;
+        if (isFullyPaid) {
+          record.status = 'paid';
+          record.paid_at = updateData.paid_at;
+        }
+        showToast('Payment of ' + formatMoney(cappedPayment) + ' recorded' + (isFullyPaid ? ' — fully paid!' : ''), 'success');
+        document.querySelector('.modal-overlay')?.remove();
+        renderPayroll(document.getElementById('main-content'));
+      } catch (e) {
+        console.error('Failed to record payment:', e);
+        showToast('Failed to record payment: ' + (e?.message || 'Unknown error'), 'error');
+      }
+    }
+
+    // Legacy wrapper for backward compat
+    async function markPayrollPaid(driverId) {
+      openRecordPaymentModal(driverId);
     }
 
     function buildPayrollRecordPrintHTML(record, driver) {
@@ -31831,7 +32019,8 @@
           totals: extras.totals || {},
           emailed_at: extras.emailedAt || null,
           paid_at: extras.paidAt || null,
-          pdf_storage_path: extras.pdfStoragePath || null
+          pdf_storage_path: extras.pdfStoragePath || null,
+          amount_paid: 0
         };
         const result = await dbInsert('payroll_records', record);
         if (result) {
