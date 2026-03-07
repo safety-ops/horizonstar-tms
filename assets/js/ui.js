@@ -24,6 +24,7 @@ function toggleDarkTheme() {
   isDarkTheme = !isDarkTheme;
   localStorage.setItem('horizonstar_dark', isDarkTheme);
   applyTheme();
+  if (typeof switchLiveMapTiles === 'function') switchLiveMapTiles();
   if (currentUser && typeof renderApp === 'function') {
     renderApp();
   } else if (typeof renderLogin === 'function') {

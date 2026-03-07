@@ -4122,246 +4122,217 @@
       border-color: var(--primary);
     }
     
-    /* ============ TEAM CHAT ============ */
+    /* ============ TEAM CHAT — SLACK-STYLE ============ */
     .chat-container {
       position: relative;
       display: flex;
       flex-direction: column;
       height: calc(100vh - 120px);
-      max-width: 1040px;
-      margin: 0 auto;
-      border-radius: 24px;
+      width: 100%;
       overflow: hidden;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.98) 100%);
-      border: 1px solid rgba(148, 163, 184, 0.22);
-      box-shadow: 0 28px 60px rgba(15, 23, 42, 0.10);
-    }
-
-    .chat-container::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      background:
-        radial-gradient(circle at top left, rgba(99, 102, 241, 0.08), transparent 34%),
-        radial-gradient(circle at top right, rgba(6, 182, 212, 0.06), transparent 30%);
-      z-index: 0;
-    }
-
-    .chat-header,
-    .chat-messages,
-    .chat-input-area {
-      position: relative;
-      z-index: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
     }
 
     .chat-header {
-      padding: 22px 24px 18px;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.18);
-      background: linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(248,250,252,0.72) 100%);
-      backdrop-filter: blur(18px);
-    }
-
-    .chat-header-row {
       display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-    }
-
-    .chat-header-main {
-      min-width: 0;
-    }
-
-    .chat-header-eyebrow {
-      margin-bottom: 10px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-    }
-
-    .chat-title-group {
-      display: flex;
-      align-items: flex-start;
-      gap: 14px;
-      min-width: 0;
-    }
-
-    .chat-title-mark {
-      width: 46px;
-      height: 46px;
-      border-radius: 14px;
-      display: inline-flex;
       align-items: center;
-      justify-content: center;
-      background: rgba(99, 102, 241, 0.10);
-      color: var(--primary);
-      font-size: 20px;
-      box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.08);
+      justify-content: space-between;
+      gap: 12px;
+      height: 49px;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-card);
       flex-shrink: 0;
+    }
+
+    .chat-channel-name {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .chat-channel-hash {
+      font-size: 20px;
+      font-weight: 300;
+      color: var(--text-muted);
+      line-height: 1;
     }
 
     .chat-header h2 {
       margin: 0;
-      color: #1e293b;
-      font-size: clamp(1.25rem, 1.9vw, 1.65rem);
-      line-height: 1.1;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .chat-header-subtitle {
-      margin-top: 6px;
-      color: var(--text-secondary);
-      font-size: 13px;
-      line-height: 1.45;
-      max-width: 520px;
-    }
-
-    .chat-header-actions {
+    .chat-header-right {
       display: flex;
       align-items: center;
-      justify-content: flex-end;
-      flex-wrap: wrap;
-      gap: 10px;
-      min-width: 0;
+      gap: 8px;
+      flex-shrink: 0;
     }
 
     .chat-status-pill {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      min-height: 44px;
-      padding: 10px 14px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.72);
-      border: 1px solid rgba(148, 163, 184, 0.22);
+      gap: 6px;
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 6px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
       color: var(--text-secondary);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
-      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
       white-space: nowrap;
     }
 
     .chat-status-ping {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
       background: #22c55e;
-      box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.14);
       flex-shrink: 0;
       animation: chatPulse 1.8s ease-in-out infinite;
     }
 
     .chat-status-separator {
-      color: rgba(100, 116, 139, 0.5);
+      color: var(--text-muted);
+      font-size: 10px;
     }
 
     .chat-refresh-btn {
-      min-height: 44px;
-      padding: 0 16px;
-      border-radius: 14px;
+      height: 28px;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 6px;
+      font-size: 12px;
       font-weight: 600;
     }
 
+    /* ---- Messages area ---- */
     .chat-messages {
       flex: 1;
       overflow-y: auto;
-      padding: 22px 24px 28px;
-      background:
-        linear-gradient(180deg, rgba(248,250,252,0.86) 0%, rgba(241,245,249,0.96) 100%);
+      padding: 8px 0;
+      background: var(--bg-primary);
       display: flex;
       flex-direction: column;
     }
 
     .chat-state {
       margin: auto;
-      max-width: 420px;
+      max-width: 400px;
       text-align: center;
-      padding: 32px 24px;
-      border-radius: 24px;
-      background: rgba(255,255,255,0.72);
-      border: 1px solid rgba(148, 163, 184, 0.18);
-      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.07);
+      padding: 28px 24px;
+      border-radius: 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
     }
 
     .chat-state-kicker {
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       font-size: 11px;
       font-weight: 700;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--text-muted);
     }
 
     .chat-state-title {
-      font-family: var(--font-display);
-      font-size: 24px;
+      font-size: 18px;
       font-weight: 700;
       color: var(--text-primary);
-      line-height: 1.1;
+      line-height: 1.2;
     }
 
     .chat-state-text {
-      margin-top: 10px;
+      margin-top: 6px;
       color: var(--text-secondary);
-      font-size: 14px;
-      line-height: 1.6;
+      font-size: 13px;
+      line-height: 1.5;
     }
 
     .chat-state.error .chat-state-title {
-      color: #b91c1c;
+      color: #dc2626;
     }
 
+    /* ---- Date dividers (Slack-style line with centered text) ---- */
     .chat-date-divider {
       display: flex;
       align-items: center;
-      justify-content: center;
-      margin: 18px 0 12px;
+      margin: 16px 20px 8px;
+      gap: 0;
+    }
+
+    .chat-date-divider::before,
+    .chat-date-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
     }
 
     .chat-date-divider span {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-height: 32px;
-      padding: 0 14px;
+      height: 26px;
+      padding: 0 12px;
       border-radius: 999px;
-      background: rgba(255,255,255,0.86);
-      border: 1px solid rgba(148, 163, 184, 0.18);
-      color: var(--text-muted);
-      font-size: 11px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-size: 12px;
       font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+      white-space: nowrap;
     }
 
+    /* ---- Message rows (all left-aligned, flat, no bubbles) ---- */
     .chat-message-row {
       display: flex;
-      align-items: flex-end;
-      gap: 12px;
-      margin-top: 14px;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 4px 20px;
+      position: relative;
+      transition: background 0.1s ease;
     }
 
+    .chat-message-row:hover {
+      background: var(--bg-hover, rgba(0,0,0,0.03));
+    }
+
+    /* Remove is-own right-alignment — all messages left-aligned */
     .chat-message-row.is-own {
-      flex-direction: row-reverse;
+      flex-direction: row;
+    }
+
+    .chat-message-row.is-start {
+      margin-top: 8px;
     }
 
     .chat-message-row.is-continuation {
-      margin-top: 6px;
+      margin-top: 0;
+      padding-top: 1px;
+      padding-bottom: 1px;
     }
 
+    /* ---- Avatars (rounded-square with presence dot) ---- */
     .chat-avatar,
     .chat-avatar-spacer {
-      width: 40px;
+      width: 36px;
       flex-shrink: 0;
     }
 
     .chat-avatar {
-      height: 40px;
-      border-radius: 14px;
+      height: 36px;
+      border-radius: 8px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -4369,134 +4340,209 @@
       color: white;
       font-size: 13px;
       font-weight: 700;
-      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+      position: relative;
     }
 
+    .chat-avatar-presence {
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #22c55e;
+      border: 2px solid var(--bg-card);
+    }
+
+    .chat-avatar-spacer {
+      height: 0;
+    }
+
+    /* ---- Message column (no max-width, fills available space) ---- */
     .chat-message-column {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      max-width: min(76%, 720px);
+      gap: 2px;
+      min-width: 0;
+      flex: 1;
     }
 
     .chat-message-row.is-own .chat-message-column {
-      align-items: flex-end;
+      align-items: flex-start;
     }
 
+    /* ---- Meta line (name + role + timestamp inline) ---- */
     .chat-message-meta {
       display: flex;
-      align-items: center;
+      align-items: baseline;
       gap: 8px;
-      padding: 0 4px;
       font-size: 12px;
       color: var(--text-muted);
     }
 
     .chat-message-row.is-own .chat-message-meta {
-      justify-content: flex-end;
+      justify-content: flex-start;
     }
 
     .chat-message-name {
       color: var(--text-primary);
+      font-size: 15px;
       font-weight: 700;
     }
 
     .chat-message-role {
       display: inline-flex;
       align-items: center;
-      min-height: 22px;
-      padding: 0 8px;
-      border-radius: 999px;
-      background: rgba(99, 102, 241, 0.10);
-      color: var(--primary);
+      height: 18px;
+      padding: 0 6px;
+      border-radius: 4px;
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
       font-size: 10px;
       font-weight: 700;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.02em;
       text-transform: uppercase;
     }
 
-    .chat-bubble {
-      display: inline-block;
-      width: fit-content;
-      max-width: 100%;
-      padding: 12px 14px 10px;
-      border-radius: 18px;
-      border: 1px solid transparent;
-      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+    .chat-message-time {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 400;
     }
 
-    .chat-bubble.is-other {
-      background: rgba(255,255,255,0.92);
-      color: #1e293b;
-      border-color: rgba(148, 163, 184, 0.16);
+    /* Hover-only timestamp for continuations */
+    .chat-message-time-hover {
+      font-size: 11px;
+      color: var(--text-muted);
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      position: absolute;
+      left: 0;
+      width: 48px;
+      text-align: right;
+      top: 50%;
+      transform: translateY(-50%);
     }
 
-    .chat-bubble.is-own {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 150%);
-      color: white;
-      border-color: transparent;
-      box-shadow: 0 18px 34px rgba(99, 102, 241, 0.20);
+    .chat-message-row:hover .chat-message-time-hover {
+      opacity: 1;
     }
 
+    /* ---- Message text (no bubble, direct in column) ---- */
     .chat-message-text {
-      color: inherit;
-      font-size: 14px;
-      line-height: 1.55;
+      color: var(--text-primary);
+      font-size: 15px;
+      line-height: 1.46;
       white-space: pre-wrap;
       word-break: break-word;
     }
 
-    .chat-message-foot {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 8px;
-      font-size: 11px;
-      font-weight: 600;
-      color: inherit;
-      opacity: 0.72;
+    /* Hide the bubble wrapper (keep for backward compat if referenced) */
+    .chat-bubble {
+      display: contents;
     }
 
+    .chat-bubble.is-own,
+    .chat-bubble.is-other {
+      display: contents;
+    }
+
+    /* Hide the old footer timestamp */
+    .chat-message-foot {
+      display: none;
+    }
+
+    /* ---- Hover action bar ---- */
+    .chat-message-actions {
+      display: none;
+      position: absolute;
+      top: -12px;
+      right: 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      z-index: 5;
+    }
+
+    .chat-message-row:hover .chat-message-actions {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .chat-action-btn {
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+
+    .chat-action-btn:hover {
+      background: var(--bg-hover, rgba(0,0,0,0.05));
+      color: var(--text-primary);
+    }
+
+    /* ---- @Mentions (gold highlight, not pill) ---- */
+    .chat-mention-chip {
+      display: inline;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: rgba(245, 197, 66, 0.18);
+      color: #92640d;
+      font-weight: 700;
+      font-size: inherit;
+      border: none;
+    }
+
+    .chat-mention-chip.is-own {
+      background: rgba(245, 197, 66, 0.18);
+      color: #92640d;
+    }
+
+    /* ---- Attachments (no bubble parent dependency) ---- */
     .chat-attachment-list {
       display: grid;
-      gap: 8px;
-      margin-top: 10px;
+      gap: 6px;
+      margin-top: 4px;
     }
 
     .chat-attachment-card {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 10px 12px;
-      border-radius: 14px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
       text-decoration: none;
-      transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+      transition: background 0.15s ease;
     }
 
     .chat-attachment-card:hover {
-      transform: translateY(-1px);
-    }
-
-    .chat-bubble.is-other .chat-attachment-card {
       background: var(--bg-secondary);
-      border: 1px solid rgba(148, 163, 184, 0.18);
-      color: var(--text-primary);
-    }
-
-    .chat-bubble.is-own .chat-attachment-card {
-      background: rgba(255,255,255,0.12);
-      border: 1px solid rgba(255,255,255,0.12);
-      color: white;
     }
 
     .chat-attachment-card.is-image {
       display: block;
       padding: 0;
       overflow: hidden;
+      max-width: 360px;
     }
 
     .chat-attachment-card.is-image img {
-      width: min(240px, 100%);
-      max-height: 220px;
+      width: 100%;
+      max-height: 240px;
       display: block;
       object-fit: cover;
     }
@@ -4506,7 +4552,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 10px 12px 12px;
+      padding: 8px 12px;
       font-size: 12px;
     }
 
@@ -4537,11 +4583,11 @@
     .chat-file-icon {
       width: 36px;
       height: 36px;
-      border-radius: 12px;
+      border-radius: 8px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      background: rgba(99, 102, 241, 0.14);
+      background: rgba(99, 102, 241, 0.10);
       color: var(--primary);
       font-size: 11px;
       font-weight: 800;
@@ -4549,87 +4595,63 @@
       flex-shrink: 0;
     }
 
-    .chat-bubble.is-own .chat-file-icon {
-      background: rgba(255,255,255,0.16);
-      color: white;
-    }
-
+    /* ---- Composer ---- */
     .chat-input-area {
-      padding: 18px 20px 20px;
-      border-top: 1px solid rgba(148, 163, 184, 0.18);
-      background: linear-gradient(180deg, rgba(255,255,255,0.76) 0%, rgba(248,250,252,0.94) 100%);
-      backdrop-filter: blur(18px);
+      padding: 0 16px 16px;
+      background: var(--bg-card);
+      flex-shrink: 0;
     }
 
     .chat-composer-shell {
-      border-radius: 22px;
-      background: rgba(255,255,255,0.88);
-      border: 1px solid rgba(148, 163, 184, 0.18);
-      padding: 14px;
-      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.10);
+      border-radius: 8px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      padding: 10px;
     }
 
     .chat-composer-top {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-end;
       gap: 12px;
-      margin-bottom: 12px;
-      font-size: 12px;
-      color: var(--text-secondary);
+      margin-bottom: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
     }
 
     .chat-composer-tip {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      min-width: 0;
-    }
-
-    .chat-composer-tip-badge {
-      width: 24px;
-      height: 24px;
-      border-radius: 999px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(99, 102, 241, 0.10);
-      color: var(--primary);
-      font-size: 12px;
-      font-weight: 800;
-      flex-shrink: 0;
+      display: none;
     }
 
     .chat-file-preview {
       display: none;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
     .chat-file-preview-list {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 8px;
     }
 
     .chat-file-chip {
       position: relative;
       display: flex;
       align-items: center;
-      gap: 10px;
-      min-width: 180px;
-      max-width: 220px;
-      padding: 10px 38px 10px 10px;
-      border-radius: 16px;
+      gap: 8px;
+      min-width: 160px;
+      max-width: 200px;
+      padding: 8px 32px 8px 8px;
+      border-radius: 8px;
       background: var(--bg-card);
-      border: 1px solid rgba(148, 163, 184, 0.18);
-      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+      border: 1px solid var(--border);
     }
 
     .chat-file-chip-thumb,
     .chat-file-chip-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -4663,41 +4685,41 @@
 
     .chat-file-chip-remove {
       position: absolute;
-      top: 8px;
-      right: 8px;
-      width: 22px;
-      height: 22px;
+      top: 6px;
+      right: 6px;
+      width: 20px;
+      height: 20px;
       border: none;
-      border-radius: 999px;
+      border-radius: 4px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      background: rgba(239, 68, 68, 0.14);
+      background: rgba(239, 68, 68, 0.12);
       color: #ef4444;
       cursor: pointer;
       font-size: 12px;
       font-weight: 700;
-      transition: transform 0.2s ease, background 0.2s ease;
+      transition: background 0.15s ease;
     }
 
     .chat-file-chip-remove:hover {
-      transform: scale(1.04);
       background: rgba(239, 68, 68, 0.22);
     }
 
     .chat-composer-row {
       display: flex;
       align-items: flex-end;
-      gap: 12px;
+      gap: 8px;
     }
 
     .chat-attach-btn {
-      width: 48px;
-      height: 48px;
+      width: 36px;
+      height: 36px;
+      min-height: 36px;
       padding: 0;
-      border-radius: 16px;
+      border-radius: 6px;
       flex-shrink: 0;
-      font-size: 18px;
+      font-size: 16px;
     }
 
     .chat-input-wrap {
@@ -4707,25 +4729,22 @@
 
     .chat-input {
       width: 100%;
-      min-height: 54px;
-      max-height: 140px;
-      padding: 15px 18px;
-      border: 1px solid rgba(148, 163, 184, 0.22);
-      border-radius: 18px;
+      min-height: 36px;
+      max-height: 120px;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
       resize: none;
       font-size: 14px;
-      line-height: 1.5;
-      background: var(--bg-tertiary);
+      line-height: 1.4;
+      background: transparent;
       color: var(--text-primary);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.55);
-      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      transition: box-shadow 0.15s ease;
     }
 
     .chat-input:focus {
       outline: none;
-      border-color: rgba(99, 102, 241, 0.38);
-      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.10);
-      background: var(--bg-card);
+      box-shadow: none;
     }
 
     .chat-input::placeholder {
@@ -4737,13 +4756,13 @@
       position: absolute;
       left: 0;
       right: 0;
-      bottom: calc(100% + 10px);
-      padding: 6px;
+      bottom: calc(100% + 6px);
+      padding: 4px;
       background: var(--bg-card);
-      border: 1px solid rgba(148, 163, 184, 0.18);
-      border-radius: 18px;
-      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
-      max-height: 260px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      max-height: 240px;
       overflow-y: auto;
       z-index: 100;
     }
@@ -4752,31 +4771,31 @@
       width: 100%;
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 10px 12px;
+      gap: 10px;
+      padding: 6px 8px;
       border: none;
-      border-radius: 14px;
+      border-radius: 6px;
       background: transparent;
       color: var(--text-primary);
       text-align: left;
       cursor: pointer;
-      transition: background 0.2s ease;
+      transition: background 0.12s ease;
     }
 
     .chat-mention-option:hover,
     .chat-mention-option.is-primary {
-      background: var(--bg-hover);
+      background: var(--bg-hover, rgba(0,0,0,0.04));
     }
 
     .chat-mention-avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 11px;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       color: white;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       flex-shrink: 0;
     }
@@ -4797,36 +4816,17 @@
     .chat-mention-role {
       color: var(--text-muted);
       font-size: 11px;
-      margin-top: 2px;
+      margin-top: 1px;
     }
 
     .chat-send-btn {
-      min-width: 118px;
-      min-height: 52px;
-      padding: 0 20px;
-      border-radius: 16px;
+      min-width: 64px;
+      height: 36px;
+      min-height: 36px;
+      padding: 0 14px;
+      border-radius: 6px;
       font-weight: 700;
-      box-shadow: 0 16px 28px rgba(99, 102, 241, 0.22);
-    }
-
-    .chat-mention-chip {
-      display: inline-flex;
-      align-items: center;
-      min-height: 24px;
-      padding: 0 8px;
-      border-radius: 999px;
-      background: rgba(99, 102, 241, 0.10);
-      border: 1px solid rgba(99, 102, 241, 0.16);
-      color: var(--primary);
-      font-weight: 700;
-      font-size: 0.95em;
-    }
-
-    .chat-bubble.is-own .chat-mention-chip,
-    .chat-mention-chip.is-own {
-      background: rgba(255,255,255,0.18);
-      border-color: rgba(255,255,255,0.16);
-      color: white;
+      font-size: 13px;
     }
 
     @keyframes chatPulse {
@@ -4838,86 +4838,66 @@
     .mini-chat-messages {
       background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
     }
-    
+
     .mini-chat-window {
       border: 1px solid #e2e8f0;
       box-shadow: 0 10px 50px rgba(0,0,0,0.15);
     }
-    
+
     .mini-chat-input-area input {
       background: #ffffff;
       border: 2px solid #e2e8f0;
     }
-    
+
     .mini-chat-input-area input:focus {
       border-color: var(--primary);
       outline: none;
       box-shadow: 0 0 0 3px var(--primary-light);
     }
-    
-    /* Dark mode chat overrides */
+
+    /* ---- Dark theme overrides ---- */
     body.dark-theme .chat-container {
-      background: linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(10, 15, 29, 0.96) 100%);
-      border-color: rgba(255,255,255,0.08);
-      box-shadow: 0 30px 70px rgba(0,0,0,0.32);
+      background: var(--bg-card);
+      border-color: var(--border);
     }
 
     body.dark-theme .chat-header {
-      background: linear-gradient(180deg, rgba(15,23,42,0.88) 0%, rgba(15,23,42,0.72) 100%);
-      border-bottom-color: rgba(255,255,255,0.08);
-    }
-
-    body.dark-theme .chat-title-mark {
-      background: rgba(99, 102, 241, 0.16);
-      box-shadow: inset 0 0 0 1px rgba(129, 140, 248, 0.12);
-    }
-
-    body.dark-theme .chat-header h2 {
-      color: var(--text-primary);
-    }
-
-    body.dark-theme .chat-header-subtitle,
-    body.dark-theme .chat-composer-top,
-    body.dark-theme .chat-status-pill {
-      color: var(--text-secondary);
+      background: var(--bg-card);
+      border-bottom-color: var(--border);
     }
 
     body.dark-theme .chat-messages {
-      background: linear-gradient(180deg, rgba(6, 11, 24, 0.92) 0%, rgba(10, 17, 33, 0.98) 100%);
+      background: var(--bg-primary);
     }
 
-    body.dark-theme .chat-state,
-    body.dark-theme .chat-date-divider span,
-    body.dark-theme .chat-status-pill,
-    body.dark-theme .chat-composer-shell {
-      background: rgba(15, 23, 42, 0.78);
-      border-color: rgba(255,255,255,0.08);
-      box-shadow: 0 18px 40px rgba(0,0,0,0.24);
+    body.dark-theme .chat-state {
+      background: var(--bg-card);
+      border-color: var(--border);
     }
 
     body.dark-theme .chat-state.error .chat-state-title {
       color: #fca5a5;
     }
 
-    body.dark-theme .chat-message-role {
-      background: rgba(129, 140, 248, 0.14);
-      color: #c7d2fe;
+    body.dark-theme .chat-message-row:hover {
+      background: rgba(255,255,255,0.03);
     }
 
-    body.dark-theme .chat-bubble.is-other {
-      background: rgba(15, 23, 42, 0.88);
-      color: var(--text-primary);
-      border-color: rgba(255,255,255,0.08);
-      box-shadow: 0 12px 28px rgba(0,0,0,0.22);
+    body.dark-theme .chat-message-actions {
+      background: var(--bg-card);
+      border-color: var(--border);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
-    body.dark-theme .chat-bubble.is-own {
-      box-shadow: 0 18px 34px rgba(79, 70, 229, 0.28);
+    body.dark-theme .chat-mention-chip,
+    body.dark-theme .chat-mention-chip.is-own {
+      background: rgba(251, 191, 36, 0.15);
+      color: #fbbf24;
     }
 
-    body.dark-theme .chat-bubble.is-other .chat-attachment-card {
-      background: rgba(255,255,255,0.04);
-      border-color: rgba(255,255,255,0.08);
+    body.dark-theme .chat-attachment-card {
+      background: var(--bg-secondary);
+      border-color: var(--border);
       color: var(--text-primary);
     }
 
@@ -4928,25 +4908,18 @@
     }
 
     body.dark-theme .chat-input-area {
-      background: linear-gradient(180deg, rgba(15,23,42,0.72) 0%, rgba(10,15,29,0.94) 100%);
-      border-top-color: rgba(255,255,255,0.08);
+      background: var(--bg-card);
     }
 
-    body.dark-theme .chat-input {
-      background: rgba(15, 23, 42, 0.82);
-      border-color: rgba(255,255,255,0.08);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
-    }
-
-    body.dark-theme .chat-input:focus {
-      background: rgba(15, 23, 42, 0.94);
-      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.14);
+    body.dark-theme .chat-composer-shell {
+      background: var(--bg-secondary);
+      border-color: var(--border);
     }
 
     body.dark-theme .chat-mention-dropdown,
     body.dark-theme .chat-file-chip {
-      background: rgba(15, 23, 42, 0.94);
-      border-color: rgba(255,255,255,0.08);
+      background: var(--bg-card);
+      border-color: var(--border);
     }
 
     body.dark-theme .chat-mention-option:hover,
@@ -6678,71 +6651,61 @@
     @media (max-width: 768px) {
       .chat-container {
         height: calc(100vh - 80px) !important;
-        max-width: 100% !important;
-        border-radius: 20px !important;
+        border-radius: 8px !important;
       }
-      
-      .chat-header {
-        padding: 18px 16px 14px !important;
-      }
-      
+
       .chat-header h2 {
-        font-size: 18px !important;
+        font-size: 14px !important;
       }
 
-      .chat-header-row {
-        flex-direction: column;
-      }
-
-      .chat-header-actions {
-        width: 100%;
-        justify-content: space-between;
-      }
-
-      .chat-status-pill {
-        flex: 1 1 auto;
-        min-width: 0;
-        white-space: normal;
-      }
-      
       .chat-messages {
-        padding: 16px 14px 22px !important;
+        padding: 4px 0 !important;
       }
 
-      .chat-message-column {
-        max-width: calc(100vw - 104px);
+      .chat-message-row {
+        padding: 4px 12px;
       }
-      
+
+      .chat-message-row:hover .chat-message-actions {
+        display: none !important;
+      }
+
+      .chat-avatar, .chat-avatar-spacer {
+        width: 32px;
+      }
+
+      .chat-avatar {
+        height: 32px;
+        border-radius: 6px;
+        font-size: 11px;
+      }
+
+      .chat-message-name {
+        font-size: 14px;
+      }
+
+      .chat-message-text {
+        font-size: 14px;
+      }
+
       .chat-input-area {
-        padding: 12px !important;
-        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+        padding: 0 10px 10px !important;
+        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
       }
 
       .chat-composer-shell {
-        padding: 12px;
-        border-radius: 18px;
-      }
-
-      .chat-composer-top {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-      }
-
-      .chat-composer-row {
-        gap: 10px;
+        padding: 8px;
+        border-radius: 6px;
       }
 
       .chat-send-btn {
-        min-width: 96px;
+        min-width: 56px;
       }
-      
+
       #chatInput {
         font-size: 16px !important; /* Prevents iOS zoom */
-        min-height: 44px !important;
-        padding: 14px 16px !important;
       }
-      
+
       #mentionDropdown {
         max-height: 180px;
       }
@@ -6754,8 +6717,17 @@
         height: calc(100vh - 72px) !important;
       }
 
-      .chat-message-column {
-        max-width: calc(100vw - 88px);
+      .chat-message-row {
+        padding: 3px 10px;
+      }
+
+      .chat-avatar, .chat-avatar-spacer {
+        width: 28px;
+      }
+
+      .chat-avatar {
+        height: 28px;
+        font-size: 10px;
       }
 
       .chat-composer-row {
@@ -6815,56 +6787,82 @@
       animation: spin 0.8s linear infinite;
     }
     
-    /* ============ LIVE MAP UX ============ */
+    /* ============ LIVE MAP — COMMAND CENTER ============ */
     .live-map-page {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      min-height: calc(100vh - 130px);
+      position: relative;
+      height: calc(100vh - 64px);
+      overflow: hidden;
+      border-radius: 12px;
     }
 
+    /* ---- Floating glass toolbar ---- */
     .live-map-toolbar {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 800;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      gap: 16px;
-      flex-wrap: wrap;
-      margin-bottom: 0;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.78);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.5);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      will-change: transform;
+    }
+
+    @supports not (backdrop-filter: blur(16px)) {
+      .live-map-toolbar {
+        background: rgba(255,255,255,0.95);
+      }
     }
 
     .live-map-toolbar-left {
       display: flex;
       align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
+      gap: 8px;
       min-width: 0;
     }
 
     .live-map-toolbar-left h2 {
       margin: 0;
+      font-size: 15px;
+      font-weight: 700;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      white-space: nowrap;
     }
 
     .live-map-toolbar-actions {
       display: flex;
       align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
+      gap: 6px;
     }
 
+    .live-map-toolbar-actions .btn {
+      height: 32px;
+      min-height: 32px;
+      padding: 0 10px;
+      font-size: 12px;
+      border-radius: 6px;
+    }
+
+    /* ---- Status chip with breathing dot ---- */
     .live-map-status-chip {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
       font-weight: 600;
-      background: var(--surface-elevated);
+      background: rgba(255,255,255,0.6);
       color: var(--text-secondary);
-      border: 1px solid var(--border);
+      border: 1px solid rgba(0,0,0,0.06);
       white-space: nowrap;
     }
 
@@ -6878,32 +6876,60 @@
 
     .live-map-status-chip.live .dot {
       background: #22c55e;
+      animation: live-dot-breathe 2.5s ease-in-out infinite;
     }
 
     .live-map-status-chip.degraded .dot {
       background: #f59e0b;
     }
 
+    @keyframes live-dot-breathe {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+
+    /* ---- Floating KPI bar ---- */
     .live-map-kpi-row {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(140px, 1fr));
-      gap: 12px;
+      position: absolute;
+      top: 64px;
+      left: 12px;
+      z-index: 800;
+      display: inline-flex;
+      gap: 8px;
     }
 
     .live-map-kpi {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px;
-      min-height: 84px;
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      gap: 4px;
+      gap: 2px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.78);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.5);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      min-width: 90px;
+      will-change: transform;
+    }
+
+    @supports not (backdrop-filter: blur(12px)) {
+      .live-map-kpi {
+        background: rgba(255,255,255,0.95);
+      }
+    }
+
+    .live-map-kpi--pulse {
+      animation: kpi-pulse-green 2s ease-in-out infinite;
+    }
+
+    @keyframes kpi-pulse-green {
+      0%, 100% { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+      50% { box-shadow: 0 2px 12px rgba(34,197,94,0.25); }
     }
 
     .live-map-kpi-label {
-      font-size: 11px;
+      font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       color: var(--text-muted);
@@ -6911,61 +6937,70 @@
     }
 
     .live-map-kpi-value {
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 700;
       font-family: var(--font-mono);
       color: var(--text-primary);
-      line-height: 1.1;
+      line-height: 1;
     }
 
+    /* ---- Map canvas (fills entire page) ---- */
     .live-map-layout {
-      display: flex;
-      gap: 14px;
-      flex: 1;
-      min-height: 0;
-      height: clamp(832px, 104vh, 1456px);
-      max-height: 1456px;
-      align-items: stretch;
+      position: absolute;
+      inset: 0;
     }
 
     .live-map-canvas {
-      flex: 1;
-      min-width: 0;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      overflow: hidden;
-      background: var(--bg-card);
+      width: 100%;
       height: 100%;
-      min-height: 0;
       position: relative;
     }
 
     #liveMapContainer {
       width: 100%;
       height: 100%;
-      min-height: 0;
     }
 
+    /* ---- Fleet panel (glass overlay from right) ---- */
     .live-map-panel {
-      width: 380px;
-      max-width: 40vw;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      bottom: 12px;
+      width: 370px;
+      max-width: calc(100vw - 24px);
+      z-index: 800;
+      background: rgba(255,255,255,0.82);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.5);
       border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.10);
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      min-height: 0;
-      height: 100%;
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease;
+      will-change: transform;
+    }
+
+    @supports not (backdrop-filter: blur(16px)) {
+      .live-map-panel {
+        background: rgba(255,255,255,0.96);
+      }
+    }
+
+    .live-map-panel[data-collapsed="true"] {
+      transform: translateX(calc(100% + 24px));
+      opacity: 0;
+      pointer-events: none;
     }
 
     .live-map-panel-head {
       padding: 12px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      background: var(--surface-elevated);
+      gap: 8px;
     }
 
     .live-map-panel-head-row {
@@ -6977,24 +7012,62 @@
 
     .live-map-panel-head h3 {
       margin: 0;
-      font-size: 16px;
+      font-size: 15px;
+      font-weight: 700;
       display: inline-flex;
       align-items: center;
       gap: 6px;
     }
 
     .live-map-panel-toggle {
-      display: none;
-      min-height: 44px;
-      min-width: 44px;
-      padding: 0 10px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--bg-card);
+      display: inline-flex;
+      height: 32px;
+      min-width: 32px;
+      padding: 0 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(0,0,0,0.08);
+      background: rgba(255,255,255,0.5);
       color: var(--text-secondary);
       cursor: pointer;
       align-items: center;
       justify-content: center;
+      font-size: 14px;
+      transition: background 0.15s ease;
+    }
+
+    .live-map-panel-toggle:hover {
+      background: rgba(0,0,0,0.04);
+    }
+
+    /* FAB toggle for panel (visible at all sizes) */
+    .live-map-panel-fab {
+      display: none;
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 799;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      border: none;
+      background: rgba(255,255,255,0.82);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+      color: var(--text-primary);
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: transform 0.15s ease;
+    }
+
+    .live-map-panel-fab:hover {
+      transform: scale(1.05);
+    }
+
+    .live-map-panel[data-collapsed="true"] ~ .live-map-panel-fab {
+      display: inline-flex;
     }
 
     .live-map-panel-body {
@@ -7006,23 +7079,27 @@
     .live-map-panel-controls {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      margin-bottom: 14px;
-      position: static;
-      background: var(--bg-card);
+      gap: 8px;
+      margin-bottom: 12px;
       padding-bottom: 10px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
     }
 
     .live-map-search {
       width: 100%;
-      min-height: 44px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: var(--surface-elevated);
+      height: 36px;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.6);
       color: var(--text-primary);
-      padding: 0 40px 0 40px;
-      font-size: 14px;
+      padding: 0 36px 0 36px;
+      font-size: 13px;
+    }
+
+    .live-map-search:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.10);
     }
 
     .live-map-search-wrap {
@@ -7033,7 +7110,7 @@
 
     .live-map-search-wrap .ui-icon-inline {
       position: absolute;
-      left: 12px;
+      left: 10px;
       color: var(--text-muted);
       pointer-events: none;
     }
@@ -7041,89 +7118,86 @@
     .live-map-filter-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 6px;
       align-items: center;
     }
 
     .live-map-filter-chip {
-      border: 1px solid var(--border);
-      background: var(--surface-elevated);
+      border: 1px solid rgba(0,0,0,0.08);
+      background: rgba(255,255,255,0.5);
       color: var(--text-secondary);
-      border-radius: 999px;
-      min-height: 36px;
-      padding: 0 12px;
+      border-radius: 6px;
+      height: 30px;
+      padding: 0 10px;
       font-size: 12px;
       font-weight: 600;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.2s ease;
+      transition: all 0.15s ease;
     }
 
     .live-map-filter-chip.active {
       border-color: rgba(37, 99, 235, 0.35);
-      background: var(--dim-blue);
+      background: rgba(37, 99, 235, 0.10);
       color: #1d4ed8;
     }
 
     .live-map-sort-row {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
     }
 
     .live-map-sort-row select {
-      min-height: 36px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--surface-elevated);
+      height: 30px;
+      border-radius: 6px;
+      border: 1px solid rgba(0,0,0,0.08);
+      background: rgba(255,255,255,0.6);
       color: var(--text-primary);
-      padding: 0 28px 0 10px;
-      font-size: 13px;
+      padding: 0 24px 0 8px;
+      font-size: 12px;
     }
 
     .live-map-meta {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text-muted);
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      flex-wrap: wrap;
     }
 
     .live-map-meta button {
-      min-height: 30px;
-      border-radius: 8px;
-      padding: 0 10px;
-      border: 1px solid var(--border);
+      height: 26px;
+      border-radius: 6px;
+      padding: 0 8px;
+      border: 1px solid rgba(0,0,0,0.08);
       background: transparent;
       color: var(--text-secondary);
       cursor: pointer;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
     }
 
     .live-map-legend {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 6px;
       align-items: center;
     }
 
     .live-map-legend-item {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      font-size: 12px;
+      gap: 5px;
+      font-size: 11px;
       color: var(--text-secondary);
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      padding: 4px 10px;
-      min-height: 28px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.4);
     }
 
     .fleet-status-dot {
@@ -7141,36 +7215,44 @@
     .fleet-status-dot--unlinked { background: #64748b; }
     .fleet-status-dot--unknown { background: #ef4444; }
 
+    /* ---- Fleet cards with staggered entrance ---- */
     .fleet-list {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
 
     .fleet-card {
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--surface-elevated);
-      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(0,0,0,0.06);
+      background: rgba(255,255,255,0.5);
+      padding: 10px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
       cursor: pointer;
-      border-left-width: 4px;
-      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+      border-left-width: 3px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
       outline: none;
+      animation: fleet-card-enter 0.3s ease both;
+      animation-delay: calc(var(--card-index, 0) * 0.03s);
+    }
+
+    @keyframes fleet-card-enter {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .fleet-card:hover,
     .fleet-card:focus-visible {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
 
     .fleet-card--selected {
       box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
       border-color: rgba(59, 130, 246, 0.35);
-      background: var(--dim-blue);
+      background: rgba(59, 130, 246, 0.06);
     }
 
     .fleet-card--moving { border-left-color: #16a34a; }
@@ -7189,22 +7271,22 @@
     .fleet-card-title {
       font-weight: 700;
       color: var(--text-primary);
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .fleet-card-subtitle {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text-muted);
-      margin-top: 2px;
+      margin-top: 1px;
     }
 
     .fleet-pill {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      padding: 3px 8px;
-      border-radius: 999px;
-      font-size: 11px;
+      gap: 4px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.04em;
@@ -7213,15 +7295,15 @@
     }
 
     .fleet-pill--linked {
-      background: var(--dim-green);
+      background: rgba(34, 197, 94, 0.10);
       color: #166534;
-      border-color: rgba(34, 197, 94, 0.35);
+      border-color: rgba(34, 197, 94, 0.25);
     }
 
     .fleet-pill--unlinked {
-      background: var(--surface-elevated);
+      background: rgba(0,0,0,0.04);
       color: var(--text-secondary);
-      border-color: var(--border);
+      border-color: rgba(0,0,0,0.08);
     }
 
     .fleet-card-row {
@@ -7239,7 +7321,7 @@
     }
 
     .fleet-card-address {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text-secondary);
       display: -webkit-box;
       -webkit-line-clamp: 2;
@@ -7249,16 +7331,17 @@
     }
 
     .live-map-empty {
-      border: 1px dashed var(--border);
-      border-radius: 10px;
-      background: var(--surface-elevated);
+      border: 1px dashed rgba(0,0,0,0.10);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.4);
       color: var(--text-secondary);
-      padding: 18px;
+      padding: 16px;
       text-align: center;
       font-size: 13px;
       line-height: 1.5;
     }
 
+    /* ---- Map markers with glow ---- */
     .live-map-marker-pill {
       display: inline-flex;
       align-items: center;
@@ -7268,26 +7351,64 @@
       color: #fff;
       font-size: 11px;
       font-weight: 700;
-      box-shadow: 0 2px 7px rgba(15, 23, 42, 0.25);
       border: 1px solid rgba(255, 255, 255, 0.22);
       transform-origin: center;
       transition: transform 0.2s ease;
       white-space: nowrap;
     }
 
-    .live-map-marker-pill--moving { background: #16a34a; }
-    .live-map-marker-pill--stopped { background: #2563eb; }
-    .live-map-marker-pill--stale { background: #d97706; }
-    .live-map-marker-pill--unlinked { background: #64748b; }
-    .live-map-marker-pill--unknown { background: #ef4444; }
-    .live-map-marker-pill--selected { transform: scale(1.08); }
+    .live-map-marker-pill--moving {
+      background: #16a34a;
+      box-shadow: 0 0 12px rgba(22, 163, 106, 0.4);
+    }
+    .live-map-marker-pill--stopped {
+      background: #2563eb;
+      box-shadow: 0 0 12px rgba(37, 99, 235, 0.35);
+    }
+    .live-map-marker-pill--stale {
+      background: #d97706;
+      box-shadow: 0 0 10px rgba(217, 119, 6, 0.35);
+    }
+    .live-map-marker-pill--unlinked {
+      background: #64748b;
+      box-shadow: 0 0 8px rgba(100, 116, 139, 0.3);
+    }
+    .live-map-marker-pill--unknown {
+      background: #ef4444;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.35);
+    }
 
+    .live-map-marker-pill--selected {
+      transform: scale(1.12);
+      animation: marker-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes marker-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.35); }
+      50% { box-shadow: 0 0 0 8px rgba(59,130,246,0); }
+    }
+
+    .live-map-marker-arrow {
+      display: inline-block;
+      font-size: 10px;
+      margin-left: 2px;
+    }
+
+    /* ---- Custom dark popups ---- */
     .live-map-popup {
-      min-width: 220px;
+      min-width: 240px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 0;
       font-size: 12px;
+    }
+
+    .live-map-popup-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
     }
 
     .live-map-popup-title {
@@ -7296,58 +7417,224 @@
       font-size: 14px;
     }
 
+    .live-map-popup-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: white;
+    }
+
+    .live-map-popup-badge--moving { background: #16a34a; }
+    .live-map-popup-badge--stopped { background: #2563eb; }
+    .live-map-popup-badge--stale { background: #d97706; }
+    .live-map-popup-badge--unlinked { background: #64748b; }
+    .live-map-popup-badge--unknown { background: #ef4444; }
+
+    .live-map-popup-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
     .live-map-popup-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0;
       color: var(--text-secondary);
-      line-height: 1.35;
+      line-height: 1.4;
+    }
+
+    .live-map-popup-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .live-map-popup-value {
+      font-size: 13px;
+      color: var(--text-primary);
+      font-weight: 600;
+      text-align: right;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .live-map-popup-speed {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    /* ---- Dark theme glass ---- */
+    body.dark-theme .live-map-toolbar {
+      background: rgba(9,9,11,0.78);
+      border-color: rgba(255,255,255,0.08);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    body.dark-theme .live-map-status-chip {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.08);
+    }
+
+    body.dark-theme .live-map-kpi {
+      background: rgba(9,9,11,0.78);
+      border-color: rgba(255,255,255,0.08);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+    }
+
+    body.dark-theme .live-map-panel {
+      background: rgba(9,9,11,0.82);
+      border-color: rgba(255,255,255,0.08);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    body.dark-theme .live-map-panel-head {
+      border-bottom-color: rgba(255,255,255,0.06);
+    }
+
+    body.dark-theme .live-map-panel-toggle {
+      border-color: rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05);
+      color: var(--text-secondary);
+    }
+
+    body.dark-theme .live-map-panel-fab {
+      background: rgba(9,9,11,0.82);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--text-primary);
+    }
+
+    body.dark-theme .live-map-panel-controls {
+      border-bottom-color: rgba(255,255,255,0.06);
+    }
+
+    body.dark-theme .live-map-search {
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,255,255,0.08);
+    }
+
+    body.dark-theme .live-map-filter-chip {
+      border-color: rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+    }
+
+    body.dark-theme .live-map-filter-chip.active {
+      background: rgba(37, 99, 235, 0.15);
+      border-color: rgba(37, 99, 235, 0.35);
+    }
+
+    body.dark-theme .live-map-sort-row select {
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,255,255,0.08);
+      color: var(--text-primary);
+    }
+
+    body.dark-theme .live-map-legend-item {
+      background: rgba(255,255,255,0.04);
+    }
+
+    body.dark-theme .fleet-card {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.06);
+    }
+
+    body.dark-theme .fleet-card--selected {
+      background: rgba(59, 130, 246, 0.10);
+    }
+
+    body.dark-theme .fleet-pill--linked {
+      background: rgba(34, 197, 94, 0.15);
+    }
+
+    body.dark-theme .fleet-pill--unlinked {
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,255,255,0.08);
+    }
+
+    body.dark-theme .live-map-empty {
+      border-color: rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+    }
+
+    body.dark-theme .live-map-marker-pill--moving {
+      box-shadow: 0 0 16px rgba(22, 163, 106, 0.55);
+    }
+    body.dark-theme .live-map-marker-pill--stopped {
+      box-shadow: 0 0 16px rgba(37, 99, 235, 0.5);
+    }
+    body.dark-theme .live-map-marker-pill--stale {
+      box-shadow: 0 0 14px rgba(217, 119, 6, 0.5);
+    }
+
+    @supports not (backdrop-filter: blur(16px)) {
+      body.dark-theme .live-map-toolbar { background: rgba(9,9,11,0.96); }
+      body.dark-theme .live-map-kpi { background: rgba(9,9,11,0.96); }
+      body.dark-theme .live-map-panel { background: rgba(9,9,11,0.96); }
+    }
+
+    /* ---- Mobile: panel becomes bottom sheet, KPIs wrap ---- */
+    @media (max-width: 768px) {
+      .live-map-page {
+        height: calc(100vh - 56px);
+      }
+
+      .live-map-toolbar {
+        left: 8px;
+        right: 8px;
+        top: 8px;
+        flex-wrap: wrap;
+      }
+
+      .live-map-kpi-row {
+        top: auto;
+        bottom: 8px;
+        left: 8px;
+        right: 8px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+
+      .live-map-panel {
+        top: auto;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        max-width: 100%;
+        border-radius: 16px 16px 0 0;
+        max-height: 55vh;
+      }
+
+      .live-map-panel[data-collapsed="true"] {
+        transform: translateY(100%);
+      }
+
+      .live-map-panel-fab {
+        right: 8px;
+        bottom: 8px;
+        top: auto;
+      }
+
+      .live-map-filter-chip {
+        min-height: 36px;
+      }
     }
 
     @media (max-width: 1280px) {
       .live-map-panel {
         width: 340px;
-      }
-    }
-
-    /* ============ MOBILE LIVE MAP ============ */
-    @media (max-width: 768px) {
-      .live-map-page {
-        min-height: unset;
-      }
-
-      .live-map-kpi-row {
-        grid-template-columns: repeat(2, minmax(120px, 1fr));
-      }
-
-      .live-map-layout {
-        flex-direction: column;
-        height: auto;
-        min-height: unset;
-      }
-
-      .live-map-canvas {
-        height: 60vh;
-        min-height: 60vh;
-      }
-
-      #liveMapContainer {
-        min-height: 60vh;
-      }
-
-      .live-map-panel {
-        width: 100%;
-        max-width: 100%;
-        min-height: 0;
-      }
-
-      .live-map-panel-toggle {
-        display: inline-flex;
-      }
-
-      .live-map-panel[data-collapsed="true"] .live-map-panel-body {
-        display: none;
-      }
-
-      .live-map-filter-chip {
-        min-height: 44px;
       }
     }
     
@@ -40619,6 +40906,7 @@ function jsonResponse(data, status = 200) {
     
     // ============ LIVE MAP PAGE ============
     let liveMapInstance = null;
+    let liveMapTileLayer = null;
     let liveMapMarkers = {};
     let liveMapRefreshInterval = null;
     let liveMapResizeHandlerAttached = false;
@@ -40636,7 +40924,7 @@ function jsonResponse(data, status = 200) {
       viewModel: null,
       lastRefreshError: '',
       hasNoData: false,
-      panelCollapsedMobile: false,
+      panelCollapsed: false,
       fleetListCollapsed: false
     };
 
@@ -40742,35 +41030,36 @@ function jsonResponse(data, status = 200) {
     }
 
     function buildLiveMapShell() {
-      const panelCollapsed = liveMapState.panelCollapsedMobile ? 'true' : 'false';
+      const panelCollapsed = liveMapState.panelCollapsed ? 'true' : 'false';
       return '<div class="live-map-page">' +
-        '<div class="header live-map-toolbar">' +
+        '<div class="live-map-layout">' +
+          '<div class="live-map-canvas">' +
+            '<div id="liveMapContainer" aria-label="Live fleet map"></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="live-map-toolbar">' +
           '<div class="live-map-toolbar-left">' +
             '<h2>[[icon:map_pin]] ' + t('live_map') + '</h2>' +
             '<span id="liveMapStatusChip" class="live-map-status-chip"><span class="dot"></span><span>Waiting for first update</span></span>' +
           '</div>' +
           '<div class="live-map-toolbar-actions">' +
-            '<button class="btn btn-secondary" onclick="refreshLiveMap({ manual: true })" aria-label="Refresh live map">[[icon:refresh]] Refresh</button>' +
-            '<button class="btn btn-secondary" onclick="fitLiveMapToFleet(null, { force: true })" aria-label="Fit map to visible fleet">[[icon:target]] Fit Fleet</button>' +
-            (currentUser.role === 'ADMIN' ? '<button class="btn btn-secondary" onclick="goToPage(\'settings\')" aria-label="Configure Samsara">[[icon:settings]] Configure Samsara</button>' : '') +
+            '<button class="btn btn-secondary" onclick="refreshLiveMap({ manual: true })" aria-label="Refresh">[[icon:refresh]]</button>' +
+            '<button class="btn btn-secondary" onclick="fitLiveMapToFleet(null, { force: true })" aria-label="Fit fleet">[[icon:target]]</button>' +
+            (currentUser.role === 'ADMIN' ? '<button class="btn btn-secondary" onclick="goToPage(\'settings\')" aria-label="Configure Samsara">[[icon:settings]]</button>' : '') +
           '</div>' +
         '</div>' +
         '<div id="liveMapKpiRow" class="live-map-kpi-row"></div>' +
-        '<div class="live-map-layout">' +
-          '<div class="live-map-canvas">' +
-            '<div id="liveMapContainer" aria-label="Live fleet map"></div>' +
-          '</div>' +
-          '<aside id="liveMapPanel" class="live-map-panel" data-collapsed="' + panelCollapsed + '">' +
-            '<div class="live-map-panel-head">' +
-              '<div class="live-map-panel-head-row">' +
-                '<h3>[[icon:truck]] Fleet Operations</h3>' +
-                '<button id="liveMapPanelToggle" class="live-map-panel-toggle" onclick="toggleLiveMapPanel()" aria-label="Toggle fleet panel">[[icon:menu]]</button>' +
-              '</div>' +
-              '<div id="liveMapLegend" class="live-map-legend"></div>' +
+        '<aside id="liveMapPanel" class="live-map-panel" data-collapsed="' + panelCollapsed + '">' +
+          '<div class="live-map-panel-head">' +
+            '<div class="live-map-panel-head-row">' +
+              '<h3>[[icon:truck]] Fleet</h3>' +
+              '<button id="liveMapPanelToggle" class="live-map-panel-toggle" onclick="toggleLiveMapPanel()" aria-label="Toggle fleet panel">[[icon:menu]]</button>' +
             '</div>' +
-            '<div id="liveMapPanelBody" class="live-map-panel-body">' + renderLiveMapEmptyState('loading') + '</div>' +
-          '</aside>' +
-        '</div>' +
+            '<div id="liveMapLegend" class="live-map-legend"></div>' +
+          '</div>' +
+          '<div id="liveMapPanelBody" class="live-map-panel-body">' + renderLiveMapEmptyState('loading') + '</div>' +
+        '</aside>' +
+        '<button class="live-map-panel-fab" onclick="toggleLiveMapPanel()" aria-label="Show fleet panel" title="Show fleet panel">[[icon:truck]]</button>' +
       '</div>';
     }
 
@@ -40819,31 +41108,11 @@ function jsonResponse(data, status = 200) {
     }
 
     function applyLiveMapResponsiveSizing(root = document) {
-      const layout = (root && typeof root.querySelector === 'function') ? root.querySelector('.live-map-layout') : document.querySelector('.live-map-layout');
-      const canvas = (root && typeof root.querySelector === 'function') ? root.querySelector('.live-map-canvas') : document.querySelector('.live-map-canvas');
-      const container = (root && typeof root.querySelector === 'function') ? root.querySelector('#liveMapContainer') : document.getElementById('liveMapContainer');
-      if (!layout || !canvas || !container) return;
-
-      const isMobile = window.innerWidth <= 768;
-      if (isMobile) {
-        layout.style.height = 'auto';
-        layout.style.minHeight = '';
-        layout.style.maxHeight = '';
-        canvas.style.height = '60vh';
-        canvas.style.minHeight = '60vh';
-        container.style.height = '100%';
-        container.style.minHeight = '60vh';
-        return;
+      // Full viewport map — CSS handles sizing via position: absolute
+      // Just invalidate Leaflet size if present
+      if (liveMapInstance) {
+        try { liveMapInstance.invalidateSize(); } catch (e) {}
       }
-
-      const desktopHeight = Math.min(1456, Math.max(832, Math.round(window.innerHeight * 1.04)));
-      layout.style.height = desktopHeight + 'px';
-      layout.style.minHeight = '832px';
-      layout.style.maxHeight = '1456px';
-      canvas.style.height = '100%';
-      canvas.style.minHeight = '832px';
-      container.style.height = '100%';
-      container.style.minHeight = '832px';
     }
 
     function ensureLiveMapContainerSize(container) {
@@ -41096,13 +41365,13 @@ function jsonResponse(data, status = 200) {
       if (!row) return;
       const counts = viewModel?.counts || { moving: 0, stopped: 0, unlinked: 0, unknown: 0 };
       const cards = [
-        { label: 'Online Moving', value: counts.moving, color: '#16a34a' },
-        { label: 'Stopped', value: counts.stopped, color: '#2563eb' },
-        { label: 'Unlinked', value: counts.unlinked, color: '#64748b' },
-        { label: 'No GPS / Unknown', value: counts.unknown, color: '#ef4444' }
+        { label: 'Moving', value: counts.moving, color: '#16a34a', pulse: true },
+        { label: 'Stopped', value: counts.stopped, color: '#2563eb', pulse: false },
+        { label: 'Unlinked', value: counts.unlinked, color: '#64748b', pulse: false },
+        { label: 'No GPS', value: counts.unknown, color: '#ef4444', pulse: false }
       ];
       row.innerHTML = cards.map(card =>
-        '<div class="live-map-kpi">' +
+        '<div class="live-map-kpi' + (card.pulse && card.value > 0 ? ' live-map-kpi--pulse' : '') + '">' +
           '<div class="live-map-kpi-label">' + card.label + '</div>' +
           '<div class="live-map-kpi-value" style="color:' + card.color + '">' + card.value + '</div>' +
         '</div>'
@@ -41196,7 +41465,7 @@ function jsonResponse(data, status = 200) {
         return;
       }
 
-      const cards = filteredVehicles.map(vehicle => {
+      const cards = filteredVehicles.map((vehicle, cardIdx) => {
         const cardState = getLiveMapCardState(vehicle);
         const selectedClass = liveMapState.selectedVehicleKey === vehicle.key ? ' fleet-card--selected' : '';
         const statusLabel = cardState === 'moving'
@@ -41212,7 +41481,7 @@ function jsonResponse(data, status = 200) {
         const keyLiteral = JSON.stringify(vehicle.key);
         const actionLabel = vehicle.hasCoordinates ? 'Select and center on map' : 'Select truck';
 
-        return '<div class="fleet-card fleet-card--' + cardState + selectedClass + '"' +
+        return '<div class="fleet-card fleet-card--' + cardState + selectedClass + '" style="--card-index:' + cardIdx + '"' +
             ' role="button" tabindex="0"' +
             ' onclick=\'selectLiveMapVehicle(' + keyLiteral + ', { center: true })\'' +
             ' onkeydown=\'handleLiveMapCardKeydown(event, ' + keyLiteral + ')\'' +
@@ -41260,24 +41529,39 @@ function jsonResponse(data, status = 200) {
       chip.innerHTML = '<span class="dot"></span><span>' + escapeHtml(label) + '</span>';
     }
 
+    // Live status ticker — update "X ago" text every 5s
+    (function() {
+      var liveMapStatusTicker = null;
+      var origUpdateLiveMapStatusChip = updateLiveMapStatusChip;
+      function startLiveMapStatusTicker() {
+        if (liveMapStatusTicker) return;
+        liveMapStatusTicker = setInterval(function() {
+          if (currentPage !== 'live_map') {
+            clearInterval(liveMapStatusTicker);
+            liveMapStatusTicker = null;
+            return;
+          }
+          origUpdateLiveMapStatusChip();
+        }, 5000);
+      }
+      var origBuildShell = buildLiveMapShell;
+      buildLiveMapShell = function() {
+        startLiveMapStatusTicker();
+        return origBuildShell.apply(this, arguments);
+      };
+    })();
+
     function updateLiveMapPanelCollapsedState() {
       const panel = document.getElementById('liveMapPanel');
       const toggle = document.getElementById('liveMapPanelToggle');
       if (!panel || !toggle) return;
-      const isMobile = window.innerWidth <= 768;
-      if (!isMobile) {
-        panel.setAttribute('data-collapsed', 'false');
-        liveMapState.panelCollapsedMobile = false;
-        toggle.title = 'Collapse fleet panel';
-        return;
-      }
-      panel.setAttribute('data-collapsed', liveMapState.panelCollapsedMobile ? 'true' : 'false');
-      toggle.title = liveMapState.panelCollapsedMobile ? 'Expand fleet panel' : 'Collapse fleet panel';
+      const collapsed = liveMapState.panelCollapsed || false;
+      panel.setAttribute('data-collapsed', collapsed ? 'true' : 'false');
+      toggle.title = collapsed ? 'Expand fleet panel' : 'Collapse fleet panel';
     }
 
     function toggleLiveMapPanel() {
-      if (window.innerWidth > 768) return;
-      liveMapState.panelCollapsedMobile = !liveMapState.panelCollapsedMobile;
+      liveMapState.panelCollapsed = !liveMapState.panelCollapsed;
       updateLiveMapPanelCollapsedState();
     }
 
@@ -41318,9 +41602,10 @@ function jsonResponse(data, status = 200) {
       const labelText = vehicle.truckNumber ? ('#' + vehicle.truckNumber) : vehicle.truckLabel;
       const classes = 'live-map-marker-pill live-map-marker-pill--' + markerState + (isSelected ? ' live-map-marker-pill--selected' : '');
       const iconSvg = renderUIIcon('truck', { size: 12 });
+      const arrowHtml = markerState === 'moving' ? '<span class="live-map-marker-arrow">&#9654;</span>' : '';
       return L.divIcon({
         className: 'live-map-marker',
-        html: '<div class="' + classes + '">' + iconSvg + '<span>' + escapeHtml(labelText) + '</span></div>',
+        html: '<div class="' + classes + '">' + iconSvg + '<span>' + escapeHtml(labelText) + '</span>' + arrowHtml + '</div>',
         iconSize: null,
         iconAnchor: [40, 20]
       });
@@ -41337,12 +41622,17 @@ function jsonResponse(data, status = 200) {
             : markerState === 'unlinked'
               ? 'Unlinked'
               : 'No GPS';
+      const speedHtml = vehicle.speedMph > 0 ? '<span class="live-map-popup-speed">' + vehicle.speedMph + ' mph</span>' : '';
       return '<div class="live-map-popup">' +
-        '<div class="live-map-popup-title">' + escapeHtml(vehicle.truckLabel) + '</div>' +
-        '<div class="live-map-popup-row">' + escapeHtml(vehicle.vehicleName) + '</div>' +
-        '<div class="live-map-popup-row"><strong>Status:</strong> ' + escapeHtml(statusText + (vehicle.speedMph > 0 ? ' • ' + vehicle.speedMph + ' mph' : '')) + '</div>' +
-        '<div class="live-map-popup-row"><strong>Location:</strong> ' + escapeHtml(vehicle.address || 'Unknown location') + '</div>' +
-        '<div class="live-map-popup-row"><strong>Updated:</strong> ' + escapeHtml(vehicle.lastSeenLabel || 'No timestamp') + '</div>' +
+        '<div class="live-map-popup-header">' +
+          '<div class="live-map-popup-title">' + escapeHtml(vehicle.truckLabel) + '</div>' +
+          '<span class="live-map-popup-badge live-map-popup-badge--' + markerState + '">' + escapeHtml(statusText) + '</span>' +
+        '</div>' +
+        '<div class="live-map-popup-divider"></div>' +
+        '<div class="live-map-popup-row"><span class="live-map-popup-label">Vehicle</span><span class="live-map-popup-value">' + escapeHtml(vehicle.vehicleName) + '</span></div>' +
+        '<div class="live-map-popup-row"><span class="live-map-popup-label">Speed</span><span class="live-map-popup-value">' + (speedHtml || '—') + '</span></div>' +
+        '<div class="live-map-popup-row"><span class="live-map-popup-label">Location</span><span class="live-map-popup-value">' + escapeHtml(vehicle.address || 'Unknown') + '</span></div>' +
+        '<div class="live-map-popup-row"><span class="live-map-popup-label">Updated</span><span class="live-map-popup-value">' + escapeHtml(vehicle.lastSeenLabel || 'No timestamp') + '</span></div>' +
       '</div>';
     }
 
@@ -41461,7 +41751,7 @@ function jsonResponse(data, status = 200) {
       liveMapState.fleetListCollapsed = false;
       if (!['all', 'moving', 'stopped', 'unlinked'].includes(liveMapState.movementFilter)) liveMapState.movementFilter = 'all';
       if (!['status', 'speed_desc', 'truck_number'].includes(liveMapState.sortMode)) liveMapState.sortMode = 'status';
-      liveMapState.panelCollapsedMobile = window.innerWidth <= 640;
+      liveMapState.panelCollapsed = window.innerWidth <= 640;
 
       if (!samsaraKey) {
         c.innerHTML = '<div class="live-map-page">' +
@@ -41586,9 +41876,14 @@ function jsonResponse(data, status = 200) {
         return false;
       }
 
-      // Add tile layer (OpenStreetMap)
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
+      // Add tile layer (CartoDB theme-aware)
+      var tileUrl = document.body.classList.contains('dark-theme')
+        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+      liveMapTileLayer = L.tileLayer(tileUrl, {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
       }).addTo(liveMapInstance);
 
       // Wait for map to be ready before loading data
@@ -41601,6 +41896,14 @@ function jsonResponse(data, status = 200) {
         refreshLiveMap({ manual: false });
       }, 200);
       return true;
+    }
+
+    function switchLiveMapTiles() {
+      if (!liveMapInstance || !liveMapTileLayer) return;
+      var newUrl = document.body.classList.contains('dark-theme')
+        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+      liveMapTileLayer.setUrl(newUrl);
     }
 
     async function refreshLiveMap(options = {}) {
@@ -41689,24 +41992,16 @@ function jsonResponse(data, status = 200) {
       c.innerHTML = `
         <div class="chat-container">
           <div class="chat-header">
-            <div class="chat-header-row">
-              <div class="chat-header-main">
-                <div class="chat-header-eyebrow">Dispatch Workspace</div>
-                <div class="chat-title-group">
-                  <div class="chat-title-mark">[[icon:chat]]</div>
-                  <div>
-                    <h2>${t('team_chat')}</h2>
-                    <div class="chat-header-subtitle">Shared conversation for dispatch, fleet, and back office updates.</div>
-                  </div>
-                </div>
+            <div class="chat-channel-name">
+              <span class="chat-channel-hash">#</span>
+              <h2>${t('team_chat')}</h2>
+            </div>
+            <div class="chat-header-right">
+              <div id="chatOnlineStatus" class="chat-status-pill">
+                <span class="chat-status-ping"></span>
+                <span>Syncing conversation</span>
               </div>
-              <div class="chat-header-actions">
-                <div id="chatOnlineStatus" class="chat-status-pill">
-                  <span class="chat-status-ping"></span>
-                  <span>Syncing conversation</span>
-                </div>
-                <button class="btn btn-secondary chat-refresh-btn" onclick="refreshChat()">[[icon:refresh]] Refresh</button>
-              </div>
+              <button class="btn btn-secondary chat-refresh-btn" onclick="refreshChat()" title="Refresh">[[icon:refresh]]</button>
             </div>
           </div>
 
@@ -41717,11 +42012,7 @@ function jsonResponse(data, status = 200) {
           <div class="chat-input-area">
             <div class="chat-composer-shell">
               <div class="chat-composer-top">
-                <div class="chat-composer-tip">
-                  <span class="chat-composer-tip-badge">!</span>
-                  <span>Use <strong>@mentions</strong> to pull in teammates and attach files when context matters.</span>
-                </div>
-                <span>Enter to send • Shift + Enter for a new line</span>
+                <span>Enter to send &middot; Shift+Enter for new line</span>
               </div>
               <div id="chatFilePreview" class="chat-file-preview"></div>
               <div class="chat-composer-row">
@@ -42029,17 +42320,22 @@ function jsonResponse(data, status = 200) {
         const roleHtml = msg.user_role ? '<span class="chat-message-role">' + escapeHtml(msg.user_role) + '</span>' : '';
         
         html += '<article class="chat-message-row ' + (isOwnMessage ? 'is-own ' : '') + (isConsecutive ? 'is-continuation' : 'is-start') + '">';
-        
+
         if (!isConsecutive) {
-          html += '<div class="chat-avatar" style="--avatar-color:' + avatarColor + '">' + initials + '</div>';
+          html += '<div class="chat-avatar" style="--avatar-color:' + avatarColor + '">' + initials + '<span class="chat-avatar-presence"></span></div>';
         } else {
           html += '<div class="chat-avatar-spacer"></div>';
+          html += '<span class="chat-message-time-hover">' + timeStr + '</span>';
         }
-        
+
         html += '<div class="chat-message-column">';
-        
+
         if (!isConsecutive) {
-          html += '<div class="chat-message-meta"><span class="chat-message-name">' + userName + '</span>' + roleHtml + '</div>';
+          html += '<div class="chat-message-meta"><span class="chat-message-name">' + userName + '</span>' + roleHtml + '<span class="chat-message-time">' + timeStr + '</span></div>';
+        }
+
+        if (msg.message && msg.message.trim()) {
+          html += '<div class="chat-message-text">' + formatMessageWithMentions(msg.message, isOwnMessage) + '</div>';
         }
 
         let attachmentsHtml = '';
@@ -42069,16 +42365,11 @@ function jsonResponse(data, status = 200) {
           });
           attachmentsHtml += '</div>';
         }
-        
-        html += '<div class="chat-bubble ' + (isOwnMessage ? 'is-own' : 'is-other') + '">';
-
-        if (msg.message && msg.message.trim()) {
-          html += '<div class="chat-message-text">' + formatMessageWithMentions(msg.message, isOwnMessage) + '</div>';
-        }
 
         html += attachmentsHtml;
 
-        html += '<div class="chat-message-foot"><span>' + timeStr + '</span></div></div>';
+        html += '<div class="chat-message-actions"><button class="chat-action-btn" title="React">&#128578;</button><button class="chat-action-btn" title="Bookmark">&#128278;</button><button class="chat-action-btn" title="More">&#8943;</button></div>';
+
         html += '</div></article>';
       });
       
@@ -42128,12 +42419,12 @@ function jsonResponse(data, status = 200) {
     function formatMessageWithMentions(text, isOwnMessage) {
       // First escape HTML
       let html = escapeHtml(text);
-      
-      // Then highlight @mentions
+
+      // Then highlight @mentions (gold highlight style, no is-own variant)
       html = html.replace(/@([A-Za-z\u10A0-\u10FF]+ ?[A-Za-z\u10A0-\u10FF]*)/g, function(match, name) {
-        return '<span class="chat-mention-chip' + (isOwnMessage ? ' is-own' : '') + '">@' + name + '</span>';
+        return '<span class="chat-mention-chip">@' + name + '</span>';
       });
-      
+
       return html;
     }
     
