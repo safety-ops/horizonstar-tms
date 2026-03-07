@@ -43,7 +43,7 @@
   ];
 
   // Payment types
-  const PAYMENT_TYPES = ['COD', 'COP', 'BILL', 'CHECK', 'ACH'];
+  const PAYMENT_TYPES = ['BILL', 'COD', 'COP', 'LOCAL_COD', 'CHECK', 'SPLIT'];
 
   // Escape string for use in HTML attributes
   function escapeAttr(str) {
@@ -58,7 +58,15 @@
   // Remove ALL existing TMS buttons (clean slate)
   function removeAllTMSButtons() {
     const existing = document.querySelectorAll('.tms-import-button');
-    existing.forEach(btn => btn.remove());
+    existing.forEach(btn => {
+      // Remove wrapper parent if it exists
+      if (btn.parentElement && btn.parentElement.querySelector('.tms-batch-checkbox')) {
+        btn.parentElement.remove();
+      } else {
+        btn.remove();
+      }
+    });
+    batchSelected.clear();
     log(`Removed ${existing.length} existing TMS buttons`);
   }
 
@@ -88,9 +96,9 @@
 
     let el = moreActionsBtn.parentElement;
     for (let i = 0; i < 20 && el && el !== document.body; i++) {
-      const text = el.textContent || '';
-      if ((text.includes('Load Info') && text.includes('Origin') && text.includes('Destination')) ||
-          (text.includes('shipper info') && text.includes('vehicle info') && text.length > 500)) {
+      const textLower = (el.textContent || '').toLowerCase();
+      if ((textLower.includes('load info') && textLower.includes('origin') && textLower.includes('destination')) ||
+          (textLower.includes('shipper info') && textLower.includes('vehicle info') && textLower.length > 500)) {
         return el;
       }
       el = el.parentElement;
@@ -100,8 +108,65 @@
     return document.body;
   }
 
-  // Create TMS button
+  // Track batch-selected cards
+  const batchSelected = new Set();
+
+  function updateBatchBar() {
+    let bar = document.getElementById('tms-batch-bar');
+    if (batchSelected.size === 0) {
+      if (bar) bar.remove();
+      return;
+    }
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'tms-batch-bar';
+      bar.style.cssText = `
+        position: fixed; bottom: 0; left: 0; right: 0; z-index: 999998;
+        background: #1e293b; border-top: 2px solid #22c55e; padding: 12px 24px;
+        display: flex; align-items: center; justify-content: space-between;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        box-shadow: 0 -4px 12px rgba(0,0,0,0.3);
+      `;
+      document.body.appendChild(bar);
+    }
+    bar.innerHTML = `
+      <span style="color: #e2e8f0; font-size: 14px; font-weight: 600;">
+        ${batchSelected.size} load${batchSelected.size > 1 ? 's' : ''} selected
+      </span>
+      <div style="display: flex; gap: 8px;">
+        <button id="tms-batch-clear" style="padding: 8px 16px; background: #334155; border: none; border-radius: 6px; color: #e2e8f0; font-size: 13px; cursor: pointer;">Clear</button>
+        <button id="tms-batch-import" style="padding: 8px 16px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; border-radius: 6px; color: white; font-size: 13px; font-weight: 600; cursor: pointer;">Import All</button>
+      </div>
+    `;
+    document.getElementById('tms-batch-clear').addEventListener('click', () => {
+      batchSelected.clear();
+      document.querySelectorAll('.tms-batch-checkbox').forEach(cb => cb.checked = false);
+      updateBatchBar();
+    });
+    document.getElementById('tms-batch-import').addEventListener('click', () => {
+      showBatchImportModal();
+    });
+  }
+
+  // Create TMS button with batch checkbox
   function createTMSButton(moreActionsBtn) {
+    const wrapper = document.createElement('span');
+    wrapper.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; margin-right: 8px;';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'tms-batch-checkbox';
+    cb.style.cssText = 'cursor: pointer; width: 16px; height: 16px; accent-color: #22c55e;';
+    cb.addEventListener('change', () => {
+      if (cb.checked) {
+        batchSelected.add(moreActionsBtn);
+      } else {
+        batchSelected.delete(moreActionsBtn);
+      }
+      updateBatchBar();
+    });
+    cb.addEventListener('click', (e) => e.stopPropagation());
+
     const btn = document.createElement('button');
     btn.className = 'tms-import-button';
     btn.innerHTML = '+ Import to TMS';
@@ -111,7 +176,6 @@
       align-items: center;
       gap: 4px;
       padding: 8px 16px;
-      margin-right: 8px;
       background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
       color: white;
       border: none;
@@ -141,7 +205,9 @@
       btn.style.transform = 'translateY(0)';
     });
 
-    return btn;
+    wrapper.appendChild(cb);
+    wrapper.appendChild(btn);
+    return wrapper;
   }
 
   // Main injection function
@@ -173,30 +239,42 @@
     const data = {
       order_number: '',
       broker_name: '',
+      broker_contact_name: '',
+      broker_phone: '',
+      broker_email: '',
       revenue: 0,
+      broker_fee: 0,
       payment_type: '',
       vehicle_year: null,
       vehicle_make: '',
       vehicle_model: '',
       vehicle_vin: '',
       vehicle_color: '',
+      vehicle_body_type: '',
       origin: '',
       pickup_full_address: '',
+      pickup_address: '',
       pickup_city: '',
       pickup_state: '',
       pickup_zip: '',
       pickup_phone: '',
       pickup_contact_name: '',
+      pickup_contact_phone: '',
       pickup_date: '',
       destination: '',
       delivery_full_address: '',
+      delivery_address: '',
       delivery_city: '',
       delivery_state: '',
       delivery_zip: '',
       delivery_phone: '',
       delivery_contact_name: '',
+      delivery_contact_phone: '',
       dropoff_date: '',
-      dispatcher_notes: ''
+      notes: '',
+      dispatcher_notes: '',
+      vehicle_lot_number: '',
+      vehicle_buyer_number: ''
     };
 
     const cardText = card.innerText || card.textContent || '';
@@ -221,6 +299,24 @@
       log('Found Broker:', data.broker_name);
     }
 
+    // BROKER DETAILS (MC#, contact, phone, email)
+    const mcMatch = cardText.match(/MC\s*#?\s*:?\s*(\d{4,7})/i);
+    const brokerContactMatch = cardText.match(/shipper\s*info[\s\S]*?Contact\s*(?:Name)?\s*\n?\s*([A-Za-z][A-Za-z\s.'-]+?)(?:\n|Contact\s*Info|$)/i);
+    if (brokerContactMatch) {
+      data.broker_contact_name = brokerContactMatch[1].trim();
+      log('Found Broker Contact:', data.broker_contact_name);
+    }
+    const brokerPhoneMatch = cardText.match(/shipper\s*info[\s\S]*?Contact\s*Info[\s\S]*?\((\d{3})\)\s*(\d{3})-(\d{4})/i);
+    if (brokerPhoneMatch) {
+      data.broker_phone = `(${brokerPhoneMatch[1]}) ${brokerPhoneMatch[2]}-${brokerPhoneMatch[3]}`;
+      log('Found Broker Phone:', data.broker_phone);
+    }
+    const brokerEmailMatch = cardText.match(/shipper\s*info[\s\S]*?([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+    if (brokerEmailMatch) {
+      data.broker_email = brokerEmailMatch[1].trim();
+      log('Found Broker Email:', data.broker_email);
+    }
+
     // TOTAL PRICE
     const priceMatch = cardText.match(/Total\s*Price\s*\n?\s*\$?\s*([\d,]+(?:\.\d{2})?)/i);
     if (priceMatch) {
@@ -233,12 +329,21 @@
       }
     }
 
+    // BROKER FEE
+    const brokerFeeMatch = cardText.match(/(?:Broker\s*Fee|Commission|Fee)\s*\$?\s*([\d,]+(?:\.\d{2})?)/i);
+    if (brokerFeeMatch) {
+      data.broker_fee = parseFloat(brokerFeeMatch[1].replace(/,/g, ''));
+      log('Found Broker Fee:', data.broker_fee);
+    }
+
     // PAYMENT TYPE
     const paymentTermsMatch = cardText.match(/Payment\s*Terms[\s\S]*?(Cash|Certified\s*Funds|COD|COP|BILL|CHECK|ACH)/i);
     if (paymentTermsMatch) {
       const term = paymentTermsMatch[1].toUpperCase();
       if (term.includes('CASH') || term.includes('CERTIFIED')) {
         data.payment_type = 'COD';
+      } else if (term === 'ACH') {
+        data.payment_type = 'BILL'; // ACH → BILL in TMS
       } else {
         data.payment_type = term;
       }
@@ -256,9 +361,9 @@
       const termsMapping = { 5: 'NET5', 7: 'NET7', 10: 'NET10', 15: 'NET15', 21: 'NET21', 30: 'NET30', 45: 'NET45', 60: 'NET60' };
       data.payment_terms = termsMapping[days] || 'NET30';
       log('Found Payment Terms:', data.payment_terms);
-    } else if (data.payment_type === 'BILL') {
+    } else if (data.payment_type === 'BILL' || data.payment_type === 'SPLIT') {
       data.payment_terms = 'NET30';
-      log('Defaulting Payment Terms to NET30 for BILL type');
+      log('Defaulting Payment Terms to NET30 for BILL/SPLIT type');
     }
 
     // VEHICLE
@@ -285,6 +390,16 @@
     if (vinMatch) {
       data.vehicle_vin = vinMatch[1].toUpperCase();
       log('Found VIN:', data.vehicle_vin);
+    } else {
+      // Fallback: match VIN-like pattern with spaces/dashes, strip them
+      const vinFallback = cardText.match(/VIN\s*\n?\s*([A-HJ-NPR-Z0-9][\s-]?){17,22}/i);
+      if (vinFallback) {
+        const cleaned = vinFallback[0].replace(/VIN\s*/i, '').replace(/[\s-]/g, '').toUpperCase();
+        if (cleaned.length === 17 && /^[A-HJ-NPR-Z0-9]{17}$/.test(cleaned)) {
+          data.vehicle_vin = cleaned;
+          log('Found VIN (cleaned):', data.vehicle_vin);
+        }
+      }
     }
 
     // Vehicle Color
@@ -294,14 +409,28 @@
       log('Found Color:', data.vehicle_color);
     }
 
+    // Vehicle Body Type
+    const bodyTypeMatch = cardText.match(/(?:Vehicle\s*Type|Body\s*Style|Type)\s*\n?\s*(Sedan|Coupe|SUV|Truck|Pickup|Van|Minivan|Convertible|Wagon|Hatchback|Crossover)/i);
+    if (bodyTypeMatch) {
+      data.vehicle_body_type = bodyTypeMatch[1].trim();
+      log('Found Body Type:', data.vehicle_body_type);
+    }
+
+    // BUYER REFERENCE NUMBER (from origin info section)
+    const buyerRefMatch = cardText.match(/Buyer\s*Reference\s*Number\s*\n\s*([^\n-]+)/i);
+    if (buyerRefMatch && buyerRefMatch[1].trim() !== '') {
+      data.vehicle_buyer_number = buyerRefMatch[1].trim();
+      log('Found Buyer Reference:', data.vehicle_buyer_number);
+    }
+
     // ORIGIN
-    const originMatch = cardText.match(/origin\s*info[\s\S]*?\n([A-Z][a-zA-Z\s]+),\s*([A-Z]{2})\s+(\d{5})/);
+    const originMatch = cardText.match(/origin\s*info[\s\S]*?\n([A-Z][a-zA-Z\s]+),\s*([A-Z]{2})\s+(\d{5})/i);
     if (originMatch) {
       let city = originMatch[1].trim();
       let state = originMatch[2];
       let zip = originMatch[3];
       if (!/^[A-Z][a-z]/.test(city)) {
-        const altOrigin = cardText.match(/origin\s*info[\s\S]*?\n([A-Z][a-z][a-zA-Z\s]+),\s*([A-Z]{2})\s+(\d{5})/);
+        const altOrigin = cardText.match(/origin\s*info[\s\S]*?\n([A-Z][a-z][a-zA-Z\s]+),\s*([A-Z]{2})\s+(\d{5})/i);
         if (altOrigin) {
           city = altOrigin[1].trim();
           state = altOrigin[2];
@@ -317,13 +446,13 @@
     }
 
     // DESTINATION
-    const destMatch = cardText.match(/destination\s*info[\s\S]*?\n([A-Z][a-zA-Z\s]+),\s*([A-Z]{2})\s+(\d{5})/);
+    const destMatch = cardText.match(/destination\s*info[\s\S]*?\n([A-Z][a-zA-Z\s]+),\s*([A-Z]{2})\s+(\d{5})/i);
     if (destMatch) {
       let city = destMatch[1].trim();
       let state = destMatch[2];
       let zip = destMatch[3];
       if (!/^[A-Z][a-z]/.test(city)) {
-        const altDest = cardText.match(/destination\s*info[\s\S]*?\n([A-Z][a-z][a-zA-Z\s]+),\s*([A-Z]{2})\s+(\d{5})/);
+        const altDest = cardText.match(/destination\s*info[\s\S]*?\n([A-Z][a-z][a-zA-Z\s]+),\s*([A-Z]{2})\s+(\d{5})/i);
         if (altDest) {
           city = altDest[1].trim();
           state = altDest[2];
@@ -338,25 +467,48 @@
       log('Found Destination:', data.destination);
     }
 
+    // STREET ADDRESSES (look for street line before city, state zip)
+    const originStreetMatch = cardText.match(/origin\s*info[\s\S]*?\n(\d+\s+[A-Za-z0-9\s.#,]+?)(?:\n[A-Z][a-zA-Z\s]+,\s*[A-Z]{2}\s+\d{5})/i);
+    if (originStreetMatch) {
+      data.pickup_address = originStreetMatch[1].trim();
+      log('Found Pickup Address:', data.pickup_address);
+    }
+
+    const destStreetMatch = cardText.match(/destination\s*info[\s\S]*?\n(\d+\s+[A-Za-z0-9\s.#,]+?)(?:\n[A-Z][a-zA-Z\s]+,\s*[A-Z]{2}\s+\d{5})/i);
+    if (destStreetMatch) {
+      data.delivery_address = destStreetMatch[1].trim();
+      log('Found Delivery Address:', data.delivery_address);
+    }
+
+    // Recompose full addresses to include street (matches TMS composeFullAddress pattern)
+    if (data.pickup_address && data.pickup_city) {
+      data.pickup_full_address = `${data.pickup_address}, ${data.pickup_city}, ${data.pickup_state} ${data.pickup_zip}`;
+    }
+    if (data.delivery_address && data.delivery_city) {
+      data.delivery_full_address = `${data.delivery_address}, ${data.delivery_city}, ${data.delivery_state} ${data.delivery_zip}`;
+    }
+
     // PHONE NUMBERS
     const originPhoneMatch = cardText.match(/origin\s*info[\s\S]*?Contact\s*Info[\s\S]*?\((\d{3})\)\s*(\d{3})-(\d{4})/i);
     if (originPhoneMatch) {
       data.pickup_phone = `(${originPhoneMatch[1]}) ${originPhoneMatch[2]}-${originPhoneMatch[3]}`;
+      data.pickup_contact_phone = data.pickup_phone;
     }
 
     const destPhoneMatch = cardText.match(/destination\s*info[\s\S]*?Contact\s*Info[\s\S]*?\((\d{3})\)\s*(\d{3})-(\d{4})/i);
     if (destPhoneMatch) {
       data.delivery_phone = `(${destPhoneMatch[1]}) ${destPhoneMatch[2]}-${destPhoneMatch[3]}`;
+      data.delivery_contact_phone = data.delivery_phone;
     }
 
     // CONTACT NAMES
-    const originContactMatch = cardText.match(/origin\s*info[\s\S]*?Contact\s*(?:Name)?\s*\n?\s*([A-Za-z][A-Za-z\s.'-]+?)(?:\n|Contact\s*Info|$)/i);
+    const originContactMatch = cardText.match(/origin\s*info[\s\S]*?Contact\s*Info\s*\n\s*([A-Za-z][A-Za-z\s.'-]+?)(?:\n|\(|$)/i);
     if (originContactMatch) {
       data.pickup_contact_name = originContactMatch[1].trim();
       log('Found Pickup Contact:', data.pickup_contact_name);
     }
 
-    const destContactMatch = cardText.match(/destination\s*info[\s\S]*?Contact\s*(?:Name)?\s*\n?\s*([A-Za-z][A-Za-z\s.'-]+?)(?:\n|Contact\s*Info|$)/i);
+    const destContactMatch = cardText.match(/destination\s*info[\s\S]*?Contact\s*Info\s*\n\s*([A-Za-z][A-Za-z\s.'-]+?)(?:\n|\(|$)/i);
     if (destContactMatch) {
       data.delivery_contact_name = destContactMatch[1].trim();
       log('Found Delivery Contact:', data.delivery_contact_name);
@@ -368,14 +520,21 @@
       /Requested\s*Pick\s*Up[\s\S]*?(\d{1,2}\/\d{1,2}\/\d{4})/i,
       /Pick\s*Up[\s\S]*?(\d{1,2}\/\d{1,2}\/\d{4})/i
     ];
-    for (const pattern of datePatterns) {
-      const match = cardText.match(pattern);
-      if (match) {
-        const parts = match[1].split('/');
-        if (parts.length === 3) {
-          data.pickup_date = `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
-          log('Found Pickup Date:', data.pickup_date);
-          break;
+    // Also check for ISO format (YYYY-MM-DD)
+    const isoPickupMatch = cardText.match(/(?:Carrier\s*Pick\s*Up\s*ETA|Requested\s*Pick\s*Up|Pick\s*Up)[\s\S]*?(\d{4}-\d{2}-\d{2})/i);
+    if (isoPickupMatch) {
+      data.pickup_date = isoPickupMatch[1];
+      log('Found Pickup Date (ISO):', data.pickup_date);
+    } else {
+      for (const pattern of datePatterns) {
+        const match = cardText.match(pattern);
+        if (match) {
+          const parts = match[1].split('/');
+          if (parts.length === 3) {
+            data.pickup_date = `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+            log('Found Pickup Date:', data.pickup_date);
+            break;
+          }
         }
       }
     }
@@ -386,19 +545,37 @@
       /Delivery\s*Date[\s\S]*?(\d{1,2}\/\d{1,2}\/\d{4})/i,
       /Carrier\s*Delivery\s*ETA\s*\n?\s*(\d{1,2}\/\d{1,2}\/\d{4})/i
     ];
-    for (const pattern of deliveryDatePatterns) {
-      const match = cardText.match(pattern);
-      if (match) {
-        const parts = match[1].split('/');
-        if (parts.length === 3) {
-          data.dropoff_date = `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
-          log('Found Delivery Date:', data.dropoff_date);
-          break;
+    const isoDeliveryMatch = cardText.match(/(?:Expected\s*Delivery|Delivery\s*Date|Carrier\s*Delivery\s*ETA)[\s\S]*?(\d{4}-\d{2}-\d{2})/i);
+    if (isoDeliveryMatch) {
+      data.dropoff_date = isoDeliveryMatch[1];
+      log('Found Delivery Date (ISO):', data.dropoff_date);
+    } else {
+      for (const pattern of deliveryDatePatterns) {
+        const match = cardText.match(pattern);
+        if (match) {
+          const parts = match[1].split('/');
+          if (parts.length === 3) {
+            data.dropoff_date = `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+            log('Found Delivery Date:', data.dropoff_date);
+            break;
+          }
         }
       }
     }
 
+    // NOTES / SPECIAL INSTRUCTIONS
+    const notesMatch = cardText.match(/(?:Special\s*Instructions|Additional\s*Info|Notes)\s*\n?\s*([\s\S]+?)(?:\n\n|\n[A-Z][a-z]+\s+Info|$)/i);
+    if (notesMatch) {
+      data.notes = notesMatch[1].trim().substring(0, 500);
+      log('Found Notes:', data.notes);
+    }
+
+    // Append MC# to dispatcher notes if found
     data.dispatcher_notes = 'Imported from Central Dispatch';
+    if (mcMatch) {
+      data.dispatcher_notes += ` | MC# ${mcMatch[1]}`;
+      log('Found MC#:', mcMatch[1]);
+    }
 
     log('Scraped data:', data);
     return data;
@@ -428,7 +605,7 @@
         <div style="
           background: #1e293b;
           border-radius: 12px;
-          width: 500px;
+          width: 600px;
           max-width: 95vw;
           max-height: 90vh;
           overflow-y: auto;
@@ -540,11 +717,11 @@
                   ">
                 </div>
 
-                <!-- Origin/Destination Row -->
+                <!-- Color / Body Type Row -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                   <div>
-                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Origin</label>
-                    <input type="text" id="tms-origin" value="${escapeAttr(loadData.origin)}" style="
+                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Color</label>
+                    <input type="text" id="tms-vehicle-color" value="${escapeAttr(loadData.vehicle_color)}" style="
                       width: 100%;
                       padding: 8px 12px;
                       background: #0f172a;
@@ -556,8 +733,41 @@
                     ">
                   </div>
                   <div>
-                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Destination</label>
-                    <input type="text" id="tms-destination" value="${escapeAttr(loadData.destination)}" style="
+                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Body Type</label>
+                    <select id="tms-body-type" style="
+                      width: 100%;
+                      padding: 8px 12px;
+                      background: #0f172a;
+                      border: 1px solid #334155;
+                      border-radius: 6px;
+                      color: #e2e8f0;
+                      font-size: 14px;
+                      box-sizing: border-box;
+                    ">
+                      <option value="">Select...</option>
+                      ${['Sedan', 'Coupe', 'SUV', 'Truck', 'Pickup', 'Van', 'Minivan', 'Convertible', 'Wagon', 'Hatchback', 'Crossover'].map(t => `<option value="${t}" ${loadData.vehicle_body_type === t ? 'selected' : ''}>${t}</option>`).join('')}
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Lot # / Buyer # Row -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Lot #</label>
+                    <input type="text" id="tms-lot-number" value="${escapeAttr(loadData.vehicle_lot_number)}" placeholder="Lot number" style="
+                      width: 100%;
+                      padding: 8px 12px;
+                      background: #0f172a;
+                      border: 1px solid #334155;
+                      border-radius: 6px;
+                      color: #e2e8f0;
+                      font-size: 14px;
+                      box-sizing: border-box;
+                    ">
+                  </div>
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Buyer #</label>
+                    <input type="text" id="tms-buyer-number" value="${escapeAttr(loadData.vehicle_buyer_number)}" placeholder="Buyer reference" style="
                       width: 100%;
                       padding: 8px 12px;
                       background: #0f172a;
@@ -570,8 +780,54 @@
                   </div>
                 </div>
 
-                <!-- Price/Payment Row -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <!-- Pickup / Delivery Address Section -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Pickup Address</label>
+                    <input type="text" id="tms-pickup-address" value="${escapeAttr(loadData.pickup_address)}" placeholder="Street address" style="
+                      width: 100%; padding: 8px 12px; background: #0f172a; border: 1px solid #334155;
+                      border-radius: 6px; color: #e2e8f0; font-size: 14px; box-sizing: border-box; margin-bottom: 4px;
+                    ">
+                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 4px;">
+                      <input type="text" id="tms-pickup-city" value="${escapeAttr(loadData.pickup_city)}" placeholder="City" style="
+                        width: 100%; padding: 6px 10px; background: #0f172a; border: 1px solid #334155;
+                        border-radius: 4px; color: #e2e8f0; font-size: 13px; box-sizing: border-box;
+                      ">
+                      <input type="text" id="tms-pickup-state" value="${escapeAttr(loadData.pickup_state)}" placeholder="ST" maxlength="2" style="
+                        width: 100%; padding: 6px 10px; background: #0f172a; border: 1px solid #334155;
+                        border-radius: 4px; color: #e2e8f0; font-size: 13px; box-sizing: border-box; text-transform: uppercase;
+                      ">
+                      <input type="text" id="tms-pickup-zip" value="${escapeAttr(loadData.pickup_zip)}" placeholder="ZIP" maxlength="5" style="
+                        width: 100%; padding: 6px 10px; background: #0f172a; border: 1px solid #334155;
+                        border-radius: 4px; color: #e2e8f0; font-size: 13px; box-sizing: border-box;
+                      ">
+                    </div>
+                  </div>
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Delivery Address</label>
+                    <input type="text" id="tms-delivery-address" value="${escapeAttr(loadData.delivery_address)}" placeholder="Street address" style="
+                      width: 100%; padding: 8px 12px; background: #0f172a; border: 1px solid #334155;
+                      border-radius: 6px; color: #e2e8f0; font-size: 14px; box-sizing: border-box; margin-bottom: 4px;
+                    ">
+                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 4px;">
+                      <input type="text" id="tms-delivery-city" value="${escapeAttr(loadData.delivery_city)}" placeholder="City" style="
+                        width: 100%; padding: 6px 10px; background: #0f172a; border: 1px solid #334155;
+                        border-radius: 4px; color: #e2e8f0; font-size: 13px; box-sizing: border-box;
+                      ">
+                      <input type="text" id="tms-delivery-state" value="${escapeAttr(loadData.delivery_state)}" placeholder="ST" maxlength="2" style="
+                        width: 100%; padding: 6px 10px; background: #0f172a; border: 1px solid #334155;
+                        border-radius: 4px; color: #e2e8f0; font-size: 13px; box-sizing: border-box; text-transform: uppercase;
+                      ">
+                      <input type="text" id="tms-delivery-zip" value="${escapeAttr(loadData.delivery_zip)}" placeholder="ZIP" maxlength="5" style="
+                        width: 100%; padding: 6px 10px; background: #0f172a; border: 1px solid #334155;
+                        border-radius: 4px; color: #e2e8f0; font-size: 13px; box-sizing: border-box;
+                      ">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Price/Payment/Broker Fee Row -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
                   <div>
                     <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Price ($)</label>
                     <input type="number" id="tms-revenue" value="${escapeAttr(loadData.revenue)}" style="
@@ -601,9 +857,9 @@
                       ${PAYMENT_TYPES.map(p => `<option value="${p}" ${loadData.payment_type === p ? 'selected' : ''}>${p}</option>`).join('')}
                     </select>
                   </div>
-                  <div id="tms-payment-terms-group" style="display: ${loadData.payment_type === 'BILL' || loadData.payment_type === 'CHECK' ? 'block' : 'none'};">
-                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Payment Terms</label>
-                    <select id="tms-payment-terms" style="
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Broker Fee ($)</label>
+                    <input type="number" id="tms-broker-fee" value="${escapeAttr(loadData.broker_fee || '')}" placeholder="0.00" style="
                       width: 100%;
                       padding: 8px 12px;
                       background: #0f172a;
@@ -613,21 +869,83 @@
                       font-size: 14px;
                       box-sizing: border-box;
                     ">
-                      <option value="QUICK_PAY" ${loadData.payment_terms === 'QUICK_PAY' ? 'selected' : ''}>Quick Pay (3 days)</option>
-                      <option value="NET5" ${loadData.payment_terms === 'NET5' ? 'selected' : ''}>Net 5</option>
-                      <option value="NET7" ${loadData.payment_terms === 'NET7' ? 'selected' : ''}>Net 7</option>
-                      <option value="NET10" ${loadData.payment_terms === 'NET10' ? 'selected' : ''}>Net 10</option>
-                      <option value="NET15" ${loadData.payment_terms === 'NET15' ? 'selected' : ''}>Net 15</option>
-                      <option value="NET21" ${loadData.payment_terms === 'NET21' ? 'selected' : ''}>Net 21</option>
-                      <option value="NET30" ${loadData.payment_terms === 'NET30' || !loadData.payment_terms ? 'selected' : ''}>Net 30</option>
-                      <option value="NET45" ${loadData.payment_terms === 'NET45' ? 'selected' : ''}>Net 45</option>
-                      <option value="NET60" ${loadData.payment_terms === 'NET60' ? 'selected' : ''}>Net 60</option>
+                  </div>
+                </div>
+
+                <!-- Payment Terms (shown for BILL and SPLIT only) -->
+                <div id="tms-payment-terms-group" style="display: ${loadData.payment_type === 'BILL' || loadData.payment_type === 'SPLIT' ? 'block' : 'none'};">
+                  <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Payment Terms</label>
+                  <select id="tms-payment-terms" style="
+                    width: 100%;
+                    padding: 8px 12px;
+                    background: #0f172a;
+                    border: 1px solid #334155;
+                    border-radius: 6px;
+                    color: #e2e8f0;
+                    font-size: 14px;
+                    box-sizing: border-box;
+                  ">
+                    <option value="QUICK_PAY" ${loadData.payment_terms === 'QUICK_PAY' ? 'selected' : ''}>Quick Pay (3 days)</option>
+                    <option value="NET5" ${loadData.payment_terms === 'NET5' ? 'selected' : ''}>Net 5</option>
+                    <option value="NET7" ${loadData.payment_terms === 'NET7' ? 'selected' : ''}>Net 7</option>
+                    <option value="NET10" ${loadData.payment_terms === 'NET10' ? 'selected' : ''}>Net 10</option>
+                    <option value="NET15" ${loadData.payment_terms === 'NET15' ? 'selected' : ''}>Net 15</option>
+                    <option value="NET21" ${loadData.payment_terms === 'NET21' ? 'selected' : ''}>Net 21</option>
+                    <option value="NET30" ${loadData.payment_terms === 'NET30' || !loadData.payment_terms ? 'selected' : ''}>Net 30</option>
+                    <option value="NET45" ${loadData.payment_terms === 'NET45' ? 'selected' : ''}>Net 45</option>
+                    <option value="NET60" ${loadData.payment_terms === 'NET60' ? 'selected' : ''}>Net 60</option>
+                  </select>
+                </div>
+
+                <!-- Split Payment Section (shown when SPLIT selected) -->
+                <div id="tms-split-section" style="display: ${loadData.payment_type === 'SPLIT' ? 'grid' : 'none'}; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">COD/COP Amount ($)</label>
+                    <input type="number" id="tms-split-cod-amount" value="" placeholder="0.00" style="
+                      width: 100%;
+                      padding: 8px 12px;
+                      background: #0f172a;
+                      border: 1px solid #334155;
+                      border-radius: 6px;
+                      color: #e2e8f0;
+                      font-size: 14px;
+                      box-sizing: border-box;
+                    ">
+                  </div>
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Bill Amount ($)</label>
+                    <input type="number" id="tms-split-bill-amount" value="" placeholder="Auto-calculated" readonly style="
+                      width: 100%;
+                      padding: 8px 12px;
+                      background: #1e293b;
+                      border: 1px solid #334155;
+                      border-radius: 6px;
+                      color: #94a3b8;
+                      font-size: 14px;
+                      box-sizing: border-box;
+                    ">
+                  </div>
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Cash Type</label>
+                    <select id="tms-split-cash-type" style="
+                      width: 100%;
+                      padding: 8px 12px;
+                      background: #0f172a;
+                      border: 1px solid #334155;
+                      border-radius: 6px;
+                      color: #e2e8f0;
+                      font-size: 14px;
+                      box-sizing: border-box;
+                    ">
+                      <option value="COD">COD</option>
+                      <option value="COP">COP</option>
+                      <option value="LOCAL_COD">LOCAL_COD</option>
                     </select>
                   </div>
                 </div>
 
-                <!-- Broker/Pickup Row -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <!-- Broker / Pickup Date / Delivery Date Row -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
                   <div>
                     <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Broker</label>
                     <input type="text" id="tms-broker" value="${escapeAttr(loadData.broker_name)}" style="
@@ -654,7 +972,68 @@
                       box-sizing: border-box;
                     ">
                   </div>
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Delivery Date</label>
+                    <input type="date" id="tms-delivery-date" value="${escapeAttr(loadData.dropoff_date)}" style="
+                      width: 100%;
+                      padding: 8px 12px;
+                      background: #0f172a;
+                      border: 1px solid #334155;
+                      border-radius: 6px;
+                      color: #e2e8f0;
+                      font-size: 14px;
+                      box-sizing: border-box;
+                    ">
+                  </div>
                 </div>
+
+                <!-- Notes -->
+                <div>
+                  <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Special Instructions / Notes</label>
+                  <textarea id="tms-notes" rows="2" placeholder="Any special instructions..." style="
+                    width: 100%;
+                    padding: 8px 12px;
+                    background: #0f172a;
+                    border: 1px solid #334155;
+                    border-radius: 6px;
+                    color: #e2e8f0;
+                    font-size: 14px;
+                    box-sizing: border-box;
+                    resize: vertical;
+                    font-family: inherit;
+                  ">${escapeAttr(loadData.notes)}</textarea>
+                </div>
+
+                <!-- Contact Details (collapsible) -->
+                <details style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 0;">
+                  <summary style="padding: 10px 12px; cursor: pointer; font-size: 13px; color: #94a3b8; user-select: none;">
+                    Contact Details (pickup &amp; delivery)
+                  </summary>
+                  <div style="padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div>
+                      <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 4px;">Pickup Contact</label>
+                      <input type="text" id="tms-pickup-contact-name" value="${escapeAttr(loadData.pickup_contact_name)}" placeholder="Name" style="
+                        width: 100%; padding: 6px 10px; background: #1e293b; border: 1px solid #334155;
+                        border-radius: 4px; color: #e2e8f0; font-size: 13px; box-sizing: border-box; margin-bottom: 4px;
+                      ">
+                      <input type="text" id="tms-pickup-contact-phone" value="${escapeAttr(loadData.pickup_contact_phone || loadData.pickup_phone)}" placeholder="Phone" style="
+                        width: 100%; padding: 6px 10px; background: #1e293b; border: 1px solid #334155;
+                        border-radius: 4px; color: #e2e8f0; font-size: 13px; box-sizing: border-box;
+                      ">
+                    </div>
+                    <div>
+                      <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 4px;">Delivery Contact</label>
+                      <input type="text" id="tms-delivery-contact-name" value="${escapeAttr(loadData.delivery_contact_name)}" placeholder="Name" style="
+                        width: 100%; padding: 6px 10px; background: #1e293b; border: 1px solid #334155;
+                        border-radius: 4px; color: #e2e8f0; font-size: 13px; box-sizing: border-box; margin-bottom: 4px;
+                      ">
+                      <input type="text" id="tms-delivery-contact-phone" value="${escapeAttr(loadData.delivery_contact_phone || loadData.delivery_phone)}" placeholder="Phone" style="
+                        width: 100%; padding: 6px 10px; background: #1e293b; border: 1px solid #334155;
+                        border-radius: 4px; color: #e2e8f0; font-size: 13px; box-sizing: border-box;
+                      ">
+                    </div>
+                  </div>
+                </details>
               </div>
             </div>
 
@@ -778,11 +1157,14 @@
             <!-- Error Message -->
             <div id="tms-modal-error" style="
               display: none;
-              padding: 12px;
+              padding: 14px 16px;
               background: #7f1d1d;
-              border-radius: 6px;
+              border: 1px solid #991b1b;
+              border-radius: 8px;
               color: #fecaca;
               font-size: 14px;
+              font-weight: 500;
+              line-height: 1.5;
               margin-bottom: 16px;
             "></div>
 
@@ -859,14 +1241,33 @@
     futureCarRadio.addEventListener('change', updateOptionVisibility);
     tripRadio.addEventListener('change', updateOptionVisibility);
 
-    // Toggle payment terms visibility based on payment type
+    // Toggle payment terms and split section visibility based on payment type
     const paymentTypeSelect = document.getElementById('tms-payment-type');
     const paymentTermsGroup = document.getElementById('tms-payment-terms-group');
+    const splitSection = document.getElementById('tms-split-section');
     if (paymentTypeSelect && paymentTermsGroup) {
       paymentTypeSelect.addEventListener('change', () => {
         const val = paymentTypeSelect.value;
-        paymentTermsGroup.style.display = (val === 'BILL' || val === 'CHECK') ? 'block' : 'none';
+        paymentTermsGroup.style.display = (val === 'BILL' || val === 'SPLIT') ? 'block' : 'none';
+        if (splitSection) {
+          splitSection.style.display = val === 'SPLIT' ? 'grid' : 'none';
+        }
       });
+    }
+
+    // Auto-calculate split bill amount = revenue - cod amount
+    const splitCodInput = document.getElementById('tms-split-cod-amount');
+    const splitBillInput = document.getElementById('tms-split-bill-amount');
+    const revenueInput = document.getElementById('tms-revenue');
+    if (splitCodInput && splitBillInput && revenueInput) {
+      const calcBillAmount = () => {
+        const revenue = parseFloat(revenueInput.value) || 0;
+        const codAmount = parseFloat(splitCodInput.value) || 0;
+        const bill = Math.max(0, revenue - codAmount);
+        splitBillInput.value = bill > 0 ? bill.toFixed(2) : '';
+      };
+      splitCodInput.addEventListener('input', calcBillAmount);
+      revenueInput.addEventListener('input', calcBillAmount);
     }
 
     // Handle category change to show/hide subcategories
@@ -914,28 +1315,70 @@
         vehicle_make: document.getElementById('tms-vehicle-make').value.trim(),
         vehicle_model: document.getElementById('tms-vehicle-model').value.trim(),
         vehicle_vin: document.getElementById('tms-vehicle-vin')?.value.trim().toUpperCase() || null,
-        vehicle_color: loadData.vehicle_color || null,
-        origin: document.getElementById('tms-origin').value.trim(),
-        destination: document.getElementById('tms-destination').value.trim(),
+        vehicle_color: document.getElementById('tms-vehicle-color')?.value.trim() || null,
+        vehicle_body_type: document.getElementById('tms-body-type')?.value || null,
+        vehicle_lot_number: document.getElementById('tms-lot-number')?.value.trim() || null,
+        vehicle_buyer_number: document.getElementById('tms-buyer-number')?.value.trim() || null,
+        origin: (() => {
+          const c = document.getElementById('tms-pickup-city')?.value.trim();
+          const s = document.getElementById('tms-pickup-state')?.value.trim().toUpperCase();
+          return (c && s) ? `${c}, ${s}` : (c || s || '');
+        })(),
+        destination: (() => {
+          const c = document.getElementById('tms-delivery-city')?.value.trim();
+          const s = document.getElementById('tms-delivery-state')?.value.trim().toUpperCase();
+          return (c && s) ? `${c}, ${s}` : (c || s || '');
+        })(),
         revenue: parseFloat(document.getElementById('tms-revenue').value) || 0,
+        broker_fee: parseFloat(document.getElementById('tms-broker-fee')?.value) || null,
         payment_type: document.getElementById('tms-payment-type').value,
-        payment_terms: document.getElementById('tms-payment-terms')?.value || null,
+        payment_terms: (() => {
+          const pt = document.getElementById('tms-payment-type').value;
+          return (pt === 'BILL' || pt === 'SPLIT') ? (document.getElementById('tms-payment-terms')?.value || null) : null;
+        })(),
+        cod_amount: document.getElementById('tms-payment-type').value === 'SPLIT' ? (parseFloat(document.getElementById('tms-split-cod-amount')?.value) || null) : null,
+        bill_amount: document.getElementById('tms-payment-type').value === 'SPLIT' ? (parseFloat(document.getElementById('tms-split-bill-amount')?.value) || null) : null,
+        split_cash_type: document.getElementById('tms-payment-type').value === 'SPLIT' ? (document.getElementById('tms-split-cash-type')?.value || null) : null,
         broker_name: document.getElementById('tms-broker').value.trim(),
+        broker_contact_name: loadData.broker_contact_name || null,
+        broker_phone: loadData.broker_phone || null,
+        broker_email: loadData.broker_email || null,
         pickup_date: document.getElementById('tms-pickup-date').value,
-        dropoff_date: loadData.dropoff_date || null,
+        dropoff_date: document.getElementById('tms-delivery-date')?.value || null,
         pickup_phone: loadData.pickup_phone,
-        pickup_contact_name: loadData.pickup_contact_name || null,
+        pickup_contact_name: document.getElementById('tms-pickup-contact-name')?.value.trim() || null,
+        pickup_contact_phone: document.getElementById('tms-pickup-contact-phone')?.value.trim() || null,
         delivery_phone: loadData.delivery_phone,
-        delivery_contact_name: loadData.delivery_contact_name || null,
-        pickup_full_address: loadData.pickup_full_address,
-        pickup_city: loadData.pickup_city || null,
-        pickup_state: loadData.pickup_state || null,
-        pickup_zip: loadData.pickup_zip || null,
-        delivery_full_address: loadData.delivery_full_address,
-        delivery_city: loadData.delivery_city || null,
-        delivery_state: loadData.delivery_state || null,
-        delivery_zip: loadData.delivery_zip || null,
-        dispatcher_notes: 'Imported from Central Dispatch'
+        delivery_contact_name: document.getElementById('tms-delivery-contact-name')?.value.trim() || null,
+        delivery_contact_phone: document.getElementById('tms-delivery-contact-phone')?.value.trim() || null,
+        pickup_address: document.getElementById('tms-pickup-address')?.value.trim() || null,
+        pickup_city: document.getElementById('tms-pickup-city')?.value.trim() || null,
+        pickup_state: document.getElementById('tms-pickup-state')?.value.trim().toUpperCase() || null,
+        pickup_zip: document.getElementById('tms-pickup-zip')?.value.trim() || null,
+        pickup_full_address: (() => {
+          const st = document.getElementById('tms-pickup-address')?.value.trim();
+          const c = document.getElementById('tms-pickup-city')?.value.trim();
+          const s = document.getElementById('tms-pickup-state')?.value.trim().toUpperCase();
+          const z = document.getElementById('tms-pickup-zip')?.value.trim();
+          if (st && c && s && z) return `${st}, ${c}, ${s} ${z}`;
+          if (c && s && z) return `${c}, ${s} ${z}`;
+          return null;
+        })(),
+        delivery_address: document.getElementById('tms-delivery-address')?.value.trim() || null,
+        delivery_city: document.getElementById('tms-delivery-city')?.value.trim() || null,
+        delivery_state: document.getElementById('tms-delivery-state')?.value.trim().toUpperCase() || null,
+        delivery_zip: document.getElementById('tms-delivery-zip')?.value.trim() || null,
+        delivery_full_address: (() => {
+          const st = document.getElementById('tms-delivery-address')?.value.trim();
+          const c = document.getElementById('tms-delivery-city')?.value.trim();
+          const s = document.getElementById('tms-delivery-state')?.value.trim().toUpperCase();
+          const z = document.getElementById('tms-delivery-zip')?.value.trim();
+          if (st && c && s && z) return `${st}, ${c}, ${s} ${z}`;
+          if (c && s && z) return `${c}, ${s} ${z}`;
+          return null;
+        })(),
+        notes: document.getElementById('tms-notes')?.value.trim() || null,
+        dispatcher_notes: loadData.dispatcher_notes || 'Imported from Central Dispatch'
       };
 
       // Add destination-specific fields
@@ -977,7 +1420,36 @@
         });
 
         if (response.success) {
-          modal.remove();
+          // Show success confirmation inside modal
+          const modalBody = modal.querySelector('[style*="overflow-y"]') || modal.querySelector('div > div');
+          const vehicleStr = [formData.vehicle_year, formData.vehicle_make, formData.vehicle_model].filter(Boolean).join(' ');
+          const routeStr = [formData.origin, formData.destination].filter(Boolean).join(' → ');
+
+          if (modalBody) {
+            modalBody.innerHTML = `
+              <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center">
+                <div style="width:64px;height:64px;border-radius:50%;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+                  <span style="font-size:32px;color:#22c55e">✓</span>
+                </div>
+                <h3 style="color:#22c55e;font-size:20px;font-weight:700;margin:0 0 8px">Load Imported Successfully!</h3>
+                <div style="color:#94a3b8;font-size:14px;margin-bottom:20px">The load has been added to your TMS</div>
+                <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px;width:100%;max-width:360px;text-align:left">
+                  ${formData.order_number ? `<div style="margin-bottom:8px"><span style="color:#64748b;font-size:12px">ORDER #</span><br><span style="color:#e2e8f0;font-size:15px;font-weight:600">${formData.order_number}</span></div>` : ''}
+                  ${vehicleStr ? `<div style="margin-bottom:8px"><span style="color:#64748b;font-size:12px">VEHICLE</span><br><span style="color:#e2e8f0;font-size:14px">${vehicleStr}</span></div>` : ''}
+                  ${routeStr ? `<div style="margin-bottom:8px"><span style="color:#64748b;font-size:12px">ROUTE</span><br><span style="color:#e2e8f0;font-size:14px">${routeStr}</span></div>` : ''}
+                  ${formData.revenue ? `<div><span style="color:#64748b;font-size:12px">REVENUE</span><br><span style="color:#22c55e;font-size:16px;font-weight:700">$${parseFloat(formData.revenue).toFixed(2)}</span></div>` : ''}
+                </div>
+                <button id="tms-success-dismiss" style="margin-top:20px;padding:8px 24px;background:#334155;border:none;border-radius:6px;color:#e2e8f0;font-size:13px;cursor:pointer">Close</button>
+              </div>
+            `;
+            // Allow manual dismiss
+            const dismissBtn = modal.querySelector('#tms-success-dismiss');
+            if (dismissBtn) dismissBtn.addEventListener('click', () => modal.remove());
+          }
+
+          // Auto-close after 2.5s
+          setTimeout(() => { if (modal.parentNode) modal.remove(); }, 2500);
+
           tmsBtn.innerHTML = '✓ Imported!';
           tmsBtn.style.background = '#22c55e';
           setTimeout(() => {
@@ -985,7 +1457,7 @@
             tmsBtn.disabled = false;
             tmsBtn.style.opacity = '1';
             tmsBtn.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
-          }, 2000);
+          }, 3000);
         } else {
           throw new Error(response.error || 'Import failed');
         }
@@ -995,12 +1467,20 @@
         const isDuplicate = error.message.includes('duplicate key') ||
                             error.message.includes('23505') ||
                             error.message.includes('already exists');
+        const isConnection = error.message.includes('Failed to fetch') ||
+                             error.message.includes('NetworkError') ||
+                             error.message.includes('net::');
 
+        let errorMsg;
         if (isDuplicate) {
-          errorDiv.textContent = 'This load has already been imported to TMS';
+          const orderNum = formData.order_number || 'unknown';
+          errorMsg = `⚠️ This load has already been imported to TMS (Order #${orderNum}). Check your orders list.`;
+        } else if (isConnection) {
+          errorMsg = '⚠️ Could not connect to TMS. Please check your extension settings and internet connection, then try again.';
         } else {
-          errorDiv.textContent = error.message;
+          errorMsg = `⚠️ Import failed: ${error.message}. Please try again.`;
         }
+        errorDiv.innerHTML = errorMsg;
         errorDiv.style.display = 'block';
         importBtn.disabled = false;
         importBtn.textContent = 'Import Load';
@@ -1048,6 +1528,251 @@
         tmsBtn.title = 'Import this load to Horizon Star TMS';
       }, 3000);
     }
+  }
+
+  // Batch Import Modal
+  async function showBatchImportModal() {
+    // Scrape all selected cards
+    const loads = [];
+    for (const moreActionsBtn of batchSelected) {
+      const card = findCardFromButton(moreActionsBtn);
+      const data = scrapeLoadDataFromCard(card);
+      if (data.order_number || data.vehicle_make || data.origin) {
+        loads.push(data);
+      }
+    }
+
+    if (loads.length === 0) {
+      alert('No valid loads found in selection.');
+      return;
+    }
+
+    const existingModal = document.getElementById('tms-batch-modal');
+    if (existingModal) existingModal.remove();
+
+    const modalHTML = `
+      <div id="tms-batch-modal" style="
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.7); z-index: 999999;
+        display: flex; align-items: center; justify-content: center;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      ">
+        <div style="
+          background: #1e293b; border-radius: 12px; width: 600px; max-width: 95vw;
+          max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); color: #e2e8f0;
+        ">
+          <div style="padding: 16px 20px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin: 0; font-size: 18px; font-weight: 600; color: #f1f5f9;">
+              Batch Import — ${loads.length} Loads
+            </h2>
+            <button id="tms-batch-modal-close" style="background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer;">&times;</button>
+          </div>
+          <div style="padding: 20px;">
+            <div style="margin-bottom: 16px; max-height: 200px; overflow-y: auto; border: 1px solid #334155; border-radius: 6px;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <thead>
+                  <tr style="background: #0f172a;">
+                    <th style="padding: 8px; text-align: left; color: #94a3b8;">Order #</th>
+                    <th style="padding: 8px; text-align: left; color: #94a3b8;">Vehicle</th>
+                    <th style="padding: 8px; text-align: left; color: #94a3b8;">Route</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${loads.map(l => `
+                    <tr style="border-top: 1px solid #334155;">
+                      <td style="padding: 8px; color: #e2e8f0;">${escapeAttr(l.order_number || '—')}</td>
+                      <td style="padding: 8px; color: #e2e8f0;">${escapeAttr([l.vehicle_year, l.vehicle_make, l.vehicle_model].filter(Boolean).join(' ') || '—')}</td>
+                      <td style="padding: 8px; color: #e2e8f0;">${escapeAttr(l.origin || '?')} → ${escapeAttr(l.destination || '?')}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+
+            <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #94a3b8; text-transform: uppercase;">
+              Destination for ALL loads
+            </h3>
+            <div style="display: grid; gap: 8px; margin-bottom: 16px;">
+              <label style="display: flex; align-items: center; padding: 12px; background: #0f172a; border: 2px solid #22c55e; border-radius: 8px; cursor: pointer;" id="tms-batch-fc-label">
+                <input type="radio" name="tms-batch-dest" value="future_cars" id="tms-batch-fc" checked style="margin-right: 12px;">
+                <div>
+                  <div style="font-weight: 600; color: #f1f5f9;">Future Cars (Load Board)</div>
+                  <div style="margin-top: 8px;">
+                    <select id="tms-batch-category" style="width: 100%; padding: 8px 12px; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #e2e8f0; font-size: 14px; box-sizing: border-box;">
+                      <option value="">Select category...</option>
+                      ${LOAD_CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                    </select>
+                  </div>
+                </div>
+              </label>
+              <label style="display: flex; align-items: center; padding: 12px; background: #0f172a; border: 2px solid #334155; border-radius: 8px; cursor: pointer;" id="tms-batch-trip-label">
+                <input type="radio" name="tms-batch-dest" value="trip" id="tms-batch-trip" style="margin-right: 12px;">
+                <div style="flex: 1;">
+                  <div style="font-weight: 600; color: #f1f5f9;">Assign to Trip</div>
+                  <div style="margin-top: 8px; display: none;" id="tms-batch-trip-options">
+                    <select id="tms-batch-trip-select" style="width: 100%; padding: 8px 12px; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #e2e8f0; font-size: 14px; box-sizing: border-box;">
+                      <option value="">Select trip...</option>
+                    </select>
+                    <select id="tms-batch-direction" style="width: 100%; margin-top: 8px; padding: 8px 12px; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #e2e8f0; font-size: 14px; box-sizing: border-box;">
+                      <option value="">Select direction...</option>
+                      ${VEHICLE_DIRECTIONS.map(d => `<option value="${d.id}">${d.label}</option>`).join('')}
+                    </select>
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            <div id="tms-batch-progress" style="display: none; margin-bottom: 16px;">
+              <div style="background: #334155; border-radius: 4px; height: 8px; overflow: hidden;">
+                <div id="tms-batch-progress-bar" style="background: #22c55e; height: 100%; width: 0%; transition: width 0.3s;"></div>
+              </div>
+              <div id="tms-batch-progress-text" style="font-size: 12px; color: #94a3b8; margin-top: 4px;"></div>
+            </div>
+
+            <div id="tms-batch-results" style="display: none; margin-bottom: 16px; padding: 12px; border-radius: 6px; font-size: 14px;"></div>
+            <div id="tms-batch-error" style="display: none; padding: 12px; background: #7f1d1d; border-radius: 6px; color: #fecaca; font-size: 14px; margin-bottom: 16px;"></div>
+
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+              <button id="tms-batch-cancel" style="padding: 10px 20px; background: #334155; border: none; border-radius: 6px; color: #e2e8f0; font-size: 14px; cursor: pointer;">Cancel</button>
+              <button id="tms-batch-go" style="padding: 10px 20px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; border-radius: 6px; color: white; font-size: 14px; font-weight: 600; cursor: pointer;">Import All (${loads.length})</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    const modal = document.getElementById('tms-batch-modal');
+    const closeModal = () => modal.remove();
+    document.getElementById('tms-batch-modal-close').addEventListener('click', closeModal);
+    document.getElementById('tms-batch-cancel').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+    // Toggle destination options
+    const batchFcRadio = document.getElementById('tms-batch-fc');
+    const batchTripRadio = document.getElementById('tms-batch-trip');
+    const batchTripOptions = document.getElementById('tms-batch-trip-options');
+    const toggleBatchDest = () => {
+      batchTripOptions.style.display = batchTripRadio.checked ? 'block' : 'none';
+      document.getElementById('tms-batch-fc-label').style.borderColor = batchFcRadio.checked ? '#22c55e' : '#334155';
+      document.getElementById('tms-batch-trip-label').style.borderColor = batchTripRadio.checked ? '#22c55e' : '#334155';
+    };
+    batchFcRadio.addEventListener('change', toggleBatchDest);
+    batchTripRadio.addEventListener('change', async () => {
+      toggleBatchDest();
+      if (batchTripRadio.checked) {
+        const tripSelect = document.getElementById('tms-batch-trip-select');
+        tripSelect.innerHTML = '<option value="">Loading trips...</option>';
+        try {
+          const response = await chrome.runtime.sendMessage({ action: 'getTrips' });
+          if (response.success && response.trips) {
+            tripSelect.innerHTML = '<option value="">Select trip...</option>' +
+              response.trips.map(t => `<option value="${t.id}">${t.trip_number} - ${t.driver_name || 'No driver'}</option>`).join('');
+          } else {
+            tripSelect.innerHTML = '<option value="">No trips available</option>';
+          }
+        } catch (err) {
+          tripSelect.innerHTML = '<option value="">Error loading trips</option>';
+        }
+      }
+    });
+
+    // Import All handler
+    document.getElementById('tms-batch-go').addEventListener('click', async () => {
+      const errorDiv = document.getElementById('tms-batch-error');
+      errorDiv.style.display = 'none';
+
+      // Validate destination
+      let destFields = {};
+      if (batchFcRadio.checked) {
+        const category = document.getElementById('tms-batch-category').value;
+        if (!category) {
+          errorDiv.textContent = 'Please select a category';
+          errorDiv.style.display = 'block';
+          return;
+        }
+        destFields = { load_category: category, trip_id: null };
+      } else {
+        const tripId = document.getElementById('tms-batch-trip-select').value;
+        const direction = document.getElementById('tms-batch-direction').value;
+        if (!tripId || !direction) {
+          errorDiv.textContent = 'Please select a trip and direction';
+          errorDiv.style.display = 'block';
+          return;
+        }
+        destFields = { trip_id: parseInt(tripId), vehicle_direction: direction };
+      }
+
+      const goBtn = document.getElementById('tms-batch-go');
+      goBtn.disabled = true;
+      goBtn.textContent = 'Importing...';
+
+      const progressDiv = document.getElementById('tms-batch-progress');
+      const progressBar = document.getElementById('tms-batch-progress-bar');
+      const progressText = document.getElementById('tms-batch-progress-text');
+      progressDiv.style.display = 'block';
+
+      let imported = 0, failed = 0;
+      for (let i = 0; i < loads.length; i++) {
+        progressBar.style.width = `${((i + 1) / loads.length) * 100}%`;
+        progressText.textContent = `Importing ${i + 1} of ${loads.length}...`;
+
+        const formData = {
+          ...loads[i],
+          ...destFields,
+          dispatcher_notes: loads[i].dispatcher_notes || 'Imported from Central Dispatch'
+        };
+
+        try {
+          const response = await chrome.runtime.sendMessage({ action: 'importLoad', data: formData });
+          if (response.success) {
+            imported++;
+          } else {
+            failed++;
+            log('Batch import failed for:', loads[i].order_number, response.error);
+          }
+        } catch (err) {
+          failed++;
+          log('Batch import error:', err);
+        }
+
+        // 300ms delay between imports
+        if (i < loads.length - 1) {
+          await new Promise(r => setTimeout(r, 300));
+        }
+      }
+
+      // Show results
+      const resultsDiv = document.getElementById('tms-batch-results');
+      resultsDiv.style.display = 'block';
+      if (failed === 0) {
+        resultsDiv.style.background = 'rgba(34, 197, 94, 0.15)';
+        resultsDiv.style.border = '1px solid rgba(34, 197, 94, 0.3)';
+        resultsDiv.style.color = '#86efac';
+        resultsDiv.innerHTML = `<span style="font-size:18px;margin-right:8px">✓</span> All ${imported} load${imported !== 1 ? 's' : ''} imported successfully to TMS!`;
+      } else if (imported === 0) {
+        resultsDiv.style.background = 'rgba(239, 68, 68, 0.15)';
+        resultsDiv.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+        resultsDiv.style.color = '#fca5a5';
+        resultsDiv.innerHTML = `<span style="font-size:18px;margin-right:8px">⚠️</span> All ${failed} load${failed !== 1 ? 's' : ''} failed to import. Check your connection and try again.`;
+      } else {
+        resultsDiv.style.background = 'rgba(234, 179, 8, 0.15)';
+        resultsDiv.style.border = '1px solid rgba(234, 179, 8, 0.3)';
+        resultsDiv.style.color = '#fde68a';
+        resultsDiv.innerHTML = `<span style="font-size:18px;margin-right:8px">⚠️</span> ${imported} load${imported !== 1 ? 's' : ''} imported, ${failed} failed. Failed loads may already exist in TMS.`;
+      }
+
+      progressText.textContent = 'Complete';
+      goBtn.textContent = 'Done';
+      goBtn.addEventListener('click', () => {
+        closeModal();
+        batchSelected.clear();
+        document.querySelectorAll('.tms-batch-checkbox').forEach(cb => cb.checked = false);
+        updateBatchBar();
+      });
+      goBtn.disabled = false;
+    });
   }
 
   // Initialize
