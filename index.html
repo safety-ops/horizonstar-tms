@@ -6307,24 +6307,41 @@
         padding: 14px;
       }
       
-      [style*="grid-template-columns:repeat(auto-fit"] {
-        grid-template-columns: 1fr !important;
-      }
-      
-      [style*="grid-template-columns: repeat(auto-fit"] {
-        grid-template-columns: 1fr !important;
-      }
-      
       /* Force all inline flex containers to wrap - except tabs */
       [style*="display:flex"]:not(.truck-tabs-container),
       [style*="display: flex"]:not(.truck-tabs-container) {
         flex-wrap: wrap !important;
       }
-      
-      /* Force all inline grids to single column */
-      [style*="display:grid"]:not(.truck-tabs-container),
-      [style*="display: grid"]:not(.truck-tabs-container) {
+
+      /* Force all inline grids to single column (exclude special 2-col grids) */
+      [style*="display:grid"]:not(.truck-tabs-container):not(.profitability-grid):not(.aging-grid):not(.detail-stats),
+      [style*="display: grid"]:not(.truck-tabs-container):not(.profitability-grid):not(.aging-grid):not(.detail-stats) {
         grid-template-columns: 1fr !important;
+      }
+
+      /* High minmax() thresholds that overflow at 375px */
+      [style*="minmax(300px"],
+      [style*="minmax(350px"],
+      [style*="minmax(400px"] {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* Complex asymmetric minmax layouts (compliance/fuel detail views) */
+      [style*="minmax(0,1.7fr)"],
+      [style*="minmax(0,1.6fr)"] {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* Flex children min-width overrides to prevent overflow */
+      [style*="min-width:100px"],
+      [style*="min-width:110px"],
+      [style*="min-width:120px"],
+      [style*="min-width:130px"],
+      [style*="min-width:150px"],
+      [style*="min-width:220px"],
+      [style*="min-width:250px"],
+      [style*="min-width:280px"] {
+        min-width: unset !important;
       }
       
       /* Truck tabs should still scroll */
