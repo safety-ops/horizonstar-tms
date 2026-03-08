@@ -1366,7 +1366,11 @@
         revenue: parseFloat(document.getElementById('tms-revenue').value) || 0,
         broker_fee: parseFloat(document.getElementById('tms-broker-fee')?.value) || null,
         local_fee: parseFloat(document.getElementById('tms-local-fee')?.value) || null,
-        payment_type: document.getElementById('tms-payment-type').value,
+        payment_type: (() => {
+          const pt = document.getElementById('tms-payment-type').value;
+          if (pt === 'SPLIT') return document.getElementById('tms-split-cash-type')?.value || 'COD';
+          return pt;
+        })(),
         payment_terms: (() => {
           const pt = document.getElementById('tms-payment-type').value;
           if (pt === 'COD') return 'COLLECT_AT_DELIVERY';
@@ -1376,7 +1380,6 @@
         })(),
         cod_amount: document.getElementById('tms-payment-type').value === 'SPLIT' ? (parseFloat(document.getElementById('tms-split-cod-amount')?.value) || null) : null,
         bill_amount: document.getElementById('tms-payment-type').value === 'SPLIT' ? (parseFloat(document.getElementById('tms-split-bill-amount')?.value) || null) : null,
-        split_cash_type: document.getElementById('tms-payment-type').value === 'SPLIT' ? (document.getElementById('tms-split-cash-type')?.value || null) : null,
         broker_name: document.getElementById('tms-broker').value.trim(),
         broker_contact_name: loadData.broker_contact_name || null,
         broker_phone: loadData.broker_phone || null,
