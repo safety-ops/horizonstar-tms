@@ -33041,6 +33041,7 @@
     async function generateSettlementPDF(driver, tripDetails, totalRevenue, totalBrokerFee, totalLocalFee, totalCleanGross, totalDispatchFee, totalCashCollected, totalSettlement, dispatchFeePercent, periodStart, periodEnd, payDate, settlementNumber, checkNumber, deductions = {}, totalDeductions = 0) {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      const cp = getCompanyProfile();
 
       const pageWidth = doc.internal.pageSize.getWidth();
       const margin = 15;
@@ -33062,8 +33063,9 @@
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
-      doc.text('HORIZON', margin + 2, y + 6);
-      doc.text('STAR', margin + 2, y + 11);
+      const cpWordsS = cp.name.toUpperCase().replace(/,?\s+LLC$/i, '').split(/\s+/);
+      doc.text(cpWordsS[0] || '', margin + 2, y + 6);
+      doc.text(cpWordsS.slice(1).join(' ') || '', margin + 2, y + 11);
 
       // Title
       doc.setFontSize(18);
@@ -33266,7 +33268,8 @@
       doc.setFontSize(8);
       doc.setTextColor(...medGray);
       doc.setFont('helvetica', 'normal');
-      doc.text('Horizon Star LLC | (800) 555-1234 | settlements@horizonstar.com', pageWidth / 2, footerY, { align: 'center' });
+      const cp = getCompanyProfile();
+      doc.text(cp.name + ' | ' + cp.phone + ' | ' + cp.email_settlements, pageWidth / 2, footerY, { align: 'center' });
       doc.text('Generated: ' + new Date().toLocaleString(), pageWidth / 2, footerY + 4, { align: 'center' });
 
       return doc.output('blob');
@@ -33289,7 +33292,7 @@
             to: email,
             kind: 'settlement',
             subject: 'Settlement Statement - ' + driver.first_name + ' ' + driver.last_name + ' - ' + formatDate(payDate),
-            html: '<p>Please find attached your settlement statement for trips: ' + tripNumbers + '</p><p>Settlement Amount: <strong>' + formatMoney(amount) + '</strong></p><p>Settlement Date: ' + formatDate(payDate) + '</p><p>Thank you for your partnership!</p><p>- Horizon Star LLC</p>',
+            html: '<p>Please find attached your settlement statement for trips: ' + tripNumbers + '</p><p>Settlement Amount: <strong>' + formatMoney(amount) + '</strong></p><p>Settlement Date: ' + formatDate(payDate) + '</p><p>Thank you for your partnership!</p><p>- ' + getCompanyProfile().name + '</p>',
             attachment: { filename: 'Settlement_' + driver.last_name + '_' + payDate + '.pdf', content: base64, type: 'application/pdf' }
           })
         });
@@ -33324,6 +33327,7 @@
     async function generatePaystubPDF(driver, earnings, selectedTripIds, netPay, totalDriverCut, totalCashCollected, totalExpenses, totalRevenue, periodStart, periodEnd, payDate, stubNumber, checkNumber, deductions, bonuses, totalDeductions, totalBonuses, totalBrokerFee, totalLocalFee, totalCleanGross, avgEarningsPerTrip) {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      const cp = getCompanyProfile();
 
       const pageWidth = doc.internal.pageSize.getWidth();
       const margin = 15;
@@ -33628,10 +33632,10 @@
       doc.setTextColor(...darkGray);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
-      doc.text('Horizon Star, LLC', margin + 4, y + 5);
+      doc.text(cp.name, margin + 4, y + 5);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
-      doc.text('118 Mary Ambler Way, Ambler, PA 19002', margin + 4, y + 8);
+      doc.text(cp.address, margin + 4, y + 8);
       doc.setFontSize(8);
       doc.text('Check No. ' + checkNumber, pageWidth - margin - 4, y + 5, { align: 'right' });
       doc.text('Date: ' + fmtDate(payDate), pageWidth - margin - 4, y + 8, { align: 'right' });
@@ -33668,7 +33672,7 @@
       // === FOOTER ===
       doc.setTextColor(...medGray);
       doc.setFontSize(7);
-      doc.text('Horizon Star, LLC | 118 Mary Ambler Way, Ambler, PA 19002 | (267) 334-1834', pageWidth/2, y, { align: 'center' });
+      doc.text(cp.name + ' | ' + cp.address + ' | ' + cp.phone, pageWidth/2, y, { align: 'center' });
       doc.text('Statement generated ' + new Date().toLocaleDateString() + ' at ' + new Date().toLocaleTimeString(), pageWidth/2, y + 4, { align: 'center' });
 
       // Return PDF blob
@@ -33677,6 +33681,7 @@
 
     async function generatePaystub(driverId, action = 'print') {
       // action can be: 'print', 'email', or 'both'
+      const cp = getCompanyProfile();
       const driver = appData.drivers.find(d => d.id === driverId);
       if (!driver) { showToast('Driver not found.', 'error'); return; }
       const modalOverlay = document.querySelector('.modal-overlay');
@@ -34219,9 +34224,9 @@
       <div class="check-stub">
         <div class="check-header">
           <div class="check-company">
-            <strong>Horizon Star, LLC</strong>
-            118 Mary Ambler Way, Ambler, PA 19002<br>
-            (267) 334-1834
+            <strong>${escapeHtml(cp.name)}</strong>
+            ${escapeHtml(cp.address)}<br>
+            ${escapeHtml(cp.phone)}
           </div>
           <div class="check-numbers">
             Check No. <strong>${checkNumber}</strong><br>
@@ -34245,7 +34250,7 @@
       
       <!-- Footer -->
       <div class="footer">
-        Horizon Star, LLC | 118 Mary Ambler Way, Ambler, PA 19002 | (267) 334-1834<br>
+        ${escapeHtml(cp.name)} | ${escapeHtml(cp.address)} | ${escapeHtml(cp.phone)}<br>
         Statement generated ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}
       </div>
     </div>
@@ -34293,7 +34298,7 @@
           const tripNames = selectedTrips.map(t => t.trip_number).join(', ');
 
           const emailSubject = 'Earnings Statement - ' + driver.first_name + ' ' + driver.last_name + ' - Pay Date: ' + formatDate(payDate);
-          const emailBody = 'Hello ' + driver.first_name + ',\n\nPlease find attached your Earnings Statement for ' + tripNames + '.\n\nPay Date: ' + formatDate(payDate) + '\nNet Pay: ' + formatMoney(netPay) + '\n\nThank you,\nHorizon Star TMS';
+          const emailBody = 'Hello ' + driver.first_name + ',\n\nPlease find attached your Earnings Statement for ' + tripNames + '.\n\nPay Date: ' + formatDate(payDate) + '\nNet Pay: ' + formatMoney(netPay) + '\n\nThank you,\n' + cp.name;
 
           // Send email with PDF attachment
           await sendEarningsEmail(
@@ -34429,6 +34434,7 @@
 
     // ============ BILL OF LADING (BOL) PDF GENERATION ============
     async function generateBOLPDF(orderId, returnBase64 = false) {
+      const cp = getCompanyProfile();
       const order = appData.orders.find(o => o.id === orderId);
       if (!order) { showToast('Order not found', 'error'); return null; }
 
@@ -34484,8 +34490,9 @@
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
-      doc.text('HORIZON', margin + 2, y + 6);
-      doc.text('STAR', margin + 2, y + 11);
+      const cpWords = cp.name.toUpperCase().replace(/,?\s+LLC$/i, '').split(/\s+/);
+      doc.text(cpWords[0] || '', margin + 2, y + 6);
+      doc.text(cpWords.slice(1).join(' ') || '', margin + 2, y + 11);
 
       // Title
       doc.setFontSize(20);
@@ -34672,7 +34679,7 @@
       // Footer on page 1
       doc.setTextColor(...medGray);
       doc.setFontSize(7);
-      doc.text('Horizon Star, LLC | 118 Mary Ambler Way, Ambler, PA 19002 | (267) 334-1834', pageWidth/2, pageHeight - 10, { align: 'center' });
+      doc.text(cp.name + ' | ' + cp.address + ' | ' + cp.phone, pageWidth/2, pageHeight - 10, { align: 'center' });
       doc.text('Generated ' + new Date().toLocaleString(), pageWidth/2, pageHeight - 6, { align: 'center' });
 
       // === PAGE 2+: INSPECTION PHOTOS ===
@@ -34763,6 +34770,7 @@
 
     // ============ INVOICE PDF GENERATION ============
     async function generateInvoicePDF(orderId, returnBase64 = false) {
+      const cp = getCompanyProfile();
       const order = appData.orders.find(o => o.id === orderId);
       if (!order) { showToast('Order not found', 'error'); return null; }
 
@@ -35056,9 +35064,9 @@
       doc.text('Payment Information', infoX, y + 6);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...medGray);
-      doc.text('Make checks payable to: Horizon Star, LLC', infoX, y + 12);
-      doc.text('Mail to: 118 Mary Ambler Way, Ambler, PA 19002', infoX, y + 17);
-      doc.text('billing@horizonstarllc.com | (267) 334-1834', infoX, y + 22);
+      doc.text('Make checks payable to: ' + cp.name, infoX, y + 12);
+      doc.text('Mail to: ' + cp.address, infoX, y + 17);
+      doc.text(cp.email_billing + ' | ' + cp.phone, infoX, y + 22);
 
       // Vertical divider
       doc.setDrawColor(230, 230, 230);
@@ -35080,7 +35088,7 @@
       doc.setTextColor(...medGray);
       doc.setFontSize(7);
       doc.setFont('helvetica', 'normal');
-      doc.text('Horizon Star, LLC | 118 Mary Ambler Way, Ambler, PA 19002 | (267) 334-1834', margin, pageHeight - 8);
+      doc.text(cp.name + ' | ' + cp.address + ' | ' + cp.phone, margin, pageHeight - 8);
       doc.text('Page 1 of 1', pageWidth - margin, pageHeight - 8, { align: 'right' });
 
       // Return base64 for email attachment or open in new tab
@@ -35269,9 +35277,9 @@
               <div style="background: #f3f4f6; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
                 <h3 style="color: #374151; margin: 0 0 12px; font-size: 14px; font-weight: 600;">Payment Information</h3>
                 <p style="color: #6b7280; margin: 0; font-size: 13px; line-height: 1.6;">
-                  <strong>Make checks payable to:</strong> Horizon Star, LLC<br>
-                  <strong>Mail to:</strong> 118 Mary Ambler Way, Ambler, PA 19002<br>
-                  <strong>Questions?</strong> billing@horizonstarllc.com | (267) 334-1834
+                  <strong>Make checks payable to:</strong> ${cp.name}<br>
+                  <strong>Mail to:</strong> ${cp.address}<br>
+                  <strong>Questions?</strong> ${cp.email_billing} | ${cp.phone}
                 </p>
               </div>
 
@@ -35282,8 +35290,8 @@
 
             <div style="background: #1f2937; padding: 20px; text-align: center;">
               <p style="color: #9ca3af; margin: 0; font-size: 12px;">
-                Horizon Star, LLC | 118 Mary Ambler Way, Ambler, PA 19002<br>
-                (267) 334-1834 | billing@horizonstarllc.com
+                ${cp.name} | ${cp.address}<br>
+                ${cp.phone} | ${cp.email_billing}
               </p>
             </div>
           </div>
@@ -35307,8 +35315,8 @@
         const payload = {
           to: email,
           kind: 'invoice',
-          subject: 'Invoice INV-' + (order.order_number || orderId) + ' - Horizon Star Transport',
-          from_name: 'Horizon Star Billing',
+          subject: 'Invoice INV-' + (order.order_number || orderId) + ' - ' + cp.name,
+          from_name: cp.name + ' Billing',
           html: emailHtml,
           attachments: attachments
         };
@@ -35352,6 +35360,7 @@
 
     // ============ ROUTE SHEET PDF GENERATION ============
     async function generateRouteSheetPDF(orderId) {
+      const cp = getCompanyProfile();
       const order = appData.orders.find(o => o.id === orderId);
       if (!order) { showToast('Order not found', 'error'); return; }
 
@@ -35628,7 +35637,7 @@
       // === FOOTER ===
       doc.setFontSize(7);
       doc.setTextColor(...medGray);
-      doc.text('Emergency Contact: (267) 334-1834  |  dispatch@horizonstarllc.com', margin, pageHeight - 10);
+      doc.text('Emergency Contact: ' + cp.phone + '  |  ' + cp.email_dispatch, margin, pageHeight - 10);
       doc.text('Page 1 of 1  |  Printed: ' + new Date().toLocaleString(), pageWidth - margin, pageHeight - 10, { align: 'right' });
 
       // Open PDF
@@ -35639,6 +35648,7 @@
 
     // ============ TRACKING LINK TO BROKER ============
     async function sendTrackingLinkToBroker(orderId) {
+      const cp = getCompanyProfile();
       const order = appData.orders.find(o => o.id === orderId);
       if (!order) { showToast('Order not found', 'error'); return; }
 
@@ -35725,10 +35735,10 @@
             to: email,
             kind: 'tracking',
             subject: 'Tracking Link - Order ' + order.order_number,
-            from_name: 'Horizon Star Transport',
+            from_name: cp.name,
             html: '<div style="font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif; max-width: 600px; margin: 0 auto;">' +
               '<div style="background: linear-gradient(135deg, #3b82f6, #2563eb); padding: 24px; text-align: center;">' +
-                '<h1 style="color: white; margin: 0; font-size: 24px;">HORIZON STAR</h1>' +
+                '<h1 style="color: white; margin: 0; font-size: 24px;">' + cp.name.toUpperCase() + '</h1>' +
                 '<p style="color: rgba(255,255,255,0.9); margin: 8px 0 0;">Live Tracking Available</p>' +
               '</div>' +
               '<div style="padding: 24px; background: #f8fafc;">' +
@@ -35752,7 +35762,7 @@
               '</div>' +
               '<div style="background: #1e293b; padding: 20px; text-align: center;">' +
                 '<p style="color: #94a3b8; font-size: 13px; margin: 0 0 8px;">Questions? Contact our dispatch team</p>' +
-                '<p style="color: white; font-size: 14px; margin: 0;"><strong>(267) 334-1834</strong> | dispatch@horizonstarllc.com</p>' +
+                '<p style="color: white; font-size: 14px; margin: 0;"><strong>' + cp.phone + '</strong> | ' + cp.email_dispatch + '</p>' +
               '</div>' +
             '</div>'
           })
@@ -35905,6 +35915,7 @@
     }
 
     function renderTrackingPortalHTML(order, trip, driver, pickupInspection, deliveryInspection, container) {
+      const cp = getCompanyProfile();
       const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
       const fmtDateTime = (d) => d ? new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
 
@@ -36218,7 +36229,7 @@
           </style>
 
           <div class="tracking-header">
-            <div class="tracking-logo">HORIZON<span>STAR</span></div>
+            <div class="tracking-logo">${cp.name.toUpperCase()}</div>
             <div style="text-align:right;font-size:13px;color:var(--text-muted);">
               Tracking Portal
             </div>
@@ -36230,7 +36241,7 @@
                 <div class="tracking-not-found-icon">[[icon:search]]</div>
                 <h2>Order Not Found</h2>
                 <p>The tracking link may be invalid or the order no longer exists.</p>
-                <p style="margin-top:16px;">Questions? Contact <strong>(267) 334-1834</strong></p>
+                <p style="margin-top:16px;">Questions? Contact <strong>${cp.phone}</strong></p>
               </div>
             ` : `
               <div class="tracking-title">
@@ -36313,11 +36324,11 @@
                 <div class="tracking-contact-grid">
                   <div class="tracking-contact-item">
                     <div class="tracking-contact-label">Dispatch</div>
-                    <div class="tracking-contact-value">(267) 334-1834</div>
+                    <div class="tracking-contact-value">${cp.phone}</div>
                   </div>
                   <div class="tracking-contact-item">
                     <div class="tracking-contact-label">Email</div>
-                    <div class="tracking-contact-value">dispatch@horizonstarllc.com</div>
+                    <div class="tracking-contact-value">${cp.email_dispatch}</div>
                   </div>
                   ${driver ? `
                     <div class="tracking-contact-item">
@@ -36327,7 +36338,7 @@
                   ` : ''}
                   <div class="tracking-contact-item">
                     <div class="tracking-contact-label">24/7 Emergency</div>
-                    <div class="tracking-contact-value">(267) 334-1834</div>
+                    <div class="tracking-contact-value">${cp.phone}</div>
                   </div>
                 </div>
               </div>
@@ -36335,7 +36346,7 @@
           </div>
 
           <div class="tracking-footer">
-            Powered by Horizon Star TMS • Questions? Contact dispatch@horizonstarllc.com
+            Powered by ${cp.name} • Questions? Contact ${cp.email_dispatch}
           </div>
         </div>
       `;
@@ -39606,6 +39617,29 @@
       }
     }
     
+    // ============ COMPANY PROFILE ============
+
+    function getCompanyProfile() {
+      const defaults = {
+        name: 'Horizon Star, LLC',
+        address: '118 Mary Ambler Way, Ambler, PA 19002',
+        phone: '(267) 334-1834',
+        email_billing: 'billing@horizonstarllc.com',
+        email_dispatch: 'dispatch@horizonstarllc.com',
+        email_settlements: 'settlements@horizonstarllc.com',
+        email_info: 'info@horizonstarllc.com'
+      };
+      try {
+        const saved = JSON.parse(localStorage.getItem('companyProfile') || '{}');
+        return { ...defaults, ...saved };
+      } catch { return defaults; }
+    }
+
+    function saveCompanyProfile(profile) {
+      localStorage.setItem('companyProfile', JSON.stringify(profile));
+      showToast('Company profile saved', 'success');
+    }
+
     // ============ EMAIL INTEGRATION (Supabase Edge Function + Resend) ============
 
     // Helper function to convert blob to base64
@@ -39637,7 +39671,7 @@
             subject: subject,
             html: htmlContent || null,
             text: textContent || null,
-            from_name: 'Horizon Star TMS',
+            from_name: getCompanyProfile().name,
             attachment: attachment || null
           })
         });
@@ -39664,8 +39698,8 @@
         await sendEarningsEmail(
           currentUser.email,
           currentUser.first_name,
-          'Test Email from Horizon Star TMS',
-          '<h2>Email Configuration Successful!</h2><p>Your email integration is working correctly.</p><p>You can now send earnings statements directly to drivers.</p><br><p style="color:var(--text-secondary);font-size:12px">- Horizon Star TMS</p>',
+          'Test Email from ' + getCompanyProfile().name,
+          '<h2>Email Configuration Successful!</h2><p>Your email integration is working correctly.</p><p>You can now send earnings statements directly to drivers.</p><br><p style="color:var(--text-secondary);font-size:12px">- ' + getCompanyProfile().name + '</p>',
           null,
           null,
           'system_test'
@@ -39702,10 +39736,28 @@
       const maskedSamsaraKey = samsaraKey ? samsaraKey.substring(0, 8) + '...' + samsaraKey.substring(samsaraKey.length - 4) : '';
       const samsaraProxyUrl = getSamsaraProxyUrl();
       
+      const cp = getCompanyProfile();
+
       container.innerHTML = '<div class="header"><h2>[[icon:settings]] Settings</h2></div>' +
-        
+
+        // Company Profile Section
+        '<div class="card" style="max-width:700px"><div class="card-header"><h3>[[icon:building]] Company Profile</h3></div>' +
+        '<div style="padding:20px">' +
+        '<p style="color:var(--text-secondary);margin-bottom:20px">Company info used on invoices, settlements, paystubs, emails, and tracking pages.</p>' +
+        '<div class="form-group"><label>Company Name</label><input type="text" id="cpName" value="' + escapeHtml(cp.name) + '" style="width:100%"></div>' +
+        '<div class="form-group"><label>Address</label><input type="text" id="cpAddress" value="' + escapeHtml(cp.address) + '" style="width:100%"></div>' +
+        '<div class="form-group"><label>Phone</label><input type="text" id="cpPhone" value="' + escapeHtml(cp.phone) + '" style="width:100%"></div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
+        '<div class="form-group"><label>Billing Email</label><input type="email" id="cpEmailBilling" value="' + escapeHtml(cp.email_billing) + '" style="width:100%"></div>' +
+        '<div class="form-group"><label>Dispatch Email</label><input type="email" id="cpEmailDispatch" value="' + escapeHtml(cp.email_dispatch) + '" style="width:100%"></div>' +
+        '<div class="form-group"><label>Settlements Email</label><input type="email" id="cpEmailSettlements" value="' + escapeHtml(cp.email_settlements) + '" style="width:100%"></div>' +
+        '<div class="form-group"><label>Info / General Email</label><input type="email" id="cpEmailInfo" value="' + escapeHtml(cp.email_info) + '" style="width:100%"></div>' +
+        '</div>' +
+        '<button class="btn btn-primary" onclick="saveCompanyProfile({ name: document.getElementById(\'cpName\').value, address: document.getElementById(\'cpAddress\').value, phone: document.getElementById(\'cpPhone\').value, email_billing: document.getElementById(\'cpEmailBilling\').value, email_dispatch: document.getElementById(\'cpEmailDispatch\').value, email_settlements: document.getElementById(\'cpEmailSettlements\').value, email_info: document.getElementById(\'cpEmailInfo\').value })">[[icon:save]] Save Company Profile</button>' +
+        '</div></div>' +
+
         // Samsara Integration Section
-        '<div class="card" style="max-width:700px"><div class="card-header"><h3>[[icon:map_pin]] Samsara GPS Integration</h3></div>' +
+        '<div class="card" style="max-width:700px;margin-top:24px"><div class="card-header"><h3>[[icon:map_pin]] Samsara GPS Integration</h3></div>' +
         '<div style="padding:20px">' +
         '<p style="color:var(--text-secondary);margin-bottom:20px">Connect to Samsara for real-time truck GPS tracking on the Live Map.</p>' +
         
@@ -46127,7 +46179,7 @@ function jsonResponse(data, status = 200) {
       try {
         const financialContext = getDetailedFinancialContext();
         
-        const systemPrompt = 'You are an expert financial advisor for "Horizon Star LLC" auto transport company. You have access to their real financial data and should provide specific, actionable advice based on their actual numbers.\n\nWhen answering:\n1. Reference their specific numbers\n2. Provide concrete recommendations with calculations\n3. Be direct and practical\n4. Calculate ROI and payback for major purchases\n5. Consider cash flow implications\n6. Flag any risks\n7. Use simple language\n\nDATA:\n' + financialContext;
+        const systemPrompt = 'You are an expert financial advisor for "' + getCompanyProfile().name + '" auto transport company. You have access to their real financial data and should provide specific, actionable advice based on their actual numbers.\n\nWhen answering:\n1. Reference their specific numbers\n2. Provide concrete recommendations with calculations\n3. Be direct and practical\n4. Calculate ROI and payback for major purchases\n5. Consider cash flow implications\n6. Flag any risks\n7. Use simple language\n\nDATA:\n' + financialContext;
 
         const messages = aiAdvisorHistory.map(msg => ({
           role: msg.role === 'user' ? 'user' : 'assistant',
