@@ -8,6 +8,21 @@
   const DEBUG = true;
   const log = (...args) => DEBUG && console.log('[CD Importer]', ...args);
 
+  // Inject animation styles once
+  if (!document.getElementById('tms-importer-animations')) {
+    const styleEl = document.createElement('style');
+    styleEl.id = 'tms-importer-animations';
+    styleEl.textContent = `
+      @keyframes tms-spin { to { transform: rotate(360deg); } }
+      @keyframes tms-scale-in { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
+      @keyframes tms-fade-up { 0% { opacity: 0; transform: translateY(12px); } 100% { opacity: 1; transform: translateY(0); } }
+      .tms-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: tms-spin 0.6s linear infinite; vertical-align: middle; margin-right: 8px; }
+      .tms-loading-overlay { position: absolute; inset: 0; background: rgba(15,23,42,0.7); display: flex; align-items: center; justify-content: center; z-index: 10; border-radius: 8px; }
+      .tms-loading-overlay .tms-overlay-spinner { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.15); border-top-color: #22c55e; border-radius: 50%; animation: tms-spin 0.7s linear infinite; }
+    `;
+    document.head.appendChild(styleEl);
+  }
+
   // Global lock to prevent concurrent injection runs
   let isInjecting = false;
 
@@ -1252,6 +1267,10 @@
         if (splitSection) {
           splitSection.style.display = val === 'SPLIT' ? 'grid' : 'none';
         }
+        // Auto-set payment terms for COD/COP
+        const termsSelect = document.getElementById('tms-payment-terms');
+        if (val === 'COD' && termsSelect) termsSelect.value = 'COLLECT_AT_DELIVERY';
+        else if (val === 'COP' && termsSelect) termsSelect.value = 'COLLECT_AT_PICKUP';
       });
     }
 
@@ -1334,7 +1353,10 @@
         payment_type: document.getElementById('tms-payment-type').value,
         payment_terms: (() => {
           const pt = document.getElementById('tms-payment-type').value;
-          return (pt === 'BILL' || pt === 'SPLIT') ? (document.getElementById('tms-payment-terms')?.value || null) : null;
+          if (pt === 'COD') return 'COLLECT_AT_DELIVERY';
+          if (pt === 'COP') return 'COLLECT_AT_PICKUP';
+          if (pt === 'BILL' || pt === 'SPLIT') return document.getElementById('tms-payment-terms')?.value || null;
+          return null;
         })(),
         cod_amount: document.getElementById('tms-payment-type').value === 'SPLIT' ? (parseFloat(document.getElementById('tms-split-cod-amount')?.value) || null) : null,
         bill_amount: document.getElementById('tms-payment-type').value === 'SPLIT' ? (parseFloat(document.getElementById('tms-split-bill-amount')?.value) || null) : null,
@@ -1409,9 +1431,20 @@
         formData.vehicle_direction = direction;
       }
 
-      // Disable button and show loading
+      // Disable button and show loading spinner
       importBtn.disabled = true;
-      importBtn.textContent = 'Importing...';
+      importBtn.innerHTML = '<span class="tms-spinner"></span>Importing...';
+
+      // Add loading overlay to modal body
+      const modalBodyEl = modal.querySelector('[style*="overflow-y"]') || modal.querySelector('div > div');
+      let loadingOverlay = null;
+      if (modalBodyEl) {
+        modalBodyEl.style.position = 'relative';
+        loadingOverlay = document.createElement('div');
+        loadingOverlay.className = 'tms-loading-overlay';
+        loadingOverlay.innerHTML = '<div class="tms-overlay-spinner"></div>';
+        modalBodyEl.appendChild(loadingOverlay);
+      }
 
       try {
         const response = await chrome.runtime.sendMessage({
@@ -1420,26 +1453,29 @@
         });
 
         if (response.success) {
-          // Show success confirmation inside modal
-          const modalBody = modal.querySelector('[style*="overflow-y"]') || modal.querySelector('div > div');
+          // Remove loading overlay
+          if (loadingOverlay) loadingOverlay.remove();
+
+          // Show animated success confirmation inside modal
+          const successBody = modalBodyEl || modal.querySelector('[style*="overflow-y"]') || modal.querySelector('div > div');
           const vehicleStr = [formData.vehicle_year, formData.vehicle_make, formData.vehicle_model].filter(Boolean).join(' ');
           const routeStr = [formData.origin, formData.destination].filter(Boolean).join(' → ');
 
-          if (modalBody) {
-            modalBody.innerHTML = `
+          if (successBody) {
+            successBody.innerHTML = `
               <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center">
-                <div style="width:64px;height:64px;border-radius:50%;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+                <div style="width:64px;height:64px;border-radius:50%;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;margin-bottom:16px;animation:tms-scale-in 0.5s ease-out">
                   <span style="font-size:32px;color:#22c55e">✓</span>
                 </div>
-                <h3 style="color:#22c55e;font-size:20px;font-weight:700;margin:0 0 8px">Load Imported Successfully!</h3>
-                <div style="color:#94a3b8;font-size:14px;margin-bottom:20px">The load has been added to your TMS</div>
-                <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px;width:100%;max-width:360px;text-align:left">
+                <h3 style="color:#22c55e;font-size:20px;font-weight:700;margin:0 0 8px;animation:tms-fade-up 0.4s ease-out 0.2s both">Load Imported Successfully!</h3>
+                <div style="color:#94a3b8;font-size:14px;margin-bottom:20px;animation:tms-fade-up 0.4s ease-out 0.3s both">The load has been added to your TMS</div>
+                <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px;width:100%;max-width:360px;text-align:left;animation:tms-fade-up 0.4s ease-out 0.4s both">
                   ${formData.order_number ? `<div style="margin-bottom:8px"><span style="color:#64748b;font-size:12px">ORDER #</span><br><span style="color:#e2e8f0;font-size:15px;font-weight:600">${formData.order_number}</span></div>` : ''}
                   ${vehicleStr ? `<div style="margin-bottom:8px"><span style="color:#64748b;font-size:12px">VEHICLE</span><br><span style="color:#e2e8f0;font-size:14px">${vehicleStr}</span></div>` : ''}
                   ${routeStr ? `<div style="margin-bottom:8px"><span style="color:#64748b;font-size:12px">ROUTE</span><br><span style="color:#e2e8f0;font-size:14px">${routeStr}</span></div>` : ''}
                   ${formData.revenue ? `<div><span style="color:#64748b;font-size:12px">REVENUE</span><br><span style="color:#22c55e;font-size:16px;font-weight:700">$${parseFloat(formData.revenue).toFixed(2)}</span></div>` : ''}
                 </div>
-                <button id="tms-success-dismiss" style="margin-top:20px;padding:8px 24px;background:#334155;border:none;border-radius:6px;color:#e2e8f0;font-size:13px;cursor:pointer">Close</button>
+                <button id="tms-success-dismiss" style="margin-top:20px;padding:8px 24px;background:#334155;border:none;border-radius:6px;color:#e2e8f0;font-size:13px;cursor:pointer;animation:tms-fade-up 0.4s ease-out 0.5s both">Close</button>
               </div>
             `;
             // Allow manual dismiss
@@ -1480,6 +1516,7 @@
         } else {
           errorMsg = `⚠️ Import failed: ${error.message}. Please try again.`;
         }
+        if (loadingOverlay) loadingOverlay.remove();
         errorDiv.innerHTML = errorMsg;
         errorDiv.style.display = 'block';
         importBtn.disabled = false;

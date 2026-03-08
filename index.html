@@ -11260,6 +11260,8 @@
         NET60: 'Net 60'
       };
       if (normalizedTerms === 'QUICK_PAY') return 'QuickPay (Net 2)';
+      if (normalizedTerms === 'COLLECT_AT_DELIVERY') return 'Collect At Delivery';
+      if (normalizedTerms === 'COLLECT_AT_PICKUP') return 'Collect At Pick Up';
       if (netTerms[normalizedTerms]) return netTerms[normalizedTerms];
       if (normalizedTerms === 'CUSTOM') return customDays ? ('Custom (Net ' + customDays + ')') : 'Custom';
       const dynamicNetMatch = normalizedTerms.match(/^NET(\d+)$/);
@@ -11506,11 +11508,12 @@
       '</div>';
     }
     const VEHICLE_BODY_TYPE_OPTIONS = ['SUV', 'SEDAN', 'CONVERTABLE', 'VAN', 'MINIVAN', 'PICK UP TRUCK'];
-    const PAYMENT_TERMS_OPTIONS = ['QUICK_PAY', 'NET5', 'NET7', 'NET10', 'NET15', 'NET21', 'NET30', 'NET45', 'NET60'];
+    const PAYMENT_TERMS_OPTIONS = ['QUICK_PAY', 'NET5', 'NET7', 'NET10', 'NET15', 'NET21', 'NET30', 'NET45', 'NET60', 'COLLECT_AT_DELIVERY', 'COLLECT_AT_PICKUP'];
     function getPaymentTermsOptionsHtml(selected = 'NET30') {
       const normalized = String(selected || 'NET30').toUpperCase();
+      const labelMap = { QUICK_PAY: 'QuickPay (Net 2)', COLLECT_AT_DELIVERY: 'Collect At Delivery', COLLECT_AT_PICKUP: 'Collect At Pick Up' };
       return PAYMENT_TERMS_OPTIONS.map(term => {
-        const label = term === 'QUICK_PAY' ? 'QuickPay (Net 2)' : ('Net ' + term.replace('NET', ''));
+        const label = labelMap[term] || ('Net ' + term.replace('NET', ''));
         return '<option value="' + term + '"' + (normalized === term ? ' selected' : '') + '>' + label + '</option>';
       }).join('');
     }
