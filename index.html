@@ -11403,9 +11403,17 @@
       const driverLabel = options.driverLabel !== undefined ? options.driverLabel : (driver ? ((driver.first_name || '') + ' ' + (driver.last_name || '')).trim() : 'Unassigned');
       const paymentLabel = options.paymentLabel !== undefined ? options.paymentLabel : (order.payment_type || '-');
       const revenueValue = options.revenueValue !== undefined ? options.revenueValue : parseFloat(order.revenue || 0);
-      const statusRaw = options.statusRaw !== undefined ? options.statusRaw : (order.status || 'PENDING');
+      const deliveryStatus = order.delivery_status || 'pending';
+      const deliveryStatusMap = {
+        'pending': { raw: 'PENDING', label: 'NEW' },
+        'picked_up': { raw: 'IN_TRANSIT', label: 'PICKED UP' },
+        'in_transit': { raw: 'IN_TRANSIT', label: 'IN TRANSIT' },
+        'delivered': { raw: 'DELIVERED', label: 'DELIVERED' }
+      };
+      const mapped = deliveryStatusMap[deliveryStatus] || deliveryStatusMap['pending'];
+      const statusRaw = options.statusRaw !== undefined ? options.statusRaw : mapped.raw;
       const statusBadgeClass = options.statusBadgeClass || getBadge(statusRaw);
-      const statusLabel = options.statusLabel !== undefined ? options.statusLabel : getOrderStatusDisplay(statusRaw, 'order').toUpperCase();
+      const statusLabel = options.statusLabel !== undefined ? options.statusLabel : mapped.label;
       const vehicleLabel = options.vehicleLabel || getOrderVehicleLabel(order);
       const originLabel = options.originLabel !== undefined ? options.originLabel : (order.origin || '-');
       const destinationLabel = options.destinationLabel !== undefined ? options.destinationLabel : (order.destination || '-');
@@ -16976,6 +16984,7 @@
       const statusMap = {
         'pending': { bg: 'rgba(245,158,11,0.2)', color: '#f59e0b', label: 'New' },
         'picked_up': { bg: 'rgba(59,130,246,0.2)', color: '#3b82f6', label: 'Picked Up' },
+        'in_transit': { bg: 'rgba(245,158,11,0.2)', color: '#f59e0b', label: 'In Transit' },
         'delivered': { bg: 'rgba(34,197,94,0.2)', color: '#22c55e', label: 'Delivered' }
       };
       const s = statusMap[status] || statusMap['pending'];
@@ -21977,6 +21986,7 @@
         cod_amount: splitPayload.cod_amount,
         bill_amount: splitPayload.bill_amount,
         status: document.getElementById('editOrderStatus').value,
+        delivery_status: { 'PENDING': 'pending', 'IN_TRANSIT': 'picked_up', 'DELIVERED': 'delivered' }[document.getElementById('editOrderStatus').value] || 'pending',
         dispatcher_id: parseInt(document.getElementById('editOrderDispatcher').value) || null,
         vehicle_direction: document.getElementById('editOrderDirection').value,
         dispatcher_notes: document.getElementById('editOrderNotes').value || null,
@@ -22123,7 +22133,9 @@
       } else if (ordersFilter.status === 'assigned') {
         filteredOrders = filteredOrders.filter(o => o.trip_id);
       } else if (ordersFilter.status !== 'all') {
-        filteredOrders = filteredOrders.filter(o => o.status === ordersFilter.status);
+        const statusToDelivery = { 'PENDING': 'pending', 'IN_TRANSIT': 'picked_up', 'DELIVERED': 'delivered' };
+        const dsVal = statusToDelivery[ordersFilter.status];
+        filteredOrders = filteredOrders.filter(o => (o.delivery_status || 'pending') === dsVal);
       }
 
       // Apply dispatcher filter
@@ -22437,6 +22449,7 @@
         bill_amount: splitPayload.bill_amount,
         payment_terms: document.getElementById('orderBrokerTerms')?.value || null,
         status: document.getElementById('orderStatus').value,
+        delivery_status: { 'PENDING': 'pending', 'IN_TRANSIT': 'picked_up', 'DELIVERED': 'delivered' }[document.getElementById('orderStatus').value] || 'pending',
         pickup_contact_name: document.getElementById('pickupContactName').value || null,
         pickup_contact_phone: document.getElementById('pickupContactPhone').value || null,
         delivery_contact_name: document.getElementById('deliveryContactName').value || null,
