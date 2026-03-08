@@ -586,6 +586,8 @@ h4 { font-size: var(--text-lg); }
   margin-bottom: var(--space-5);
   overflow-x: auto;
   scrollbar-width: none;
+  flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
 }
 
 .section-tabs::-webkit-scrollbar {

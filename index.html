@@ -6413,6 +6413,49 @@
       .detail-stats { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
       .detail-stats .stat-card { min-width: unset !important; padding: 10px 12px !important; }
       .detail-stats .stat-card .value { font-size: 16px !important; }
+
+      /* Fix 1: Order card rows should NOT wrap — keep side-by-side */
+      .order-list-item [style*="display:flex"],
+      .order-list-item [style*="display: flex"] {
+        flex-wrap: nowrap !important;
+      }
+      .order-list-item [style*="display:flex"] > span,
+      .order-list-item [style*="display: flex"] > span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      /* Fix 2: Section tabs — force horizontal scroll, no wrap */
+      .section-tabs {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+      }
+
+      /* Fix 3: Tables — constrain wrapper width, reduce table min-width */
+      .table-wrapper {
+        max-width: 100% !important;
+        overflow-x: auto !important;
+      }
+      table {
+        min-width: 500px;
+      }
+
+      /* Fix 4: Chat header — allow shrink */
+      .chat-header-right {
+        flex-shrink: 1 !important;
+        overflow: hidden;
+      }
+      .chat-header {
+        gap: 6px !important;
+      }
+
+      /* Fix 5: Constrain main content to prevent horizontal overflow */
+      .main > div, .main > section {
+        max-width: 100% !important;
+        overflow-x: hidden;
+      }
     }
 
     /* ============ PRINT STYLES === */
