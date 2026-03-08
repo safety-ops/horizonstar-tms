@@ -1033,6 +1033,9 @@ h4 { font-size: var(--text-lg); }
   z-index: 8999;
   animation: fadeIn 0.2s ease;
 }
+@media (max-width: 480px) {
+  .notification-center-overlay { width: 100% !important; }
+}
 
 /* ============================================================
    PHASE 6 — Onboarding Wizard
