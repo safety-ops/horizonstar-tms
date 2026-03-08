@@ -5490,36 +5490,29 @@
       .topbar {
         display: none !important;
       }
-      
-      /* === MOBILE HEADER === */
+
+      /* === MOBILE HEADER (no hamburger — bottom tab bar is sole nav) === */
       .mobile-header {
         display: flex;
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         box-shadow: 0 2px 12px rgba(0,0,0,0.15);
       }
-      
-      /* === MOBILE OVERLAY - behind sidebar === */
+
+      /* Hide hamburger — bottom tab bar handles all navigation */
+      .hamburger {
+        display: none !important;
+      }
+
+      /* === SIDEBAR + OVERLAY hidden on mobile === */
+      .sidebar,
       .mobile-overlay {
-        z-index: 200 !important;
+        display: none !important;
       }
-      
-      /* === SIDEBAR === */
-      .sidebar {
-        transform: translateX(-100%);
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 250 !important;
-        width: 85%;
-        min-width: 200px;
-        max-width: 320px;
-        padding-top: 60px;
-        box-shadow: 4px 0 25px rgba(0,0,0,0.3);
-        pointer-events: auto;
-      }
-      
+
       .sidebar.mobile-open {
-        transform: translateX(0);
+        display: none !important;
       }
-      
+
       .sidebar.mobile-open nav,
       .sidebar.mobile-open .nav-item {
         pointer-events: auto !important;
