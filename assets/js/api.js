@@ -232,13 +232,22 @@ function handleRealtimeChange(payload) {
     if (!pendingRealtimeUpdate) return;
     pendingRealtimeUpdate = false;
 
-    // Show notification
-    const table = payload.table;
-    const action = payload.eventType;
-    const tableNames = { trips: 'Trip', orders: 'Vehicle', drivers: 'Driver', trucks: 'Truck', expenses: 'Expense' };
-    const actionNames = { INSERT: 'added', UPDATE: 'updated', DELETE: 'deleted' };
+    // Pulse sync indicator
+    if (typeof pulseSyncDot === 'function') pulseSyncDot();
 
-    showToast('🔄 ' + (tableNames[table] || table) + ' ' + (actionNames[action] || 'changed') + ' by another user', 'info');
+    // Show realtime toast for new items by other users (INSERT only — UPDATE/DELETE are too noisy)
+    const table = payload.table;
+    const tableNames = { trips: 'Trip', orders: 'Vehicle', drivers: 'Driver', trucks: 'Truck', expenses: 'Expense' };
+
+    if (payload.eventType === 'INSERT' && payload.new) {
+      var entityName = tableNames[table] || table;
+      var detail = '';
+      if (table === 'orders' && payload.new.order_number) detail = ' ' + payload.new.order_number;
+      if (table === 'trips' && payload.new.trip_number) detail = ' ' + payload.new.trip_number;
+      if (typeof showToast === 'function') {
+        showToast(entityName + detail + ' added by another user', 'info');
+      }
+    }
 
     // Refresh data
     await loadAllData(true);
@@ -247,18 +256,26 @@ function handleRealtimeChange(payload) {
 }
 
 function handleChatRealtimeChange(payload) {
-  // For chat, just trigger a re-render of chat if we're on that page
-  if (['INSERT', 'UPDATE', 'DELETE'].includes(payload.eventType) && currentPage === 'team_chat') {
-    const timeSinceLastSave = Date.now() - (window.lastSaveTimestamp || 0);
-    if (timeSinceLastSave < 2000) return;
+  const timeSinceLastSave = Date.now() - (window.lastSaveTimestamp || 0);
+  if (timeSinceLastSave < 2000) return;
 
-    // Reload chat messages
-    loadAllData(true).then(() => {
-      const main = document.getElementById('main-content');
-      if (main && currentPage === 'team_chat' && typeof renderTeamChat === 'function') {
-        renderTeamChat(main);
-      }
-    });
+  // Pulse sync dot on any chat change
+  if (typeof pulseSyncDot === 'function') pulseSyncDot();
+
+  if (payload.eventType === 'INSERT' && payload.new) {
+    // If on team_chat page, append the new message directly for instant delivery
+    if (currentPage === 'team_chat' && typeof appendChatMessageRealtime === 'function') {
+      appendChatMessageRealtime(payload.new);
+      return;
+    }
+
+    // Otherwise update unread count for badge
+    if (typeof updateUnreadFromRealtime === 'function') {
+      updateUnreadFromRealtime(payload.new);
+    }
+  } else if (['UPDATE', 'DELETE'].includes(payload.eventType) && currentPage === 'team_chat') {
+    // Full reload for edits/deletes
+    if (typeof loadChatMessages === 'function') loadChatMessages();
   }
 }
 
@@ -335,7 +352,8 @@ async function loadAllData(forceReload = false) {
       maintenance_records: [], claims: [], tickets: [], violations: [],
       ticket_files: [], violation_files: [], claim_files: [], compliance_tasks: [], accidents: [],
       company_files: [],
-      payroll_records: []
+      payroll_records: [],
+      activity_log_recent: []
     };
 
     // Load secondary data in background (non-blocking)
@@ -437,6 +455,11 @@ async function loadSecondaryData() {
     let payroll_records = [];
     try { payroll_records = await dbFetch('payroll_records', { order: 'created_at.desc' }) || []; } catch(e) { payroll_records = []; }
     appData.payroll_records = payroll_records;
+
+    // Load recent activity entries for detail-side activity feeds
+    let activity_log_recent = [];
+    try { activity_log_recent = await dbFetch('activity_log', { order: 'created_at.desc', range: [0, 299] }) || []; } catch(e) { activity_log_recent = []; }
+    appData.activity_log_recent = activity_log_recent;
 
     // Update cache
     dataCache.set('appData', appData);

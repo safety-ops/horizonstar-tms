@@ -136,15 +136,19 @@ function closeModal(modalId) {
  */
 function closeAllModals() {
   document.querySelectorAll('.modal-overlay').forEach(m => m.remove());
+  // Also close command palette
+  document.querySelector('.command-palette-overlay')?.remove();
 }
 
 // ============ KEYBOARD SHORTCUTS ============
 
-// Keyboard shortcut handler
+// Two-key sequence state
+let pendingShortcutKey = null;
+let pendingShortcutTimer = null;
+
 document.addEventListener('keydown', function(e) {
   // Skip if typing in input/textarea
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
-    // Only handle Escape in inputs
     if (e.key === 'Escape') {
       e.target.blur();
       closeAllModals();
@@ -152,38 +156,17 @@ document.addEventListener('keydown', function(e) {
     return;
   }
 
-  // Ctrl/Cmd + K - Quick Search
+  // Cmd/Ctrl + K - Command Palette
   if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
     e.preventDefault();
-    openQuickSearch();
+    openCommandPalette();
     return;
   }
 
-  // Ctrl/Cmd + N - New Item (context-aware)
+  // Cmd/Ctrl + N - New Item (context-aware)
   if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
     e.preventDefault();
     triggerNewItem();
-    return;
-  }
-
-  // Ctrl/Cmd + Shift + D - Dashboard
-  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D') {
-    e.preventDefault();
-    if (typeof navigate === 'function') navigate('dashboard');
-    return;
-  }
-
-  // Ctrl/Cmd + Shift + T - Trips
-  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'T') {
-    e.preventDefault();
-    if (typeof navigate === 'function') navigate('trips');
-    return;
-  }
-
-  // ? or / - Show keyboard shortcuts help
-  if (e.key === '?' || (e.key === '/' && !e.ctrlKey)) {
-    e.preventDefault();
-    showKeyboardShortcutsHelp();
     return;
   }
 
@@ -193,102 +176,273 @@ document.addEventListener('keydown', function(e) {
     return;
   }
 
-  // Number keys 1-9 for quick navigation
-  if (/^[1-9]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
-    const navPages = ['dashboard', 'trips', 'orders', 'drivers', 'trucks', 'fuel', 'ifta', 'payroll', 'settings'];
-    const pageIndex = parseInt(e.key) - 1;
-    if (pageIndex < navPages.length && typeof navigate === 'function') {
-      navigate(navPages[pageIndex]);
-      showToast('Navigated to ' + navPages[pageIndex].charAt(0).toUpperCase() + navPages[pageIndex].slice(1));
+  // ? - Show keyboard shortcuts help
+  if (e.key === '?') {
+    e.preventDefault();
+    showKeyboardShortcutsHelp();
+    return;
+  }
+
+  // / - Focus search (open command palette)
+  if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault();
+    openCommandPalette();
+    return;
+  }
+
+  // Two-key sequences: G→D (Dashboard), G→T (Trips), G→O (Orders), N→O (New Order), N→T (New Trip)
+  if (pendingShortcutKey) {
+    e.preventDefault();
+    const combo = pendingShortcutKey + e.key.toLowerCase();
+    clearTimeout(pendingShortcutTimer);
+    pendingShortcutKey = null;
+
+    const twoKeyActions = {
+      'gd': () => { if (typeof navigate === 'function') navigate('dashboard'); },
+      'gt': () => { if (typeof navigate === 'function') navigate('trips'); },
+      'go': () => { if (typeof navigate === 'function') navigate('orders'); },
+      'gf': () => { if (typeof navigate === 'function') navigate('drivers'); },
+      'gb': () => { if (typeof navigate === 'function') navigate('billing'); },
+      'no': () => { if (typeof openOrderModal === 'function') openOrderModal(); },
+      'nt': () => { if (typeof openTripModal === 'function') openTripModal(); },
+    };
+
+    if (twoKeyActions[combo]) {
+      twoKeyActions[combo]();
     }
+    return;
+  }
+
+  // Start two-key sequence
+  if (e.key === 'g' || e.key === 'n') {
+    pendingShortcutKey = e.key;
+    pendingShortcutTimer = setTimeout(() => { pendingShortcutKey = null; }, 1000);
+    return;
   }
 });
 
-// ============ QUICK SEARCH ============
+// ============ COMMAND PALETTE (Cmd+K) ============
+
+// Recent navigation history
+let recentNavHistory = JSON.parse(localStorage.getItem('tms_recent_nav') || '[]');
+
+function addToRecentNav(pageId) {
+  recentNavHistory = recentNavHistory.filter(p => p !== pageId);
+  recentNavHistory.unshift(pageId);
+  if (recentNavHistory.length > 5) recentNavHistory = recentNavHistory.slice(0, 5);
+  localStorage.setItem('tms_recent_nav', JSON.stringify(recentNavHistory));
+}
 
 /**
- * Open quick search modal
+ * Open command palette (replaces old quick search)
  */
-function openQuickSearch() {
-  const existing = document.querySelector('.quick-search-overlay');
+function openCommandPalette() {
+  const existing = document.querySelector('.command-palette-overlay');
   if (existing) {
     existing.remove();
     return;
   }
 
   const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay quick-search-overlay';
-  overlay.style.cssText = 'display:flex;align-items:flex-start;justify-content:center;padding-top:15vh';
+  overlay.className = 'command-palette-overlay';
   overlay.innerHTML = `
-    <div class="modal" style="max-width:500px;width:100%;margin:0 16px">
-      <div style="padding:20px">
-        <input type="text" id="quickSearchInput" placeholder="Search pages, trips, drivers..."
-               style="width:100%;padding:14px 18px;font-size:16px;border:2px solid var(--primary);border-radius:var(--radius);background:var(--bg-secondary);color:var(--text-primary)"
-               autocomplete="off">
-        <div id="quickSearchResults" style="margin-top:16px;max-height:300px;overflow-y:auto"></div>
-        <div style="margin-top:12px;font-size:12px;color:var(--text-muted);display:flex;gap:16px">
-          <span>↑↓ Navigate</span>
-          <span>↵ Select</span>
-          <span>Esc Close</span>
-        </div>
+    <div class="command-palette">
+      <input type="text" class="command-palette-input" id="cmdPaletteInput"
+             placeholder="Search pages, orders, trips, drivers..."
+             autocomplete="off" spellcheck="false">
+      <div class="command-palette-results" id="cmdPaletteResults"></div>
+      <div class="command-palette-footer">
+        <span><kbd>↑↓</kbd> Navigate</span>
+        <span><kbd>↵</kbd> Select</span>
+        <span><kbd>Esc</kbd> Close</span>
       </div>
     </div>
   `;
   document.body.appendChild(overlay);
 
-  const input = document.getElementById('quickSearchInput');
+  const input = document.getElementById('cmdPaletteInput');
   input.focus();
 
-  input.addEventListener('input', handleQuickSearch);
-  input.addEventListener('keydown', handleQuickSearchNav);
+  // Show recent items on empty state
+  renderCommandPaletteResults('');
+
+  input.addEventListener('input', (e) => renderCommandPaletteResults(e.target.value));
+  input.addEventListener('keydown', handleCommandPaletteNav);
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-function handleQuickSearch(e) {
-  const query = e.target.value.toLowerCase();
-  const results = document.getElementById('quickSearchResults');
+// Backward compat
+function openQuickSearch() { openCommandPalette(); }
 
-  if (!query) {
-    results.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:20px">Start typing to search...</div>';
-    return;
-  }
+function renderCommandPaletteResults(query) {
+  const results = document.getElementById('cmdPaletteResults');
+  const q = query.toLowerCase().trim();
 
-  // Search pages
-  const pages = [
-    { name: 'Dashboard', page: 'dashboard', icon: '📊' },
-    { name: 'Trips', page: 'trips', icon: '🚛' },
-    { name: 'Orders', page: 'orders', icon: '📦' },
-    { name: 'Drivers', page: 'drivers', icon: '👥' },
-    { name: 'Trucks', page: 'trucks', icon: '🚚' },
-    { name: 'Fuel', page: 'fuel', icon: '⛽' },
-    { name: 'IFTA', page: 'ifta', icon: '📋' },
-    { name: 'Payroll', page: 'payroll', icon: '💰' },
-    { name: 'Chat', page: 'team_chat', icon: '💬' },
-    { name: 'Settings', page: 'settings', icon: '⚙️' }
+  // All searchable pages
+  const allPages = [
+    { name: 'Dashboard', page: 'dashboard', group: 'Pages', icon: icons.dashboard },
+    { name: 'Trips', page: 'trips', group: 'Dispatch', icon: icons.trips },
+    { name: 'Orders', page: 'orders', group: 'Dispatch', icon: icons.orders },
+    { name: 'Load Board', page: 'loadboard', group: 'Dispatch', icon: icons.loadboard },
+    { name: 'Tasks', page: 'tasks', group: 'Dispatch', icon: icons.tasks },
+    { name: 'Drivers', page: 'drivers', group: 'Fleet', icon: icons.drivers },
+    { name: 'Trucks', page: 'trucks', group: 'Fleet', icon: icons.trucks },
+    { name: 'Local Drivers', page: 'local_drivers', group: 'Fleet', icon: icons.drivers },
+    { name: 'Brokers', page: 'brokers', group: 'Partners', icon: icons.brokers },
+    { name: 'Dealers', page: 'dealers', group: 'Partners', icon: icons.brokers },
+    { name: 'Dispatchers', page: 'dispatchers', group: 'Partners', icon: icons.dispatchers },
+    { name: 'Dispatcher Ranking', page: 'dispatcher_ranking', group: 'Partners', icon: icons.dispatchers },
+    { name: 'Billing', page: 'billing', group: 'Finance', icon: icons.payroll },
+    { name: 'Payroll', page: 'payroll', group: 'Finance', icon: icons.payroll },
+    { name: 'Financials', page: 'financials', group: 'Finance', icon: icons.payroll },
+    { name: 'Trip Profitability', page: 'trip_profitability', group: 'Finance', icon: icons.profitability },
+    { name: 'Fuel', page: 'fuel', group: 'Finance', icon: icons.fuel },
+    { name: 'IFTA', page: 'ifta', group: 'Finance', icon: icons.ifta },
+    { name: 'Reports', page: 'reports', group: 'Finance', icon: icons.reports },
+    { name: 'AI Advisor', page: 'ai_advisor', group: 'Finance', icon: icons.ai_advisor },
+    { name: 'Compliance', page: 'compliance', group: 'Operations', icon: icons.compliance },
+    { name: 'Maintenance', page: 'maintenance', group: 'Operations', icon: icons.maintenance },
+    { name: 'Applications', page: 'applications', group: 'Operations', icon: icons.compliance },
+    { name: 'Settings', page: 'settings', group: 'Settings', icon: icons.settings },
+    { name: 'Users', page: 'users', group: 'Settings', icon: icons.drivers },
+    { name: 'Activity Log', page: 'activity_log', group: 'Settings', icon: icons.reports },
+    { name: 'Live Map', page: 'live_map', group: 'Pages', icon: icons.live_map },
+    { name: 'Team Chat', page: 'team_chat', group: 'Pages', icon: icons.chat },
   ];
 
-  const matchedPages = pages.filter(p => p.name.toLowerCase().includes(query));
-
-  if (matchedPages.length === 0) {
-    results.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:20px">No results found</div>';
+  if (!q) {
+    // Show recent items
+    if (recentNavHistory.length > 0) {
+      const recentItems = recentNavHistory.map(pageId => allPages.find(p => p.page === pageId)).filter(Boolean);
+      if (recentItems.length > 0) {
+        let html = '<div class="command-palette-group">Recent</div>';
+        html += recentItems.map((p, i) =>
+          `<div class="command-palette-item${i === 0 ? ' selected' : ''}" data-page="${p.page}">
+            <span class="item-icon">${p.icon || ''}</span>
+            <span>${escapeHtml(p.name)}</span>
+          </div>`
+        ).join('');
+        results.innerHTML = html;
+        attachCommandPaletteItemHandlers();
+        return;
+      }
+    }
+    results.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted)">Type to search pages, orders, trips...</div>';
     return;
   }
 
-  results.innerHTML = matchedPages.map((p, i) => `
-    <div class="quick-search-item${i === 0 ? ' selected' : ''}" data-page="${p.page}"
-         style="padding:12px 16px;cursor:pointer;border-radius:var(--radius);display:flex;align-items:center;gap:12px;${i === 0 ? 'background:var(--primary-light)' : ''}"
-         onmouseover="this.style.background='var(--bg-hover)';selectQuickSearchItem(this)"
-         onclick="navigateFromQuickSearch('${p.page}')">
-      <span style="font-size:20px">${p.icon}</span>
-      <span style="font-weight:500">${escapeHtml(p.name)}</span>
-    </div>
-  `).join('');
+  let html = '';
+  let totalItems = 0;
+
+  // Search pages
+  const matchedPages = allPages.filter(p => p.name.toLowerCase().includes(q));
+  if (matchedPages.length > 0) {
+    html += '<div class="command-palette-group">Pages</div>';
+    matchedPages.forEach(p => {
+      html += `<div class="command-palette-item${totalItems === 0 ? ' selected' : ''}" data-page="${p.page}">
+        <span class="item-icon">${p.icon || ''}</span>
+        <span>${escapeHtml(p.name)}</span>
+        <span class="item-hint">${p.group}</span>
+      </div>`;
+      totalItems++;
+    });
+  }
+
+  // Search entities (orders by VIN/number, trips by number, drivers by name)
+  if (typeof appData !== 'undefined' && q.length >= 2) {
+    // Search orders
+    const matchedOrders = (appData.orders || []).filter(o => {
+      const searchStr = [o.order_number, o.vin, o.year, o.make, o.model].filter(Boolean).join(' ').toLowerCase();
+      return searchStr.includes(q);
+    }).slice(0, 5);
+
+    if (matchedOrders.length > 0) {
+      html += '<div class="command-palette-group">Orders</div>';
+      matchedOrders.forEach(o => {
+        const label = [o.order_number, o.year, o.make, o.model].filter(Boolean).join(' ');
+        html += `<div class="command-palette-item${totalItems === 0 ? ' selected' : ''}" data-page="orders" data-entity-type="order" data-entity-id="${o.id}">
+          <span class="item-icon">${icons.orders || ''}</span>
+          <span>${escapeHtml(label)}</span>
+        </div>`;
+        totalItems++;
+      });
+    }
+
+    // Search trips
+    const matchedTrips = (appData.trips || []).filter(t => {
+      const searchStr = [t.trip_number, t.status].filter(Boolean).join(' ').toLowerCase();
+      return searchStr.includes(q);
+    }).slice(0, 5);
+
+    if (matchedTrips.length > 0) {
+      html += '<div class="command-palette-group">Trips</div>';
+      matchedTrips.forEach(t => {
+        html += `<div class="command-palette-item${totalItems === 0 ? ' selected' : ''}" data-page="trips" data-entity-type="trip" data-entity-id="${t.id}">
+          <span class="item-icon">${icons.trips || ''}</span>
+          <span>Trip ${escapeHtml(t.trip_number || '')}</span>
+          <span class="item-hint">${escapeHtml(t.status || '')}</span>
+        </div>`;
+        totalItems++;
+      });
+    }
+
+    // Search drivers
+    const matchedDrivers = (appData.drivers || []).filter(d => {
+      const name = ((d.first_name || '') + ' ' + (d.last_name || '')).toLowerCase();
+      return name.includes(q);
+    }).slice(0, 5);
+
+    if (matchedDrivers.length > 0) {
+      html += '<div class="command-palette-group">Drivers</div>';
+      matchedDrivers.forEach(d => {
+        html += `<div class="command-palette-item${totalItems === 0 ? ' selected' : ''}" data-page="drivers" data-entity-type="driver" data-entity-id="${d.id}">
+          <span class="item-icon">${icons.drivers || ''}</span>
+          <span>${escapeHtml((d.first_name || '') + ' ' + (d.last_name || ''))}</span>
+        </div>`;
+        totalItems++;
+      });
+    }
+
+    // Search brokers
+    const matchedBrokers = (appData.brokers || []).filter(b => {
+      const name = (b.name || '').toLowerCase();
+      return name.includes(q);
+    }).slice(0, 5);
+
+    if (matchedBrokers.length > 0) {
+      html += '<div class="command-palette-group">Brokers</div>';
+      matchedBrokers.forEach(b => {
+        html += `<div class="command-palette-item${totalItems === 0 ? ' selected' : ''}" data-page="brokers" data-entity-type="broker" data-entity-id="${b.id}">
+          <span class="item-icon">${icons.brokers || ''}</span>
+          <span>${escapeHtml(b.name || '')}</span>
+        </div>`;
+        totalItems++;
+      });
+    }
+  }
+
+  if (totalItems === 0) {
+    html = '<div style="padding:20px;text-align:center;color:var(--text-muted)">No results found</div>';
+  }
+
+  results.innerHTML = html;
+  attachCommandPaletteItemHandlers();
 }
 
-function handleQuickSearchNav(e) {
-  const results = document.getElementById('quickSearchResults');
-  const items = results.querySelectorAll('.quick-search-item');
-  const selected = results.querySelector('.quick-search-item.selected');
+function attachCommandPaletteItemHandlers() {
+  document.querySelectorAll('.command-palette-item').forEach(item => {
+    item.addEventListener('click', () => executeCommandPaletteItem(item));
+    item.addEventListener('mouseenter', () => {
+      document.querySelectorAll('.command-palette-item').forEach(i => i.classList.remove('selected'));
+      item.classList.add('selected');
+    });
+  });
+}
+
+function handleCommandPaletteNav(e) {
+  const results = document.getElementById('cmdPaletteResults');
+  const items = results.querySelectorAll('.command-palette-item');
+  const selected = results.querySelector('.command-palette-item.selected');
 
   if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
     e.preventDefault();
@@ -297,29 +451,38 @@ function handleQuickSearchNav(e) {
     let idx = Array.from(items).indexOf(selected);
     idx = e.key === 'ArrowDown' ? Math.min(idx + 1, items.length - 1) : Math.max(idx - 1, 0);
 
-    items.forEach(i => { i.classList.remove('selected'); i.style.background = ''; });
+    items.forEach(i => i.classList.remove('selected'));
     items[idx].classList.add('selected');
-    items[idx].style.background = 'var(--primary-light)';
     items[idx].scrollIntoView({ block: 'nearest' });
   }
 
   if (e.key === 'Enter' && selected) {
     e.preventDefault();
-    navigateFromQuickSearch(selected.dataset.page);
+    executeCommandPaletteItem(selected);
+  }
+
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    document.querySelector('.command-palette-overlay')?.remove();
   }
 }
 
-function selectQuickSearchItem(item) {
-  document.querySelectorAll('.quick-search-item').forEach(i => {
-    i.classList.remove('selected');
-    i.style.background = '';
-  });
-  item.classList.add('selected');
-  item.style.background = 'var(--primary-light)';
+function executeCommandPaletteItem(item) {
+  const page = item.dataset.page;
+  document.querySelector('.command-palette-overlay')?.remove();
+
+  if (page && typeof navigate === 'function') {
+    addToRecentNav(page);
+    navigate(page);
+  }
 }
 
+// Keep backward compat for old quick search functions
+function handleQuickSearch(e) { renderCommandPaletteResults(e.target.value); }
+function handleQuickSearchNav(e) { handleCommandPaletteNav(e); }
+function selectQuickSearchItem(item) {}
 function navigateFromQuickSearch(page) {
-  document.querySelector('.quick-search-overlay')?.remove();
+  document.querySelector('.command-palette-overlay')?.remove();
   if (typeof navigate === 'function') navigate(page);
 }
 
@@ -353,40 +516,39 @@ function showKeyboardShortcutsHelp() {
   const existing = document.querySelector('.shortcuts-help-overlay');
   if (existing) { existing.remove(); return; }
 
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  const mod = isMac ? 'Cmd' : 'Ctrl';
+
+  const shortcuts = [
+    ['Command Palette', mod + ' + K  or  /'],
+    ['New Item', mod + ' + N'],
+    ['Go to Dashboard', 'G then D'],
+    ['Go to Trips', 'G then T'],
+    ['Go to Orders', 'G then O'],
+    ['Go to Fleet', 'G then F'],
+    ['Go to Billing', 'G then B'],
+    ['New Order', 'N then O'],
+    ['New Trip', 'N then T'],
+    ['Close Modal', 'Esc'],
+    ['Show This Help', '?'],
+  ];
+
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay shortcuts-help-overlay';
   overlay.innerHTML = `
     <div class="modal" style="max-width:450px">
       <div class="modal-header">
-        <h3>⌨️ Keyboard Shortcuts</h3>
-        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+        <h3>Keyboard Shortcuts</h3>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
       </div>
       <div style="padding:20px">
-        <div style="display:grid;gap:12px">
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
-            <span>Quick Search</span><kbd style="background:var(--bg-tertiary);padding:4px 8px;border-radius:4px;font-family:monospace">Ctrl + K</kbd>
-          </div>
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
-            <span>New Item</span><kbd style="background:var(--bg-tertiary);padding:4px 8px;border-radius:4px;font-family:monospace">Ctrl + N</kbd>
-          </div>
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
-            <span>Go to Dashboard</span><kbd style="background:var(--bg-tertiary);padding:4px 8px;border-radius:4px;font-family:monospace">Ctrl + Shift + D</kbd>
-          </div>
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
-            <span>Go to Trips</span><kbd style="background:var(--bg-tertiary);padding:4px 8px;border-radius:4px;font-family:monospace">Ctrl + Shift + T</kbd>
-          </div>
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
-            <span>Quick Navigate</span><kbd style="background:var(--bg-tertiary);padding:4px 8px;border-radius:4px;font-family:monospace">1 - 9</kbd>
-          </div>
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
-            <span>Close Modal</span><kbd style="background:var(--bg-tertiary);padding:4px 8px;border-radius:4px;font-family:monospace">Esc</kbd>
-          </div>
-          <div style="display:flex;justify-content:space-between;padding:8px 0">
-            <span>Show This Help</span><kbd style="background:var(--bg-tertiary);padding:4px 8px;border-radius:4px;font-family:monospace">?</kbd>
-          </div>
-        </div>
-        <div style="margin-top:16px;font-size:12px;color:var(--text-muted);text-align:center">
-          Use <strong>Cmd</strong> instead of Ctrl on Mac
+        <div style="display:grid;gap:8px">
+          ${shortcuts.map(([label, keys]) => `
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+              <span>${label}</span>
+              <kbd style="background:var(--bg-tertiary);padding:4px 8px;border-radius:4px;font-family:monospace;font-size:12px">${keys}</kbd>
+            </div>
+          `).join('')}
         </div>
       </div>
     </div>
@@ -397,17 +559,14 @@ function showKeyboardShortcutsHelp() {
 
 // ============ GLOBAL ERROR HANDLERS ============
 
-// Catch unhandled errors to prevent silent failures
 window.onerror = function(message, source, lineno, colno, error) {
   console.error('Unhandled error:', message, 'at', source, lineno + ':' + colno);
-  // Show user-friendly message
   if (typeof showToast === 'function') {
     showToast('Something went wrong. Please try again or refresh the page.', 'error');
   }
-  return false; // Let error propagate for debugging
+  return false;
 };
 
-// Catch unhandled promise rejections
 window.addEventListener('unhandledrejection', function(event) {
   console.error('Unhandled promise rejection:', event.reason);
   if (typeof showToast === 'function') {
@@ -417,9 +576,6 @@ window.addEventListener('unhandledrejection', function(event) {
 
 // ============ TABLE SCROLL INDICATORS ============
 
-/**
- * Initialize scroll indicators for responsive tables
- */
 function initTableScrollIndicators() {
   document.querySelectorAll('.table-wrapper').forEach(wrapper => {
     const updateScrollIndicators = () => {
@@ -431,6 +587,17 @@ function initTableScrollIndicators() {
     wrapper.addEventListener('scroll', updateScrollIndicators);
     updateScrollIndicators();
   });
+}
+
+// ============ SYNC HEARTBEAT ============
+
+function pulseSyncDot() {
+  const dot = document.getElementById('syncDot');
+  if (dot) {
+    dot.classList.remove('pulse');
+    void dot.offsetWidth; // trigger reflow
+    dot.classList.add('pulse');
+  }
 }
 
 // ============ SVG ICONS ============

@@ -1,16 +1,29 @@
 /* ============================================================
    HORIZON STAR TMS - CSS Variables & Theming
+   Design System v2 — Green brand, Zinc surfaces
    ============================================================ */
 
 :root {
-  /* Primary Colors - Horizon Star Green */
+  /* Brand Colors — Green primary */
   --primary: #22c55e;
   --primary-hover: #16a34a;
   --primary-light: rgba(34, 197, 94, 0.12);
   --primary-dark: #15803d;
   --secondary: #64748b;
+  --purple: #a855f7;
 
-  /* Status Colors */
+  /* Semantic Brand Palette */
+  --green: #22c55e;
+  --green-dim: rgba(34, 197, 94, 0.12);
+  --blue: #3b82f6;
+  --blue-dim: rgba(59, 130, 246, 0.12);
+  --amber: #f59e0b;
+  --amber-dim: rgba(245, 158, 11, 0.12);
+  --red: #ef4444;
+  --red-dim: rgba(239, 68, 68, 0.12);
+  --purple-dim: rgba(168, 85, 247, 0.12);
+
+  /* Status Colors (backward-compat aliases) */
   --success: #22c55e;
   --success-light: rgba(34, 197, 94, 0.12);
   --warning: #f59e0b;
@@ -20,27 +33,34 @@
   --info: #3b82f6;
   --info-light: rgba(59, 130, 246, 0.12);
 
-  /* Light Theme Backgrounds (Default) */
-  --bg-primary: #f8fafc;
+  /* Light Theme Backgrounds — Warm Neutral */
+  --bg-primary: #f5f5f7;
   --bg-secondary: #ffffff;
-  --bg-tertiary: #f1f5f9;
+  --bg-tertiary: #f0f0f2;
   --bg-card: #ffffff;
-  --bg-hover: #f1f5f9;
-  --bg-darker: #e2e8f0;
+  --bg-card-hover: #f3f4f6;
+  --bg-hover: #f5f5f7;
+  --bg-darker: #e5e5e7;
+  --bg-elevated: #e5e7eb;
+  --bg-float: #d4d4d8;
+
+  /* Backward-compat aliases */
+  --bg-app: var(--bg-primary);
 
   /* Text Colors */
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
 
   /* Borders */
-  --border: #e2e8f0;
-  --border-light: #f1f5f9;
+  --border: rgba(0,0,0,0.08);
+  --border-light: rgba(0,0,0,0.04);
+  --border-active: rgba(34, 197, 94, 0.4);
 
-  /* Shadows - 3 depth levels */
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md: 0 2px 4px rgba(0,0,0,0.08);
-  --shadow-lg: 0 4px 8px rgba(0,0,0,0.10);
+  /* Shadows - Softer, more diffused */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
 
   /* Backward-compatible shadow mappings */
   --shadow-xs: var(--shadow-sm);
@@ -54,32 +74,69 @@
   --shadow-glow-blue: none;
   --shadow-inner-glow: none;
 
-  /* Gradients */
+  /* Gradients — Green brand */
   --accent-gradient: #22c55e;
   --gradient-primary: #22c55e;
   --gradient-primary-hover: #16a34a;
   --gradient-secondary: #3b82f6;
   --gradient-warning: #f59e0b;
   --gradient-danger: #ef4444;
-  --gradient-purple: #8b5cf6;
-  --gradient-sidebar: #1a2f2a;
+  --gradient-purple: #a855f7;
+  --gradient-sidebar: #111113;
   --gradient-card: var(--bg-card);
 
-  /* Glass Effect - neutralized to solid values */
+  /* Glass Effect */
   --glass-bg: var(--bg-card);
   --glass-border: var(--border);
   --glass-blur: none;
 
   /* Border Radius */
-  --radius-sm: 6px;
-  --radius: 10px;
-  --radius-lg: 14px;
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
   --radius-xl: 20px;
 
   /* Layout */
   --sidebar-width: 240px;
   --sidebar-collapsed-width: 72px;
   --header-height: 64px;
+
+  /* Spacing Scale (4px base) */
+  --space-0-5: 2px;
+  --space-1: 4px;
+  --space-1-5: 6px;
+  --space-2: 8px;
+  --space-2-5: 10px;
+  --space-3: 12px;
+  --space-3-5: 14px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* Typography */
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 28px;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-heavy: 800;
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.6;
 
   /* Animation */
   --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -91,34 +148,68 @@
   --duration-fast: 150ms;
   --duration-normal: 250ms;
   --duration-slow: 400ms;
+
+  /* Icon defaults */
+  --icon-default: var(--text-secondary);
 }
 
 /* ============================================================
-   DARK THEME
+   DARK THEME — Zinc-based, 4-level surface hierarchy
+   Level 0 Canvas: --bg-primary (#09090b)
+   Level 1 Card:   --bg-card (#18181b)
+   Level 2 Elevated: --bg-elevated (#27272a)
+   Level 3 Float:  --bg-float (#3f3f46)
    ============================================================ */
 
 body.dark-theme {
-  --bg-primary: #0c1520;
-  --bg-secondary: #111c2a;
-  --bg-tertiary: #1a2735;
-  --bg-card: #151f2c;
-  --bg-hover: #1e2d3d;
-  --bg-darker: #0a1018;
-  --text-primary: #f1f5f9;
-  --text-secondary: #e2e8f0;
-  --text-muted: #cbd5e1;
-  --border: #1e3a4a;
-  --border-light: #1a2f3d;
-  --primary-light: rgba(16, 185, 129, 0.15);
-  --success-light: rgba(16, 185, 129, 0.15);
+  /* Surface hierarchy */
+  --bg-primary: #09090b;
+  --bg-secondary: #18181b;
+  --bg-tertiary: #27272a;
+  --bg-card: #18181b;
+  --bg-card-hover: #1f1f23;
+  --bg-hover: #27272a;
+  --bg-darker: #09090b;
+  --bg-elevated: #27272a;
+  --bg-float: #3f3f46;
+
+  /* Text — improved contrast */
+  --text-primary: #ececf0;
+  --text-secondary: #a1a1aa;
+  --text-muted: #82828c; /* Brightened from #71717a for WCAG AA */
+
+  /* Borders */
+  --border: rgba(255,255,255,0.06);
+  --border-light: rgba(255,255,255,0.03);
+  --border-active: rgba(34, 197, 94, 0.4);
+
+  /* Primary tints for dark */
+  --primary-light: rgba(34, 197, 94, 0.15);
+  --success-light: rgba(34, 197, 94, 0.15);
   --warning-light: rgba(245, 158, 11, 0.15);
   --danger-light: rgba(239, 68, 68, 0.15);
   --info-light: rgba(59, 130, 246, 0.15);
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
-  --shadow-md: 0 2px 4px rgba(0,0,0,0.4);
-  --shadow-lg: 0 4px 8px rgba(0,0,0,0.5);
+
+  /* Brand dim colors for dark */
+  --green-dim: rgba(34, 197, 94, 0.15);
+  --blue-dim: rgba(59, 130, 246, 0.15);
+  --amber-dim: rgba(245, 158, 11, 0.15);
+  --red-dim: rgba(239, 68, 68, 0.15);
+  --purple-dim: rgba(168, 85, 247, 0.15);
+
+  /* Dark shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4), 0 2px 4px -2px rgba(0,0,0,0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5), 0 4px 6px -4px rgba(0,0,0,0.3);
   --shadow-card: var(--shadow-sm);
   --shadow-card-hover: var(--shadow-md);
+
+  /* Glow tokens — active in dark mode */
+  --shadow-glow-green: 0 0 12px rgba(34,197,94,0.15);
+  --shadow-glow-blue: 0 0 12px rgba(59,130,246,0.15);
+  --shadow-inner-glow: inset 0 1px 0 rgba(255,255,255,0.04);
+
+  /* Glass */
   --glass-bg: var(--bg-card);
   --glass-border: var(--border);
   --gradient-card: var(--bg-card);
