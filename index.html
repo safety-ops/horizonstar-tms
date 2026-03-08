@@ -33268,7 +33268,6 @@
       doc.setFontSize(8);
       doc.setTextColor(...medGray);
       doc.setFont('helvetica', 'normal');
-      const cp = getCompanyProfile();
       doc.text(cp.name + ' | ' + cp.phone + ' | ' + cp.email_settlements, pageWidth / 2, footerY, { align: 'center' });
       doc.text('Generated: ' + new Date().toLocaleString(), pageWidth / 2, footerY + 4, { align: 'center' });
 
