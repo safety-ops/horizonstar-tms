@@ -842,7 +842,7 @@
                 </div>
 
                 <!-- Price/Payment/Broker Fee Row -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                   <div>
                     <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Price ($)</label>
                     <input type="number" id="tms-revenue" value="${escapeAttr(loadData.revenue)}" style="
@@ -885,6 +885,19 @@
                       box-sizing: border-box;
                     ">
                   </div>
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Local Fee ($)</label>
+                    <input type="number" id="tms-local-fee" value="" placeholder="0.00" style="
+                      width: 100%;
+                      padding: 8px 12px;
+                      background: #0f172a;
+                      border: 1px solid #334155;
+                      border-radius: 6px;
+                      color: #e2e8f0;
+                      font-size: 14px;
+                      box-sizing: border-box;
+                    ">
+                  </div>
                 </div>
 
                 <!-- Payment Terms (shown for BILL and SPLIT only) -->
@@ -909,6 +922,8 @@
                     <option value="NET30" ${loadData.payment_terms === 'NET30' || !loadData.payment_terms ? 'selected' : ''}>Net 30</option>
                     <option value="NET45" ${loadData.payment_terms === 'NET45' ? 'selected' : ''}>Net 45</option>
                     <option value="NET60" ${loadData.payment_terms === 'NET60' ? 'selected' : ''}>Net 60</option>
+                    <option value="COLLECT_AT_DELIVERY" ${loadData.payment_terms === 'COLLECT_AT_DELIVERY' ? 'selected' : ''}>Collect At Delivery</option>
+                    <option value="COLLECT_AT_PICKUP" ${loadData.payment_terms === 'COLLECT_AT_PICKUP' ? 'selected' : ''}>Collect At Pick Up</option>
                   </select>
                 </div>
 
@@ -1350,6 +1365,7 @@
         })(),
         revenue: parseFloat(document.getElementById('tms-revenue').value) || 0,
         broker_fee: parseFloat(document.getElementById('tms-broker-fee')?.value) || null,
+        local_fee: parseFloat(document.getElementById('tms-local-fee')?.value) || null,
         payment_type: document.getElementById('tms-payment-type').value,
         payment_terms: (() => {
           const pt = document.getElementById('tms-payment-type').value;
