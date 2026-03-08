@@ -5809,16 +5809,59 @@
       .detail-stats .stat-card { min-width: unset !important; padding: 10px 12px !important; }
       .detail-stats .stat-card .value { font-size: 16px !important; }
 
-      /* --- Order card rows — keep side-by-side --- */
+      /* --- Order cards — compact on mobile --- */
+      .order-list-item {
+        padding: 10px 12px !important;
+      }
+
+      /* Header row: keep nowrap, truncate overflow */
+      .order-list-item > div:first-child {
+        flex-wrap: nowrap !important;
+        overflow: hidden;
+      }
+
+      /* Truncate long text in all order card rows */
+      .order-list-item span {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+
+      /* Revenue pushed right — don't shrink */
+      .order-list-item .money {
+        flex-shrink: 0 !important;
+      }
+
+      /* Hide payment type and trip label on mobile to save space */
+      .order-list-item > div:first-child > span:nth-child(4),
+      .order-list-item > div:first-child > span:nth-child(5) {
+        display: none !important;
+      }
+
+      /* Action buttons — smaller */
+      .order-list-item .action-btn {
+        padding: 4px 7px !important;
+        font-size: 11px !important;
+      }
+
+      /* Dispatcher notes — clamp to 1 line */
+      .order-list-item [style*="dim-amber"] {
+        max-height: 28px !important;
+        overflow: hidden !important;
+      }
+
+      /* Tighter vertical spacing between rows */
+      .order-list-item > div {
+        margin-top: 3px !important;
+      }
+      .order-list-item > div:first-child {
+        margin-top: 0 !important;
+      }
+
+      /* All order card flex rows stay nowrap */
       .order-list-item [style*="display:flex"],
       .order-list-item [style*="display: flex"] {
         flex-wrap: nowrap !important;
-      }
-      .order-list-item [style*="display:flex"] > span,
-      .order-list-item [style*="display: flex"] > span {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
       }
 
       /* --- Chat header --- */
@@ -10339,7 +10382,7 @@
     // ============ PAGINATION STATE ============
     const pagination = {
       trips: { page: 1, perPage: 50, total: 0 },
-      orders: { page: 1, perPage: 50, total: 0 },
+      orders: { page: 1, perPage: 25, total: 0 },
       maintenance: { page: 1, perPage: 50, total: 0 },
       expenses: { page: 1, perPage: 50, total: 0 },
       activity_log: { page: 1, perPage: 100, total: 0 }
@@ -21939,6 +21982,7 @@
     // Debounced search functions
     const debouncedOrderSearch = debounce((value) => {
       ordersFilter.search = value;
+      pagination.orders.page = 1;
       renderOrders(document.getElementById('main-content'));
       const si = document.getElementById('orderSearch');
       if (si) { si.focus(); si.setSelectionRange(si.value.length, si.value.length); }
@@ -22007,6 +22051,14 @@
         filteredOrders = filteredOrders.filter(o => o.broker_name === ordersFilter.broker);
       }
 
+      // Paginate filtered results
+      const ordersTotalPages = Math.ceil(filteredOrders.length / pagination.orders.perPage) || 1;
+      if (pagination.orders.page > ordersTotalPages) pagination.orders.page = ordersTotalPages;
+      const paged = getPaginatedData(filteredOrders, 'orders');
+      const pagedOrders = paged.data;
+      const showStart = filteredOrders.length === 0 ? 0 : (paged.page - 1) * paged.perPage + 1;
+      const showEnd = Math.min(paged.page * paged.perPage, paged.total);
+
       // Get unique brokers for filter
       const uniqueBrokers = [...new Set(yearFilteredOrders.map(o => o.broker_name).filter(b => b))];
       const brokerOptions = uniqueBrokers.map(b => '<option value="' + b + '"' + (ordersFilter.broker === b ? ' selected' : '') + '>' + b + '</option>').join('');
@@ -22039,21 +22091,21 @@
         '<button onclick="localStorage.setItem(\'ordersViewMode\',\'table\');renderOrders(document.getElementById(\'main-content\'))" style="' + viewBtnBase + 'background:' + (ordersViewMode==='table' ? 'var(--primary)' : 'transparent') + ';color:' + (ordersViewMode==='table' ? 'white' : 'var(--text-secondary)') + ';" title="Table view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>' +
         '</div>';
 
-      c.innerHTML = '<div class="header"><h2>Vehicles / Orders</h2><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:8px;background:var(--surface-elevated);padding:8px 12px;border-radius:6px;border:1px solid var(--border)"><label style="font-weight:600;color:var(--text-secondary);font-size:13px">Year:</label><select onchange="ordersYear=parseInt(this.value);renderOrders(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px">' + ordersYearOptions + '</select></div><span style="font-size:12px;background:var(--dim-blue);color:var(--info);padding:6px 10px;border-radius:999px;font-weight:600;border:1px solid var(--info-border)">Year ' + ordersYear + '</span>' + (undatedOrderCount > 0 ? '<span style="font-size:12px;background:var(--dim-amber);color:var(--warning);padding:6px 10px;border-radius:999px;font-weight:600;border:1px solid var(--warning-border)">Undated excluded: ' + undatedOrderCount + '</span>' : '') + viewToggleHtml + '<button class="btn btn-secondary" onclick="exportOrders()">[[icon:download]] Export</button><button class="btn" style="background:#8b5cf6;color:white" onclick="openCreateNewLoad()">[[icon:file]] AI Import</button><button class="btn btn-primary" onclick="openOrderWizard()">+ New Order</button><button class="btn btn-secondary" id="bulkDeleteBtn" style="display:none;background:#fee2e2;color:#dc2626;border-color:#fecaca" onclick="bulkDeleteOrders()">[[icon:trash]] Delete Selected (<span id="selectedCount">0</span>)</button></div></div>' +
+      c.innerHTML = '<div class="header"><h2>Vehicles / Orders</h2><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:8px;background:var(--surface-elevated);padding:8px 12px;border-radius:6px;border:1px solid var(--border)"><label style="font-weight:600;color:var(--text-secondary);font-size:13px">Year:</label><select onchange="ordersYear=parseInt(this.value);pagination.orders.page=1;renderOrders(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px">' + ordersYearOptions + '</select></div><span style="font-size:12px;background:var(--dim-blue);color:var(--info);padding:6px 10px;border-radius:999px;font-weight:600;border:1px solid var(--info-border)">Year ' + ordersYear + '</span>' + (undatedOrderCount > 0 ? '<span style="font-size:12px;background:var(--dim-amber);color:var(--warning);padding:6px 10px;border-radius:999px;font-weight:600;border:1px solid var(--warning-border)">Undated excluded: ' + undatedOrderCount + '</span>' : '') + viewToggleHtml + '<button class="btn btn-secondary" onclick="exportOrders()">[[icon:download]] Export</button><button class="btn" style="background:#8b5cf6;color:white" onclick="openCreateNewLoad()">[[icon:file]] AI Import</button><button class="btn btn-primary" onclick="openOrderWizard()">+ New Order</button><button class="btn btn-secondary" id="bulkDeleteBtn" style="display:none;background:#fee2e2;color:#dc2626;border-color:#fecaca" onclick="bulkDeleteOrders()">[[icon:trash]] Delete Selected (<span id="selectedCount">0</span>)</button></div></div>' +
 
         // Search and Filters
         '<div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap;align-items:center;background:#f8fafc;padding:16px;border-radius:8px">' +
         '<div style="flex:1;min-width:200px"><input type="text" id="orderSearch" placeholder="[[icon:search]] Search by Order ID, Broker, or Vehicle..." value="' + ordersFilter.search + '" oninput="debouncedOrderSearch(this.value)" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:6px;font-size:14px"></div>' +
-        '<div style="display:flex;align-items:center;gap:8px"><label style="font-weight:600;color:var(--text-secondary)">Status:</label><select onchange="ordersFilter.status=this.value;renderOrders(document.getElementById(\'main-content\'))" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px"><option value="all"' + (ordersFilter.status === 'all' ? ' selected' : '') + '>All</option><option value="unassigned"' + (ordersFilter.status === 'unassigned' ? ' selected' : '') + '>Unassigned</option><option value="assigned"' + (ordersFilter.status === 'assigned' ? ' selected' : '') + '>Assigned</option><option value="PENDING"' + (ordersFilter.status === 'PENDING' ? ' selected' : '') + '>New</option><option value="IN_TRANSIT"' + (ordersFilter.status === 'IN_TRANSIT' ? ' selected' : '') + '>Picked Up</option><option value="DELIVERED"' + (ordersFilter.status === 'DELIVERED' ? ' selected' : '') + '>Delivered</option></select></div>' +
-        '<div style="display:flex;align-items:center;gap:8px"><label style="font-weight:600;color:var(--text-secondary)">Dispatcher:</label><select onchange="ordersFilter.dispatcher=this.value;renderOrders(document.getElementById(\'main-content\'))" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px"><option value="all"' + (ordersFilter.dispatcher === 'all' ? ' selected' : '') + '>All</option>' + dispatcherOptions + '</select></div>' +
-        '<div style="display:flex;align-items:center;gap:8px"><label style="font-weight:600;color:var(--text-secondary)">Driver:</label><select onchange="ordersFilter.driver=this.value;renderOrders(document.getElementById(\'main-content\'))" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px"><option value="all"' + (ordersFilter.driver === 'all' ? ' selected' : '') + '>All</option>' + driverOptions + '</select></div>' +
-        '<div style="display:flex;align-items:center;gap:8px"><label style="font-weight:600;color:var(--text-secondary)">Broker:</label><select onchange="ordersFilter.broker=this.value;renderOrders(document.getElementById(\'main-content\'))" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px"><option value="all"' + (ordersFilter.broker === 'all' ? ' selected' : '') + '>All Brokers</option>' + brokerOptions + '</select></div>' +
-        '<button class="btn btn-secondary" style="padding:8px 16px" onclick="ordersFilter={search:\'\',status:\'all\',broker:\'all\',dispatcher:\'all\',driver:\'all\'};renderOrders(document.getElementById(\'main-content\'))">Clear</button>' +
-        '<span style="color:var(--text-secondary);font-size:13px">Showing ' + filteredOrders.length + ' of ' + yearFilteredOrders.length + '</span>' +
+        '<div style="display:flex;align-items:center;gap:8px"><label style="font-weight:600;color:var(--text-secondary)">Status:</label><select onchange="ordersFilter.status=this.value;pagination.orders.page=1;renderOrders(document.getElementById(\'main-content\'))" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px"><option value="all"' + (ordersFilter.status === 'all' ? ' selected' : '') + '>All</option><option value="unassigned"' + (ordersFilter.status === 'unassigned' ? ' selected' : '') + '>Unassigned</option><option value="assigned"' + (ordersFilter.status === 'assigned' ? ' selected' : '') + '>Assigned</option><option value="PENDING"' + (ordersFilter.status === 'PENDING' ? ' selected' : '') + '>New</option><option value="IN_TRANSIT"' + (ordersFilter.status === 'IN_TRANSIT' ? ' selected' : '') + '>Picked Up</option><option value="DELIVERED"' + (ordersFilter.status === 'DELIVERED' ? ' selected' : '') + '>Delivered</option></select></div>' +
+        '<div style="display:flex;align-items:center;gap:8px"><label style="font-weight:600;color:var(--text-secondary)">Dispatcher:</label><select onchange="ordersFilter.dispatcher=this.value;pagination.orders.page=1;renderOrders(document.getElementById(\'main-content\'))" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px"><option value="all"' + (ordersFilter.dispatcher === 'all' ? ' selected' : '') + '>All</option>' + dispatcherOptions + '</select></div>' +
+        '<div style="display:flex;align-items:center;gap:8px"><label style="font-weight:600;color:var(--text-secondary)">Driver:</label><select onchange="ordersFilter.driver=this.value;pagination.orders.page=1;renderOrders(document.getElementById(\'main-content\'))" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px"><option value="all"' + (ordersFilter.driver === 'all' ? ' selected' : '') + '>All</option>' + driverOptions + '</select></div>' +
+        '<div style="display:flex;align-items:center;gap:8px"><label style="font-weight:600;color:var(--text-secondary)">Broker:</label><select onchange="ordersFilter.broker=this.value;pagination.orders.page=1;renderOrders(document.getElementById(\'main-content\'))" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px"><option value="all"' + (ordersFilter.broker === 'all' ? ' selected' : '') + '>All Brokers</option>' + brokerOptions + '</select></div>' +
+        '<button class="btn btn-secondary" style="padding:8px 16px" onclick="ordersFilter={search:\'\',status:\'all\',broker:\'all\',dispatcher:\'all\',driver:\'all\'};pagination.orders.page=1;renderOrders(document.getElementById(\'main-content\'))">Clear</button>' +
+        '<span style="color:var(--text-secondary);font-size:13px">Showing ' + showStart + '-' + showEnd + ' of ' + filteredOrders.length + '</span>' +
         '</div>' +
         
         (ordersViewMode === 'table' ? (function() {
-          const tableRows = filteredOrders.map(o => {
+          const tableRows = pagedOrders.map(o => {
             const t = appData.trips.find(x => x.id === o.trip_id);
             const driver = t ? appData.drivers.find(d => d.id === t.driver_id) : null;
             const vehicle = [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).join(' ') || '-';
@@ -22093,9 +22145,9 @@
         '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;padding:8px 10px;border-bottom:1px solid var(--border)">' +
         '<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer"><input type="checkbox" id="selectAllOrders" onchange="toggleSelectAllOrders(this.checked)"> Select all visible</label>' +
         '</div>' +
-        (filteredOrders.length === 0 ? renderEmptyState('car', 'No orders found', 'Create your first order to start tracking deliveries', '+ New Order', 'openOrderWizard()') :
+        (pagedOrders.length === 0 ? renderEmptyState('car', 'No orders found', 'Create your first order to start tracking deliveries', '+ New Order', 'openOrderWizard()') :
         '<div style="display:flex;flex-direction:column;gap:10px">' +
-        filteredOrders.map(o => {
+        pagedOrders.map(o => {
           const t = appData.trips.find(x => x.id === o.trip_id);
           const driver = t ? appData.drivers.find(d => d.id === t.driver_id) : null;
           const noteTitle = (o.dispatcher_notes || '').replace(/"/g, '&quot;').replace(/\n/g, ' ');
@@ -22114,7 +22166,8 @@
           });
         }).join('') +
         '</div>') +
-        '</div>');
+        '</div>') +
+        renderPaginationControls('orders');
     }
 
     function toggleSelectAllOrders(checked) {
