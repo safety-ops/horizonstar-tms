@@ -308,22 +308,27 @@ h4 { font-size: var(--text-lg); }
 .card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
-  box-shadow: var(--shadow-card);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .card:hover {
-  box-shadow: var(--shadow-card-hover);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
+
+.card-compact { padding: 12px; }
+.card-flush { padding: 0; }
+.card-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border-light, var(--border)); }
+.card-row:last-child { border-bottom: none; }
 
 .stat-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
-  box-shadow: var(--shadow-card);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -358,6 +363,20 @@ h4 { font-size: var(--text-lg); }
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+
+/* --- Compact Text Utilities --- */
+.text-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.text-value { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.text-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.text-truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* --- Compact Badge --- */
+.badge-xs { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600; line-height: 1.2; }
+
+/* --- Action Buttons (compact) --- */
+.actions-row { display: flex; gap: 4px; }
+.action-btn-sm { padding: 4px 8px; font-size: 11px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-tertiary); cursor: pointer; transition: all 0.15s ease; color: var(--text-secondary); }
+.action-btn-sm:hover { background: var(--bg-hover); border-color: var(--primary); color: var(--primary); }
 
 .hero-card {
   background: var(--bg-card);
@@ -431,21 +450,27 @@ h4 { font-size: var(--text-lg); }
 }
 
 .data-table th {
-  padding: var(--space-3) var(--space-4);
+  padding: 10px 14px;
   text-align: left;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
+  background: var(--bg-tertiary);
 }
 
 .data-table td {
-  padding: var(--space-3) var(--space-4);
+  padding: 10px 14px;
   color: var(--text-primary);
   border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.data-table tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--bg-tertiary) 30%, transparent);
 }
 
 .data-table tbody tr {
@@ -481,8 +506,8 @@ h4 { font-size: var(--text-lg); }
 
 .page-header h1,
 .page-header h2 {
-  font-size: var(--text-2xl);
-  font-weight: 800;
+  font-size: 18px;
+  font-weight: 700;
   margin: 0;
 }
 
