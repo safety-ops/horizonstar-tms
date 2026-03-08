@@ -3,35 +3,6 @@
    Toast notifications, modals, theme, sidebar, loading states
    ============================================================ */
 
-// ============ THEME MANAGEMENT ============
-let isDarkTheme = localStorage.getItem('horizonstar_dark') === 'true';
-
-/**
- * Apply the current theme to the document
- */
-function applyTheme() {
-  if (isDarkTheme) {
-    document.body.classList.add('dark-theme');
-  } else {
-    document.body.classList.remove('dark-theme');
-  }
-}
-
-/**
- * Toggle between dark and light themes
- */
-function toggleDarkTheme() {
-  isDarkTheme = !isDarkTheme;
-  localStorage.setItem('horizonstar_dark', isDarkTheme);
-  applyTheme();
-  if (typeof switchLiveMapTiles === 'function') switchLiveMapTiles();
-  if (currentUser && typeof renderApp === 'function') {
-    renderApp();
-  } else if (typeof renderLogin === 'function') {
-    renderLogin();
-  }
-}
-
 // ============ TOAST NOTIFICATIONS ============
 
 /**
@@ -626,5 +597,3 @@ const icons = {
   live_map: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/></svg>'
 };
 
-// Apply theme on load
-applyTheme();

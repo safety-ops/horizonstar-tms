@@ -162,8 +162,6 @@ let protectedAccessGranted = false;
  * Render the login page
  */
 function renderLogin() {
-  applyTheme();
-
   // Generate 30 particles for animated background
   let particlesHtml = '<div class="login-particles">';
   for (let i = 1; i <= 30; i++) {

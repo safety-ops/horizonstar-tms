@@ -15,9 +15,6 @@ async function initApp() {
   // Initialize Supabase client
   initSupabase();
 
-  // Apply saved theme
-  applyTheme();
-
   // Check for existing session
   if (currentUser) {
     console.log('✅ User session found:', currentUser.email);
