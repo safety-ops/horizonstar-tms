@@ -75,7 +75,7 @@ const SESSION_TIMEOUT_MINUTES = 60; // 1 hour
 // ============ PAGINATION DEFAULT STATE ============
 const pagination = {
   trips: { page: 1, perPage: 50, total: 0 },
-  orders: { page: 1, perPage: 50, total: 0 },
+  orders: { page: 1, perPage: 25, total: 0 },
   maintenance: { page: 1, perPage: 50, total: 0 },
   expenses: { page: 1, perPage: 50, total: 0 },
   activity_log: { page: 1, perPage: 100, total: 0 }
