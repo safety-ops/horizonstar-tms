@@ -13,7 +13,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     handleImportLoad(request.data)
       .then(result => sendResponse(result))
       .catch(error => sendResponse({ success: false, error: error.message }));
-    return true; // Keep channel open for async response
+    return true;
   }
 
   if (request.action === 'getTrips') {
@@ -27,6 +27,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     testSupabaseConnection()
       .then(result => sendResponse(result))
       .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
+
+  if (request.action === 'getRecentImports') {
+    chrome.storage.local.get(['recentImports'], (result) => {
+      sendResponse({ success: true, imports: result.recentImports || [] });
+    });
     return true;
   }
 });
@@ -86,12 +93,12 @@ async function handleGetTrips() {
 }
 
 // Resolve broker name to broker_id, creating if needed
-async function resolveOrCreateBroker(brokerName, config) {
+async function resolveOrCreateBroker(brokerName, brokerDetails, config) {
   if (!brokerName) return { brokerId: null, brokerName: null };
 
   try {
     // Look up existing broker by name (case-insensitive)
-    const lookupUrl = `${config.url}/rest/v1/brokers?name=ilike.${encodeURIComponent(brokerName)}&select=id,name&limit=1`;
+    const lookupUrl = `${config.url}/rest/v1/brokers?name=ilike.${encodeURIComponent(brokerName)}&select=id,name,contact_name,phone,email&limit=1`;
     const lookupResponse = await fetch(lookupUrl, {
       headers: {
         'apikey': config.key,
@@ -102,12 +109,38 @@ async function resolveOrCreateBroker(brokerName, config) {
     if (lookupResponse.ok) {
       const brokers = await lookupResponse.json();
       if (brokers.length > 0) {
-        log('Found existing broker:', brokers[0].id, brokers[0].name);
-        return { brokerId: brokers[0].id, brokerName: brokers[0].name };
+        const existing = brokers[0];
+        log('Found existing broker:', existing.id, existing.name);
+
+        // PATCH to fill in any missing fields (don't overwrite existing data)
+        const patchData = {};
+        if (!existing.contact_name && brokerDetails.contact_name) patchData.contact_name = brokerDetails.contact_name;
+        if (!existing.phone && brokerDetails.phone) patchData.phone = brokerDetails.phone;
+        if (!existing.email && brokerDetails.email) patchData.email = brokerDetails.email;
+
+        if (Object.keys(patchData).length > 0) {
+          log('Enriching broker with missing fields:', patchData);
+          await fetch(`${config.url}/rest/v1/brokers?id=eq.${existing.id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': config.key,
+              'Authorization': `Bearer ${config.key}`
+            },
+            body: JSON.stringify(patchData)
+          });
+        }
+
+        return { brokerId: existing.id, brokerName: existing.name };
       }
     }
 
-    // Create new broker
+    // Create new broker with all available details
+    const createBody = { name: brokerName };
+    if (brokerDetails.contact_name) createBody.contact_name = brokerDetails.contact_name;
+    if (brokerDetails.phone) createBody.phone = brokerDetails.phone;
+    if (brokerDetails.email) createBody.email = brokerDetails.email;
+
     const createResponse = await fetch(`${config.url}/rest/v1/brokers`, {
       method: 'POST',
       headers: {
@@ -116,7 +149,7 @@ async function resolveOrCreateBroker(brokerName, config) {
         'Authorization': `Bearer ${config.key}`,
         'Prefer': 'return=representation'
       },
-      body: JSON.stringify({ name: brokerName })
+      body: JSON.stringify(createBody)
     });
 
     if (createResponse.ok) {
@@ -144,11 +177,18 @@ async function handleImportLoad(loadData) {
     throw new Error('Supabase API key not configured. Please open extension settings.');
   }
 
+  // Build broker details for enrichment
+  const brokerDetails = {
+    contact_name: loadData.broker_contact_name || null,
+    phone: loadData.broker_phone || null,
+    email: loadData.broker_email || null
+  };
+
   // Resolve broker name to broker_id
   let brokerId = null;
   let resolvedBrokerName = loadData.broker_name || null;
   if (resolvedBrokerName) {
-    const brokerResult = await resolveOrCreateBroker(resolvedBrokerName, config);
+    const brokerResult = await resolveOrCreateBroker(resolvedBrokerName, brokerDetails, config);
     brokerId = brokerResult.brokerId;
     resolvedBrokerName = brokerResult.brokerName || resolvedBrokerName;
   }
@@ -160,6 +200,8 @@ async function handleImportLoad(loadData) {
     broker_id: brokerId,
     broker_name: resolvedBrokerName,
     revenue: loadData.revenue || null,
+    broker_fee: loadData.broker_fee || null,
+    local_fee: loadData.local_fee || null,
     payment_type: loadData.payment_type || null,
     payment_terms: loadData.payment_terms || null,
     vehicle_year: loadData.vehicle_year || null,
@@ -167,24 +209,30 @@ async function handleImportLoad(loadData) {
     vehicle_model: loadData.vehicle_model || null,
     vehicle_vin: loadData.vehicle_vin || null,
     vehicle_color: loadData.vehicle_color || null,
+    vehicle_body_type: loadData.vehicle_body_type || null,
+    vehicle_lot_number: loadData.vehicle_lot_number || null,
+    vehicle_buyer_number: loadData.vehicle_buyer_number || null,
     origin: loadData.origin || null,
     pickup_full_address: loadData.pickup_full_address || null,
+    pickup_address: loadData.pickup_address || null,
     pickup_city: loadData.pickup_city || null,
     pickup_state: loadData.pickup_state || null,
     pickup_zip: loadData.pickup_zip || null,
     pickup_phone: loadData.pickup_phone || null,
     pickup_contact_name: loadData.pickup_contact_name || null,
-    pickup_contact_phone: loadData.pickup_phone || null,
+    pickup_contact_phone: loadData.pickup_contact_phone || loadData.pickup_phone || null,
     pickup_date: loadData.pickup_date || null,
     destination: loadData.destination || null,
     delivery_full_address: loadData.delivery_full_address || null,
+    delivery_address: loadData.delivery_address || null,
     delivery_city: loadData.delivery_city || null,
     delivery_state: loadData.delivery_state || null,
     delivery_zip: loadData.delivery_zip || null,
     delivery_phone: loadData.delivery_phone || null,
     delivery_contact_name: loadData.delivery_contact_name || null,
-    delivery_contact_phone: loadData.delivery_phone || null,
+    delivery_contact_phone: loadData.delivery_contact_phone || loadData.delivery_phone || null,
     dropoff_date: loadData.dropoff_date || null,
+    notes: loadData.notes || null,
     dispatcher_notes: loadData.dispatcher_notes || 'Imported from Central Dispatch',
     dispatcher_id: config.dispatcherId || null,
     delivery_status: 'pending',
@@ -192,7 +240,10 @@ async function handleImportLoad(loadData) {
     load_category: loadData.load_category || null,
     load_subcategory: loadData.load_subcategory || null,
     trip_id: loadData.trip_id || null,
-    vehicle_direction: loadData.vehicle_direction || null
+    vehicle_direction: loadData.vehicle_direction || null,
+    // SPLIT payment fields
+    cod_amount: loadData.cod_amount || null,
+    bill_amount: loadData.bill_amount || null
   };
 
   // Clean up null/empty values
@@ -246,6 +297,24 @@ async function handleImportLoad(loadData) {
 
   const result = await response.json();
   log('Import successful:', result);
+
+  // Save to recent imports history (keep last 20)
+  try {
+    const stored = await chrome.storage.local.get(['recentImports']);
+    const history = stored.recentImports || [];
+    history.unshift({
+      order_number: orderData.order_number,
+      broker_name: resolvedBrokerName || '',
+      revenue: orderData.revenue || 0,
+      origin: orderData.origin || '',
+      destination: orderData.destination || '',
+      timestamp: new Date().toISOString()
+    });
+    if (history.length > 20) history.length = 20;
+    await chrome.storage.local.set({ recentImports: history });
+  } catch (e) {
+    log('Failed to save import history:', e.message);
+  }
 
   return {
     success: true,
