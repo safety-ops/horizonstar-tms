@@ -1037,6 +1037,16 @@ h4 { font-size: var(--text-lg); }
 }
 @media (max-width: 480px) {
   .notification-center-overlay { width: 100% !important; }
+
+  /* Mobile card tightening */
+  .card { padding: 12px; border-radius: 12px; }
+  .section-tabs .section-tab { padding: 6px 12px; font-size: 12px; }
+  .stats-grid { grid-template-columns: 1fr; gap: 8px; }
+  .form-row { grid-template-columns: 1fr !important; }
+  .btn { padding: 8px 12px; font-size: 12px; }
+  .stat-card { flex: 1 1 100%; min-width: unset; width: 100%; }
+  .filter-bar { gap: 6px; }
+  .filter-bar .filter-chip { padding: 5px 10px; font-size: 12px; }
 }
 
 /* ============================================================

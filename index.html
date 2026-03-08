@@ -5607,84 +5607,53 @@
 
     /* ============ RESPONSIVE - SMALL MOBILE (< 480px) ============ */
     @media (max-width: 480px) {
+      /* --- Layout --- */
       .main {
-        padding: 68px 12px 100px 12px;
+        padding: 60px 10px 90px 10px !important;
       }
-      
-      .header h2 {
-        font-size: 20px;
+
+      /* --- Typography --- */
+      h2 { font-size: 17px !important; }
+      h3 { font-size: 15px !important; }
+      h4 { font-size: 14px !important; }
+      .header h2, .page-header h2 { font-size: 17px !important; }
+      .header, .page-header { gap: 8px !important; }
+
+      /* --- Cards — tighter padding --- */
+      .card, .stat-card, .driver-card, .metric-card {
+        padding: 12px !important;
       }
-      
-      .header-actions {
-        grid-template-columns: 1fr;
-      }
-      
-      .header-actions .btn-primary {
-        grid-column: span 1;
-      }
-      
-      .stats-grid {
-        grid-template-columns: 1fr;
-        gap: 10px;
-      }
-      
+      .card { border-radius: 12px !important; }
+      .card h3 { font-size: 15px !important; }
+      .driver-card h3 { font-size: 16px !important; }
+
+      /* --- Stat cards — full width stacking --- */
       .stat-card {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 14px 16px;
+        flex: 1 1 100% !important;
+        min-width: unset !important;
+        width: 100% !important;
       }
-      
-      .stat-card .label {
-        margin-bottom: 0;
-        order: 1;
-      }
-      
-      .stat-card .value {
-        font-size: 22px;
-        order: 2;
-      }
-      
-      table {
-        font-size: 11px;
-        min-width: 100%;
-      }
+      .stat-card .label { margin-bottom: 0; }
+      .stat-card .value { font-size: 22px; }
 
-      table th, table td {
-        padding: 8px 6px;
+      /* --- Grids — all single column --- */
+      .stats-grid,
+      .form-row,
+      [class*="-grid"]:not(.profitability-grid):not(.aging-grid):not(.detail-stats) {
+        grid-template-columns: 1fr !important;
       }
-      
-      .modal-header h3 {
-        font-size: 18px;
-      }
-      
-      .modal-body {
-        padding: 16px;
-      }
-      
-      .card {
-        padding: 14px;
-        border-radius: 14px;
-      }
-      
-      .card h3 {
-        font-size: 15px;
-      }
-      
-      .form-group input,
-      .form-group select {
-        padding: 14px;
-      }
-      
-      /* Force all inline flex containers to wrap - except tabs */
-      [style*="display:flex"]:not(.truck-tabs-container),
-      [style*="display: flex"]:not(.truck-tabs-container) {
-        flex-wrap: wrap !important;
-      }
+      .stats-grid { gap: 8px !important; }
 
-      /* Force all inline grids to single column (exclude special 2-col grids) */
+      /* Force all inline grids to single column */
       [style*="display:grid"]:not(.truck-tabs-container):not(.profitability-grid):not(.aging-grid):not(.detail-stats),
       [style*="display: grid"]:not(.truck-tabs-container):not(.profitability-grid):not(.aging-grid):not(.detail-stats) {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* Form rows inside modals — single column */
+      .modal .form-row,
+      .modal [style*="display:grid"],
+      .modal [style*="display: grid"] {
         grid-template-columns: 1fr !important;
       }
 
@@ -5695,10 +5664,22 @@
         grid-template-columns: 1fr !important;
       }
 
-      /* Complex asymmetric minmax layouts (compliance/fuel detail views) */
+      /* Complex asymmetric minmax layouts */
       [style*="minmax(0,1.7fr)"],
       [style*="minmax(0,1.6fr)"] {
         grid-template-columns: 1fr !important;
+      }
+
+      /* --- Flex containers — wrap and full-width children --- */
+      [style*="display:flex"]:not(.truck-tabs-container):not(.section-tabs):not(.order-list-item):not([style*="flex-wrap:nowrap"]):not([style*="flex-wrap: nowrap"]),
+      [style*="display: flex"]:not(.truck-tabs-container):not(.section-tabs):not(.order-list-item):not([style*="flex-wrap:nowrap"]):not([style*="flex-wrap: nowrap"]) {
+        flex-wrap: wrap !important;
+      }
+
+      /* Flex children full width — except tabs and nowrap containers */
+      [style*="display:flex"]:not(.truck-tabs-container):not(.section-tabs):not(.order-list-item):not([style*="flex-wrap:nowrap"]):not([style*="flex-wrap: nowrap"]) > div:not(.order-list-item),
+      [style*="display: flex"]:not(.truck-tabs-container):not(.section-tabs):not(.order-list-item):not([style*="flex-wrap:nowrap"]):not([style*="flex-wrap: nowrap"]) > div:not(.order-list-item) {
+        min-width: unset !important;
       }
 
       /* Flex children min-width overrides to prevent overflow */
@@ -5706,14 +5687,71 @@
       [style*="min-width:110px"],
       [style*="min-width:120px"],
       [style*="min-width:130px"],
+      [style*="min-width:140px"],
       [style*="min-width:150px"],
+      [style*="min-width:180px"],
+      [style*="min-width:200px"],
       [style*="min-width:220px"],
       [style*="min-width:250px"],
       [style*="min-width:280px"] {
         min-width: unset !important;
       }
-      
-      /* Truck tabs should still scroll */
+
+      /* --- Max-width containers — full width --- */
+      [style*="max-width:900px"],
+      [style*="max-width:800px"],
+      [style*="max-width:760px"],
+      [style*="max-width:700px"],
+      [style*="max-width: 900px"],
+      [style*="max-width: 800px"],
+      [style*="max-width: 760px"],
+      [style*="max-width: 700px"] {
+        max-width: 100% !important;
+      }
+
+      /* --- Gap reduction --- */
+      [style*="gap:20px"], [style*="gap: 20px"] { gap: 10px !important; }
+      [style*="gap:16px"], [style*="gap: 16px"] { gap: 10px !important; }
+      [style*="gap:24px"], [style*="gap: 24px"] { gap: 12px !important; }
+
+      /* --- Buttons --- */
+      .btn { padding: 8px 12px !important; font-size: 12px !important; }
+      .header-actions {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+      }
+      .header-actions .btn {
+        flex: 1 1 auto !important;
+        text-align: center !important;
+      }
+
+      /* --- Forms --- */
+      .form-group input,
+      .form-group select {
+        padding: 12px;
+      }
+
+      /* --- Tables --- */
+      table {
+        font-size: 11px;
+        min-width: 400px !important;
+      }
+      table th, table td {
+        padding: 8px 6px;
+      }
+      .table-wrapper {
+        max-width: 100% !important;
+        overflow-x: auto !important;
+      }
+
+      /* --- Modals --- */
+      .modal-header h3 { font-size: 18px; }
+      .modal-body { padding: 14px !important; }
+      .modal-footer { padding: 12px 14px !important; }
+      .modal-footer .btn { flex: 1; justify-content: center; }
+
+      /* --- Truck tabs — horizontal scroll --- */
       .truck-tabs-container {
         display: flex !important;
         flex-wrap: nowrap !important;
@@ -5721,13 +5759,12 @@
         overflow-y: hidden !important;
         -webkit-overflow-scrolling: touch !important;
         padding-bottom: 10px;
-        margin-left: -12px;
-        margin-right: -12px;
-        padding-left: 12px;
-        padding-right: 12px;
-        max-width: calc(100% + 24px) !important;
+        margin-left: -10px;
+        margin-right: -10px;
+        padding-left: 10px;
+        padding-right: 10px;
+        max-width: calc(100% + 20px) !important;
       }
-      
       .truck-tabs-container button,
       .truck-tabs-container .truck-tab,
       .truck-tab {
@@ -5736,54 +5773,43 @@
         flex-shrink: 0 !important;
         white-space: nowrap !important;
       }
-      
-      /* Ensure gradient headers stay nice */
+
+      /* --- Section tabs — horizontal scroll, no wrap --- */
+      .section-tabs {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+      }
+
+      /* --- Gradient headers --- */
       [style*="linear-gradient"] {
         border-radius: 8px !important;
       }
-      
-      .driver-card {
-        padding: 16px;
-      }
 
-      .driver-card h3 {
-        font-size: 16px;
-      }
-
-      /* Login form card */
+      /* --- Login form --- */
       .login-form-card { width: 100% !important; min-width: unset !important; padding: 28px 20px !important; border-radius: 16px !important; }
 
-      /* Large metric font scaling */
+      /* --- Large metric font scaling --- */
       [style*="font-size:28px"] { font-size: 22px !important; }
       [style*="font-size:32px"] { font-size: 24px !important; }
       [style*="font-size:36px"] { font-size: 26px !important; }
 
-      /* Detail page stat card min-widths */
+      /* --- Detail page stat card min-widths --- */
       .stat-card[style*="min-width"] { min-width: unset !important; width: 100% !important; }
 
-      /* Tighter page header spacing */
-      .header, .page-header { gap: 8px !important; }
-      .header h2, .page-header h2 { font-size: 17px !important; }
-      .btn { padding: 8px 12px !important; font-size: 12px !important; }
-
-      /* Modal tighter on small phones */
-      .modal-body { padding: 14px !important; }
-      .modal-footer { padding: 12px 14px !important; }
-      .modal-footer .btn { flex: 1; justify-content: center; }
-
-      /* Profitability grid responsive */
+      /* --- Profitability grid --- */
       .profitability-grid { grid-template-columns: repeat(2, 1fr) !important; }
       .profitability-grid > div { padding: 14px 10px !important; }
 
-      /* Aging grid responsive */
+      /* --- Aging grid --- */
       .aging-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }
 
-      /* Detail stats responsive */
+      /* --- Detail stats --- */
       .detail-stats { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
       .detail-stats .stat-card { min-width: unset !important; padding: 10px 12px !important; }
       .detail-stats .stat-card .value { font-size: 16px !important; }
 
-      /* Fix 1: Order card rows should NOT wrap — keep side-by-side */
+      /* --- Order card rows — keep side-by-side --- */
       .order-list-item [style*="display:flex"],
       .order-list-item [style*="display: flex"] {
         flex-wrap: nowrap !important;
@@ -5795,23 +5821,7 @@
         white-space: nowrap;
       }
 
-      /* Fix 2: Section tabs — force horizontal scroll, no wrap */
-      .section-tabs {
-        flex-wrap: nowrap !important;
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-      }
-
-      /* Fix 3: Tables — constrain wrapper width, reduce table min-width */
-      .table-wrapper {
-        max-width: 100% !important;
-        overflow-x: auto !important;
-      }
-      table {
-        min-width: 500px;
-      }
-
-      /* Fix 4: Chat header — allow shrink */
+      /* --- Chat header --- */
       .chat-header-right {
         flex-shrink: 1 !important;
         overflow: hidden;
@@ -5820,7 +5830,7 @@
         gap: 6px !important;
       }
 
-      /* Fix 5: Constrain main content to prevent horizontal overflow */
+      /* --- Constrain main content --- */
       .main > div, .main > section {
         max-width: 100% !important;
         overflow-x: hidden;
