@@ -47380,6 +47380,7 @@ function jsonResponse(data, status = 200) {
           newUser = await dbInsert('users', {
             auth_id: authId,
             email: app.contact_email,
+            password: tempPassword,
             first_name: app.contact_name || app.company_name,
             last_name: '',
             role: 'DEALER',
@@ -48031,6 +48032,7 @@ function jsonResponse(data, status = 200) {
           const newUser = await dbInsert('users', {
             auth_id: authId,
             email: email,
+            password: password,
             first_name: contactName || companyName,
             last_name: '',
             role: 'DEALER',
