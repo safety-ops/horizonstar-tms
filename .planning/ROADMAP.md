@@ -136,7 +136,11 @@ Plans:
 3. Filter bar, pagination controls, and order detail modals all follow the Stripe/Linear aesthetic established in Phase 19
 4. Shared helpers (renderOrderPreviewCard, renderPaginationControls) are restyled so downstream pages automatically inherit the new look
 
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 21-01-PLAN.md -- Restyle shared helpers (renderOrderPreviewCard, renderPaginationControls) + badge CSS rules
+- [ ] 21-02-PLAN.md -- Restyle orders page (header, filters, table view, button hierarchy)
 
 ---
 
@@ -248,7 +252,7 @@ Phases execute in numeric order: 19 → 20 → 21 → 22 → 23 → 24 → 25 �
 | 16-18. CSS Polish | v1.3 | 0/0 | Abandoned | 2026-03-12 |
 | 19. Token Foundation & Component Classes | v1.4 | 3/3 | Complete | 2026-03-12 |
 | 20. Dashboard Restyle | v1.4 | 2/2 | Complete | 2026-03-13 |
-| 21. Orders Page Restyle | v1.4 | 0/TBD | Not started | - |
+| 21. Orders Page Restyle | v1.4 | 0/2 | Not started | - |
 | 22. Trips & Load Board Restyle | v1.4 | 0/TBD | Not started | - |
 | 23. People & Fleet Restyle | v1.4 | 0/TBD | Not started | - |
 | 24. Finance Pages Restyle | v1.4 | 0/TBD | Not started | - |
@@ -258,4 +262,4 @@ Phases execute in numeric order: 19 → 20 → 21 → 22 → 23 → 24 → 25 �
 ---
 
 **Roadmap created**: 2026-02-10
-**Last updated**: 2026-03-13 (Phase 20 complete: 2/2 plans)
+**Last updated**: 2026-03-13 (Phase 21 planned: 2 plans in 2 waves)
