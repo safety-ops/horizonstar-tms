@@ -24744,12 +24744,12 @@
       });
 
       c.innerHTML =
-        '<div class="header responsive-page-header"><h2>Dispatchers</h2><div class="responsive-page-actions"><div class="responsive-filter-group"><select onchange="dispatchersPeriod.type=this.value;if(dispatchersPeriod.type===\'year\'&&!dispatchersPeriod.year){dispatchersPeriod.year=new Date().getFullYear();}renderDispatchers(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);min-height:44px"><option value="year"' + (dispatchersPeriod.type === 'year' ? ' selected' : '') + '>Year</option><option value="all"' + (dispatchersPeriod.type === 'all' ? ' selected' : '') + '>All Time</option></select>' +
-        (dispatchersPeriod.type === 'year' ? '<select onchange="dispatchersPeriod.year=parseInt(this.value);renderDispatchers(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);min-height:44px">' + dispatcherYearOptions + '</select>' : '') +
-        '</div><div class="responsive-chip-row"><span style="font-size:12px;background:var(--dim-blue);color:var(--info);padding:6px 10px;border-radius:999px;font-weight:600;border:1px solid var(--info-border)">' + getPeriodLabel(resolvedPeriod) + '</span>' +
-        (undatedOrderCount > 0 && dispatchersPeriod.type !== 'all' ? '<span style="font-size:12px;background:var(--dim-amber);color:var(--warning);padding:6px 10px;border-radius:999px;font-weight:600;border:1px solid var(--warning-border)">Undated excluded: ' + undatedOrderCount + '</span>' : '') +
+        '<div class="header responsive-page-header"><h2 style="font-size:18px;font-weight:600">Dispatchers</h2><div class="responsive-page-actions"><div class="responsive-filter-group"><select class="select" onchange="dispatchersPeriod.type=this.value;if(dispatchersPeriod.type===\'year\'&&!dispatchersPeriod.year){dispatchersPeriod.year=new Date().getFullYear();}renderDispatchers(document.getElementById(\'main-content\'))"><option value="year"' + (dispatchersPeriod.type === 'year' ? ' selected' : '') + '>Year</option><option value="all"' + (dispatchersPeriod.type === 'all' ? ' selected' : '') + '>All Time</option></select>' +
+        (dispatchersPeriod.type === 'year' ? '<select class="select" onchange="dispatchersPeriod.year=parseInt(this.value);renderDispatchers(document.getElementById(\'main-content\'))">' + dispatcherYearOptions + '</select>' : '') +
+        '</div><div class="responsive-chip-row"><span style="font-size:10px;background:var(--bg-tertiary);color:var(--text-secondary);padding:2px 6px;border-radius:4px">' + getPeriodLabel(resolvedPeriod) + '</span>' +
+        (undatedOrderCount > 0 && dispatchersPeriod.type !== 'all' ? '<span style="font-size:10px;background:var(--bg-tertiary);color:var(--text-secondary);padding:2px 6px;border-radius:4px">Undated excluded: ' + undatedOrderCount + '</span>' : '') +
         '</div><button class="btn btn-primary" onclick="openDispModal()">+ New Dispatcher</button></div></div>' +
-        '<div class="card"><div class="desktop-only"><div class="table-wrapper"><table><thead><tr><th>Code</th><th>Name</th><th>Cars Booked</th><th>Revenue Generated</th><th>Actions</th></tr></thead><tbody>' +
+        '<div class="card"><div class="desktop-only"><div class="table-wrapper"><table class="data-table"><thead><tr><th>Code</th><th>Name</th><th>Cars Booked</th><th>Revenue Generated</th><th>Actions</th></tr></thead><tbody>' +
         (appData.dispatchers.length === 0 ? '<tr><td colspan="5">' + renderEmptyState('phone', 'No dispatchers yet', 'Add a dispatcher to start tracking performance') + '</td></tr>' : dispatcherRows.map(item => item.row).join('')) +
         '</tbody></table></div></div>' +
         '<div class="mobile-only responsive-mobile-list" style="padding:12px">' +
@@ -24892,12 +24892,12 @@
         if (rank === 0) return '<span style="font-size:20px">[[icon:medal-gold]]</span>';
         if (rank === 1) return '<span style="font-size:20px">[[icon:medal-silver]]</span>';
         if (rank === 2) return '<span style="font-size:20px">[[icon:medal-bronze]]</span>';
-        return '<span style="color:var(--text-secondary);font-weight:700">#' + (rank + 1) + '</span>';
+        return '<span style="color:var(--text-secondary);font-weight:600">#' + (rank + 1) + '</span>';
       };
-      
+
       const getProgressBar = (value, max, color) => {
         const percent = max > 0 ? (value / max * 100) : 0;
-        return '<div style="background:rgba(255,255,255,0.1);border-radius:4px;height:8px;width:100%;min-width:60px"><div style="background:' + color + ';height:100%;border-radius:4px;width:' + percent + '%"></div></div>';
+        return '<div style="background:var(--bg-tertiary);border-radius:4px;height:8px;width:100%;min-width:60px"><div style="background:' + color + ';height:100%;border-radius:4px;width:' + percent + '%"></div></div>';
       };
       
       const maxCars = Math.max(...dispArray.map(d => d.cars), 1);
@@ -24905,12 +24905,12 @@
       const mobileRankingCards = rankedByRevenue.map((d, i) => {
         const isTop = i === 0;
         const isBottom = i === rankedByRevenue.length - 1 && rankedByRevenue.length > 1;
-        const accent = isTop ? '#10b981' : (isBottom ? '#f59e0b' : 'var(--border)');
-        const accentBg = isTop ? 'rgba(34,197,94,0.10)' : (isBottom ? 'rgba(245,158,11,0.10)' : 'transparent');
+        const accent = isTop ? 'var(--green)' : (isBottom ? 'var(--amber)' : 'var(--border)');
+        const accentBg = isTop ? 'var(--dim-green)' : (isBottom ? 'var(--dim-amber)' : 'transparent');
         return `<article class="mobile-record-card" style="border-left:4px solid ${accent};background:${accentBg || 'var(--bg-card)'}">
           <div class="mobile-record-card-header">
             <div style="display:flex;align-items:flex-start;gap:12px;min-width:0">
-              <span class="mobile-rank-badge" style="border-color:${accent};color:${isTop ? '#16a34a' : (isBottom ? '#d97706' : 'var(--text-primary)')};background:${isTop ? 'rgba(34,197,94,0.12)' : (isBottom ? 'rgba(245,158,11,0.12)' : 'var(--bg-secondary)')}">${getMedal(i)}</span>
+              <span class="mobile-rank-badge" style="border-color:${accent};color:${isTop ? 'var(--green)' : (isBottom ? 'var(--amber)' : 'var(--text-primary)')};background:${isTop ? 'var(--dim-green)' : (isBottom ? 'var(--dim-amber)' : 'var(--bg-secondary)')}">${getMedal(i)}</span>
               <div class="mobile-record-card-title">
                 <strong>${escapeHtml(d.name || '-')}</strong>
                 <span>${escapeHtml(d.code || '-')} • ${d.cars} cars booked</span>
@@ -24929,77 +24929,77 @@
         </article>`;
       }).join('');
       
-      c.innerHTML = '<div class="header responsive-page-header"><h2>[[icon:trophy]] Dispatcher Performance Ranking</h2></div>' +
+      c.innerHTML = '<div class="header responsive-page-header"><h2 style="font-size:18px;font-weight:600">Dispatcher Performance Ranking</h2></div>' +
         '<div class="responsive-filter-bar">' +
-        '<div class="responsive-filter-group"><div class="form-group" style="margin:0"><label style="margin-bottom:4px">Period</label><select id="dispRankPeriod" onchange="dispRankPeriod=this.value;renderDispatcherRanking(document.getElementById(\'main-content\'))"><option value="all"' + (dispRankPeriod === 'all' ? ' selected' : '') + '>All Time</option><option value="month"' + (dispRankPeriod === 'month' ? ' selected' : '') + '>Monthly</option><option value="q1"' + (dispRankPeriod === 'q1' ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="q2"' + (dispRankPeriod === 'q2' ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="q3"' + (dispRankPeriod === 'q3' ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="q4"' + (dispRankPeriod === 'q4' ? ' selected' : '') + '>Q4 (Oct-Dec)</option><option value="year"' + (dispRankPeriod === 'year' ? ' selected' : '') + '>Full Year</option></select></div>' +
-        (dispRankPeriod === 'month' ? '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Month</label><select id="dispRankMonth" onchange="dispRankMonth=parseInt(this.value);renderDispatcherRanking(document.getElementById(\'main-content\'))">' + months.slice(1).map((m, i) => '<option value="' + (i + 1) + '"' + (dispRankMonth === i + 1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select></div>' : '') +
-        (dispRankPeriod !== 'all' ? '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select id="dispRankYear" onchange="dispRankYear=parseInt(this.value);renderDispatcherRanking(document.getElementById(\'main-content\'))">' + dispRankYearOptions + '</select></div>' : '') +
-        '</div><div class="responsive-chip-row"><span style="font-size:12px;background:var(--dim-blue);color:var(--info);padding:6px 10px;border-radius:999px;font-weight:600;border:1px solid var(--info-border)">[[icon:calendar]] ' + getDispRankPeriodLabel() + '</span></div></div>' +
-        
-        '<div class="responsive-stat-strip">' +
-        '<div class="stat-card"><div class="label">Total Dispatchers</div><div class="value">' + appData.dispatchers.length + '</div></div>' +
-        '<div class="stat-card"><div class="label">Total Cars Booked</div><div class="value">' + totalCars + '</div></div>' +
-        '<div class="stat-card"><div class="label">Total Revenue</div><div class="value">' + formatMoney(totalRevenue) + '</div></div>' +
-        '<div class="stat-card" style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3)"><div class="label">Clean Revenue</div><div class="value" style="color:#60a5fa">' + formatMoney(totalCleanRevenue) + '</div></div>' +
-        '<div class="stat-card"><div class="label">Broker Fees</div><div class="value" style="color:#ef4444">' + formatMoney(totalBrokerFees) + '</div></div>' +
-        '<div class="stat-card"><div class="label">Avg Price / Car</div><div class="value">' + formatMoney(avgPriceOverall) + '</div></div>' +
+        '<div class="responsive-filter-group"><div class="form-group" style="margin:0"><label style="margin-bottom:4px">Period</label><select class="select" id="dispRankPeriod" onchange="dispRankPeriod=this.value;renderDispatcherRanking(document.getElementById(\'main-content\'))"><option value="all"' + (dispRankPeriod === 'all' ? ' selected' : '') + '>All Time</option><option value="month"' + (dispRankPeriod === 'month' ? ' selected' : '') + '>Monthly</option><option value="q1"' + (dispRankPeriod === 'q1' ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="q2"' + (dispRankPeriod === 'q2' ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="q3"' + (dispRankPeriod === 'q3' ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="q4"' + (dispRankPeriod === 'q4' ? ' selected' : '') + '>Q4 (Oct-Dec)</option><option value="year"' + (dispRankPeriod === 'year' ? ' selected' : '') + '>Full Year</option></select></div>' +
+        (dispRankPeriod === 'month' ? '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Month</label><select class="select" id="dispRankMonth" onchange="dispRankMonth=parseInt(this.value);renderDispatcherRanking(document.getElementById(\'main-content\'))">' + months.slice(1).map((m, i) => '<option value="' + (i + 1) + '"' + (dispRankMonth === i + 1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select></div>' : '') +
+        (dispRankPeriod !== 'all' ? '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select class="select" id="dispRankYear" onchange="dispRankYear=parseInt(this.value);renderDispatcherRanking(document.getElementById(\'main-content\'))">' + dispRankYearOptions + '</select></div>' : '') +
+        '</div><div class="responsive-chip-row"><span style="font-size:10px;background:var(--bg-tertiary);color:var(--text-secondary);padding:2px 6px;border-radius:4px">' + getDispRankPeriodLabel() + '</span></div></div>' +
+
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px">' +
+        '<div class="stat-flat"><div class="stat-flat-label">Total Dispatchers</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + appData.dispatchers.length + '</div></div>' +
+        '<div class="stat-flat"><div class="stat-flat-label">Total Cars Booked</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + totalCars + '</div></div>' +
+        '<div class="stat-flat"><div class="stat-flat-label">Total Revenue</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + formatMoney(totalRevenue) + '</div></div>' +
+        '<div class="stat-flat"><div class="stat-flat-label">Clean Revenue</div><div class="stat-flat-value" style="font-family:var(--font-mono);color:var(--blue)">' + formatMoney(totalCleanRevenue) + '</div></div>' +
+        '<div class="stat-flat"><div class="stat-flat-label">Broker Fees</div><div class="stat-flat-value" style="font-family:var(--font-mono);color:var(--red)">' + formatMoney(totalBrokerFees) + '</div></div>' +
+        '<div class="stat-flat"><div class="stat-flat-label">Avg Price / Car</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + formatMoney(avgPriceOverall) + '</div></div>' +
         '</div>' +
-        
+
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;margin-bottom:24px">' +
-        '<div class="card" style="padding:20px;border-left:4px solid #10b981">' +
-        '<div style="display:flex;align-items:center;gap:12px"><span style="font-size:32px">[[icon:trophy]]</span><div><div style="font-size:12px;color:#9ca3af">TOP PERFORMER</div><div style="font-size:24px;font-weight:700;color:#4ade80">' + (topDispatcher?.name || '-') + '</div><div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + escapeHtml(topDispatcher?.code || '-') + '</div></div></div>' +
+        '<div class="card" style="padding:20px;border-left:3px solid var(--green)">' +
+        '<div><div style="font-size:12px;color:var(--text-muted)">TOP PERFORMER</div><div style="font-size:20px;font-weight:600;color:var(--text-primary);margin-top:4px">' + (topDispatcher?.name || '-') + '</div><div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + escapeHtml(topDispatcher?.code || '-') + '</div></div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">' +
-        '<div style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:#4ade80">Cars</div><div style="font-size:20px;font-weight:700;color:#4ade80">' + (topDispatcher?.cars || 0) + '</div></div>' +
-        '<div style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:#4ade80">Revenue</div><div style="font-size:20px;font-weight:700;color:#4ade80">' + formatMoney(topDispatcher?.revenue || 0) + '</div></div>' +
+        '<div class="stat-flat"><div class="stat-flat-label">Cars</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + (topDispatcher?.cars || 0) + '</div></div>' +
+        '<div class="stat-flat"><div class="stat-flat-label">Revenue</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + formatMoney(topDispatcher?.revenue || 0) + '</div></div>' +
         '</div></div>' +
-        '<div class="card" style="padding:20px;border-left:4px solid #f59e0b">' +
-        '<div style="display:flex;align-items:center;gap:12px"><span style="font-size:32px">[[icon:trend_up]]</span><div><div style="font-size:12px;color:#9ca3af">NEEDS IMPROVEMENT</div><div style="font-size:24px;font-weight:700;color:#fbbf24">' + (bottomDispatcher?.name || '-') + '</div><div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + escapeHtml(bottomDispatcher?.code || '-') + '</div></div></div>' +
+        '<div class="card" style="padding:20px;border-left:3px solid var(--amber)">' +
+        '<div><div style="font-size:12px;color:var(--text-muted)">NEEDS IMPROVEMENT</div><div style="font-size:20px;font-weight:600;color:var(--text-primary);margin-top:4px">' + (bottomDispatcher?.name || '-') + '</div><div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + escapeHtml(bottomDispatcher?.code || '-') + '</div></div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">' +
-        '<div style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:#fbbf24">Cars</div><div style="font-size:20px;font-weight:700;color:#fbbf24">' + (bottomDispatcher?.cars || 0) + '</div></div>' +
-        '<div style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);padding:12px;border-radius:8px;text-align:center"><div style="font-size:11px;color:#fbbf24">Revenue</div><div style="font-size:20px;font-weight:700;color:#fbbf24">' + formatMoney(bottomDispatcher?.revenue || 0) + '</div></div>' +
+        '<div class="stat-flat"><div class="stat-flat-label">Cars</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + (bottomDispatcher?.cars || 0) + '</div></div>' +
+        '<div class="stat-flat"><div class="stat-flat-label">Revenue</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + formatMoney(bottomDispatcher?.revenue || 0) + '</div></div>' +
         '</div></div></div>' +
-        
-        '<div class="card"><div class="card-header"><h3>[[icon:chart]] Full Ranking (by Revenue)</h3></div>' +
-        '<div class="desktop-only"><div class="table-wrapper"><table><thead><tr><th style="width:60px">Rank</th><th>Dispatcher</th><th style="text-align:center">Cars Booked</th><th style="text-align:center">Cars Progress</th><th style="text-align:right">Revenue</th><th style="text-align:center">Revenue Progress</th><th style="text-align:right">Broker Fees</th><th style="text-align:right">Local Fees</th><th style="text-align:right">Clean Revenue</th><th style="text-align:right">Avg $/Car</th></tr></thead><tbody>' +
+
+        '<div class="card"><div class="card-header"><h3>Full Ranking (by Revenue)</h3></div>' +
+        '<div class="desktop-only"><div class="table-wrapper"><table class="data-table"><thead><tr><th style="width:60px">Rank</th><th>Dispatcher</th><th style="text-align:center">Cars Booked</th><th style="text-align:center">Cars Progress</th><th style="text-align:right">Revenue</th><th style="text-align:center">Revenue Progress</th><th style="text-align:right">Broker Fees</th><th style="text-align:right">Local Fees</th><th style="text-align:right">Clean Revenue</th><th style="text-align:right">Avg $/Car</th></tr></thead><tbody>' +
         (rankedByRevenue.length === 0 ? '<tr><td colspan="10" style="text-align:center;padding:40px">No dispatcher data for this period</td></tr>' :
         rankedByRevenue.map((d, i) =>
-          '<tr style="' + (i === 0 ? 'background:rgba(34,197,94,0.1)' : i === rankedByRevenue.length - 1 && rankedByRevenue.length > 1 ? 'background:rgba(245,158,11,0.1)' : '') + '">' +
+          '<tr' + (i === 0 ? ' style="background:var(--bg-secondary)"' : '') + '>' +
           '<td style="text-align:center">' + getMedal(i) + '</td>' +
           '<td><strong>' + escapeHtml(d.name || '-') + '</strong><span style="color:var(--text-secondary);margin-left:8px;font-size:12px">' + escapeHtml(d.code || '-') + '</span></td>' +
           '<td style="text-align:center;font-weight:600">' + d.cars + '</td>' +
-          '<td>' + getProgressBar(d.cars, maxCars, '#3b82f6') + '</td>' +
+          '<td>' + getProgressBar(d.cars, maxCars, 'var(--blue)') + '</td>' +
           '<td style="text-align:right" class="money">' + formatMoney(d.revenue) + '</td>' +
-          '<td>' + getProgressBar(d.revenue, maxRevenue, '#10b981') + '</td>' +
+          '<td>' + getProgressBar(d.revenue, maxRevenue, 'var(--green)') + '</td>' +
           '<td style="text-align:right" class="money negative">' + formatMoney(d.brokerFees) + '</td>' +
           '<td style="text-align:right" class="money negative">' + formatMoney(d.localFees) + '</td>' +
-          '<td style="text-align:right;font-weight:600;color:#1d4ed8">' + formatMoney(d.cleanRevenue) + '</td>' +
+          '<td style="text-align:right;font-weight:600;color:var(--blue)">' + formatMoney(d.cleanRevenue) + '</td>' +
           '<td style="text-align:right">' + formatMoney(d.avgPricePerCar) + '</td>' +
           '</tr>'
         ).join('')) +
-        '<tr style="background:rgba(255,255,255,0.05);font-weight:700"><td colspan="2" style="text-align:right">TOTALS:</td><td style="text-align:center">' + totalCars + '</td><td></td><td style="text-align:right">' + formatMoney(totalRevenue) + '</td><td></td><td style="text-align:right;color:#f87171">' + formatMoney(totalBrokerFees) + '</td><td style="text-align:right;color:#f87171">' + formatMoney(totalLocalFees) + '</td><td style="text-align:right;color:#60a5fa">' + formatMoney(totalCleanRevenue) + '</td><td style="text-align:right">' + formatMoney(avgPriceOverall) + '</td></tr>' +
+        '<tr style="background:var(--bg-secondary);font-weight:600"><td colspan="2" style="text-align:right">TOTALS:</td><td style="text-align:center">' + totalCars + '</td><td></td><td style="text-align:right">' + formatMoney(totalRevenue) + '</td><td></td><td style="text-align:right;color:var(--red)">' + formatMoney(totalBrokerFees) + '</td><td style="text-align:right;color:var(--red)">' + formatMoney(totalLocalFees) + '</td><td style="text-align:right;color:var(--blue)">' + formatMoney(totalCleanRevenue) + '</td><td style="text-align:right">' + formatMoney(avgPriceOverall) + '</td></tr>' +
         '</tbody></table></div></div>' +
         '<div class="mobile-only responsive-mobile-list" style="padding:12px">' +
         (rankedByRevenue.length === 0 ? renderEmptyState('chart', 'No dispatcher data for this period', 'Adjust the selected period to see ranking cards.') : mobileRankingCards) +
         '</div></div>' +
-        
+
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:24px">' +
-        '<div class="card" style="padding:20px"><h3 style="margin-bottom:16px;color:#3b82f6">[[icon:car]] Cars Booked Leaderboard</h3>' +
+        '<div class="card" style="padding:20px"><h3 style="margin-bottom:16px;font-size:14px;font-weight:600;color:var(--text-primary)">Cars Booked Leaderboard</h3>' +
         rankedByCards(rankedByRevenue.slice(0, 5).map((d, i) => ({
           rank: i,
           name: d.name,
           value: d.cars,
           label: d.cars + ' cars',
           percent: maxCars > 0 ? (d.cars / maxCars * 100) : 0,
-          color: '#3b82f6'
+          color: 'var(--blue)'
         }))) + '</div>' +
-        '<div class="card" style="padding:20px"><h3 style="margin-bottom:16px;color:#10b981">[[icon:money]] Revenue Leaderboard</h3>' +
+        '<div class="card" style="padding:20px"><h3 style="margin-bottom:16px;font-size:14px;font-weight:600;color:var(--text-primary)">Revenue Leaderboard</h3>' +
         rankedByCards(rankedByRevenue.slice(0, 5).map((d, i) => ({
           rank: i,
           name: d.name,
           value: d.revenue,
           label: formatMoney(d.revenue),
           percent: maxRevenue > 0 ? (d.revenue / maxRevenue * 100) : 0,
-          color: '#10b981'
+          color: 'var(--green)'
         }))) + '</div></div>';
     }
     
@@ -25010,12 +25010,12 @@
         if (rank === 2) return '[[icon:medal-bronze]]';
         return '#' + (rank + 1);
       };
-      
-      return items.map(item => 
+
+      return items.map(item =>
         '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">' +
         '<span style="font-size:16px;width:30px">' + getMedal(item.rank) + '</span>' +
         '<div style="flex:1"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:600">' + item.name + '</span><span style="color:var(--text-secondary)">' + item.label + '</span></div>' +
-        '<div style="background:rgba(255,255,255,0.1);border-radius:4px;height:8px"><div style="background:' + item.color + ';height:100%;border-radius:4px;width:' + item.percent + '%"></div></div></div></div>'
+        '<div style="background:var(--bg-tertiary);border-radius:4px;height:8px"><div style="background:' + item.color + ';height:100%;border-radius:4px;width:' + item.percent + '%"></div></div></div></div>'
       ).join('');
     }
 
