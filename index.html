@@ -37041,20 +37041,20 @@
 
       // Tabs
       const tabs = `
-        <div class="responsive-page-header" style="margin-bottom:16px">
-          <div class="responsive-page-actions approved-scroll-x" data-scroll-kind="tabs" style="gap:6px;flex-wrap:nowrap;">
-            <button class="btn ${finTab === 'executive' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='executive';renderConsolidatedFinancials(document.getElementById('main-content'))">[[icon:building]] Executive</button>
-            <button class="btn ${finTab === 'analysis' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='analysis';renderConsolidatedFinancials(document.getElementById('main-content'))">[[icon:trend_up]] Analysis</button>
-            <button class="btn ${finTab === 'overview' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='overview';renderConsolidatedFinancials(document.getElementById('main-content'))">[[icon:chart]] Overview</button>
-            <button class="btn ${finTab === 'costs' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='costs';renderConsolidatedFinancials(document.getElementById('main-content'))">[[icon:expense]] Costs</button>
-            <button class="btn ${finTab === 'trips' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='trips';renderConsolidatedFinancials(document.getElementById('main-content'))">[[icon:truck]] By Trip</button>
-            <button class="btn ${finTab === 'drivers' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='drivers';renderConsolidatedFinancials(document.getElementById('main-content'))">[[icon:user]] By Driver</button>
-            <button class="btn ${finTab === 'brokers' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='brokers';renderConsolidatedFinancials(document.getElementById('main-content'))">[[icon:handshake]] By Broker</button>
-            <button class="btn ${finTab === 'lanes' ? 'btn-primary' : 'btn-secondary'}" style="padding:6px 12px;font-size:12px" onclick="finTab='lanes';renderConsolidatedFinancials(document.getElementById('main-content'))">[[icon:map]] By Lane</button>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+          <div class="segmented-control-scroll" style="flex:1;min-width:0">
+            <button class="segmented-control-btn ${finTab === 'executive' ? 'active' : ''}" onclick="finTab='executive';renderConsolidatedFinancials(document.getElementById('main-content'))">Executive</button>
+            <button class="segmented-control-btn ${finTab === 'analysis' ? 'active' : ''}" onclick="finTab='analysis';renderConsolidatedFinancials(document.getElementById('main-content'))">Analysis</button>
+            <button class="segmented-control-btn ${finTab === 'overview' ? 'active' : ''}" onclick="finTab='overview';renderConsolidatedFinancials(document.getElementById('main-content'))">Overview</button>
+            <button class="segmented-control-btn ${finTab === 'costs' ? 'active' : ''}" onclick="finTab='costs';renderConsolidatedFinancials(document.getElementById('main-content'))">Costs</button>
+            <button class="segmented-control-btn ${finTab === 'trips' ? 'active' : ''}" onclick="finTab='trips';renderConsolidatedFinancials(document.getElementById('main-content'))">By Trip</button>
+            <button class="segmented-control-btn ${finTab === 'drivers' ? 'active' : ''}" onclick="finTab='drivers';renderConsolidatedFinancials(document.getElementById('main-content'))">By Driver</button>
+            <button class="segmented-control-btn ${finTab === 'brokers' ? 'active' : ''}" onclick="finTab='brokers';renderConsolidatedFinancials(document.getElementById('main-content'))">By Broker</button>
+            <button class="segmented-control-btn ${finTab === 'lanes' ? 'active' : ''}" onclick="finTab='lanes';renderConsolidatedFinancials(document.getElementById('main-content'))">By Lane</button>
           </div>
-          <div class="responsive-filter-group" style="background:var(--surface-elevated);padding:8px 12px;border-radius:6px;border:1px solid var(--border)">
-            <label style="font-weight:600;color:var(--text-secondary);font-size:13px">Year:</label>
-            <select onchange="financialsYear=parseInt(this.value);renderConsolidatedFinancials(document.getElementById('main-content'))" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-weight:600">
+          <div style="display:flex;align-items:center;gap:8px">
+            <label style="font-weight:500;color:var(--text-secondary);font-size:13px">Year:</label>
+            <select class="select" onchange="financialsYear=parseInt(this.value);renderConsolidatedFinancials(document.getElementById('main-content'))">
               ${yearOptions}
             </select>
           </div>
@@ -37084,89 +37084,89 @@
         content = renderFinByLane(orders, trips);
       }
       
-      c.innerHTML = '<div class="header responsive-page-header"><h2>[[icon:money]] Financials</h2></div>' + tabs + content;
+      c.innerHTML = '<div class="header responsive-page-header"><h2 style="font-size:18px;font-weight:600">Financials</h2></div>' + tabs + content;
     }
     
     function renderFinOverview(totalRevenue, cleanRevenue, grossProfit, operatingProfit, netProfit, profitMargin, totalCars, totalMiles, tripCount, monthlyFixedCosts, totalVariableCosts, totalDriverPay, totalBrokerFees, totalLocalFees, totalTripExpenses, profitPerCar, profitPerMile, revenuePerMile, avgRevenuePerCar) {
       return `
         <div class="stats-grid" style="margin-bottom:24px;">
-          <div class="stat-card" style="border-left:4px solid #22c55e">
-            <div class="label">Total Revenue</div>
-            <div class="value" style="color:#22c55e">${formatMoney(totalRevenue)}</div>
-            <div style="font-size:12px;color:#64748b;margin-top:4px">${totalCars} cars • ${tripCount} trips</div>
+          <div class="stat-flat stat-card--green">
+            <div class="stat-flat-label">Total Revenue</div>
+            <div class="stat-flat-value" style="color:var(--green);font-family:var(--font-mono)">${formatMoney(totalRevenue)}</div>
+            <div class="stat-flat-delta">${totalCars} cars &middot; ${tripCount} trips</div>
           </div>
-          <div class="stat-card" style="border-left:4px solid #3b82f6">
-            <div class="label">Clean Revenue</div>
-            <div class="value" style="color:#3b82f6">${formatMoney(cleanRevenue)}</div>
-            <div style="font-size:12px;color:#64748b;margin-top:4px">After broker & local fees</div>
+          <div class="stat-flat stat-card--blue">
+            <div class="stat-flat-label">Clean Revenue</div>
+            <div class="stat-flat-value" style="color:var(--blue);font-family:var(--font-mono)">${formatMoney(cleanRevenue)}</div>
+            <div class="stat-flat-delta">After broker &amp; local fees</div>
           </div>
-          <div class="stat-card" style="border-left:4px solid ${netProfit >= 0 ? '#22c55e' : '#ef4444'}">
-            <div class="label">Net Profit</div>
-            <div class="value" style="color:${netProfit >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(netProfit)}</div>
-            <div style="font-size:12px;color:#64748b;margin-top:4px">${profitMargin.toFixed(1)}% margin</div>
+          <div class="stat-flat ${netProfit >= 0 ? 'stat-card--green' : 'stat-card--red'}">
+            <div class="stat-flat-label">Net Profit</div>
+            <div class="stat-flat-value" style="color:${netProfit >= 0 ? 'var(--green)' : 'var(--red)'};font-family:var(--font-mono)">${formatMoney(netProfit)}</div>
+            <div class="stat-flat-delta">${profitMargin.toFixed(1)}% margin</div>
           </div>
-          <div class="stat-card">
-            <div class="label">Profit / Car</div>
-            <div class="value">${formatMoney(profitPerCar)}</div>
+          <div class="stat-flat stat-card--amber">
+            <div class="stat-flat-label">Profit / Car</div>
+            <div class="stat-flat-value" style="font-family:var(--font-mono)">${formatMoney(profitPerCar)}</div>
           </div>
         </div>
-        
+
         <div class="responsive-split-grid" style="margin-bottom:24px;">
           <div class="card">
-            <div class="card-header"><h3>[[icon:trend_up]] Revenue Breakdown</h3></div>
+            <div class="card-header"><h3 style="font-size:14px;font-weight:600">Revenue Breakdown</h3></div>
             <div style="padding:20px;">
-              <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0">
-                <span>Gross Revenue</span><strong style="color:#22c55e">${formatMoney(totalRevenue)}</strong>
+              <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+                <span>Gross Revenue</span><strong style="color:var(--green);font-family:var(--font-mono)">${formatMoney(totalRevenue)}</strong>
               </div>
-              <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0">
-                <span style="color:#ef4444">− Broker Fees</span><span style="color:#ef4444">${formatMoney(totalBrokerFees)}</span>
+              <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+                <span style="color:var(--red)">− Broker Fees</span><span style="color:var(--red);font-family:var(--font-mono)">${formatMoney(totalBrokerFees)}</span>
               </div>
-              <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0">
-                <span style="color:#ef4444">− Local Fees</span><span style="color:#ef4444">${formatMoney(totalLocalFees)}</span>
+              <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+                <span style="color:var(--red)">− Local Fees</span><span style="color:var(--red);font-family:var(--font-mono)">${formatMoney(totalLocalFees)}</span>
               </div>
-              <div style="display:flex;justify-content:space-between;padding:12px 0;background:#f0fdf4;margin:0 -20px;padding-left:20px;padding-right:20px;">
-                <strong>= Clean Revenue</strong><strong style="color:#22c55e">${formatMoney(cleanRevenue)}</strong>
+              <div style="display:flex;justify-content:space-between;padding:12px 0;background:var(--green-dim);margin:0 -20px;padding-left:20px;padding-right:20px;">
+                <strong>= Clean Revenue</strong><strong style="color:var(--green);font-family:var(--font-mono)">${formatMoney(cleanRevenue)}</strong>
               </div>
             </div>
           </div>
-          
+
           <div class="card">
-            <div class="card-header"><h3>[[icon:trend_down]] Expenses Breakdown</h3></div>
+            <div class="card-header"><h3 style="font-size:14px;font-weight:600">Expenses Breakdown</h3></div>
             <div style="padding:20px;">
-              <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0">
-                <span>Driver Pay</span><span style="color:#ef4444">${formatMoney(totalDriverPay)}</span>
+              <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+                <span>Driver Pay</span><span style="color:var(--red);font-family:var(--font-mono)">${formatMoney(totalDriverPay)}</span>
               </div>
-              <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0">
-                <span>Trip Expenses (fuel, tolls)</span><span style="color:#ef4444">${formatMoney(totalTripExpenses)}</span>
+              <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+                <span>Trip Expenses (fuel, tolls)</span><span style="color:var(--red);font-family:var(--font-mono)">${formatMoney(totalTripExpenses)}</span>
               </div>
-              <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0">
-                <span>Variable Costs</span><span style="color:#ef4444">${formatMoney(totalVariableCosts)}</span>
+              <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+                <span>Variable Costs</span><span style="color:var(--red);font-family:var(--font-mono)">${formatMoney(totalVariableCosts)}</span>
               </div>
-              <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0">
-                <span>Fixed Costs (monthly)</span><span style="color:#ef4444">${formatMoney(monthlyFixedCosts)}/mo</span>
+              <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+                <span>Fixed Costs (monthly)</span><span style="color:var(--red);font-family:var(--font-mono)">${formatMoney(monthlyFixedCosts)}/mo</span>
               </div>
             </div>
           </div>
         </div>
-        
+
         <div class="card">
-          <div class="card-header"><h3>[[icon:chart]] Key Metrics</h3></div>
+          <div class="card-header"><h3 style="font-size:14px;font-weight:600">Key Metrics</h3></div>
           <div class="responsive-stat-strip" style="padding:20px;margin-bottom:0;">
-            <div style="text-align:center;padding:16px;background:#f8fafc;border-radius:8px;">
-              <div style="font-size:24px;font-weight:700;color:#3b82f6">${formatMoney(revenuePerMile)}</div>
-              <div style="font-size:13px;color:#64748b;margin-top:4px">Revenue / Mile</div>
+            <div style="text-align:center;padding:16px;background:var(--bg-secondary);border-radius:8px;">
+              <div style="font-size:24px;font-weight:600;color:var(--blue);font-family:var(--font-mono)">${formatMoney(revenuePerMile)}</div>
+              <div style="font-size:13px;color:var(--text-secondary);margin-top:4px">Revenue / Mile</div>
             </div>
-            <div style="text-align:center;padding:16px;background:#f8fafc;border-radius:8px;">
-              <div style="font-size:24px;font-weight:700;color:#22c55e">${formatMoney(profitPerMile)}</div>
-              <div style="font-size:13px;color:#64748b;margin-top:4px">Profit / Mile</div>
+            <div style="text-align:center;padding:16px;background:var(--bg-secondary);border-radius:8px;">
+              <div style="font-size:24px;font-weight:600;color:var(--green);font-family:var(--font-mono)">${formatMoney(profitPerMile)}</div>
+              <div style="font-size:13px;color:var(--text-secondary);margin-top:4px">Profit / Mile</div>
             </div>
-            <div style="text-align:center;padding:16px;background:#f8fafc;border-radius:8px;">
-              <div style="font-size:24px;font-weight:700;color:#8b5cf6">${formatMoney(avgRevenuePerCar)}</div>
-              <div style="font-size:13px;color:#64748b;margin-top:4px">Avg Revenue / Car</div>
+            <div style="text-align:center;padding:16px;background:var(--bg-secondary);border-radius:8px;">
+              <div style="font-size:24px;font-weight:600;color:var(--purple);font-family:var(--font-mono)">${formatMoney(avgRevenuePerCar)}</div>
+              <div style="font-size:13px;color:var(--text-secondary);margin-top:4px">Avg Revenue / Car</div>
             </div>
-            <div style="text-align:center;padding:16px;background:#f8fafc;border-radius:8px;">
-              <div style="font-size:24px;font-weight:700;color:#f59e0b">${totalMiles.toLocaleString()}</div>
-              <div style="font-size:13px;color:#64748b;margin-top:4px">Total Miles</div>
+            <div style="text-align:center;padding:16px;background:var(--bg-secondary);border-radius:8px;">
+              <div style="font-size:24px;font-weight:600;color:var(--amber);font-family:var(--font-mono)">${totalMiles.toLocaleString()}</div>
+              <div style="font-size:13px;color:var(--text-secondary);margin-top:4px">Total Miles</div>
             </div>
           </div>
         </div>
@@ -37175,12 +37175,12 @@
     
     function renderFinCosts(fixedCosts, variableCosts, monthlyFixedCosts, totalVariableCosts, totalFuelFromRecords, totalMaintenanceCost, totalOtherVariableCosts, fuelRecords = []) {
       const fixedRows = fixedCosts.length === 0
-        ? '<tr><td colspan="4" style="text-align:center;padding:20px;color:#64748b">No fixed costs yet</td></tr>'
-        : fixedCosts.map(fc => `<tr><td><span class="badge badge-blue">${fc.category || 'OTHER'}</span></td><td>${fc.name}</td><td class="money">${formatMoney(fc.amount)}/mo</td><td><div class="actions"><button class="action-btn edit" onclick="openFixedCostModal(${fc.id})">Edit</button><button class="action-btn delete" onclick="deleteFixedCost(${fc.id})">Del</button></div></td></tr>`).join('');
+        ? '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-secondary)">No fixed costs yet</td></tr>'
+        : fixedCosts.map(fc => `<tr><td><span class="badge badge-blue">${fc.category || 'OTHER'}</span></td><td>${fc.name}</td><td class="money" style="font-family:var(--font-mono)">${formatMoney(fc.amount)}/mo</td><td><div class="actions"><button class="action-btn edit" onclick="openFixedCostModal(${fc.id})">Edit</button><button class="action-btn delete" onclick="deleteFixedCost(${fc.id})">Del</button></div></td></tr>`).join('');
 
       const varRows = variableCosts.length === 0
-        ? '<tr><td colspan="5" style="text-align:center;padding:20px;color:#64748b">No variable costs yet</td></tr>'
-        : variableCosts.map(vc => `<tr><td>${vc.date ? formatDate(vc.date) : '-'}</td><td><span class="badge badge-purple">${vc.category || 'OTHER'}</span></td><td>${vc.name || vc.description || '-'}</td><td class="money">${formatMoney(vc.amount)}</td><td><div class="actions"><button class="action-btn edit" onclick="openVariableCostModal(${vc.id})">Edit</button><button class="action-btn delete" onclick="deleteVariableCost(${vc.id})">Del</button></div></td></tr>`).join('');
+        ? '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-secondary)">No variable costs yet</td></tr>'
+        : variableCosts.map(vc => `<tr><td>${vc.date ? formatDate(vc.date) : '-'}</td><td><span class="badge badge-purple">${vc.category || 'OTHER'}</span></td><td>${vc.name || vc.description || '-'}</td><td class="money" style="font-family:var(--font-mono)">${formatMoney(vc.amount)}</td><td><div class="actions"><button class="action-btn edit" onclick="openVariableCostModal(${vc.id})">Edit</button><button class="action-btn delete" onclick="deleteVariableCost(${vc.id})">Del</button></div></td></tr>`).join('');
 
       // Fuel card stats
       const fuelTxCount = fuelRecords.length;
@@ -37190,75 +37190,75 @@
 
       return `
         <div class="stats-grid" style="margin-bottom:24px;">
-          <div class="stat-card" style="border-left:4px solid #ef4444">
-            <div class="label">Monthly Fixed Costs</div>
-            <div class="value" style="color:#ef4444">${formatMoney(monthlyFixedCosts)}</div>
+          <div class="stat-flat stat-card--red">
+            <div class="stat-flat-label">Monthly Fixed Costs</div>
+            <div class="stat-flat-value" style="color:var(--red);font-family:var(--font-mono)">${formatMoney(monthlyFixedCosts)}</div>
           </div>
-          <div class="stat-card" style="border-left:4px solid #f59e0b">
-            <div class="label">Total Variable Costs</div>
-            <div class="value" style="color:#f59e0b">${formatMoney(totalVariableCosts)}</div>
+          <div class="stat-flat stat-card--amber">
+            <div class="stat-flat-label">Total Variable Costs</div>
+            <div class="stat-flat-value" style="color:var(--amber);font-family:var(--font-mono)">${formatMoney(totalVariableCosts)}</div>
           </div>
-          <div class="stat-card">
-            <div class="label">Fuel (from records)</div>
-            <div class="value">${formatMoney(totalFuelFromRecords)}</div>
+          <div class="stat-flat">
+            <div class="stat-flat-label">Fuel (from records)</div>
+            <div class="stat-flat-value" style="font-family:var(--font-mono)">${formatMoney(totalFuelFromRecords)}</div>
           </div>
-          <div class="stat-card">
-            <div class="label">Maintenance</div>
-            <div class="value">${formatMoney(totalMaintenanceCost)}</div>
+          <div class="stat-flat">
+            <div class="stat-flat-label">Maintenance</div>
+            <div class="stat-flat-value" style="font-family:var(--font-mono)">${formatMoney(totalMaintenanceCost)}</div>
           </div>
         </div>
 
         <!-- Fuel Card Expenses Card -->
-        <div class="card" style="margin-bottom:24px;border-left:4px solid #dc2626">
+        <div class="card" style="margin-bottom:24px;border-left:2px solid var(--red)">
           <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
-            <h3>[[icon:fuel]] Fuel Card Expenses</h3>
-            <div style="font-size:24px;font-weight:700;color:#dc2626">${formatMoney(totalFuelFromRecords)}</div>
+            <h3 style="font-size:14px;font-weight:600">Fuel Card Expenses</h3>
+            <div style="font-size:24px;font-weight:600;color:var(--red);font-family:var(--font-mono)">${formatMoney(totalFuelFromRecords)}</div>
           </div>
-          <div style="padding:16px 20px;background:#fef2f2">
+          <div style="padding:16px 20px;background:var(--red-dim)">
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;">
-              <div style="text-align:center;padding:12px;background:white;border-radius:8px;">
-                <div style="font-size:11px;color:#64748b">Transactions</div>
-                <div style="font-size:18px;font-weight:700">${fuelTxCount}</div>
+              <div style="text-align:center;padding:12px;background:var(--bg-card);border-radius:8px;">
+                <div style="font-size:11px;color:var(--text-secondary)">Transactions</div>
+                <div style="font-size:18px;font-weight:600;font-family:var(--font-mono)">${fuelTxCount}</div>
               </div>
-              <div style="text-align:center;padding:12px;background:white;border-radius:8px;">
-                <div style="font-size:11px;color:#64748b">Total Gallons</div>
-                <div style="font-size:18px;font-weight:700">${totalGallons.toFixed(1)}</div>
+              <div style="text-align:center;padding:12px;background:var(--bg-card);border-radius:8px;">
+                <div style="font-size:11px;color:var(--text-secondary)">Total Gallons</div>
+                <div style="font-size:18px;font-weight:600;font-family:var(--font-mono)">${totalGallons.toFixed(1)}</div>
               </div>
-              <div style="text-align:center;padding:12px;background:white;border-radius:8px;">
-                <div style="font-size:11px;color:#64748b">Avg $/Gallon</div>
-                <div style="font-size:18px;font-weight:700">${formatMoney(avgPerGallon)}</div>
+              <div style="text-align:center;padding:12px;background:var(--bg-card);border-radius:8px;">
+                <div style="font-size:11px;color:var(--text-secondary)">Avg $/Gallon</div>
+                <div style="font-size:18px;font-weight:600;font-family:var(--font-mono)">${formatMoney(avgPerGallon)}</div>
               </div>
-              <div style="text-align:center;padding:12px;background:white;border-radius:8px;">
-                <div style="font-size:11px;color:#64748b">Avg per Fill</div>
-                <div style="font-size:18px;font-weight:700">${formatMoney(avgPerTransaction)}</div>
+              <div style="text-align:center;padding:12px;background:var(--bg-card);border-radius:8px;">
+                <div style="font-size:11px;color:var(--text-secondary)">Avg per Fill</div>
+                <div style="font-size:18px;font-weight:600;font-family:var(--font-mono)">${formatMoney(avgPerTransaction)}</div>
               </div>
             </div>
-            <div style="margin-top:12px;text-align:center;font-size:12px;color:#64748b">
-              Data from uploaded fuel card reports • <a href="#" onclick="navigateTo('fuel');return false" style="color:var(--danger)">View Fuel Tracking →</a>
+            <div style="margin-top:12px;text-align:center;font-size:12px;color:var(--text-secondary)">
+              Data from uploaded fuel card reports &middot; <a href="#" onclick="navigateTo('fuel');return false" style="color:var(--red)">View Fuel Tracking &rarr;</a>
             </div>
           </div>
         </div>
 
         <div class="card" style="margin-bottom:24px;">
           <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
-            <h3>[[icon:building]] Fixed Costs (Monthly)</h3>
+            <h3 style="font-size:14px;font-weight:600">Fixed Costs (Monthly)</h3>
             <button class="btn btn-primary" onclick="openFixedCostModal()">+ Add</button>
           </div>
           <div class="table-wrapper">
-            <table>
+            <table class="data-table">
               <thead><tr><th>Category</th><th>Name</th><th>Amount</th><th>Actions</th></tr></thead>
               <tbody>${fixedRows}</tbody>
             </table>
           </div>
         </div>
-        
+
         <div class="card">
           <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
-            <h3>[[icon:note]] Variable Costs</h3>
+            <h3 style="font-size:14px;font-weight:600">Variable Costs</h3>
             <button class="btn btn-primary" onclick="openVariableCostModal()">+ Add</button>
           </div>
           <div class="table-wrapper">
-            <table>
+            <table class="data-table">
               <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Actions</th></tr></thead>
               <tbody>${varRows}</tbody>
             </table>
@@ -37269,7 +37269,7 @@
     
     function renderFinByTrip(trips) {
       const tripRows = trips.length === 0
-        ? '<tr><td colspan="9" style="text-align:center;padding:40px;color:#64748b">No trips yet</td></tr>'
+        ? '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-secondary)">No trips yet</td></tr>'
         : [...trips].sort((a, b) => b.id - a.id).slice(0, 50).map(t => {
             const fin = getTripFin(t.id);
             const driver = appData.drivers.find(d => d.id === t.driver_id);
@@ -37279,19 +37279,19 @@
               <td>${driver ? driver.first_name + ' ' + driver.last_name : '-'}</td>
               <td>${t.trip_date ? formatDate(t.trip_date) : '-'}</td>
               <td>${fin.vehicleCount}</td>
-              <td>${(t.miles || 0).toLocaleString()}</td>
-              <td class="money">${formatMoney(fin.loadRevenue)}</td>
-              <td class="money negative">${formatMoney(fin.brokerFee + fin.localFees)}</td>
-              <td class="money negative">${formatMoney(fin.driverCut + fin.totalExpenses)}</td>
-              <td class="money ${profit >= 0 ? '' : 'negative'}" style="font-weight:700;color:${profit >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(profit)}</td>
+              <td style="font-family:var(--font-mono)">${(t.miles || 0).toLocaleString()}</td>
+              <td class="money" style="font-family:var(--font-mono)">${formatMoney(fin.loadRevenue)}</td>
+              <td class="money negative" style="font-family:var(--font-mono)">${formatMoney(fin.brokerFee + fin.localFees)}</td>
+              <td class="money negative" style="font-family:var(--font-mono)">${formatMoney(fin.driverCut + fin.totalExpenses)}</td>
+              <td class="money ${profit >= 0 ? '' : 'negative'}" style="font-weight:600;color:${profit >= 0 ? 'var(--green)' : 'var(--red)'};font-family:var(--font-mono)">${formatMoney(profit)}</td>
             </tr>`;
           }).join('');
-      
+
       return `
         <div class="card">
-          <div class="card-header"><h3>[[icon:truck]] Profitability by Trip</h3></div>
+          <div class="card-header"><h3 style="font-size:14px;font-weight:600">Profitability by Trip</h3></div>
           <div class="table-wrapper">
-            <table>
+            <table class="data-table">
               <thead><tr><th>Trip</th><th>Driver</th><th>Date</th><th>Cars</th><th>Miles</th><th>Revenue</th><th>Fees</th><th>Costs</th><th>Profit</th></tr></thead>
               <tbody>${tripRows}</tbody>
             </table>
@@ -37305,7 +37305,7 @@
       drivers.forEach(d => {
         driverStats[d.id] = { name: d.first_name + ' ' + d.last_name, trips: 0, cars: 0, miles: 0, revenue: 0, profit: 0, driverPay: 0 };
       });
-      
+
       trips.forEach(t => {
         if (t.driver_id && driverStats[t.driver_id]) {
           const fin = getTripFin(t.id);
@@ -37317,27 +37317,27 @@
           driverStats[t.driver_id].driverPay += fin.driverCut;
         }
       });
-      
+
       const driverList = Object.values(driverStats).filter(d => d.trips > 0).sort((a, b) => b.profit - a.profit);
-      
+
       const rows = driverList.length === 0
-        ? '<tr><td colspan="8" style="text-align:center;padding:40px;color:#64748b">No driver data yet</td></tr>'
+        ? '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-secondary)">No driver data yet</td></tr>'
         : driverList.map(d => `<tr>
             <td><strong>${d.name}</strong></td>
             <td>${d.trips}</td>
             <td>${d.cars}</td>
-            <td>${d.miles.toLocaleString()}</td>
-            <td class="money">${formatMoney(d.revenue)}</td>
-            <td class="money">${formatMoney(d.driverPay)}</td>
-            <td class="money ${d.profit >= 0 ? '' : 'negative'}" style="font-weight:700;color:${d.profit >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(d.profit)}</td>
-            <td>${d.cars > 0 ? formatMoney(d.profit / d.cars) : '-'}</td>
+            <td style="font-family:var(--font-mono)">${d.miles.toLocaleString()}</td>
+            <td class="money" style="font-family:var(--font-mono)">${formatMoney(d.revenue)}</td>
+            <td class="money" style="font-family:var(--font-mono)">${formatMoney(d.driverPay)}</td>
+            <td class="money ${d.profit >= 0 ? '' : 'negative'}" style="font-weight:600;color:${d.profit >= 0 ? 'var(--green)' : 'var(--red)'};font-family:var(--font-mono)">${formatMoney(d.profit)}</td>
+            <td style="font-family:var(--font-mono)">${d.cars > 0 ? formatMoney(d.profit / d.cars) : '-'}</td>
           </tr>`).join('');
-      
+
       return `
         <div class="card">
-          <div class="card-header"><h3>[[icon:user]] Profitability by Driver</h3></div>
+          <div class="card-header"><h3 style="font-size:14px;font-weight:600">Profitability by Driver</h3></div>
           <div class="table-wrapper">
-            <table>
+            <table class="data-table">
               <thead><tr><th>Driver</th><th>Trips</th><th>Cars</th><th>Miles</th><th>Revenue</th><th>Driver Pay</th><th>Net Profit</th><th>Profit/Car</th></tr></thead>
               <tbody>${rows}</tbody>
             </table>
@@ -37395,23 +37395,23 @@
         .sort((a, b) => b.netProfit - a.netProfit);
 
       const rows = brokerList.length === 0
-        ? '<tr><td colspan="8" style="text-align:center;padding:40px;color:#64748b">No broker data yet</td></tr>'
+        ? '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-secondary)">No broker data yet</td></tr>'
         : brokerList.map(b => `<tr>
             <td><strong>${b.name}</strong></td>
             <td>${b.trips}</td>
             <td>${b.cars}</td>
-            <td class="money">${formatMoney(b.revenue)}</td>
-            <td class="money negative">${formatMoney(b.brokerFee)} <span style="color:var(--text-secondary);font-size:11px">(${b.feePercent.toFixed(1)}%)</span></td>
-            <td class="money">${formatMoney(b.cleanRevenue)}</td>
-            <td class="money" style="color:#22c55e;font-weight:700">${formatMoney(b.netProfit)}</td>
-            <td>${b.cars > 0 ? formatMoney(b.netProfit / b.cars) : '-'}</td>
+            <td class="money" style="font-family:var(--font-mono)">${formatMoney(b.revenue)}</td>
+            <td class="money negative" style="font-family:var(--font-mono)">${formatMoney(b.brokerFee)} <span style="color:var(--text-secondary);font-size:11px">(${b.feePercent.toFixed(1)}%)</span></td>
+            <td class="money" style="font-family:var(--font-mono)">${formatMoney(b.cleanRevenue)}</td>
+            <td class="money" style="color:var(--green);font-weight:600;font-family:var(--font-mono)">${formatMoney(b.netProfit)}</td>
+            <td style="font-family:var(--font-mono)">${b.cars > 0 ? formatMoney(b.netProfit / b.cars) : '-'}</td>
           </tr>`).join('');
 
       return `
         <div class="card">
-          <div class="card-header"><h3>[[icon:handshake]] Profitability by Broker</h3></div>
+          <div class="card-header"><h3 style="font-size:14px;font-weight:600">Profitability by Broker</h3></div>
           <div class="table-wrapper">
-            <table>
+            <table class="data-table">
               <thead><tr><th>Broker</th><th>Trips</th><th>Cars</th><th>Revenue</th><th>Broker Fee</th><th>Clean Rev</th><th>Net Profit</th><th>Profit/Car</th></tr></thead>
               <tbody>${rows}</tbody>
             </table>
@@ -37482,23 +37482,23 @@
         .slice(0, 20);
 
       const rows = laneList.length === 0
-        ? '<tr><td colspan="8" style="text-align:center;padding:40px;color:#64748b">No lane data yet</td></tr>'
+        ? '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-secondary)">No lane data yet</td></tr>'
         : laneList.map(l => `<tr>
             <td><strong>${l.lane}</strong></td>
             <td>${l.trips}</td>
             <td>${l.cars}</td>
-            <td>${l.miles.toLocaleString()}</td>
-            <td class="money">${formatMoney(l.revenue)}</td>
-            <td class="money">${formatMoney(l.cleanRevenue)}</td>
-            <td class="money" style="color:#22c55e;font-weight:700">${formatMoney(l.netProfit)}</td>
-            <td>${formatMoney(l.rpm)}/mi</td>
+            <td style="font-family:var(--font-mono)">${l.miles.toLocaleString()}</td>
+            <td class="money" style="font-family:var(--font-mono)">${formatMoney(l.revenue)}</td>
+            <td class="money" style="font-family:var(--font-mono)">${formatMoney(l.cleanRevenue)}</td>
+            <td class="money" style="color:var(--green);font-weight:600;font-family:var(--font-mono)">${formatMoney(l.netProfit)}</td>
+            <td style="font-family:var(--font-mono)">${formatMoney(l.rpm)}/mi</td>
           </tr>`).join('');
 
       return `
         <div class="card">
-          <div class="card-header"><h3>[[icon:map]] Profitability by Lane</h3></div>
+          <div class="card-header"><h3 style="font-size:14px;font-weight:600">Profitability by Lane</h3></div>
           <div class="table-wrapper">
-            <table>
+            <table class="data-table">
               <thead><tr><th>Lane</th><th>Trips</th><th>Cars</th><th>Miles</th><th>Revenue</th><th>Clean Rev</th><th>Net Profit</th><th>Rev/Mile</th></tr></thead>
               <tbody>${rows}</tbody>
             </table>
