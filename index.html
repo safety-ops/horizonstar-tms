@@ -10071,10 +10071,10 @@
       const prevDisabled = p.page <= 1 ? 'disabled' : '';
       const nextDisabled = p.page >= totalPages ? 'disabled' : '';
       
-      return '<div class="pagination-controls" style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:20px;padding:16px;background:var(--bg-card);border-radius:12px">' +
-        '<button class="btn btn-secondary" onclick="changePage(\'' + pageKey + '\', ' + (p.page - 1) + ')" ' + prevDisabled + ' style="padding:10px 16px">← ' + ('Previous') + '</button>' +
-        '<span style="color:var(--text-muted)">' + ('Page') + ' <strong>' + p.page + '</strong> / ' + totalPages + ' (' + p.total + ' ' + ('records') + ')</span>' +
-        '<button class="btn btn-secondary" onclick="changePage(\'' + pageKey + '\', ' + (p.page + 1) + ')" ' + nextDisabled + ' style="padding:10px 16px">' + ('Next') + ' →</button>' +
+      return '<div class="pagination-controls pagination-flat" style="margin-top:16px">' +
+        '<button class="btn btn-secondary btn-sm" onclick="changePage(\'' + pageKey + '\', ' + (p.page - 1) + ')" ' + prevDisabled + '>← Previous</button>' +
+        '<span style="color:var(--text-secondary);font-size:13px">Page <strong>' + p.page + '</strong> / ' + totalPages + ' (' + p.total + ' records)</span>' +
+        '<button class="btn btn-secondary btn-sm" onclick="changePage(\'' + pageKey + '\', ' + (p.page + 1) + ')" ' + nextDisabled + '>Next →</button>' +
         '</div>';
     }
     
@@ -10665,10 +10665,7 @@
             : '');
 
       const cardClasses = 'order-list-item' + (options.cardClass ? ' ' + options.cardClass : '');
-      let cardStyle = 'border:1px solid var(--border);background:var(--bg-card);border-radius:10px;padding:12px 16px;cursor:pointer;transition:background 0.15s ease';
-      if (options.accentColor) {
-        cardStyle += ';border-left:4px solid ' + options.accentColor + ';padding-left:10px';
-      }
+      let cardStyle = 'border:1px solid var(--border-primary);background:var(--bg-primary);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);cursor:pointer;transition:background 0.15s ease';
       if (options.cardStyle) {
         cardStyle += ';' + options.cardStyle;
       }
@@ -10687,7 +10684,7 @@
           '<span class="order-card-secondary">Trip: <strong style="color:var(--text-primary)">' + escapeHtml(tripLabel) + '</strong></span>' +
           extraMetaHtml +
           '</div>' +
-          '<span class="money positive order-card-amount">' + formatMoney(revenueValue) + '</span>' +
+          '<span class="money positive order-card-amount" style="font-family:var(--font-mono)">' + formatMoney(revenueValue) + '</span>' +
         '</div>' +
         // Row 2: Vehicle + Driver
         '<div class="order-card-row" style="margin-top:6px">' +
