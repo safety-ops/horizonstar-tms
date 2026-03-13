@@ -9123,7 +9123,7 @@
               </button>
             </form>
             <p style="text-align:center;margin-top:16px;color:var(--text-muted);font-size:12px">
-              Need an account? Contact <strong style="color:#6366f1">info@horizonstarllc.com</strong>
+              Need an account? <a href="#" onclick="this.closest('.modal-overlay').remove();renderDealerRegistration();return false;" style="color:var(--primary);text-decoration:none;font-weight:500">Register as a Dealer</a>
             </p>
           </div>
         </div>
@@ -9191,7 +9191,7 @@
     }
 
     // ============ DATABASE FUNCTIONS ============
-    const PUBLIC_DB_TABLES = new Set(['driver_applications']);
+    const PUBLIC_DB_TABLES = new Set(['driver_applications', 'dealer_applications']);
 
     function requireTableAuth(table, options = {}) {
       if (options.allowUnauthenticated) return;
@@ -14816,7 +14816,7 @@
 
       // Restore saved page from localStorage (persist across refresh)
       const savedPage = localStorage.getItem('tms_current_page');
-      const validPages = ['dashboard', 'live_map', 'team_chat', 'trips', 'orders', 'loadboard', 'future_cars', 'tasks', 'drivers', 'trucks', 'local_drivers', 'brokers', 'dealers', 'dispatchers', 'dispatcher_ranking', 'financials', 'billing', 'payroll', 'fuel', 'ifta', 'maintenance', 'compliance', 'applications', 'settings', 'users', 'activity_log', 'trip_profitability', 'reports', 'ai_advisor'];
+      const validPages = ['dashboard', 'live_map', 'team_chat', 'trips', 'orders', 'loadboard', 'future_cars', 'tasks', 'drivers', 'trucks', 'local_drivers', 'brokers', 'dealers', 'dispatchers', 'dispatcher_ranking', 'financials', 'billing', 'payroll', 'fuel', 'ifta', 'maintenance', 'compliance', 'applications', 'dealer_applications', 'settings', 'users', 'activity_log', 'trip_profitability', 'reports', 'ai_advisor'];
       if (savedPage && validPages.includes(savedPage)) {
         currentPage = savedPage;
       }
@@ -14884,7 +14884,8 @@
         { label: 'Operations', items: [
           { id: 'compliance', label: 'Compliance', icon: icons.compliance },
           { id: 'maintenance', label: 'Maintenance', icon: icons.maintenance },
-          isAdmin ? { id: 'applications', label: 'Applications', icon: icons.applications } : null
+          isAdmin ? { id: 'applications', label: 'Applications', icon: icons.applications } : null,
+          isAdmin ? { id: 'dealer_applications', label: 'Dealer Apps', icon: icons.store || icons.brokers } : null
         ].filter(Boolean) },
         isAdmin ? { label: 'Settings', items: [
           { id: 'settings', label: 'Settings', icon: icons.settings },
@@ -15313,7 +15314,8 @@
         subPages: [
           { id: 'compliance', label: 'Compliance' },
           { id: 'maintenance', label: 'Maintenance' },
-          { id: 'applications', label: 'Applications', admin: true }
+          { id: 'applications', label: 'Applications', admin: true },
+          { id: 'dealer_applications', label: 'Dealer Apps', admin: true }
         ]
       },
       {
@@ -16681,6 +16683,7 @@
       else if (currentPage === 'live_map') renderLiveMap(m);
       else if (currentPage === 'team_chat') renderTeamChat(m);
       else if (currentPage === 'applications') renderApplications(m);
+      else if (currentPage === 'dealer_applications') renderDealerApplications(m);
       else if (currentPage === 'tracking') renderTrackingPortal(m);
       else if (currentPage === 'dealers') renderDealersAdmin(m);
       
@@ -47066,6 +47069,402 @@ function jsonResponse(data, status = 200) {
     }
 
     // ============================================================
+    // DEALER SELF-REGISTRATION & ADMIN APPROVAL
+    // ============================================================
+
+    let dealerApplicationsData = [];
+    let dealerApplicationsFilter = 'all';
+
+    /**
+     * Render public dealer registration form (no auth required)
+     */
+    function renderDealerRegistration() {
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <div style="min-height:100vh;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;padding:24px">
+          <div style="width:100%;max-width:640px">
+            <div style="text-align:center;margin-bottom:32px">
+              <div style="font-size:32px;font-weight:600;color:var(--text-primary)">[[icon:store]] Dealer Registration</div>
+              <p style="color:var(--text-secondary);margin-top:8px">Apply for a dealer account to submit vehicles for transport</p>
+            </div>
+            <div class="card" style="padding:32px">
+              <form id="dealer-registration-form" onsubmit="submitDealerRegistration(event)">
+                <h4 style="margin:0 0 20px;color:var(--text-primary)">Company Information</h4>
+                <div class="form-group" style="margin-bottom:16px">
+                  <label style="display:block;margin-bottom:6px;font-weight:500">Company Name *</label>
+                  <input type="text" id="reg-company-name" required placeholder="Your dealership name" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary)">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+                  <div class="form-group">
+                    <label style="display:block;margin-bottom:6px;font-weight:500">Contact Name *</label>
+                    <input type="text" id="reg-contact-name" required placeholder="John Smith" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary)">
+                  </div>
+                  <div class="form-group">
+                    <label style="display:block;margin-bottom:6px;font-weight:500">Email *</label>
+                    <input type="email" id="reg-contact-email" required placeholder="dealer@company.com" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary)">
+                  </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+                  <div class="form-group">
+                    <label style="display:block;margin-bottom:6px;font-weight:500">Phone</label>
+                    <input type="tel" id="reg-contact-phone" placeholder="(555) 123-4567" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary)">
+                  </div>
+                  <div class="form-group">
+                    <label style="display:block;margin-bottom:6px;font-weight:500">Payment Terms</label>
+                    <select id="reg-payment-terms" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary)">
+                      <option value="NET30">NET 30</option>
+                      <option value="NET15">NET 15</option>
+                      <option value="COD">COD</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group" style="margin-bottom:16px">
+                  <label style="display:block;margin-bottom:6px;font-weight:500">Company Address</label>
+                  <input type="text" id="reg-company-address" placeholder="123 Main St, City, State ZIP" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary)">
+                </div>
+                <div class="form-group" style="margin-bottom:24px">
+                  <label style="display:block;margin-bottom:6px;font-weight:500">Additional Notes</label>
+                  <textarea id="reg-notes" rows="3" placeholder="Tell us about your dealership, volume expectations, etc." style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);resize:vertical"></textarea>
+                </div>
+                <div id="reg-error" style="color:#ef4444;font-size:13px;margin-bottom:12px;display:none"></div>
+                <div style="display:flex;gap:12px;justify-content:flex-end">
+                  <button type="button" class="btn btn-secondary" onclick="renderLogin()" style="padding:12px 24px">Back to Login</button>
+                  <button type="submit" class="btn btn-primary" id="reg-submit-btn" style="padding:12px 24px">Submit Application</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    /**
+     * Handle dealer registration form submission
+     */
+    async function submitDealerRegistration(e) {
+      e.preventDefault();
+      const btn = document.getElementById('reg-submit-btn');
+      const errorEl = document.getElementById('reg-error');
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+      errorEl.style.display = 'none';
+
+      try {
+        const companyName = document.getElementById('reg-company-name').value.trim();
+        const contactName = document.getElementById('reg-contact-name').value.trim();
+        const contactEmail = document.getElementById('reg-contact-email').value.trim().toLowerCase();
+        const contactPhone = document.getElementById('reg-contact-phone').value.trim();
+        const companyAddress = document.getElementById('reg-company-address').value.trim();
+        const paymentTerms = document.getElementById('reg-payment-terms').value;
+        const notes = document.getElementById('reg-notes').value.trim();
+
+        if (!companyName || !contactName || !contactEmail) {
+          throw new Error('Company name, contact name, and email are required.');
+        }
+
+        // Check for duplicate email
+        const { data: existing } = await sb.from('dealer_applications')
+          .select('id, status')
+          .eq('contact_email', contactEmail)
+          .in('status', ['pending', 'under_review'])
+          .limit(1);
+
+        if (existing && existing.length > 0) {
+          throw new Error('An application with this email is already pending review.');
+        }
+
+        const { error } = await sb.from('dealer_applications').insert([{
+          company_name: companyName,
+          contact_name: contactName,
+          contact_email: contactEmail,
+          contact_phone: contactPhone,
+          company_address: companyAddress,
+          payment_terms: paymentTerms,
+          notes: notes,
+          status: 'pending'
+        }]);
+
+        if (error) throw new Error(error.message);
+
+        // Show success
+        const app = document.getElementById('app');
+        app.innerHTML = `
+          <div style="min-height:100vh;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;padding:24px">
+            <div style="width:100%;max-width:500px;text-align:center">
+              <div class="card" style="padding:48px 32px">
+                <div style="font-size:64px;margin-bottom:20px">[[icon:check_circle]]</div>
+                <h2 style="margin:0 0 12px;color:var(--text-primary)">Application Submitted!</h2>
+                <p style="color:var(--text-secondary);line-height:1.6;margin-bottom:8px">
+                  Thank you, <strong>${escapeHtml(companyName)}</strong>. Your dealer registration has been received.
+                </p>
+                <p style="color:var(--text-muted);font-size:13px;margin-bottom:24px">
+                  Our team will review your application and contact you at <strong>${escapeHtml(contactEmail)}</strong> once approved. This typically takes 1-2 business days.
+                </p>
+                <button class="btn btn-primary" onclick="renderLogin()" style="padding:12px 32px">Back to Login</button>
+              </div>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Submit Application';
+      }
+    }
+
+    // ============================================================
+    // DEALER APPLICATIONS — ADMIN MANAGEMENT
+    // ============================================================
+
+    async function renderDealerApplications(m) {
+      m.innerHTML = '<div style="padding:0">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:16px">' +
+        '<h1 style="margin:0;font-size:18px;font-weight:600">[[icon:store]] Dealer Applications</h1>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        '<button class="btn ' + (dealerApplicationsFilter === 'all' ? 'btn-primary' : 'btn-secondary') + '" onclick="filterDealerApplications(\'all\')">All</button>' +
+        '<button class="btn ' + (dealerApplicationsFilter === 'pending' ? 'btn-primary' : 'btn-secondary') + '" onclick="filterDealerApplications(\'pending\')">Pending</button>' +
+        '<button class="btn ' + (dealerApplicationsFilter === 'approved' ? 'btn-primary' : 'btn-secondary') + '" onclick="filterDealerApplications(\'approved\')">Approved</button>' +
+        '<button class="btn ' + (dealerApplicationsFilter === 'rejected' ? 'btn-primary' : 'btn-secondary') + '" onclick="filterDealerApplications(\'rejected\')">Rejected</button>' +
+        '</div></div>' +
+        '<div id="dealerAppsContent"><div style="text-align:center;padding:40px"><div class="spinner"></div><p style="color:var(--text-muted);margin-top:16px">Loading applications...</p></div></div>' +
+        '</div>';
+
+      await loadDealerApplications();
+    }
+
+    async function loadDealerApplications() {
+      try {
+        let query = sb.from('dealer_applications').select('*').order('submitted_at', { ascending: false });
+        if (dealerApplicationsFilter !== 'all') {
+          query = query.eq('status', dealerApplicationsFilter);
+        }
+        const { data, error } = await query;
+        if (error) throw error;
+        dealerApplicationsData = data || [];
+        renderDealerApplicationsList();
+      } catch (err) {
+        console.error('Error loading dealer applications:', err);
+        document.getElementById('dealerAppsContent').innerHTML = '<div class="card" style="text-align:center;padding:40px"><p style="color:var(--danger)">Error loading applications: ' + escapeHtml(err.message) + '</p><button class="btn btn-primary" onclick="loadDealerApplications()" style="margin-top:16px">Retry</button></div>';
+      }
+    }
+
+    function filterDealerApplications(filter) {
+      dealerApplicationsFilter = filter;
+      renderDealerApplications(document.getElementById('main-content'));
+    }
+
+    function renderDealerApplicationsList() {
+      const content = document.getElementById('dealerAppsContent');
+
+      if (dealerApplicationsData.length === 0) {
+        content.innerHTML = '<div class="card" style="text-align:center;padding:60px">' +
+          '<div style="font-size:48px;margin-bottom:16px">[[icon:store]]</div>' +
+          '<h3 style="margin:0 0 8px">No Dealer Applications</h3>' +
+          '<p style="color:var(--text-muted);margin:0">' +
+          (dealerApplicationsFilter === 'all' ? 'No dealer registration requests have been submitted yet.' : 'No ' + dealerApplicationsFilter.replace('_', ' ') + ' applications.') +
+          '</p></div>';
+        return;
+      }
+
+      const statusColors = {
+        pending: { bg: '#fef3c7', text: '#92400e', label: 'Pending' },
+        under_review: { bg: '#dbeafe', text: '#1e40af', label: 'Under Review' },
+        approved: { bg: '#d1fae5', text: '#065f46', label: 'Approved' },
+        rejected: { bg: '#fee2e2', text: '#991b1b', label: 'Rejected' }
+      };
+
+      content.innerHTML = '<div class="card" style="overflow:hidden"><div class="table-wrapper">' +
+        '<table class="data-table"><thead><tr><th>Company</th><th>Contact</th><th>Email</th><th>Phone</th><th>Submitted</th><th style="text-align:center">Status</th><th style="text-align:center">Actions</th></tr></thead><tbody>' +
+        dealerApplicationsData.map(function(app) {
+          var status = statusColors[app.status] || statusColors.pending;
+          var submitted = app.submitted_at ? new Date(app.submitted_at).toLocaleDateString() : 'N/A';
+          return '<tr>' +
+            '<td><strong>' + escapeHtml(app.company_name || '-') + '</strong></td>' +
+            '<td>' + escapeHtml(app.contact_name || '-') + '</td>' +
+            '<td style="font-size:13px">' + escapeHtml(app.contact_email || '-') + '</td>' +
+            '<td style="font-size:13px">' + escapeHtml(app.contact_phone || '-') + '</td>' +
+            '<td style="font-size:13px">' + submitted + '</td>' +
+            '<td style="text-align:center"><span style="display:inline-block;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500;background:' + status.bg + ';color:' + status.text + '">' + status.label + '</span></td>' +
+            '<td style="text-align:center"><div style="display:flex;gap:6px;justify-content:center">' +
+            '<button class="action-btn edit" onclick="viewDealerApplication(' + app.id + ')">View</button>' +
+            (app.status === 'pending' || app.status === 'under_review' ? '<button class="action-btn" style="color:#22c55e" onclick="approveDealerApplication(' + app.id + ')">Approve</button><button class="action-btn delete" onclick="rejectDealerApplicationPrompt(' + app.id + ')">Reject</button>' : '') +
+            '</div></td></tr>';
+        }).join('') +
+        '</tbody></table></div></div>' +
+        '<div style="margin-top:12px;color:var(--text-muted);font-size:13px">Showing ' + dealerApplicationsData.length + ' application' + (dealerApplicationsData.length !== 1 ? 's' : '') + '</div>';
+    }
+
+    function viewDealerApplication(id) {
+      var app = dealerApplicationsData.find(function(a) { return a.id === id; });
+      if (!app) return;
+
+      var statusColors = {
+        pending: { bg: '#fef3c7', text: '#92400e', label: 'Pending' },
+        under_review: { bg: '#dbeafe', text: '#1e40af', label: 'Under Review' },
+        approved: { bg: '#d1fae5', text: '#065f46', label: 'Approved' },
+        rejected: { bg: '#fee2e2', text: '#991b1b', label: 'Rejected' }
+      };
+      var status = statusColors[app.status] || statusColors.pending;
+
+      var modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+      var actionsHtml = '';
+      if (app.status === 'pending' || app.status === 'under_review') {
+        actionsHtml = '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">' +
+          '<button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Close</button>' +
+          '<button class="btn" style="background:#ef4444;color:white" onclick="this.closest(\'.modal-overlay\').remove();rejectDealerApplicationPrompt(' + app.id + ')">Reject</button>' +
+          '<button class="btn btn-primary" style="background:#22c55e" onclick="this.closest(\'.modal-overlay\').remove();approveDealerApplication(' + app.id + ')">Approve</button>' +
+          '</div>';
+      } else if (app.status === 'approved') {
+        actionsHtml = '<div style="background:#d1fae5;padding:12px 16px;border-radius:8px;margin-top:16px;color:#065f46;font-size:13px">[[icon:check_circle]] Approved' + (app.reviewed_at ? ' on ' + new Date(app.reviewed_at).toLocaleDateString() : '') + '</div>' +
+          '<div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Close</button></div>';
+      } else if (app.status === 'rejected') {
+        actionsHtml = '<div style="background:#fee2e2;padding:12px 16px;border-radius:8px;margin-top:16px;color:#991b1b;font-size:13px">[[icon:x_circle]] Rejected: ' + escapeHtml(app.rejection_reason || 'No reason provided') + '</div>' +
+          '<div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Close</button></div>';
+      } else {
+        actionsHtml = '<div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Close</button></div>';
+      }
+
+      modal.innerHTML = '<div class="modal" style="max-width:550px">' +
+        '<div class="modal-header"><h3>Dealer Application</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">x</button></div>' +
+        '<div class="modal-body">' +
+        '<div style="text-align:center;margin-bottom:20px">' +
+        '<div style="font-size:20px;font-weight:700;color:var(--text-primary)">' + escapeHtml(app.company_name) + '</div>' +
+        '<span style="display:inline-block;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500;background:' + status.bg + ';color:' + status.text + ';margin-top:8px">' + status.label + '</span>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
+        '<div style="background:var(--bg-secondary);padding:14px;border-radius:8px"><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">CONTACT NAME</div><div style="font-weight:500">' + escapeHtml(app.contact_name || '-') + '</div></div>' +
+        '<div style="background:var(--bg-secondary);padding:14px;border-radius:8px"><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">EMAIL</div><div style="font-weight:500">' + escapeHtml(app.contact_email || '-') + '</div></div>' +
+        '<div style="background:var(--bg-secondary);padding:14px;border-radius:8px"><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">PHONE</div><div style="font-weight:500">' + escapeHtml(app.contact_phone || '-') + '</div></div>' +
+        '<div style="background:var(--bg-secondary);padding:14px;border-radius:8px"><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">PAYMENT TERMS</div><div style="font-weight:500">' + escapeHtml(app.payment_terms || 'NET30') + '</div></div>' +
+        '</div>' +
+        (app.company_address ? '<div style="background:var(--bg-secondary);padding:14px;border-radius:8px;margin-top:12px"><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">ADDRESS</div><div style="font-weight:500">' + escapeHtml(app.company_address) + '</div></div>' : '') +
+        (app.notes ? '<div style="background:var(--bg-secondary);padding:14px;border-radius:8px;margin-top:12px"><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">NOTES</div><div style="color:var(--text-secondary)">' + escapeHtml(app.notes) + '</div></div>' : '') +
+        '<div style="font-size:12px;color:var(--text-muted);margin-top:12px">Submitted: ' + (app.submitted_at ? new Date(app.submitted_at).toLocaleString() : 'N/A') + '</div>' +
+        actionsHtml +
+        '</div></div>';
+
+      document.body.appendChild(modal);
+    }
+
+    async function approveDealerApplication(id) {
+      var app = dealerApplicationsData.find(function(a) { return a.id === id; });
+      if (!app) return;
+
+      if (!confirm('Approve dealer application from "' + app.company_name + '"?\n\nThis will create a dealer account with login credentials.')) return;
+
+      try {
+        // Generate a temporary password
+        var tempPassword = 'Dealer' + Math.floor(1000 + Math.random() * 9000) + '!';
+
+        // Create Supabase Auth user
+        var authId = await createAuthUserWithoutSessionSwitch(
+          app.contact_email,
+          tempPassword,
+          { first_name: app.contact_name || app.company_name, last_name: '' }
+        );
+
+        // Create user record
+        var newUser = await dbInsert('users', {
+          auth_id: authId,
+          email: app.contact_email,
+          first_name: app.contact_name || app.company_name,
+          last_name: '',
+          role: 'DEALER',
+          is_active: true
+        });
+
+        // Generate dealer code
+        var dealerCode = generateDealerCode(app.company_name);
+        var existingCodes = (appData.dealers || []).map(function(d) { return d.dealer_code; });
+        var attempts = 0;
+        while (existingCodes.includes(dealerCode) && attempts < 10) {
+          dealerCode = generateDealerCode(app.company_name);
+          attempts++;
+        }
+
+        // Create dealer profile
+        await dbInsert('dealers', {
+          user_id: newUser.id,
+          company_name: app.company_name,
+          dealer_code: dealerCode,
+          contact_name: app.contact_name,
+          contact_phone: app.contact_phone,
+          company_address: app.company_address,
+          payment_terms: app.payment_terms || 'NET30',
+          is_active: true
+        });
+
+        // Update application status
+        await sb.from('dealer_applications').update({
+          status: 'approved',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: currentUser?.id
+        }).eq('id', id);
+
+        await logActivity('DEALER_APPLICATION_APPROVED', { company_name: app.company_name, email: app.contact_email, dealer_code: dealerCode });
+
+        // Reload dealers
+        await loadAllData(true);
+
+        // Show credentials to admin
+        var credModal = document.createElement('div');
+        credModal.className = 'modal-overlay';
+        credModal.onclick = function(e) { if (e.target === credModal) credModal.remove(); };
+        credModal.innerHTML = '<div class="modal" style="max-width:450px">' +
+          '<div class="modal-header"><h3>Dealer Account Created</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">x</button></div>' +
+          '<div class="modal-body" style="text-align:center">' +
+          '<div style="font-size:48px;margin-bottom:16px">[[icon:check_circle]]</div>' +
+          '<h3 style="margin:0 0 8px;color:var(--text-primary)">' + escapeHtml(app.company_name) + '</h3>' +
+          '<p style="color:var(--text-secondary);margin-bottom:20px">Dealer account created successfully. Share these credentials:</p>' +
+          '<div style="background:var(--bg-secondary);padding:16px;border-radius:8px;text-align:left;font-family:monospace;font-size:14px">' +
+          '<div style="margin-bottom:8px"><strong>Email:</strong> ' + escapeHtml(app.contact_email) + '</div>' +
+          '<div style="margin-bottom:8px"><strong>Password:</strong> ' + escapeHtml(tempPassword) + '</div>' +
+          '<div><strong>Dealer Code:</strong> ' + escapeHtml(dealerCode) + '</div>' +
+          '</div>' +
+          '<p style="color:var(--text-muted);font-size:12px;margin-top:12px">The dealer should change their password after first login.</p>' +
+          '</div>' +
+          '<div class="modal-footer"><button class="btn btn-primary" onclick="this.closest(\'.modal-overlay\').remove()">Done</button></div>' +
+          '</div>';
+        document.body.appendChild(credModal);
+
+        loadDealerApplications();
+      } catch (err) {
+        showToast('Error approving application: ' + err.message, 'error');
+      }
+    }
+
+    function rejectDealerApplicationPrompt(id) {
+      var reason = prompt('Reason for rejection (optional):');
+      if (reason === null) return;
+      rejectDealerApplication(id, reason);
+    }
+
+    async function rejectDealerApplication(id, reason) {
+      try {
+        var { error } = await sb.from('dealer_applications').update({
+          status: 'rejected',
+          rejection_reason: reason || 'No reason provided',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: currentUser?.id
+        }).eq('id', id);
+
+        if (error) throw error;
+
+        var app = dealerApplicationsData.find(function(a) { return a.id === id; });
+        await logActivity('DEALER_APPLICATION_REJECTED', { company_name: app?.company_name, email: app?.contact_email });
+
+        showToast('Application rejected', 'info');
+        loadDealerApplications();
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    // ============================================================
     // DEALER PORTAL
     // ============================================================
 
@@ -47115,8 +47514,8 @@ function jsonResponse(data, status = 200) {
       const recentOrders = stats.orders.slice(0, 10);
 
       m.innerHTML = '<div class="page-header">' +
-        '<h1>Welcome, ' + (currentDealerProfile.company_name || 'Dealer') + '</h1>' +
-        '<p style="color:var(--text-secondary);margin-top:4px">Dealer Code: <strong>' + currentDealerProfile.dealer_code + '</strong></p>' +
+        '<h1>Welcome, ' + escapeHtml(currentDealerProfile.company_name || 'Dealer') + '</h1>' +
+        '<p style="color:var(--text-secondary);margin-top:4px">Dealer Code: <strong>' + escapeHtml(currentDealerProfile.dealer_code) + '</strong></p>' +
         '</div>' +
 
         // Stats cards
@@ -47134,7 +47533,7 @@ function jsonResponse(data, status = 200) {
         '<div style="font-size:32px;font-weight:700;color:#22c55e">' + stats.delivered + '</div>' +
         '<div style="color:var(--text-secondary);font-size:13px">Delivered</div></div>' +
         '<div class="stat-card" style="background:var(--bg-card);padding:20px;border-radius:12px;text-align:center">' +
-        '<div style="font-size:32px;font-weight:700;color:#8b5cf6">$' + formatNumber(stats.totalSpent) + '</div>' +
+        '<div style="font-size:32px;font-weight:700;color:#8b5cf6">$' + formatMoney(stats.totalSpent) + '</div>' +
         '<div style="color:var(--text-secondary);font-size:13px">Total Spent</div></div>' +
         '</div>' +
 
@@ -47150,9 +47549,9 @@ function jsonResponse(data, status = 200) {
           const statusColors = { pending: '#f59e0b', picked_up: '#3b82f6', in_transit: '#3b82f6', delivered: '#22c55e' };
           const statusLabels = { pending: 'Pending', picked_up: 'Picked Up', in_transit: 'In Transit', delivered: 'Delivered' };
           return '<tr>' +
-            '<td><strong>' + (o.order_number || '-') + '</strong></td>' +
-            '<td>' + [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).join(' ') + '</td>' +
-            '<td>' + (o.origin || '-') + ' → ' + (o.destination || '-') + '</td>' +
+            '<td><strong>' + escapeHtml(o.order_number || '-') + '</strong></td>' +
+            '<td>' + [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).map(v => escapeHtml(String(v))).join(' ') + '</td>' +
+            '<td>' + escapeHtml(o.origin || '-') + ' → ' + escapeHtml(o.destination || '-') + '</td>' +
             '<td><span class="badge" style="background:' + (statusColors[o.delivery_status] || '#6b7280') + '">' + (statusLabels[o.delivery_status] || o.delivery_status || 'Unknown') + '</span></td>' +
             '<td>' + formatDate(o.created_at) + '</td></tr>';
         }).join('')) +
@@ -47291,11 +47690,11 @@ function jsonResponse(data, status = 200) {
         (orders.length === 0 ? '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted)">No orders found</td></tr>' :
         orders.map(o => {
           return '<tr onclick="viewDealerOrderDetail(' + o.id + ')" style="cursor:pointer">' +
-            '<td><strong>' + (o.order_number || '-') + '</strong></td>' +
-            '<td>' + [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).join(' ') + '</td>' +
-            '<td style="font-family:monospace;font-size:12px">' + (o.vehicle_vin || '-') + '</td>' +
-            '<td>' + (o.origin || '-') + '<br><small style="color:var(--text-muted)">' + formatDate(o.pickup_date) + '</small></td>' +
-            '<td>' + (o.destination || '-') + '<br><small style="color:var(--text-muted)">' + formatDate(o.dropoff_date) + '</small></td>' +
+            '<td><strong>' + escapeHtml(o.order_number || '-') + '</strong></td>' +
+            '<td>' + [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).map(v => escapeHtml(String(v))).join(' ') + '</td>' +
+            '<td style="font-family:monospace;font-size:12px">' + escapeHtml(o.vehicle_vin || '-') + '</td>' +
+            '<td>' + escapeHtml(o.origin || '-') + '<br><small style="color:var(--text-muted)">' + formatDate(o.pickup_date) + '</small></td>' +
+            '<td>' + escapeHtml(o.destination || '-') + '<br><small style="color:var(--text-muted)">' + formatDate(o.dropoff_date) + '</small></td>' +
             '<td><span class="badge" style="background:' + (statusColors[o.delivery_status] || '#6b7280') + '">' + (statusLabels[o.delivery_status] || o.delivery_status || 'Unknown') + '</span></td>' +
             '<td>' + formatDate(o.created_at) + '</td></tr>';
         }).join('')) +
@@ -47318,42 +47717,36 @@ function jsonResponse(data, status = 200) {
       const modal = document.createElement('div');
       modal.className = 'modal-overlay';
       modal.onclick = e => { if (e.target === modal) modal.remove(); };
-      modal.innerHTML = `
-        <div class="modal" style="max-width:500px">
-          <div class="modal-header">
-            <h3>Order Details</h3>
-            <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
-          </div>
-          <div class="modal-body">
-            <div style="text-align:center;margin-bottom:20px">
-              <div style="font-size:24px;font-weight:700;color:var(--accent-primary)">${order.order_number || 'N/A'}</div>
-              <span class="badge" style="background:${statusColors[order.delivery_status] || '#6b7280'};margin-top:8px">${statusLabels[order.delivery_status] || 'Unknown'}</span>
-            </div>
-            <div style="background:var(--bg-darker);padding:16px;border-radius:8px;margin-bottom:16px">
-              <div style="font-weight:600;margin-bottom:8px">[[icon:car]] Vehicle</div>
-              <div>${[order.vehicle_year, order.vehicle_make, order.vehicle_model].filter(Boolean).join(' ') || '-'}</div>
-              <div style="color:var(--text-muted);font-size:13px">VIN: ${order.vehicle_vin || 'N/A'}</div>
-              <div style="color:var(--text-muted);font-size:13px">Color: ${order.vehicle_color || 'N/A'}</div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-              <div style="background:var(--bg-darker);padding:16px;border-radius:8px">
-                <div style="font-weight:600;margin-bottom:8px">[[icon:map_pin]] Pickup</div>
-                <div>${order.origin || '-'}</div>
-                <div style="color:var(--text-muted);font-size:13px">${formatDate(order.pickup_date)}</div>
-              </div>
-              <div style="background:var(--bg-darker);padding:16px;border-radius:8px">
-                <div style="font-weight:600;margin-bottom:8px">[[icon:flag]] Delivery</div>
-                <div>${order.destination || '-'}</div>
-                <div style="color:var(--text-muted);font-size:13px">${formatDate(order.dropoff_date)}</div>
-              </div>
-            </div>
-            ${order.dispatcher_notes ? '<div style="margin-top:16px;background:var(--bg-darker);padding:16px;border-radius:8px"><div style="font-weight:600;margin-bottom:8px">[[icon:note]] Notes</div><div style="color:var(--text-secondary)">' + order.dispatcher_notes + '</div></div>' : ''}
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove()">Close</button>
-          </div>
-        </div>
-      `;
+      const esc = escapeHtml;
+      const vehicleStr = [order.vehicle_year, order.vehicle_make, order.vehicle_model].filter(Boolean).map(v => esc(String(v))).join(' ') || '-';
+      modal.innerHTML = '<div class="modal" style="max-width:500px">' +
+        '<div class="modal-header"><h3>Order Details</h3>' +
+        '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div>' +
+        '<div class="modal-body">' +
+        '<div style="text-align:center;margin-bottom:20px">' +
+        '<div style="font-size:24px;font-weight:700;color:var(--accent-primary)">' + esc(order.order_number || 'N/A') + '</div>' +
+        '<span class="badge" style="background:' + (statusColors[order.delivery_status] || '#6b7280') + ';margin-top:8px">' + esc(statusLabels[order.delivery_status] || 'Unknown') + '</span>' +
+        '</div>' +
+        '<div style="background:var(--bg-darker);padding:16px;border-radius:8px;margin-bottom:16px">' +
+        '<div style="font-weight:600;margin-bottom:8px">[[icon:car]] Vehicle</div>' +
+        '<div>' + vehicleStr + '</div>' +
+        '<div style="color:var(--text-muted);font-size:13px">VIN: ' + esc(order.vehicle_vin || 'N/A') + '</div>' +
+        '<div style="color:var(--text-muted);font-size:13px">Color: ' + esc(order.vehicle_color || 'N/A') + '</div>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
+        '<div style="background:var(--bg-darker);padding:16px;border-radius:8px">' +
+        '<div style="font-weight:600;margin-bottom:8px">[[icon:map_pin]] Pickup</div>' +
+        '<div>' + esc(order.origin || '-') + '</div>' +
+        '<div style="color:var(--text-muted);font-size:13px">' + formatDate(order.pickup_date) + '</div></div>' +
+        '<div style="background:var(--bg-darker);padding:16px;border-radius:8px">' +
+        '<div style="font-weight:600;margin-bottom:8px">[[icon:flag]] Delivery</div>' +
+        '<div>' + esc(order.destination || '-') + '</div>' +
+        '<div style="color:var(--text-muted);font-size:13px">' + formatDate(order.dropoff_date) + '</div></div>' +
+        '</div>' +
+        (order.dispatcher_notes ? '<div style="margin-top:16px;background:var(--bg-darker);padding:16px;border-radius:8px"><div style="font-weight:600;margin-bottom:8px">[[icon:note]] Notes</div><div style="color:var(--text-secondary)">' + esc(order.dispatcher_notes) + '</div></div>' : '') +
+        '</div>' +
+        '<div class="modal-footer"><button class="btn btn-primary" onclick="this.closest(\'.modal-overlay\').remove()">Close</button></div>' +
+        '</div>';
       document.body.appendChild(modal);
     }
 
@@ -47380,13 +47773,13 @@ function jsonResponse(data, status = 200) {
         // Stats cards
         '<div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px">' +
         '<div class="card" style="padding:24px;text-align:center">' +
-        '<div style="font-size:36px;font-weight:700;color:#8b5cf6">$' + formatNumber(stats.totalSpent) + '</div>' +
+        '<div style="font-size:36px;font-weight:700;color:#8b5cf6">$' + formatMoney(stats.totalSpent) + '</div>' +
         '<div style="color:var(--text-secondary);margin-top:4px">Total Spent</div></div>' +
         '<div class="card" style="padding:24px;text-align:center">' +
         '<div style="font-size:36px;font-weight:700;color:var(--accent-primary)">' + stats.totalVehicles + '</div>' +
         '<div style="color:var(--text-secondary);margin-top:4px">Total Vehicles</div></div>' +
         '<div class="card" style="padding:24px;text-align:center">' +
-        '<div style="font-size:36px;font-weight:700;color:#22c55e">$' + formatNumber(stats.avgCostPerVehicle) + '</div>' +
+        '<div style="font-size:36px;font-weight:700;color:#22c55e">$' + formatMoney(stats.avgCostPerVehicle) + '</div>' +
         '<div style="color:var(--text-secondary);margin-top:4px">Avg Cost/Vehicle</div></div>' +
         '</div>' +
 
@@ -47398,11 +47791,11 @@ function jsonResponse(data, status = 200) {
         stats.orders.map(o => {
           const statusColors = { pending: '#f59e0b', picked_up: '#3b82f6', in_transit: '#3b82f6', delivered: '#22c55e' };
           return '<tr>' +
-            '<td><strong>' + (o.order_number || '-') + '</strong></td>' +
-            '<td>' + [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).join(' ') + '</td>' +
+            '<td><strong>' + escapeHtml(o.order_number || '-') + '</strong></td>' +
+            '<td>' + [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).map(v => escapeHtml(String(v))).join(' ') + '</td>' +
             '<td>' + formatDate(o.created_at) + '</td>' +
-            '<td style="font-weight:600">$' + formatNumber(o.revenue || 0) + '</td>' +
-            '<td><span class="badge" style="background:' + (statusColors[o.delivery_status] || '#6b7280') + '">' + (o.delivery_status || '-') + '</span></td></tr>';
+            '<td style="font-weight:600">$' + formatMoney(o.revenue || 0) + '</td>' +
+            '<td><span class="badge" style="background:' + (statusColors[o.delivery_status] || '#6b7280') + '">' + escapeHtml(o.delivery_status || '-') + '</span></td></tr>';
         }).join('')) +
         '</tbody></table></div></div>';
     }
@@ -47443,11 +47836,11 @@ function jsonResponse(data, status = 200) {
         (dealerStats.length === 0 ? '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted)">No dealers yet. Click "Add Dealer" to create one.</td></tr>' :
         dealerStats.map(d => {
           return '<tr>' +
-            '<td><strong>' + (d.company_name || '-') + '</strong></td>' +
-            '<td><code style="background:var(--bg-darker);padding:2px 6px;border-radius:4px">' + (d.dealer_code || '-') + '</code></td>' +
-            '<td>' + (d.contact_name || '-') + '<br><small style="color:var(--text-muted)">' + (d.contact_phone || '') + '</small></td>' +
+            '<td><strong>' + escapeHtml(d.company_name || '-') + '</strong></td>' +
+            '<td><code style="background:var(--bg-darker);padding:2px 6px;border-radius:4px">' + escapeHtml(d.dealer_code || '-') + '</code></td>' +
+            '<td>' + escapeHtml(d.contact_name || '-') + '<br><small style="color:var(--text-muted)">' + escapeHtml(d.contact_phone || '') + '</small></td>' +
             '<td style="text-align:center">' + d.orderCount + ' <small style="color:var(--text-muted)">(' + d.pending + ' pending)</small></td>' +
-            '<td style="font-weight:600">$' + formatNumber(d.totalRevenue) + '</td>' +
+            '<td style="font-weight:600">$' + formatMoney(d.totalRevenue) + '</td>' +
             '<td><span class="badge ' + (d.is_active ? 'badge-green' : 'badge-gray') + '">' + (d.is_active ? 'Active' : 'Inactive') + '</span></td>' +
             '<td class="sticky-col"><div class="actions">' +
             '<button class="action-btn edit" onclick="openDealerModal(' + d.id + ')">Edit</button>' +
@@ -47567,7 +47960,7 @@ function jsonResponse(data, status = 200) {
       e.preventDefault();
 
       const companyName = document.getElementById('dealer-company-name').value.trim();
-      const dealerCode = document.getElementById('dealer-code').value.trim().toUpperCase();
+      let dealerCode = document.getElementById('dealer-code').value.trim().toUpperCase();
       const contactName = document.getElementById('dealer-contact-name').value.trim();
       const contactPhone = document.getElementById('dealer-contact-phone').value.trim();
       const address = document.getElementById('dealer-address').value.trim();
@@ -47576,6 +47969,17 @@ function jsonResponse(data, status = 200) {
       const notes = document.getElementById('dealer-notes').value.trim();
 
       try {
+        // Validate dealer code uniqueness for new dealers
+        if (!dealerId) {
+          const existingCodes = (appData.dealers || []).map(d => d.dealer_code);
+          let attempts = 0;
+          while (existingCodes.includes(dealerCode) && attempts < 10) {
+            dealerCode = generateDealerCode(companyName);
+            document.getElementById('dealer-code').value = dealerCode;
+            attempts++;
+          }
+        }
+
         if (dealerId) {
           // Update existing dealer
           await dbUpdate('dealers', dealerId, {
@@ -47654,7 +48058,11 @@ function jsonResponse(data, status = 200) {
       }
 
       try {
-        // Delete dealer profile (user account remains but can be deactivated separately)
+        // Deactivate linked user account so dealer can no longer log in
+        if (dealer.user_id) {
+          await dbUpdate('users', dealer.user_id, { is_active: false });
+        }
+        // Delete dealer profile
         await dbDelete('dealers', dealerId);
         await logActivity('DEALER_DELETED', { company_name: dealer.company_name, dealer_code: dealer.dealer_code });
         showToast('Dealer deleted', 'success');
