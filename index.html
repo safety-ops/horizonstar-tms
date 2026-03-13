@@ -20705,7 +20705,7 @@
       m.innerHTML = '<div class="modal" style="max-width:750px;max-height:90vh;display:flex;flex-direction:column"><div class="modal-header"><h3>Add Vehicle</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
         '<div class="form-group"><label>Vehicle Direction *</label><select id="orderDirection" style="border:2px solid #6366f1;font-weight:600">' + directionOptions + '</select></div>' +
         '<div class="form-row"><div class="form-group"><label>Order #</label><input id="orderNum" value="ORD-' + Date.now().toString().slice(-4) + '"></div><div class="form-group" style="position:relative"><label>Broker</label><input type="text" id="orderBrokerInput" placeholder="Start typing broker..." autocomplete="off"><input type="hidden" id="orderBrokerId"></div></div>' +
-        '<div id="newBrokerSection" style="display:none;background:#f0fdf4;padding:12px;border-radius:8px;margin-bottom:12px;border:1px solid #bbf7d0"><div class="form-group" style="margin-bottom:0"><label>New Broker Name *</label><input id="newBrokerName" placeholder="Enter broker name"></div></div>' +
+        '<div id="newBrokerSection" style="display:none;background:var(--bg-tertiary);padding:var(--space-3);border-radius:var(--radius-md);margin-bottom:var(--space-3);border:1px solid var(--border-primary)"><div class="form-group" style="margin-bottom:0"><label>New Broker Name *</label><input id="newBrokerName" placeholder="Enter broker name"></div></div>' +
         '<div style="background:var(--surface-elevated);padding:12px;border-radius:8px;margin-bottom:12px">' +
         '<label style="font-weight:600;display:block;margin-bottom:8px">[[icon:building]] Broker Details</label>' +
         '<div class="form-row" style="gap:12px"><div class="form-group" style="margin-bottom:0;flex:1"><label>Contact Name</label><input id="orderBrokerContactName" placeholder="Broker contact"></div><div class="form-group" style="margin-bottom:0;flex:1"><label>Email</label><input type="email" id="orderBrokerEmail" placeholder="broker@email.com"></div></div>' +
@@ -21810,48 +21810,48 @@
             const driverName = driver ? escapeHtml(driver.first_name + ' ' + driver.last_name) : '-';
             const tripNum = t ? escapeHtml(String(t.trip_number)) : '-';
             const ds = o.delivery_status || 'pending';
-            const dsBadge = ds === 'delivered' ? 'badge-success' : ds === 'picked_up' ? 'badge-warning' : 'badge-info';
+            const dsBadge = ds === 'delivered' ? 'badge-green' : ds === 'picked_up' ? 'badge-amber' : 'badge-blue';
             const dsLabel = ds === 'delivered' ? 'Delivered' : ds === 'picked_up' ? 'Picked Up' : 'New';
             const revenue = formatMoney(o.transport_fee || o.revenue || 0);
             const assignBtn = t
-              ? '<button class="action-btn" style="padding:4px 8px;font-size:11px;background:var(--dim-red);color:var(--danger)" onclick="unassignOrderFromTrip(' + o.id + ')" title="Unassign">Unlink</button>'
-              : '<button class="action-btn" style="padding:4px 8px;font-size:11px;background:var(--dim-blue);color:var(--info)" onclick="openAssignToTrip(' + o.id + ')" title="Assign to trip">Assign</button>';
+              ? '<button class="action-btn" style="padding:2px 8px;font-size:12px;background:var(--dim-red);color:var(--danger)" onclick="unassignOrderFromTrip(' + o.id + ')" title="Unassign">Unlink</button>'
+              : '<button class="action-btn" style="padding:2px 8px;font-size:12px;background:var(--dim-blue);color:var(--info)" onclick="openAssignToTrip(' + o.id + ')" title="Assign to trip">Assign</button>';
             return '<tr>' +
               '<td><input type="checkbox" class="order-checkbox" data-id="' + o.id + '" onchange="toggleOrderSelection(' + o.id + ', event)"></td>' +
               '<td><strong>' + escapeHtml(o.order_number || String(o.id)) + '</strong></td>' +
               '<td>' + escapeHtml(vehicle) + '</td>' +
-              '<td style="font-size:12px;white-space:nowrap">' + route + '</td>' +
+              '<td style="white-space:nowrap">' + route + '</td>' +
               '<td><span class="badge ' + dsBadge + '">' + dsLabel + '</span></td>' +
               '<td>' + tripNum + '</td>' +
               '<td>' + driverName + '</td>' +
               '<td class="money">' + revenue + '</td>' +
-              '<td><div class="actions">' + assignBtn + '<button class="action-btn edit" style="padding:4px 8px;font-size:11px" onclick="openOrderModal(' + o.id + ')">Edit</button><button class="action-btn delete" style="padding:4px 8px;font-size:11px" onclick="deleteOrder(' + o.id + ')">Del</button></div></td>' +
+              '<td><div class="actions">' + assignBtn + '<button class="action-btn edit" style="padding:2px 8px;font-size:12px" onclick="openOrderModal(' + o.id + ')">Edit</button><button class="action-btn delete" style="padding:2px 8px;font-size:12px" onclick="deleteOrder(' + o.id + ')">Del</button></div></td>' +
               '</tr>';
           }).join('');
-          return '<div class="card" style="padding:0;overflow:hidden">' +
-            '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--border)">' +
-            '<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer"><input type="checkbox" id="selectAllOrders" onchange="toggleSelectAllOrders(this.checked)"> Select all visible</label>' +
+          return '<div class="card card-flush" style="overflow-x:auto">' +
+            '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap;padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--border-primary)">' +
+            '<label style="display:flex;align-items:center;gap:var(--space-2);font-size:13px;font-weight:500;color:var(--text-secondary);cursor:pointer"><input type="checkbox" id="selectAllOrders" onchange="toggleSelectAllOrders(this.checked)"> Select all visible</label>' +
             '</div>' +
-            '<div class="table-wrapper"><table><thead><tr><th style="width:36px"></th><th>Order #</th><th>Vehicle</th><th>Route</th><th>Status</th><th>Trip #</th><th>Driver</th><th>Revenue</th><th>Actions</th></tr></thead><tbody>' +
+            '<table class="data-table"><thead><tr><th style="width:36px"></th><th>Order #</th><th>Vehicle</th><th>Route</th><th>Status</th><th>Trip #</th><th>Driver</th><th>Revenue</th><th>Actions</th></tr></thead><tbody>' +
             (tableRows || '<tr><td colspan="9">' + renderEmptyState('car', 'No orders found', 'Create your first order to start tracking deliveries', '+ New Order', 'openOrderWizard()') + '</td></tr>') +
-            '</tbody></table></div></div>';
+            '</tbody></table></div>';
         })() :
-        '<div class="card orders-list-shell" style="padding:12px">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;padding:8px 10px;border-bottom:1px solid var(--border)">' +
-        '<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer"><input type="checkbox" id="selectAllOrders" onchange="toggleSelectAllOrders(this.checked)"> Select all visible</label>' +
+        '<div class="card orders-list-shell" style="padding:var(--space-4)">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap;margin-bottom:var(--space-3);padding-bottom:var(--space-3);border-bottom:1px solid var(--border-primary)">' +
+        '<label style="display:flex;align-items:center;gap:var(--space-2);font-size:13px;font-weight:500;color:var(--text-secondary);cursor:pointer"><input type="checkbox" id="selectAllOrders" onchange="toggleSelectAllOrders(this.checked)"> Select all visible</label>' +
         '</div>' +
         (pagedOrders.length === 0 ? renderEmptyState('car', 'No orders found', 'Create your first order to start tracking deliveries', '+ New Order', 'openOrderWizard()') :
-        '<div style="display:flex;flex-direction:column;gap:10px">' +
+        '<div style="display:flex;flex-direction:column;gap:var(--space-3)">' +
         pagedOrders.map(o => {
           const t = appData.trips.find(x => x.id === o.trip_id);
           const driver = t ? appData.drivers.find(d => d.id === t.driver_id) : null;
           const noteTitle = (o.dispatcher_notes || '').replace(/"/g, '&quot;').replace(/\n/g, ' ');
           const assignBtn = t
-            ? '<button class="action-btn" style="padding:5px 9px;font-size:12px;background:var(--dim-red);color:var(--danger)" onclick="unassignOrderFromTrip(' + o.id + ')" title="Unassign from trip">Unlink</button>'
-            : '<button class="action-btn" style="padding:5px 9px;font-size:12px;background:var(--dim-blue);color:var(--info)" onclick="openAssignToTrip(' + o.id + ')" title="Assign to trip">Assign</button>';
+            ? '<button class="action-btn" style="padding:2px 8px;font-size:12px;background:var(--dim-red);color:var(--danger)" onclick="unassignOrderFromTrip(' + o.id + ')" title="Unassign from trip">Unlink</button>'
+            : '<button class="action-btn" style="padding:2px 8px;font-size:12px;background:var(--dim-blue);color:var(--info)" onclick="openAssignToTrip(' + o.id + ')" title="Assign to trip">Assign</button>';
           const actionsHtml = assignBtn +
-            (o.dispatcher_notes ? '<button class="action-btn" style="padding:5px 9px;font-size:12px;background:var(--dim-amber);color:var(--warning)" title="' + noteTitle + '">Note</button>' : '') +
-            '<button class="action-btn delete" style="padding:5px 9px;font-size:12px" onclick="deleteOrder(' + o.id + ')" title="Delete order">Del</button>';
+            (o.dispatcher_notes ? '<button class="action-btn" style="padding:2px 8px;font-size:12px;background:var(--dim-amber);color:var(--warning)" title="' + noteTitle + '">Note</button>' : '') +
+            '<button class="action-btn delete" style="padding:2px 8px;font-size:12px" onclick="deleteOrder(' + o.id + ')" title="Delete order">Del</button>';
           return renderOrderPreviewCard(o, {
             trip: t,
             driver,
@@ -21958,12 +21958,12 @@
       if (!existing) {
         existing = document.createElement('div');
         existing.id = 'bulkActionBar';
-        existing.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,0.2);z-index:999;animation:fadeInUp 0.2s ease';
+        existing.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg-primary);border:1px solid var(--border-primary);border-radius:var(--radius-md);padding:12px 20px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-md);z-index:999';
         document.body.appendChild(existing);
       }
 
       existing.innerHTML = '<span style="font-weight:600;color:var(--text-primary);white-space:nowrap">' + count + ' selected</span>' +
-        '<div style="width:1px;height:24px;background:var(--border)"></div>' +
+        '<div style="width:1px;height:24px;background:var(--border-primary)"></div>' +
         actions +
         '<button class="btn btn-secondary" onclick="clearBulkSelection()" style="font-size:13px;padding:6px 10px">Clear</button>';
     }
@@ -22050,7 +22050,7 @@
       m.innerHTML = '<div class="modal" style="max-width:780px;max-height:90vh;display:flex;flex-direction:column"><div class="modal-header"><h3>' + (o ? 'Edit' : 'New') + ' Order</h3><button class="modal-close" onclick="clearEditing(\'orders\',' + id + ');this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
         '<div class="form-row"><div class="form-group"><label>Order #</label><input id="orderNum" value="' + (o?.order_number || 'ORD-' + Date.now().toString().slice(-4)) + '"></div><div class="form-group"><label>Trip</label><select id="orderTrip"><option value="">Unassigned</option>' + appData.trips.map(t => '<option value="' + t.id + '"' + (o?.trip_id === t.id ? ' selected' : '') + '>' + t.trip_number + '</option>').join('') + '</select></div></div>' +
         '<div class="form-row"><div class="form-group"><label>Driver</label><select id="orderDriver"><option value="">Unassigned</option>' + appData.drivers.filter(d => d.status === 'ACTIVE').map(d => '<option value="' + d.id + '"' + (o?.driver_id === d.id ? ' selected' : '') + '>' + d.first_name + ' ' + d.last_name + '</option>').join('') + '</select></div><div class="form-group" style="position:relative"><label>Broker</label><input type="text" id="orderBrokerInput" value="' + (o?.broker_name || '') + '" placeholder="Start typing broker..." autocomplete="off"><input type="hidden" id="orderBrokerId" value="' + (o?.broker_id || '') + '"></div></div>' +
-        '<div id="newBrokerSection" style="display:none;background:#f0fdf4;padding:12px;border-radius:8px;margin-bottom:12px;border:1px solid #bbf7d0"><div class="form-group" style="margin-bottom:0"><label>New Broker Name *</label><input id="newBrokerName" placeholder="Enter broker name"></div></div>' +
+        '<div id="newBrokerSection" style="display:none;background:var(--bg-tertiary);padding:var(--space-3);border-radius:var(--radius-md);margin-bottom:var(--space-3);border:1px solid var(--border-primary)"><div class="form-group" style="margin-bottom:0"><label>New Broker Name *</label><input id="newBrokerName" placeholder="Enter broker name"></div></div>' +
         '<div style="background:var(--surface-elevated);padding:12px;border-radius:8px;margin-bottom:12px">' +
         '<label style="font-weight:600;display:block;margin-bottom:8px">[[icon:building]] Broker Details</label>' +
         '<div class="form-row" style="gap:12px"><div class="form-group" style="margin-bottom:0;flex:1"><label>Contact Name</label><input id="orderBrokerContactName" value="' + (existingBroker?.contact_name || '') + '" placeholder="Broker contact"></div><div class="form-group" style="margin-bottom:0;flex:1"><label>Email</label><input type="email" id="orderBrokerEmail" value="' + (existingBroker?.email || '') + '" placeholder="broker@email.com"></div></div>' +
@@ -22082,8 +22082,8 @@
         '<div style="background:var(--dim-amber);padding:12px;border-radius:8px;margin-bottom:12px"><label style="font-weight:600;display:block;margin-bottom:8px">[[icon:money]] Payment</label>' +
         '<div class="form-row" style="gap:12px"><div class="form-group" style="margin-bottom:0"><label>Revenue $</label><input type="number" id="orderRev" value="' + (o?.revenue || '') + '" onchange="updatePaymentSplit()"></div><div class="form-group" style="margin-bottom:0"><label>Broker Fee $</label><input type="number" id="orderBrokerFee" value="' + (o?.broker_fee || 0) + '"></div><div class="form-group" style="margin-bottom:0"><label>Local Fee $</label><input type="number" id="orderFee" value="' + (o?.local_fee || 0) + '"></div></div>' +
         '<div class="form-row" style="gap:12px;margin-top:8px"><div class="form-group" style="margin-bottom:0"><label>Payment</label><select id="orderPay" onchange="toggleSplitPayment()"><option value="BILL"' + ((!o || (!orderSplitLike && o?.payment_type === 'BILL')) ? ' selected' : '') + '>BILL</option><option value="COD"' + ((!orderSplitLike && o?.payment_type === 'COD') ? ' selected' : '') + '>COD</option><option value="COP"' + ((!orderSplitLike && o?.payment_type === 'COP') ? ' selected' : '') + '>COP</option><option value="CHECK"' + ((!orderSplitLike && o?.payment_type === 'CHECK') ? ' selected' : '') + '>CHECK</option><option value="LOCAL_COD"' + ((!orderSplitLike && o?.payment_type === 'LOCAL_COD') ? ' selected' : '') + '>LOCAL_COD</option><option value="SPLIT"' + (orderSplitLike ? ' selected' : '') + '>SPLIT</option></select></div><div class="form-group" style="margin-bottom:0"><label>Status</label><select id="orderStatus"><option value="PENDING"' + (o?.status === 'PENDING' ? ' selected' : '') + '>NEW</option><option value="IN_TRANSIT"' + (o?.status === 'IN_TRANSIT' ? ' selected' : '') + '>IN_TRANSIT</option><option value="DELIVERED"' + (o?.status === 'DELIVERED' ? ' selected' : '') + '>DELIVERED</option></select></div></div>' +
-        '<div id="splitPaymentSection" style="display:' + (orderSplitLike ? 'block' : 'none') + ';margin-top:12px;padding-top:12px;border-top:1px dashed #f59e0b">' +
-        '<div class="form-row" style="grid-template-columns:1fr 1fr 1fr;gap:12px"><div class="form-group" style="margin-bottom:0"><label>Cash Type</label><select id="splitCodType"><option value="COD"' + (orderSplitCashType === 'COD' ? ' selected' : '') + '>COD</option><option value="COP"' + (orderSplitCashType === 'COP' ? ' selected' : '') + '>COP</option><option value="LOCAL_COD"' + (orderSplitCashType === 'LOCAL_COD' ? ' selected' : '') + '>LOCAL_COD</option></select></div><div class="form-group" style="margin-bottom:0"><label>Cash Amount $</label><input type="number" id="splitCodAmount" value="' + orderSplitCashAmount + '" onchange="updateSplitBill()"></div><div class="form-group" style="margin-bottom:0"><label>Bill Amount $</label><input type="number" id="splitBillAmount" value="' + orderSplitBillAmount + '" readonly style="background:var(--surface-elevated)"></div></div>' +
+        '<div id="splitPaymentSection" style="display:' + (orderSplitLike ? 'block' : 'none') + ';margin-top:12px;padding-top:12px;border-top:1px dashed var(--border-primary)">' +
+        '<div class="form-row" style="grid-template-columns:1fr 1fr 1fr;gap:12px"><div class="form-group" style="margin-bottom:0"><label>Cash Type</label><select id="splitCodType"><option value="COD"' + (orderSplitCashType === 'COD' ? ' selected' : '') + '>COD</option><option value="COP"' + (orderSplitCashType === 'COP' ? ' selected' : '') + '>COP</option><option value="LOCAL_COD"' + (orderSplitCashType === 'LOCAL_COD' ? ' selected' : '') + '>LOCAL_COD</option></select></div><div class="form-group" style="margin-bottom:0"><label>Cash Amount $</label><input type="number" id="splitCodAmount" value="' + orderSplitCashAmount + '" onchange="updateSplitBill()"></div><div class="form-group" style="margin-bottom:0"><label>Bill Amount $</label><input type="number" id="splitBillAmount" value="' + orderSplitBillAmount + '" readonly style="background:var(--bg-tertiary)"></div></div>' +
         '</div>' +
         '</div>' +
         '<div class="form-group"><label>[[icon:note]] Notes for Dispatchers</label><textarea id="orderNotes" rows="2" placeholder="Internal notes for dispatch team..." style="resize:vertical">' + (o?.dispatcher_notes || '') + '</textarea></div>' +
