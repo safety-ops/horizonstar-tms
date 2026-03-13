@@ -22829,13 +22829,13 @@
       };
       
       const c = document.getElementById('main-content');
-      c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px"><button class="btn btn-secondary" onclick="renderDrivers(document.getElementById(\'main-content\'))">← Back</button><div class="driver-avatar" style="width:50px;height:50px;font-size:20px">' + d.first_name[0] + d.last_name[0] + '</div><div><h2 style="margin:0">' + d.first_name + ' ' + d.last_name + '</h2><p style="margin:0;color:#64748b">' + d.phone + (d.email ? ' | ' + d.email : '') + '</p></div><span class="badge ' + getBadge(d.status) + '">' + d.status + '</span></div><button class="btn btn-primary" onclick="openDriverModal(' + driverId + ')">[[icon:edit]] Edit Driver</button></div>' +
+      c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px"><button class="btn btn-secondary" onclick="renderDrivers(document.getElementById(\'main-content\'))">← Back</button><div class="driver-avatar" style="width:50px;height:50px;font-size:20px">' + d.first_name[0] + d.last_name[0] + '</div><div><h2 style="margin:0;font-size:18px;font-weight:600">' + d.first_name + ' ' + d.last_name + '</h2><p style="margin:0;color:var(--text-secondary)">' + d.phone + (d.email ? ' | ' + d.email : '') + '</p></div><span class="badge ' + getBadge(d.status) + '">' + d.status + '</span></div><button class="btn btn-primary" onclick="openDriverModal(' + driverId + ')">Edit Driver</button></div>' +
         
         // Stats
-        '<div class="detail-stats" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px"><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Driver Cut</div><div class="value">' + d.cut_percent + '%</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Total Trips</div><div class="value">' + trips.length + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px;background:#d1fae5"><div class="label">Total Earnings</div><div class="value" style="color:#059669">' + formatMoney(earn) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px"><div class="label">Qualification Files</div><div class="value">' + qualFiles.length + '/10</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Personal Files</div><div class="value">' + persFiles.length + '/3</div></div><div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px;background:#dbeafe"><div class="label">Custom Folders</div><div class="value" style="color:var(--info)">' + customFolders.length + '</div></div></div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px"><div class="stat-flat" style="flex:0 0 auto;min-width:100px"><div class="stat-flat-label">Driver Cut</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + d.cut_percent + '%</div></div><div class="stat-flat" style="flex:0 0 auto;min-width:100px"><div class="stat-flat-label">Total Trips</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + trips.length + '</div></div><div class="stat-flat" style="flex:0 0 auto;min-width:120px"><div class="stat-flat-label">Total Earnings</div><div class="stat-flat-value" style="font-family:var(--font-mono);color:var(--green)">' + formatMoney(earn) + '</div></div><div class="stat-flat" style="flex:0 0 auto;min-width:120px"><div class="stat-flat-label">Qualification Files</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + qualFiles.length + '/10</div></div><div class="stat-flat" style="flex:0 0 auto;min-width:100px"><div class="stat-flat-label">Personal Files</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + persFiles.length + '/3</div></div><div class="stat-flat" style="flex:0 0 auto;min-width:110px"><div class="stat-flat-label">Custom Folders</div><div class="stat-flat-value" style="font-family:var(--font-mono);color:var(--blue)">' + customFolders.length + '</div></div></div>' +
         
         // Qualification Files Section
-        '<div class="card" style="margin-bottom:24px"><div class="card-header" style="background:#1e40af;color:white;border-radius:8px 8px 0 0"><h3 style="margin:0">[[icon:folder]] Driver Qualification Files (DQ Files)</h3></div><div class="table-wrapper"><table><thead><tr><th>Document Type</th><th>Status</th><th>Expiration</th><th>Uploaded</th><th>Actions</th></tr></thead><tbody>' +
+        '<div class="card card-flush" style="margin-bottom:24px"><div style="padding:14px 16px;border-bottom:1px solid var(--border)"><h3 style="margin:0;font-size:14px;font-weight:600">Driver Qualification Files (DQ Files)</h3></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Document Type</th><th>Status</th><th>Expiration</th><th>Uploaded</th><th>Actions</th></tr></thead><tbody>' +
         qualFileTypes.map(ft => {
           const file = qualFiles.find(f => f.file_type === ft.type);
           return '<tr><td><strong>' + formatFileType(ft.type) + '</strong></td><td>' + (file ? '<span class="badge badge-green">[[icon:check]] Uploaded</span>' : '<span class="badge badge-gray">Missing</span>') + '</td><td>' + (ft.hasExpiry ? (file ? getExpiryBadge(file) : '<span style="color:var(--text-secondary)">-</span>') : '<span style="color:var(--text-secondary)">N/A</span>') + '</td><td>' + (file ? formatDate(file.created_at) : '-') + '</td><td><div class="actions">' + (file ? '<button class="action-btn view" onclick="viewFile(' + file.id + ')">View</button><button class="action-btn delete" onclick="deleteDriverFile(' + file.id + ',' + driverId + ')">Del</button>' : '<button class="action-btn edit" onclick="openUploadFileModal(' + driverId + ',\'' + ft.type + '\',\'QUALIFICATION\',' + ft.hasExpiry + ')">Upload</button>') + '</div></td></tr>';
@@ -22843,7 +22843,7 @@
         '</tbody></table></div></div>' +
         
         // Personal Files Section
-        '<div class="card" style="margin-bottom:24px"><div class="card-header" style="background:#7c3aed;color:white;border-radius:8px 8px 0 0"><h3 style="margin:0">[[icon:lock]] Driver Personal Files</h3></div><div class="table-wrapper"><table><thead><tr><th>Document Type</th><th>Status</th><th>Uploaded</th><th>Actions</th></tr></thead><tbody>' +
+        '<div class="card card-flush" style="margin-bottom:24px"><div style="padding:14px 16px;border-bottom:1px solid var(--border)"><h3 style="margin:0;font-size:14px;font-weight:600">Driver Personal Files</h3></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Document Type</th><th>Status</th><th>Uploaded</th><th>Actions</th></tr></thead><tbody>' +
         persFileTypes.map(ft => {
           const file = persFiles.find(f => f.file_type === ft);
           return '<tr><td><strong>' + formatFileType(ft) + '</strong></td><td>' + (file ? '<span class="badge badge-green">[[icon:check]] Uploaded</span>' : '<span class="badge badge-gray">Missing</span>') + '</td><td>' + (file ? formatDate(file.created_at) : '-') + '</td><td><div class="actions">' + (file ? '<button class="action-btn view" onclick="viewFile(' + file.id + ')">View</button><button class="action-btn delete" onclick="deleteDriverFile(' + file.id + ',' + driverId + ')">Del</button>' : '<button class="action-btn edit" onclick="openUploadFileModal(' + driverId + ',\'' + ft + '\',\'PERSONAL\',false)">Upload</button>') + '</div></td></tr>';
@@ -22851,13 +22851,13 @@
         '</tbody></table></div></div>' +
         
         // Custom Folders Section
-        '<div class="card"><div class="card-header" style="background:#0891b2;color:white;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">[[icon:folder_open]] Custom Folders</h3><button class="btn" style="background:white;color:#0891b2;padding:6px 12px;font-size:13px" onclick="openCustomFolderModal(' + driverId + ',\'driver\')">+ New Folder</button></div>' +
-        (customFolders.length === 0 ? '<div style="padding:40px;text-align:center;color:#64748b">No custom folders yet. Click "+ New Folder" to create one.</div>' :
+        '<div class="card card-flush"><div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0;font-size:14px;font-weight:600">Custom Folders</h3><button class="btn btn-secondary" style="padding:6px 12px;font-size:13px" onclick="openCustomFolderModal(' + driverId + ',\'driver\')">+ New Folder</button></div>' +
+        (customFolders.length === 0 ? '<div style="padding:40px;text-align:center;color:var(--text-secondary)">No custom folders yet. Click "+ New Folder" to create one.</div>' :
         '<div style="padding:16px">' +
         customFolders.map(folder => {
           const folderFiles = customFiles.filter(f => (f.folder_name || 'Uncategorized') === folder);
-          return '<div style="margin-bottom:16px;border:1px solid #e5e7eb;border-radius:8px"><div style="background:#f0f9ff;padding:12px 16px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><strong>[[icon:folder]] ' + folder + ' (' + folderFiles.length + ' files)</strong><button class="action-btn edit" onclick="openCustomFileUpload(' + driverId + ',\'' + folder.replace(/'/g, "\\'") + '\',\'driver\')">+ Add File</button></div>' +
-            '<div class="table-wrapper"><table><thead><tr><th>File Name</th><th>Type</th><th>Uploaded</th><th>Notes</th><th>Actions</th></tr></thead><tbody>' +
+          return '<div style="margin-bottom:16px;border:1px solid var(--border);border-radius:8px"><div style="background:var(--bg-secondary);padding:12px 16px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><strong>' + folder + ' (' + folderFiles.length + ' files)</strong><button class="action-btn edit" onclick="openCustomFileUpload(' + driverId + ',\'' + folder.replace(/'/g, "\\'") + '\',\'driver\')">+ Add File</button></div>' +
+            '<div class="table-wrapper"><table class="data-table"><thead><tr><th>File Name</th><th>Type</th><th>Uploaded</th><th>Notes</th><th>Actions</th></tr></thead><tbody>' +
             folderFiles.map(f => '<tr><td>' + f.file_name + '</td><td>' + (f.file_type || '-') + '</td><td>' + formatDate(f.created_at) + '</td><td>' + (f.notes || '-') + '</td><td><div class="actions"><button class="action-btn view" onclick="viewFile(' + f.id + ')">View</button><button class="action-btn delete" onclick="deleteDriverFile(' + f.id + ',' + driverId + ')">Del</button></div></td></tr>').join('') +
             '</tbody></table></div></div>';
         }).join('') +
@@ -22878,19 +22878,19 @@
       const driverFaultPaid = driverClaims.filter(c => c.fault_party === 'DRIVER' && c.status === 'SETTLED')
         .reduce((s, c) => s + parseFloat(c.settlement_amount || c.claim_amount || 0), 0);
       
-      return '<div class="card" style="margin-top:24px"><div class="card-header" style="background:#dc2626;color:white;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">[[icon:ticket]] Compliance Record</h3><div style="display:flex;gap:8px"><button class="btn" style="background:white;color:#dc2626;padding:6px 12px;font-size:13px" onclick="openTicketModal(null,' + driverId + ')">+ Ticket</button><button class="btn" style="background:white;color:#8b5cf6;padding:6px 12px;font-size:13px" onclick="openViolationModal(null,' + driverId + ')">+ Violation</button><button class="btn" style="background:white;color:#f59e0b;padding:6px 12px;font-size:13px" onclick="openClaimModalForDriver(' + driverId + ')">+ Claim</button></div></div>' +
+      return '<div class="card card-flush" style="margin-top:24px"><div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0;font-size:14px;font-weight:600">Compliance Record</h3><div style="display:flex;gap:8px"><button class="btn btn-secondary" style="padding:6px 12px;font-size:13px" onclick="openTicketModal(null,' + driverId + ')">+ Ticket</button><button class="btn btn-secondary" style="padding:6px 12px;font-size:13px" onclick="openViolationModal(null,' + driverId + ')">+ Violation</button><button class="btn btn-secondary" style="padding:6px 12px;font-size:13px" onclick="openClaimModalForDriver(' + driverId + ')">+ Claim</button></div></div>' +
         
         // Summary badges
         '<div style="padding:16px;background:var(--bg-darker);display:flex;gap:16px;flex-wrap:wrap">' +
         '<div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600">Tickets:</span><span class="badge badge-red">' + openTickets + ' Open</span><span class="badge badge-green">' + (driverTickets.length - openTickets) + ' Closed</span></div>' +
-        '<div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600">Violations:</span><span class="badge" style="background:#8b5cf6;color:white">' + openViolations + ' Open</span><span class="badge badge-blue">' + (driverViolations.length - openViolations) + ' Closed</span></div>' +
+        '<div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600">Violations:</span><span class="badge badge-purple">' + openViolations + ' Open</span><span class="badge badge-blue">' + (driverViolations.length - openViolations) + ' Closed</span></div>' +
         '<div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600">Claims:</span><span class="badge badge-amber">' + openClaims + ' Open</span><span class="badge badge-gray">' + (driverClaims.length - openClaims) + ' Closed</span></div>' +
         (driverFaultPaid > 0 ? '<div style="display:flex;align-items:center;gap:8px;margin-left:auto"><span class="badge badge-red" style="font-size:12px">[[icon:money]] Driver Fault Paid: ' + formatMoney(driverFaultPaid) + '</span></div>' : '') +
         '</div>' +
         
         // Tickets table
-        (driverTickets.length > 0 ? '<div style="padding:16px;border-bottom:1px solid var(--border)"><h4 style="margin:0 0 12px">[[icon:ticket]] Tickets (' + driverTickets.length + ')</h4>' +
-        '<div class="table-wrapper"><table><thead><tr><th>Date</th><th>Description</th><th>Status</th><th>Court Date</th><th>Decision</th><th>Actions</th></tr></thead><tbody>' +
+        (driverTickets.length > 0 ? '<div style="padding:16px;border-bottom:1px solid var(--border)"><h4 style="margin:0 0 12px;font-size:14px;font-weight:600">Tickets (' + driverTickets.length + ')</h4>' +
+        '<div class="table-wrapper"><table class="data-table"><thead><tr><th>Date</th><th>Description</th><th>Status</th><th>Court Date</th><th>Decision</th><th>Actions</th></tr></thead><tbody>' +
         driverTickets.sort((a, b) => (b.ticket_date || '').localeCompare(a.ticket_date || '')).map(t => 
           '<tr><td>' + (t.ticket_date ? formatDate(t.ticket_date) : '-') + '</td>' +
           '<td style="max-width:200px">' + (t.ticket_description || '-') + '</td>' +
@@ -22902,8 +22902,8 @@
         '</tbody></table></div></div>' : '<div style="padding:16px;border-bottom:1px solid var(--border);color:var(--text-muted)">No tickets on record [[icon:check]]</div>') +
         
         // Violations table
-        (driverViolations.length > 0 ? '<div style="padding:16px;border-bottom:1px solid var(--border)"><h4 style="margin:0 0 12px">[[icon:alert]] Violations (' + driverViolations.length + ')</h4>' +
-        '<div class="table-wrapper"><table><thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Severity</th><th>Status</th><th>Actions</th></tr></thead><tbody>' +
+        (driverViolations.length > 0 ? '<div style="padding:16px;border-bottom:1px solid var(--border)"><h4 style="margin:0 0 12px;font-size:14px;font-weight:600">Violations (' + driverViolations.length + ')</h4>' +
+        '<div class="table-wrapper"><table class="data-table"><thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Severity</th><th>Status</th><th>Actions</th></tr></thead><tbody>' +
         driverViolations.sort((a, b) => (b.violation_date || '').localeCompare(a.violation_date || '')).map(v => 
           '<tr><td>' + (v.violation_date ? formatDate(v.violation_date) : '-') + '</td>' +
           '<td>' + getViolationTypeBadge(v.violation_type) + '</td>' +
@@ -22915,8 +22915,8 @@
         '</tbody></table></div></div>' : '<div style="padding:16px;border-bottom:1px solid var(--border);color:var(--text-muted)">No violations on record [[icon:check]]</div>') +
         
         // Claims table
-        (driverClaims.length > 0 ? '<div style="padding:16px"><h4 style="margin:0 0 12px">[[icon:spark]] Claims (' + driverClaims.length + ')</h4>' +
-        '<div class="table-wrapper"><table><thead><tr><th>Date</th><th>Type</th><th>Fault</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>' +
+        (driverClaims.length > 0 ? '<div style="padding:16px"><h4 style="margin:0 0 12px;font-size:14px;font-weight:600">Claims (' + driverClaims.length + ')</h4>' +
+        '<div class="table-wrapper"><table class="data-table"><thead><tr><th>Date</th><th>Type</th><th>Fault</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>' +
         driverClaims.sort((a, b) => (b.incident_date || '').localeCompare(a.incident_date || '')).map(c => 
           '<tr><td>' + (c.incident_date ? formatDate(c.incident_date) : '-') + '</td>' +
           '<td>' + (c.damage_type || '-') + '</td>' +
