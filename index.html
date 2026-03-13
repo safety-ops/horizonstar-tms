@@ -26840,47 +26840,46 @@
       
       const isOverdue = (d, s) => d < today && s !== 'COMPLETED';
       
-      c.innerHTML = '<div class="header"><h2>[[icon:clipboard]] Tasks</h2><button class="btn btn-primary" onclick="openTaskModal()">+ New Task</button></div>' +
-        
+      c.innerHTML = '<div class="header"><h2 style="font-size:18px;font-weight:600">[[icon:clipboard]] Tasks</h2><button class="btn btn-primary" onclick="openTaskModal()">+ New Task</button></div>' +
+
         // Stats cards
-        '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px">' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px;cursor:pointer;' + (taskFilter === 'all' ? 'border:2px solid var(--blue)' : '') + '" onclick="taskFilter=\'all\';renderTasks(document.getElementById(\'main-content\'))"><div class="label">Pending Tasks</div><div class="value">' + totalPending + '</div></div>' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;cursor:pointer;background:var(--blue-dim);' + (taskFilter === 'today' ? 'border:2px solid var(--blue)' : '') + '" onclick="taskFilter=\'today\';renderTasks(document.getElementById(\'main-content\'))"><div class="label">Due Today</div><div class="value" style="color:var(--blue)">' + todayTasks + '</div></div>' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px;cursor:pointer;background:var(--red-dim);' + (taskFilter === 'overdue' ? 'border:2px solid var(--red)' : '') + '" onclick="taskFilter=\'overdue\';renderTasks(document.getElementById(\'main-content\'))"><div class="label">Overdue</div><div class="value" style="color:var(--danger)">' + overdueTasks + '</div></div>' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px;cursor:pointer;background:var(--amber-dim);' + (taskFilter === 'urgent' ? 'border:2px solid var(--amber)' : '') + '" onclick="taskFilter=\'urgent\';renderTasks(document.getElementById(\'main-content\'))"><div class="label">[[icon:fire]] Urgent</div><div class="value" style="color:var(--amber)">' + urgentTasks + '</div></div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:24px">' +
+        '<div class="stat-flat stat-card--blue"><div class="stat-flat-label">Pending Tasks</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + totalPending + '</div></div>' +
+        '<div class="stat-flat stat-card--blue"><div class="stat-flat-label">Due Today</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + todayTasks + '</div></div>' +
+        '<div class="stat-flat stat-card--red"><div class="stat-flat-label">Overdue</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + overdueTasks + '</div></div>' +
+        '<div class="stat-flat stat-card--green"><div class="stat-flat-label">Completed</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + tasks.filter(t => t.status === 'COMPLETED').length + '</div></div>' +
         '</div>' +
-        
-        // Filter tabs
-        '<div style="display:flex;gap:8px;margin-bottom:16px">' +
-        '<button class="btn ' + (taskFilter === 'all' ? 'btn-primary' : 'btn-secondary') + '" onclick="taskFilter=\'all\';renderTasks(document.getElementById(\'main-content\'))">All Pending</button>' +
-        '<button class="btn ' + (taskFilter === 'today' ? 'btn-primary' : 'btn-secondary') + '" onclick="taskFilter=\'today\';renderTasks(document.getElementById(\'main-content\'))">Today</button>' +
-        '<button class="btn ' + (taskFilter === 'upcoming' ? 'btn-primary' : 'btn-secondary') + '" onclick="taskFilter=\'upcoming\';renderTasks(document.getElementById(\'main-content\'))">Upcoming</button>' +
-        '<button class="btn ' + (taskFilter === 'overdue' ? 'btn-primary' : 'btn-secondary') + '" style="' + (taskFilter === 'overdue' ? '' : 'background:var(--red-dim);color:var(--red);border-color:#fecaca') + '" onclick="taskFilter=\'overdue\';renderTasks(document.getElementById(\'main-content\'))">Overdue</button>' +
-        '<button class="btn ' + (taskFilter === 'completed' ? 'btn-primary' : 'btn-secondary') + '" onclick="taskFilter=\'completed\';renderTasks(document.getElementById(\'main-content\'))">Completed</button>' +
+
+        // Filter tabs - segmented control
+        '<div class="segmented-control" style="margin-bottom:16px">' +
+        '<button class="segmented-control-btn' + (taskFilter === 'all' ? ' active' : '') + '" onclick="taskFilter=\'all\';renderTasks(document.getElementById(\'main-content\'))">All Pending</button>' +
+        '<button class="segmented-control-btn' + (taskFilter === 'today' ? ' active' : '') + '" onclick="taskFilter=\'today\';renderTasks(document.getElementById(\'main-content\'))">Today</button>' +
+        '<button class="segmented-control-btn' + (taskFilter === 'upcoming' ? ' active' : '') + '" onclick="taskFilter=\'upcoming\';renderTasks(document.getElementById(\'main-content\'))">Upcoming</button>' +
+        '<button class="segmented-control-btn' + (taskFilter === 'overdue' ? ' active' : '') + '" onclick="taskFilter=\'overdue\';renderTasks(document.getElementById(\'main-content\'))">Overdue</button>' +
+        '<button class="segmented-control-btn' + (taskFilter === 'completed' ? ' active' : '') + '" onclick="taskFilter=\'completed\';renderTasks(document.getElementById(\'main-content\'))">Completed</button>' +
         '</div>' +
-        
+
         // Tasks list
-        '<div class="card"><div class="card-header"><h3>' + (taskFilter === 'completed' ? 'Completed Tasks' : taskFilter === 'overdue' ? 'Overdue Tasks' : taskFilter === 'today' ? "Today's Tasks" : 'Tasks') + ' (' + filteredTasks.length + ')</h3></div>' +
+        '<div class="card card-flush"><div class="section-header"><span class="section-header-title">' + (taskFilter === 'completed' ? 'Completed Tasks' : taskFilter === 'overdue' ? 'Overdue Tasks' : taskFilter === 'today' ? "Today's Tasks" : 'Tasks') + ' (' + filteredTasks.length + ')</span></div>' +
         (filteredTasks.length === 0 ? renderEmptyState('check', 'No tasks found', 'Create a task to track your to-dos', '+ New Task', 'openTaskModal()') :
         '<div style="padding:16px">' +
         filteredTasks.map(t => {
           const assignee = appData.dispatchers.find(d => d.id === t.assigned_to);
           const creator = appData.users.find(u => u.id === t.created_by);
-          const overdueStyle = isOverdue(t.due_date, t.status) ? 'border-left:4px solid var(--red);background:var(--red-dim)' : '';
-          const urgentStyle = t.priority === 'URGENT' && t.status !== 'COMPLETED' ? 'border-left:4px solid var(--amber);background:var(--amber-dim)' : '';
-          
-          return '<div style="padding:16px;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:12px;' + (overdueStyle || urgentStyle) + '">' +
+          const borderStyle = isOverdue(t.due_date, t.status) ? 'border-left:3px solid var(--red)' : (t.priority === 'URGENT' && t.status !== 'COMPLETED' ? 'border-left:3px solid var(--amber)' : 'border-left:3px solid var(--border)');
+
+          return '<div style="padding:16px;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;' + borderStyle + '">' +
             '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">' +
             '<div style="flex:1">' +
             '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">' +
             (t.status !== 'COMPLETED' ? '<input type="checkbox" style="width:20px;height:20px;cursor:pointer" onchange="toggleTaskComplete(' + t.id + ',this.checked)" title="Mark as completed">' : '<span style="color:var(--green);font-size:20px">[[icon:check]]</span>') +
-            '<strong style="font-size:16px;' + (t.status === 'COMPLETED' ? 'text-decoration:line-through;color:var(--text-muted)' : '') + '">' + t.title + '</strong>' +
+            '<span style="font-size:16px;font-weight:600;' + (t.status === 'COMPLETED' ? 'text-decoration:line-through;color:var(--text-muted)' : '') + '">' + t.title + '</span>' +
             getPriorityBadge(t.priority) +
             getStatusBadge(t.status) +
             '</div>' +
             (t.description ? '<p style="color:var(--text-secondary);margin:0 0 8px 32px;font-size:14px">' + t.description + '</p>' : '') +
             '<div style="display:flex;gap:16px;margin-left:32px;font-size:13px;color:var(--text-secondary)">' +
-            '<span>[[icon:calendar]] ' + (isOverdue(t.due_date, t.status) ? '<span style="color:var(--danger);font-weight:600">OVERDUE: </span>' : '') + formatDate(t.due_date) + '</span>' +
+            '<span>[[icon:calendar]] ' + (isOverdue(t.due_date, t.status) ? '<span style="color:var(--red);font-weight:600">OVERDUE: </span>' : '') + formatDate(t.due_date) + '</span>' +
             (assignee ? '<span>[[icon:user]] ' + assignee.name + '</span>' : '') +
             (creator ? '<span>Created by: ' + (creator.first_name || creator.email) + '</span>' : '') +
             '</div>' +
@@ -26903,10 +26902,10 @@
       
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
       m.innerHTML = '<div class="modal" style="max-width:500px"><div class="modal-header"><h3>' + (t ? 'Edit Task' : 'New Task') + '</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body">' +
-        '<div class="form-group"><label>Task Title *</label><input id="taskTitle" value="' + (t?.title || '') + '" placeholder="What needs to be done?"></div>' +
-        '<div class="form-group"><label>Description</label><textarea id="taskDesc" rows="3" placeholder="Additional details...">' + (t?.description || '') + '</textarea></div>' +
-        '<div class="form-row"><div class="form-group"><label>Due Date *</label><input type="date" id="taskDue" value="' + (t?.due_date || today) + '"></div><div class="form-group"><label>Priority</label><select id="taskPriority"><option value="LOW"' + (t?.priority === 'LOW' ? ' selected' : '') + '>Low</option><option value="NORMAL"' + (!t || t?.priority === 'NORMAL' ? ' selected' : '') + '>Normal</option><option value="HIGH"' + (t?.priority === 'HIGH' ? ' selected' : '') + '>High</option><option value="URGENT"' + (t?.priority === 'URGENT' ? ' selected' : '') + '>[[icon:fire]] Urgent</option></select></div></div>' +
-        '<div class="form-row"><div class="form-group"><label>Assign To</label><select id="taskAssignee"><option value="">Everyone / Unassigned</option>' + dispatcherOptions + '</select></div><div class="form-group"><label>Status</label><select id="taskStatus"><option value="PENDING"' + (!t || t?.status === 'PENDING' ? ' selected' : '') + '>Pending</option><option value="IN_PROGRESS"' + (t?.status === 'IN_PROGRESS' ? ' selected' : '') + '>In Progress</option><option value="COMPLETED"' + (t?.status === 'COMPLETED' ? ' selected' : '') + '>Completed</option></select></div></div>' +
+        '<div class="form-group"><label>Task Title *</label><input class="input" id="taskTitle" value="' + (t?.title || '') + '" placeholder="What needs to be done?"></div>' +
+        '<div class="form-group"><label>Description</label><textarea class="textarea" id="taskDesc" rows="3" placeholder="Additional details...">' + (t?.description || '') + '</textarea></div>' +
+        '<div class="form-row"><div class="form-group"><label>Due Date *</label><input class="input" type="date" id="taskDue" value="' + (t?.due_date || today) + '"></div><div class="form-group"><label>Priority</label><select class="select" id="taskPriority"><option value="LOW"' + (t?.priority === 'LOW' ? ' selected' : '') + '>Low</option><option value="NORMAL"' + (!t || t?.priority === 'NORMAL' ? ' selected' : '') + '>Normal</option><option value="HIGH"' + (t?.priority === 'HIGH' ? ' selected' : '') + '>High</option><option value="URGENT"' + (t?.priority === 'URGENT' ? ' selected' : '') + '>[[icon:fire]] Urgent</option></select></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Assign To</label><select class="select" id="taskAssignee"><option value="">Everyone / Unassigned</option>' + dispatcherOptions + '</select></div><div class="form-group"><label>Status</label><select class="select" id="taskStatus"><option value="PENDING"' + (!t || t?.status === 'PENDING' ? ' selected' : '') + '>Pending</option><option value="IN_PROGRESS"' + (t?.status === 'IN_PROGRESS' ? ' selected' : '') + '>In Progress</option><option value="COMPLETED"' + (t?.status === 'COMPLETED' ? ' selected' : '') + '>Completed</option></select></div></div>' +
         '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveTask(' + id + ')">Save Task</button></div></div>';
       document.body.appendChild(m);
     }
