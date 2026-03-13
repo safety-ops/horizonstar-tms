@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-12)
 ## Current Position
 
 Phase: 24 of 26 (Finance Pages Restyle)
-Plan: 1 of 5 in current phase
+Plan: 2 of 5 in current phase
 Status: In progress
-Last activity: 2026-03-13 -- Completed 24-01-PLAN.md (Billing page shell + overview + brokers tabs)
+Last activity: 2026-03-13 -- Completed 24-02-PLAN.md (Billing invoices/collections + payroll restyle)
 
-Progress: [██████░░░░] 60%
+Progress: [██████░░░░] 62%
 
 ## Performance Metrics
 
@@ -86,6 +86,12 @@ Key context for v1.4:
 - Billing stat cards use stat-flat + stat-card--{color} accent border pattern (Phase 24)
 - Aging bar keeps #f97316 (orange) and #991b1b (deep red) as intentional intermediate tier colors (Phase 24)
 - renderMiniAgingBar uses CSS variables for primary colors (Phase 24)
+- Billing invoices tab uses segmented-control filter, data-table, input class on search (Phase 24)
+- Billing collections tab uses stat-flat cards with accent borders, segmented-control filter, data-table (Phase 24)
+- Payroll uses segmented-control for all tab toggles (main tabs, period type, driver filter) (Phase 24)
+- Payroll stat cards use stat-flat + stat-card--{color} pattern, no stat-icon (Phase 24)
+- Payroll driver cards use flat bg-tertiary stat boxes with font-mono monetary values (Phase 24)
+- getPaymentStatusInfo() and buildPayrollStatusChip() use CSS variables, font-weight:600 (Phase 24)
 
 ### Known Issues
 - 4,344 inline style= attributes in index.html (in JS render functions) bypass CSS variables -- every page sweep requires JS template edits
@@ -101,9 +107,9 @@ Key context for v1.4:
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 24-01-PLAN.md (Billing page shell + overview + brokers tabs)
+Stopped at: Completed 24-02-PLAN.md (Billing invoices/collections + payroll restyle)
 Resume file: None
 
 ---
 
-**Next action**: Execute 24-02-PLAN.md (next plan in Phase 24)
+**Next action**: Execute 24-03-PLAN.md (next plan in Phase 24)
