@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-12)
 
 **Core value:** Efficient end-to-end vehicle transport management
-**Current focus:** v1.4 -- Phase 20 (Dashboard Restyle)
+**Current focus:** v1.4 -- Phase 21 (next page restyle)
 
 ## Current Position
 
 Phase: 20 of 26 (Dashboard Restyle)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-03-13 -- Completed 20-01-PLAN.md (Dashboard top section restyle)
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-03-13 -- Completed 20-02-PLAN.md (Dashboard bottom section restyle)
 
-Progress: [██░░░░░░░░] 15%
+Progress: [███░░░░░░░] 20%
 
 ## Performance Metrics
 
@@ -52,6 +52,9 @@ Key context for v1.4:
 - Dashboard CSS patterns: stat-card-label/value/sub, section-header/title/link, attention-pill, profitability-cell, dashboard-greeting/date (Phase 20)
 - KPI row expanded to 6 cards with auto-fit grid (Phase 20)
 - Time-of-day greeting replaces static Dashboard heading (Phase 20)
+- Analytics section-header pattern: uniform flat headers replacing colored border-bottom h3s (Phase 20)
+- Sparkline SVG colors kept as hex (inline SVG stroke/fill) (Phase 20)
+- font-family: var(--font-mono) on all dashboard numeric metric values (Phase 20)
 
 ### Known Issues
 - 4,344 inline style= attributes in index.html (in JS render functions) bypass CSS variables -- every page sweep requires JS template edits
@@ -67,9 +70,9 @@ Key context for v1.4:
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 20-01-PLAN.md
+Stopped at: Completed 20-02-PLAN.md (Phase 20 complete)
 Resume file: None
 
 ---
 
-**Next action**: Execute 20-02-PLAN.md (Dashboard bottom section restyle)
+**Next action**: Research and plan Phase 21 (next page restyle)
