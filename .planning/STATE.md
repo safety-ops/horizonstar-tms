@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-12)
 
 **Core value:** Efficient end-to-end vehicle transport management
-**Current focus:** v1.4 -- Phase 23 in progress (People & Fleet Restyle)
+**Current focus:** v1.4 -- Phase 23 complete (People & Fleet Restyle)
 
 ## Current Position
 
 Phase: 23 of 26 (People & Fleet Restyle)
-Plan: 2 of 3 in current phase
-Status: Plan complete
-Last activity: 2026-03-13 -- Completed 23-02-PLAN.md (Local Drivers + Trucks restyle)
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-03-13 -- Completed 23-03-PLAN.md (Brokers + Dispatchers restyle)
 
-Progress: [█████░░░░░] 50%
+Progress: [██████░░░░] 58%
 
 ## Performance Metrics
 
@@ -77,6 +77,10 @@ Key context for v1.4:
 - Local Drivers pending sections use neutral headers with colored left border accents (Phase 23)
 - Local Drivers action buttons use btn-secondary/btn-ghost, not hardcoded colors (Phase 23)
 - Trucks page already clean from prior work, only header needed 18px/600 fix (Phase 23)
+- Broker helper functions (getScoreColor, getActivityStatus) use CSS variables instead of hardcoded hex (Phase 23)
+- Dispatcher spotlight cards use left border accents (green/amber) instead of colored backgrounds (Phase 23)
+- Dispatcher ranking progress bars use var(--bg-tertiary) track with CSS variable fills (Phase 23)
+- Leaderboard card headers neutral (14px/600, text-primary) instead of colored (Phase 23)
 
 ### Known Issues
 - 4,344 inline style= attributes in index.html (in JS render functions) bypass CSS variables -- every page sweep requires JS template edits
@@ -92,9 +96,9 @@ Key context for v1.4:
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 23-02-PLAN.md (Local Drivers + Trucks restyle)
+Stopped at: Completed 23-03-PLAN.md (Brokers + Dispatchers restyle) -- Phase 23 complete
 Resume file: None
 
 ---
 
-**Next action**: Execute 23-03-PLAN.md (Brokers + Dispatchers restyle)
+**Next action**: Begin Phase 24 (Finance Pages Restyle)
