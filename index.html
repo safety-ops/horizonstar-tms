@@ -39856,7 +39856,7 @@
           card: '<div class="mobile-data-card">' +
             '<div class="mobile-data-card-header">' +
               '<div class="mobile-data-card-title"><strong>#' + escapeHtml(String(truck ? truck.truck_number : '-')) + '</strong><span>' + escapeHtml(m.service_type || 'Service') + '</span></div>' +
-              '<span class="money" style="font-weight:700">' + costValue + '</span>' +
+              '<span class="money" style="font-weight:600;font-family:var(--font-mono)">' + costValue + '</span>' +
             '</div>' +
             '<div class="mobile-data-card-grid">' +
               '<div class="mobile-data-point"><span class="mobile-data-point-label">Date</span><span class="mobile-data-point-value">' + escapeHtml(m.service_date ? formatDate(m.service_date) : '-') + '</span></div>' +
@@ -39869,21 +39869,21 @@
         };
       });
 
-      c.innerHTML = '<div class="header responsive-page-header"><h2>[[icon:wrench]] Maintenance</h2><div class="responsive-page-actions"><button class="btn btn-secondary" onclick="exportMaintenanceToCSV()">[[icon:chart]] Export to Sheets</button><button class="btn btn-primary" onclick="openMaintenanceModal(null, null)">+ New Record</button></div></div>' +
+      c.innerHTML = '<div class="header responsive-page-header"><h2 style="font-size:18px;font-weight:600">[[icon:wrench]] Maintenance</h2><div class="responsive-page-actions"><button class="btn btn-secondary" onclick="exportMaintenanceToCSV()">[[icon:chart]] Export to Sheets</button><button class="btn btn-primary" onclick="openMaintenanceModal(null, null)">+ New Record</button></div></div>' +
 
         // Filters
         '<div class="responsive-filter-bar">' +
-        '<div class="responsive-filter-group"><label style="font-weight:600;color:var(--text-secondary)">[[icon:truck]] Truck:</label><select onchange="maintenanceFilter.truck=this.value;renderMaintenance(document.getElementById(\'main-content\'))" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px"><option value="all"' + (maintenanceFilter.truck === 'all' ? ' selected' : '') + '>All Trucks</option>' + truckOptions + '</select></div>' +
-        '<div class="responsive-filter-group"><label style="font-weight:600;color:var(--text-secondary)">[[icon:calendar]] Sort:</label><select onchange="maintenanceFilter.sort=this.value;renderMaintenance(document.getElementById(\'main-content\'))" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px"><option value="newest"' + (maintenanceFilter.sort === 'newest' ? ' selected' : '') + '>Newest First</option><option value="oldest"' + (maintenanceFilter.sort === 'oldest' ? ' selected' : '') + '>Oldest First</option></select></div>' +
+        '<div class="responsive-filter-group"><label style="font-weight:500;color:var(--text-secondary);font-size:13px">[[icon:truck]] Truck:</label><select class="select" onchange="maintenanceFilter.truck=this.value;renderMaintenance(document.getElementById(\'main-content\'))"><option value="all"' + (maintenanceFilter.truck === 'all' ? ' selected' : '') + '>All Trucks</option>' + truckOptions + '</select></div>' +
+        '<div class="responsive-filter-group"><label style="font-weight:500;color:var(--text-secondary);font-size:13px">[[icon:calendar]] Sort:</label><select class="select" onchange="maintenanceFilter.sort=this.value;renderMaintenance(document.getElementById(\'main-content\'))"><option value="newest"' + (maintenanceFilter.sort === 'newest' ? ' selected' : '') + '>Newest First</option><option value="oldest"' + (maintenanceFilter.sort === 'oldest' ? ' selected' : '') + '>Oldest First</option></select></div>' +
         '<button class="btn btn-secondary" style="padding:8px 16px" onclick="maintenanceFilter={truck:\'all\',sort:\'newest\'};renderMaintenance(document.getElementById(\'main-content\'))">Clear Filters</button>' +
         '</div>' +
 
         '<div class="responsive-stat-strip">' +
-        '<div class="stat-card" style="padding:12px 16px"><div class="label">Total Records</div><div class="value">' + records.length + '</div></div>' +
-        '<div class="stat-card" style="padding:12px 16px"><div class="label">Filtered Records</div><div class="value">' + filtered.length + '</div></div>' +
-        '<div class="stat-card" style="padding:12px 16px;border-left:3px solid #10b981"><div class="label">Total Spent' + (maintenanceFilter.truck !== 'all' ? ' (Filtered)' : '') + '</div><div class="value" style="color:#10b981">' + formatMoney(total) + '</div></div></div>' +
+        '<div class="stat-flat stat-card--blue"><div class="stat-flat-label">Total Records</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + records.length + '</div></div>' +
+        '<div class="stat-flat stat-card--amber"><div class="stat-flat-label">Filtered Records</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + filtered.length + '</div></div>' +
+        '<div class="stat-flat stat-card--green"><div class="stat-flat-label">Total Spent' + (maintenanceFilter.truck !== 'all' ? ' (Filtered)' : '') + '</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + formatMoney(total) + '</div></div></div>' +
 
-        '<div class="desktop-only card"><div class="card-header"><h3>[[icon:clipboard]] Maintenance Records' + (maintenanceFilter.truck !== 'all' ? ' - Truck #' + (appData.trucks.find(t => t.id == maintenanceFilter.truck)?.truck_number || '') : '') + '</h3></div><div class="table-wrapper"><table><thead><tr><th>Truck</th><th>Date</th><th>Type</th><th>Shop</th><th>Description</th><th>Cost</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
+        '<div class="desktop-only card-flush"><div class="card-header"><h3 style="font-size:14px;font-weight:600">[[icon:clipboard]] Maintenance Records' + (maintenanceFilter.truck !== 'all' ? ' - Truck #' + (appData.trucks.find(t => t.id == maintenanceFilter.truck)?.truck_number || '') : '') + '</h3></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Truck</th><th>Date</th><th>Type</th><th>Shop</th><th>Description</th><th>Cost</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
         (maintenanceRows.length === 0 ? '<tr><td colspan="7">' + renderEmptyState('wrench', 'No maintenance records', 'Track vehicle maintenance to stay on schedule') + '</td></tr>' : maintenanceRows.map(item => item.row).join('')) +
         '</tbody></table></div></div>' +
         '<div class="mobile-only responsive-mobile-list">' +
