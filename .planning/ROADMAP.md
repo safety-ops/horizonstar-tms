@@ -92,7 +92,12 @@ Requirements and roadmap defined (16 requirements across 3 phases). Never starte
 4. Decorative animations (particle rain, shimmer, float, bounce, driveTruck, etc.) are gone -- only spinner, toast slide-in, and skeleton pulse remain
 5. A set of reusable component classes exists (flat cards, clean tables, desaturated badges, subtle hover states) that page-level sweeps can adopt in subsequent phases
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 19-01-PLAN.md -- Token swap (variables.css) + inline style block neutralization
+- [ ] 19-02-PLAN.md -- Component class flattening + new component library (base.css)
+- [ ] 19-03-PLAN.md -- Decorative animation removal + hover effect cleanup (index.html)
 
 ---
 
@@ -237,7 +242,7 @@ Phases execute in numeric order: 19 → 20 → 21 → 22 → 23 → 24 → 25 �
 | 12. Core Dispatch Pages | v1.2 | 6/6 | Abandoned | 2026-02-11 |
 | 13-15. Remaining Pages | v1.2 | 0/0 | Abandoned | 2026-02-11 |
 | 16-18. CSS Polish | v1.3 | 0/0 | Abandoned | 2026-03-12 |
-| 19. Token Foundation & Component Classes | v1.4 | 0/TBD | Not started | - |
+| 19. Token Foundation & Component Classes | v1.4 | 0/3 | Not started | - |
 | 20. Dashboard Restyle | v1.4 | 0/TBD | Not started | - |
 | 21. Orders Page Restyle | v1.4 | 0/TBD | Not started | - |
 | 22. Trips & Load Board Restyle | v1.4 | 0/TBD | Not started | - |
@@ -249,4 +254,4 @@ Phases execute in numeric order: 19 → 20 → 21 → 22 → 23 → 24 → 25 �
 ---
 
 **Roadmap created**: 2026-02-10
-**Last updated**: 2026-03-12 (v1.4 roadmap added, v1.3 marked abandoned)
+**Last updated**: 2026-03-12 (Phase 19 planned: 3 plans in 2 waves)
