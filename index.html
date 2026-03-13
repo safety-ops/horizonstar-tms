@@ -17198,7 +17198,7 @@
         { value: 'q2', label: 'Q2' },
         { value: 'q3', label: 'Q3' },
         { value: 'q4', label: 'Q4' }
-      ].map(p => '<button onclick="changeDashboardPeriod(\'' + p.value + '\')" style="padding:6px 12px;border-radius:6px;border:1px solid ' + (dashboardPeriod === p.value ? 'var(--primary)' : 'var(--border)') + ';background:' + (dashboardPeriod === p.value ? 'var(--primary)' : 'var(--bg-secondary)') + ';color:' + (dashboardPeriod === p.value ? 'white' : 'var(--text-primary)') + ';font-size:13px;font-weight:500;cursor:pointer">' + p.label + '</button>').join('');
+      ].map(p => '<button class="btn ' + (dashboardPeriod === p.value ? 'btn-primary' : 'btn-secondary') + '" onclick="changeDashboardPeriod(\'' + p.value + '\')" style="padding:6px 12px;font-size:13px">' + p.label + '</button>').join('');
 
       // Month selector options
       const monthOptions = dashboardMonthNames.slice(1).map((m, i) => '<option value="' + (i + 1) + '"' + (dashboardMonth === i + 1 ? ' selected' : '') + '>' + m + '</option>').join('');
@@ -17207,7 +17207,7 @@
         const d = appData.drivers.find(x => x.id === t.driver_id);
         const tr = appData.trucks.find(x => x.id === t.truck_id);
         const f = getTripFin(t.id);
-        return '<tr style="cursor:pointer" onclick="viewTrip(' + t.id + ')"><td><strong style="color:#3b82f6">' + t.trip_number + '</strong></td><td>' + formatDate(t.trip_date) + '</td><td>' + (d ? d.first_name + ' ' + d.last_name : '-') + '</td><td>' + (tr ? '#' + tr.truck_number : '-') + '</td><td>' + f.vehicleCount + '</td><td class="money">' + formatMoney(f.loadRevenue) + '</td><td class="money ' + (f.netProfit >= 0 ? 'positive' : 'negative') + '">' + formatMoney(f.netProfit) + '</td><td><span class="badge ' + getBadge(t.status) + '">' + t.status + '</span></td></tr>';
+        return '<tr style="cursor:pointer" onclick="viewTrip(' + t.id + ')"><td><strong style="color:var(--blue)">' + t.trip_number + '</strong></td><td>' + formatDate(t.trip_date) + '</td><td>' + (d ? d.first_name + ' ' + d.last_name : '-') + '</td><td>' + (tr ? '#' + tr.truck_number : '-') + '</td><td>' + f.vehicleCount + '</td><td class="money">' + formatMoney(f.loadRevenue) + '</td><td class="money ' + (f.netProfit >= 0 ? 'positive' : 'negative') + '">' + formatMoney(f.netProfit) + '</td><td><span class="badge ' + getBadge(t.status) + '">' + t.status + '</span></td></tr>';
       }).join('');
       const recentTripsCards = recentTrips.map(t => {
         const d = appData.drivers.find(x => x.id === t.driver_id);
@@ -17215,14 +17215,14 @@
         const f = getTripFin(t.id);
         return '<article class="mobile-data-card" onclick="viewTrip(' + t.id + ')" style="cursor:pointer">' +
           '<div class="mobile-data-card-header">' +
-          '<div class="mobile-data-card-title"><strong style="color:#3b82f6">' + escapeHtml(t.trip_number || ('TRIP-' + t.id)) + '</strong><span>' + formatDate(t.trip_date) + ' • ' + f.vehicleCount + ' cars</span></div>' +
+          '<div class="mobile-data-card-title"><strong style="color:var(--blue)">' + escapeHtml(t.trip_number || ('TRIP-' + t.id)) + '</strong><span>' + formatDate(t.trip_date) + ' • ' + f.vehicleCount + ' cars</span></div>' +
           '<span class="badge ' + getBadge(t.status) + '">' + escapeHtml(t.status || 'NEW') + '</span>' +
           '</div>' +
           '<div class="mobile-data-card-grid">' +
           '<div class="mobile-data-point"><span class="mobile-data-point-label">Driver</span><span class="mobile-data-point-value">' + escapeHtml(d ? (d.first_name + ' ' + d.last_name) : '-') + '</span></div>' +
           '<div class="mobile-data-point"><span class="mobile-data-point-label">Truck</span><span class="mobile-data-point-value">' + escapeHtml(tr ? ('#' + tr.truck_number) : '-') + '</span></div>' +
           '<div class="mobile-data-point"><span class="mobile-data-point-label">Revenue</span><span class="mobile-data-point-value">' + formatMoney(f.loadRevenue) + '</span></div>' +
-          '<div class="mobile-data-point"><span class="mobile-data-point-label">Profit</span><span class="mobile-data-point-value" style="color:' + (f.netProfit >= 0 ? '#047857' : '#dc2626') + '">' + formatMoney(f.netProfit) + '</span></div>' +
+          '<div class="mobile-data-point"><span class="mobile-data-point-label">Profit</span><span class="mobile-data-point-value" style="color:' + (f.netProfit >= 0 ? 'var(--green)' : 'var(--red)') + '">' + formatMoney(f.netProfit) + '</span></div>' +
           '</div>' +
           '<div class="mobile-data-card-actions"><button class="btn btn-secondary" type="button">View Trip</button></div>' +
           '</article>';
@@ -17255,52 +17255,35 @@
       ).join('') || '<div style="padding:20px 0;text-align:center;color:var(--text-muted);font-size:13px">[[icon:check]] All caught up!</div>';
 
       // ── Responsive grid style injected once ─────────────────────────────
-      const dashGridStyle = '<style>.dash-main-grid{display:grid;grid-template-columns:2fr 1fr;gap:20px}.dash-main-grid .dash-right{display:flex;flex-direction:column;gap:16px}@media(max-width:1024px){.dash-main-grid{grid-template-columns:1fr}}</style>';
+      const dashGridStyle = '<style>.dash-main-grid{display:grid;grid-template-columns:2fr 1fr;gap:var(--space-5)}.dash-main-grid .dash-right{display:flex;flex-direction:column;gap:var(--space-4)}@media(max-width:1024px){.dash-main-grid{grid-template-columns:1fr}}</style>';
+
+      // Time-of-day greeting
+      const dashHour = new Date().getHours();
+      const dashGreeting = dashHour < 12 ? 'Good morning' : dashHour < 17 ? 'Good afternoon' : 'Good evening';
+      const dashDateStr = new Date().toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
 
       c.innerHTML = dashGridStyle +
 
         // ── PAGE HEADER ──────────────────────────────────────────────────────
-        '<div class="page-header responsive-page-header" style="margin-bottom:16px">' +
-        '<h2 style="margin:0;font-size:18px;font-weight:700;color:var(--text-primary)">[[icon:chart]] Dashboard</h2>' +
+        '<div class="page-header responsive-page-header" style="margin-bottom:var(--space-4)">' +
+        '<div>' +
+        '<div class="dashboard-greeting">' + dashGreeting + ', ' + escapeHtml(currentUser?.first_name || currentUser?.name || 'there') + '</div>' +
+        '<div class="dashboard-date">' + dashDateStr + '</div>' +
+        '</div>' +
         '<div class="responsive-page-actions">' +
         '<div class="approved-scroll-x" data-scroll-kind="tabs" style="max-width:100%"><div class="responsive-page-actions" style="flex-wrap:nowrap;min-width:max-content;gap:4px">' + periodButtons + '</div></div>' +
-        (dashboardPeriod === 'month' ? '<select onchange="changeDashboardMonth(this.value)" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);font-weight:600;cursor:pointer">' + monthOptions + '</select>' : '') +
-        (dashboardPeriod !== 'all' ? '<select onchange="changeDashboardYear(this.value)" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);font-weight:600;cursor:pointer">' + yearOptions + '</select>' : '') +
+        (dashboardPeriod === 'month' ? '<select class="select" onchange="changeDashboardMonth(this.value)">' + monthOptions + '</select>' : '') +
+        (dashboardPeriod !== 'all' ? '<select class="select" onchange="changeDashboardYear(this.value)">' + yearOptions + '</select>' : '') +
         '<button class="btn btn-secondary" onclick="showExportMenu()">[[icon:download]] Export</button>' +
         '<button class="btn btn-secondary" onclick="loadAllData(true).then(()=>renderPage())">[[icon:refresh]] Refresh</button>' +
         '</div></div>' +
 
-        // ── TOP ATTENTION STRIP (compact pills) ────────────────────────────
-        '<div class="stagger-enter responsive-chip-row dashboard-attention-strip">' +
-
-        // Unassigned Orders — amber
-        '<div onclick="navigate(\'orders\')" style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;background:var(--dim-amber,#fef3c7);cursor:pointer;border:1px solid rgba(245,158,11,0.2);transition:all 0.15s" onmouseover="this.style.transform=\'translateY(-1px)\'" onmouseout="this.style.transform=\'translateY(0)\'">' +
-        '<span style="font-size:14px;color:#f59e0b">[[icon:order]]</span>' +
-        '<span style="font-size:13px;font-weight:700;color:#f59e0b">' + unassignedOrdersCount + '</span>' +
-        '<span style="font-size:12px;color:#92400e;font-weight:500">Unassigned</span>' +
-        '</div>' +
-
-        // Active Trips — green
-        '<div onclick="navigate(\'trips\')" style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;background:var(--dim-green,#d1fae5);cursor:pointer;border:1px solid rgba(16,185,129,0.2);transition:all 0.15s" onmouseover="this.style.transform=\'translateY(-1px)\'" onmouseout="this.style.transform=\'translateY(0)\'">' +
-        '<span style="font-size:14px;color:#10b981">[[icon:truck]]</span>' +
-        '<span style="font-size:13px;font-weight:700;color:#10b981">' + activeTripsCount + '</span>' +
-        '<span style="font-size:12px;color:#065f46;font-weight:500">Active Trips</span>' +
-        '</div>' +
-
-        // Pending Tasks — blue
-        '<div onclick="navigate(\'tasks\')" style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;background:var(--dim-blue,#dbeafe);cursor:pointer;border:1px solid rgba(59,130,246,0.2);transition:all 0.15s" onmouseover="this.style.transform=\'translateY(-1px)\'" onmouseout="this.style.transform=\'translateY(0)\'">' +
-        '<span style="font-size:14px;color:#3b82f6">[[icon:clipboard]]</span>' +
-        '<span style="font-size:13px;font-weight:700;color:#3b82f6">' + pendingTasksCount + '</span>' +
-        '<span style="font-size:12px;color:#1e40af;font-weight:500">Tasks</span>' +
-        '</div>' +
-
-        // Unpaid Invoices — red
-        '<div onclick="navigate(\'billing\')" style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;background:var(--dim-red,#fee2e2);cursor:pointer;border:1px solid rgba(239,68,68,0.2);transition:all 0.15s" onmouseover="this.style.transform=\'translateY(-1px)\'" onmouseout="this.style.transform=\'translateY(0)\'">' +
-        '<span style="font-size:14px;color:#ef4444">[[icon:dollar]]</span>' +
-        '<span style="font-size:13px;font-weight:700;color:#ef4444">' + unpaidInvoicesCount + '</span>' +
-        '<span style="font-size:12px;color:#991b1b;font-weight:500">Unpaid</span>' +
-        '</div>' +
-
+        // ── TOP ATTENTION STRIP (compact flat badges) ────────────────────────
+        '<div class="responsive-chip-row dashboard-attention-strip">' +
+        '<div class="attention-pill attention-pill--amber" onclick="navigate(\'orders\')"><span class="attention-pill-count">' + unassignedOrdersCount + '</span><span class="attention-pill-label">Unassigned</span></div>' +
+        '<div class="attention-pill attention-pill--green" onclick="navigate(\'trips\')"><span class="attention-pill-count">' + activeTripsCount + '</span><span class="attention-pill-label">Active Trips</span></div>' +
+        '<div class="attention-pill attention-pill--blue" onclick="navigate(\'tasks\')"><span class="attention-pill-count">' + pendingTasksCount + '</span><span class="attention-pill-label">Tasks</span></div>' +
+        '<div class="attention-pill attention-pill--red" onclick="navigate(\'billing\')"><span class="attention-pill-count">' + unpaidInvoicesCount + '</span><span class="attention-pill-label">Unpaid</span></div>' +
         '</div>' +
 
         // ── MAIN 2/3 + 1/3 GRID ─────────────────────────────────────────────
@@ -17311,21 +17294,25 @@
         // ════════════════════════════════════════
         '<div>' +
 
-        // KPI row — 3 stat cards with sub-labels
-        '<div class="stagger-enter dashboard-kpi-grid">' +
-        '<div class="stat-card" style="border-left:3px solid #10b981"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Revenue</div><div style="font-size:20px;font-weight:700;font-family:var(--font-mono);margin-top:4px">' + formatMoney(totalRev) + '</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">' + yearTrips.length + ' trips · ' + totalCars + ' cars</div></div>' +
-        '<div class="stat-card" style="border-left:3px solid ' + (totalProfit >= 0 ? '#10b981' : '#ef4444') + '"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Profit</div><div style="font-size:20px;font-weight:700;font-family:var(--font-mono);color:' + (totalProfit >= 0 ? '#047857' : '#dc2626') + ';margin-top:4px">' + formatMoney(totalProfit) + '</div><div style="font-size:11px;color:' + (totalProfit >= 0 ? '#047857' : '#dc2626') + ';margin-top:2px">' + profitMargin + '% margin</div></div>' +
-        '<div class="stat-card" style="border-left:3px solid #ef4444"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Expenses</div><div style="font-size:20px;font-weight:700;font-family:var(--font-mono);margin-top:4px">' + formatMoney(totalBrokerFees + totalLocalFees + totalDriverCut + totalExpenses) + '</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">' + formatMoney(totalDriverCut) + ' driver cuts</div></div>' +
+        // KPI row — 6 stat cards with label-above-number
+        '<div class="dashboard-kpi-grid">' +
+        '<div class="stat-card stat-card--green"><div class="stat-card-label">Revenue</div><div class="stat-card-value">' + formatMoney(totalRev) + '</div><div class="stat-card-sub">' + yearTrips.length + ' trips &middot; ' + totalCars + ' cars</div></div>' +
+        '<div class="stat-card stat-card--' + (totalProfit >= 0 ? 'green' : 'red') + '"><div class="stat-card-label">Profit</div><div class="stat-card-value" style="color:' + (totalProfit >= 0 ? 'var(--green)' : 'var(--red)') + '">' + formatMoney(totalProfit) + '</div><div class="stat-card-sub">' + profitMargin + '% margin</div></div>' +
+        '<div class="stat-card stat-card--red"><div class="stat-card-label">Expenses</div><div class="stat-card-value">' + formatMoney(totalBrokerFees + totalLocalFees + totalDriverCut + totalExpenses) + '</div><div class="stat-card-sub">' + formatMoney(totalDriverCut) + ' driver cuts</div></div>' +
+        '<div class="stat-card stat-card--blue"><div class="stat-card-label">Clean Gross</div><div class="stat-card-value">' + formatMoney(cleanGross) + '</div><div class="stat-card-sub">Rev - broker - local</div></div>' +
+        '<div class="stat-card stat-card--slate"><div class="stat-card-label">Miles</div><div class="stat-card-value">' + totalMiles.toLocaleString() + '</div><div class="stat-card-sub">' + (dashboardMilesSource === 'samsara' ? 'Samsara' : 'Trip data') + '</div></div>' +
+        '<div class="stat-card stat-card--purple"><div class="stat-card-label">Avg/Car</div><div class="stat-card-value">' + formatMoney(avgPricePerCar) + '</div><div class="stat-card-sub">' + totalCars + ' cars</div></div>' +
         '</div>' +
 
         // Recent Trips table (last 5)
-        '<div class="card card-flush" style="margin-bottom:16px"><div style="padding:14px 16px;border-bottom:1px solid var(--border)"><h3 style="margin:0;font-size:14px;font-weight:700">[[icon:truck]] Recent Trips (' + getDashboardPeriodLabel() + ')</h3></div>' +
+        '<div class="card card-flush" style="margin-bottom:var(--space-4)">' +
+        '<div class="section-header"><h3 class="section-title">Recent Trips (' + getDashboardPeriodLabel() + ')</h3><a class="section-link" onclick="navigate(\'trips\')">View all &rarr;</a></div>' +
         (recentTrips.length > 0
           ? '<div class="desktop-only"><div class="table-wrapper"><table class="data-table"><thead><tr><th>Trip</th><th>Date</th><th>Driver</th><th>Truck</th><th>Cars</th><th>Revenue</th><th>Profit</th><th>Status</th></tr></thead><tbody>' + recentTripsRows + '</tbody></table></div></div><div class="mobile-only responsive-mobile-list" style="padding:12px">' + recentTripsCards + '</div>'
           : '<div style="padding:40px;text-align:center;color:var(--text-muted)">No trips for ' + getDashboardPeriodLabel() + '</div>') +
         '</div>' +
 
-        // Quick View — Company Profitability (dark gradient card)
+        // Company Profitability (flat neutral card)
         (function() {
           const monthlyFixedCosts = (appData.fixed_costs || []).reduce((s, fc) => s + parseFloat(fc.amount || 0), 0);
           const periodMonths = Math.max(1, Object.keys(calculateTripVolume(yearTrips).monthlyData).length);
@@ -17348,26 +17335,25 @@
           const hasMiles = totalMiles > 0;
           const dataQuality = (hasFixedCosts ? 1 : 0) + (hasTrips ? 1 : 0) + (hasMiles ? 1 : 0);
           const warningBanner = dataQuality < 3 ?
-            '<div style="padding:12px 20px;background:rgba(251,191,36,0.2);border-bottom:1px solid rgba(251,191,36,0.3);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
-            '<span style="color:#fcd34d;font-size:12px">[[icon:alert]] ' + (!hasFixedCosts ? 'No fixed costs entered' : !hasTrips ? 'Need more trip data' : 'Missing miles data') + ' - metrics may be inaccurate</span>' +
-            (!hasFixedCosts ? '<button onclick="openSetupWizard()" style="background:#fbbf24;color:#78350f;border:none;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">[[icon:magic]][[icon:male]] Setup Wizard</button>' : '') +
+            '<div style="padding:12px 20px;background:var(--amber-dim);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
+            '<span style="color:var(--amber);font-size:12px">[[icon:alert]] ' + (!hasFixedCosts ? 'No fixed costs entered' : !hasTrips ? 'Need more trip data' : 'Missing miles data') + ' - metrics may be inaccurate</span>' +
+            (!hasFixedCosts ? '<button class="btn btn-secondary" onclick="openSetupWizard()" style="font-size:11px;padding:4px 10px">[[icon:magic]][[icon:male]] Setup Wizard</button>' : '') +
             '</div>' : '';
-          return '<div class="card" style="margin-bottom:20px;background:linear-gradient(135deg,#1e293b,#334155);color:white;overflow:hidden">' +
-            '<div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.1)">' +
-            '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
-            '<h3 style="margin:0;color:white;font-size:16px">[[icon:bolt]] Quick View - Company Profitability</h3>' +
+          return '<div class="card card-flush" style="margin-bottom:var(--space-5)">' +
+            '<div class="section-header">' +
+            '<h3 class="section-title">Company Profitability</h3>' +
             '<div style="display:flex;align-items:center;gap:12px">' +
-            '<span style="background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:12px;font-size:11px">' + totalMiles.toLocaleString() + ' mi ' + (dashboardMilesSource === 'samsara' ? '<span style="color:#93c5fd;font-size:9px">[[icon:signal]]</span>' : '') + ' \u2022 ' + totalCars + ' cars</span>' +
-            '<button onclick="openSetupWizard()" style="background:rgba(59,130,246,0.3);color:#93c5fd;border:1px solid rgba(59,130,246,0.5);padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer">[[icon:magic]][[icon:male]] Setup</button>' +
-            '</div></div></div>' +
+            '<span class="badge-xs" style="background:var(--bg-elevated);color:var(--text-muted);padding:4px 10px;border-radius:var(--radius-sm)">' + totalMiles.toLocaleString() + ' mi ' + (dashboardMilesSource === 'samsara' ? '<span style="color:var(--blue);font-size:9px">[[icon:signal]]</span>' : '') + ' &bull; ' + totalCars + ' cars</span>' +
+            '<button class="btn btn-secondary" onclick="openSetupWizard()" style="font-size:11px;padding:4px 10px">[[icon:magic]][[icon:male]] Setup</button>' +
+            '</div></div>' +
             warningBanner +
             '<div class="dashboard-profitability-grid">' +
-            '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)"><div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Cost Per Mile</div><div style="font-size:28px;font-weight:700;color:#f87171">$' + cpm.toFixed(2) + '</div><div style="font-size:10px;color:#94a3b8;margin-top:4px">Operating ' + glossary('CPM') + '</div></div>' +
-            '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)"><div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Revenue Per Mile</div><div style="font-size:28px;font-weight:700;color:#4ade80">$' + rpm.toFixed(2) + '</div><div style="font-size:10px;color:#94a3b8;margin-top:4px">Gross ' + glossary('RPM') + '</div></div>' +
-            '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);background:' + (marginPerMile >= 0 ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)') + '"><div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Margin Per Mile</div><div style="font-size:28px;font-weight:700;color:' + (marginPerMile >= 0 ? '#4ade80' : '#f87171') + '">$' + marginPerMile.toFixed(2) + '</div><div style="font-size:10px;color:' + (marginPerMile >= 0 ? '#86efac' : '#fca5a5') + ';margin-top:4px">' + (marginPerMile >= 0 ? '[[icon:check]] Profitable' : '[[icon:x]] Losing Money') + '</div></div>' +
-            '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)"><div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Avg Vehicle Price</div><div style="font-size:28px;font-weight:700;color:#60a5fa">$' + currentAvgPrice.toFixed(0) + '</div><div style="font-size:10px;color:#94a3b8;margin-top:4px">Current Average</div></div>' +
-            '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)"><div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Break-Even Price</div><div style="font-size:28px;font-weight:700;color:#a78bfa">$' + targetVehiclePrice.toFixed(0) + '</div><div style="font-size:10px;color:#94a3b8;margin-top:4px">Min per vehicle</div></div>' +
-            '<div style="padding:20px;text-align:center;background:' + (priceGap <= 0 ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)') + '"><div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Profit Per Vehicle</div><div style="font-size:28px;font-weight:700;color:' + (priceGap <= 0 ? '#4ade80' : '#f87171') + '">$' + Math.abs(currentAvgPrice - targetVehiclePrice).toFixed(0) + '</div><div style="font-size:10px;color:' + (priceGap <= 0 ? '#86efac' : '#fca5a5') + ';margin-top:4px">' + (priceGap <= 0 ? '[[icon:check]] Profitable' : '[[icon:x]] Losing $' + Math.abs(priceGap).toFixed(0) + '/car') + '</div></div>' +
+            '<div class="profitability-cell"><div class="stat-card-label" style="margin-bottom:8px">Cost Per Mile</div><div style="font-size:var(--text-xl);font-weight:600;font-family:var(--font-mono);color:var(--red)">$' + cpm.toFixed(2) + '</div><div style="font-size:10px;color:var(--text-muted);margin-top:4px">Operating ' + glossary('CPM') + '</div></div>' +
+            '<div class="profitability-cell"><div class="stat-card-label" style="margin-bottom:8px">Revenue Per Mile</div><div style="font-size:var(--text-xl);font-weight:600;font-family:var(--font-mono);color:var(--green)">$' + rpm.toFixed(2) + '</div><div style="font-size:10px;color:var(--text-muted);margin-top:4px">Gross ' + glossary('RPM') + '</div></div>' +
+            '<div class="profitability-cell" style="background:' + (marginPerMile >= 0 ? 'var(--green-dim, rgba(34,197,94,0.08))' : 'var(--red-dim, rgba(239,68,68,0.08))') + '"><div class="stat-card-label" style="margin-bottom:8px">Margin Per Mile</div><div style="font-size:var(--text-xl);font-weight:600;font-family:var(--font-mono);color:' + (marginPerMile >= 0 ? 'var(--green)' : 'var(--red)') + '">$' + marginPerMile.toFixed(2) + '</div><div style="font-size:10px;color:' + (marginPerMile >= 0 ? 'var(--green)' : 'var(--red)') + ';margin-top:4px">' + (marginPerMile >= 0 ? '[[icon:check]] Profitable' : '[[icon:x]] Losing Money') + '</div></div>' +
+            '<div class="profitability-cell"><div class="stat-card-label" style="margin-bottom:8px">Avg Vehicle Price</div><div style="font-size:var(--text-xl);font-weight:600;font-family:var(--font-mono);color:var(--blue)">$' + currentAvgPrice.toFixed(0) + '</div><div style="font-size:10px;color:var(--text-muted);margin-top:4px">Current Average</div></div>' +
+            '<div class="profitability-cell"><div class="stat-card-label" style="margin-bottom:8px">Break-Even Price</div><div style="font-size:var(--text-xl);font-weight:600;font-family:var(--font-mono);color:var(--purple)">$' + targetVehiclePrice.toFixed(0) + '</div><div style="font-size:10px;color:var(--text-muted);margin-top:4px">Min per vehicle</div></div>' +
+            '<div class="profitability-cell" style="background:' + (priceGap <= 0 ? 'var(--green-dim, rgba(34,197,94,0.08))' : 'var(--red-dim, rgba(239,68,68,0.08))') + '"><div class="stat-card-label" style="margin-bottom:8px">Profit Per Vehicle</div><div style="font-size:var(--text-xl);font-weight:600;font-family:var(--font-mono);color:' + (priceGap <= 0 ? 'var(--green)' : 'var(--red)') + '">$' + Math.abs(currentAvgPrice - targetVehiclePrice).toFixed(0) + '</div><div style="font-size:10px;color:' + (priceGap <= 0 ? 'var(--green)' : 'var(--red)') + ';margin-top:4px">' + (priceGap <= 0 ? '[[icon:check]] Profitable' : '[[icon:x]] Losing $' + Math.abs(priceGap).toFixed(0) + '/car') + '</div></div>' +
             '</div></div>';
         })() +
 
