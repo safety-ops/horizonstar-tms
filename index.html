@@ -17673,37 +17673,36 @@
       // Total revenue
       const totalRevenue = displayOrders.reduce((s, o) => s + parseFloat(o.revenue || 0), 0);
       
-      c.innerHTML = '<div class="header"><h2>[[icon:clipboard]] Future Cars</h2><div style="display:flex;gap:8px"><button class="btn btn-primary" onclick="openLoadBoardOrder()">+ Add Vehicle</button><button class="btn" style="background:#8b5cf6;color:white" onclick="openCreateNewLoad()">[[icon:file]] AI Import</button></div></div>' +
-        
+      c.innerHTML = '<div class="header"><h2 style="font-size:18px;font-weight:600">Future Cars</h2><div style="display:flex;gap:8px"><button class="btn btn-primary" onclick="openLoadBoardOrder()">+ Add Vehicle</button><button class="btn btn-secondary" onclick="openCreateNewLoad()">[[icon:file]] AI Import</button></div></div>' +
+
         // Stats
         '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px">' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px"><div class="label">Total Unassigned</div><div class="value">' + unassignedOrders.length + '</div></div>' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px"><div class="label">In ' + currentCat.name + '</div><div class="value">' + categoryCounts[currentCat.id] + '</div></div>' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:140px;padding:12px 16px"><div class="label">Revenue (Displayed)</div><div class="value">' + formatMoney(totalRevenue) + '</div></div>' +
+        '<div class="stat-flat" style="flex:0 0 auto;min-width:120px"><div class="stat-card-label">Total Unassigned</div><div class="stat-card-value">' + unassignedOrders.length + '</div></div>' +
+        '<div class="stat-flat" style="flex:0 0 auto;min-width:120px"><div class="stat-card-label">In ' + currentCat.name + '</div><div class="stat-card-value">' + categoryCounts[currentCat.id] + '</div></div>' +
+        '<div class="stat-flat" style="flex:0 0 auto;min-width:140px"><div class="stat-card-label">Revenue (Displayed)</div><div class="stat-card-value" style="font-family:var(--font-mono)">' + formatMoney(totalRevenue) + '</div></div>' +
         '</div>' +
-        
+
         // Category tabs
-        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">' +
+        '<div class="segmented-control" style="margin-bottom:var(--space-4);flex-wrap:wrap">' +
         loadBoardCategories.map(cat => {
           const isActive = cat.id === selectedLoadCategory;
-          const inactiveBg = 'white';
-          return '<button onclick="selectedLoadCategory=\'' + cat.id + '\';selectedLoadSub=null;renderLoadBoard(document.getElementById(\'main-content\'))" style="padding:10px 16px;border:2px solid ' + cat.color + ';background:' + (isActive ? cat.color : inactiveBg) + ';color:' + (isActive ? 'white' : cat.color) + ';border-radius:8px;cursor:pointer;font-weight:600">' + cat.name + ' (' + categoryCounts[cat.id] + ')</button>';
+          return '<button class="segmented-control-btn' + (isActive ? ' active' : '') + '" onclick="selectedLoadCategory=\'' + cat.id + '\';selectedLoadSub=null;renderLoadBoard(document.getElementById(\'main-content\'))">' + cat.name + ' (' + categoryCounts[cat.id] + ')</button>';
         }).join('') +
         '</div>' +
-        
+
         // Subcategory tabs (if any)
-        (currentCat.subs.length > 0 ? '<div style="display:flex;gap:8px;margin-bottom:16px;padding-left:20px;flex-wrap:wrap">' +
-        '<button onclick="selectedLoadSub=null;renderLoadBoard(document.getElementById(\'main-content\'))" style="padding:6px 12px;border:1px solid ' + ('#cbd5e1') + ';background:' + (!selectedLoadSub ? '#1e40af' : ('white')) + ';color:' + (!selectedLoadSub ? 'white' : ('#475569')) + ';border-radius:6px;cursor:pointer;font-size:13px">All</button>' +
+        (currentCat.subs.length > 0 ? '<div class="segmented-control" style="margin-bottom:var(--space-4);margin-left:var(--space-5)">' +
+        '<button class="segmented-control-btn' + (!selectedLoadSub ? ' active' : '') + '" onclick="selectedLoadSub=null;renderLoadBoard(document.getElementById(\'main-content\'))">All</button>' +
         currentCat.subs.map(sub => {
           const isActive = sub.id === selectedLoadSub;
-          return '<button onclick="selectedLoadSub=\'' + sub.id + '\';renderLoadBoard(document.getElementById(\'main-content\'))" style="padding:6px 12px;border:1px solid ' + ('#cbd5e1') + ';background:' + (isActive ? '#1e40af' : ('white')) + ';color:' + (isActive ? 'white' : ('#475569')) + ';border-radius:6px;cursor:pointer;font-size:13px">' + sub.name + ' (' + categoryCounts[sub.id] + ')</button>';
+          return '<button class="segmented-control-btn' + (isActive ? ' active' : '') + '" onclick="selectedLoadSub=\'' + sub.id + '\';renderLoadBoard(document.getElementById(\'main-content\'))">' + sub.name + ' (' + categoryCounts[sub.id] + ')</button>';
         }).join('') +
         '</div>' : '') +
-        
+
         // Orders cards
-        '<div class="card"><div class="card-header" style="background:' + currentCat.color + ';color:white;border-radius:8px 8px 0 0"><h3 style="margin:0">' + currentCat.name + (selectedLoadSub ? ' → ' + currentCat.subs.find(s => s.id === selectedLoadSub)?.name : '') + '</h3></div>' +
-        (displayOrders.length === 0 ? '<div style="padding:40px;text-align:center;color:#64748b">No vehicles in this category</div>' :
-        '<div style="padding:12px;display:flex;flex-direction:column;gap:10px">' +
+        '<div class="card"><div style="padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--border)"><h3 style="margin:0;font-size:15px;font-weight:600;color:var(--text-primary)">' + currentCat.name + (selectedLoadSub ? ' → ' + currentCat.subs.find(s => s.id === selectedLoadSub)?.name : '') + '</h3></div>' +
+        (displayOrders.length === 0 ? renderEmptyState('clipboard', 'No vehicles', 'No unassigned vehicles in this category', '+ Add Vehicle', 'openLoadBoardOrder()') :
+        '<div style="padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-2-5)">' +
         displayOrders.map(o => {
           const dispatcher = (appData.dispatchers || []).find(d => String(d.id) === String(o.dispatcher_id));
           const currentSubLabel = currentCat.subs.find(s => s.id === o.load_subcategory)?.name || null;
