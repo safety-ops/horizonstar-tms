@@ -47227,6 +47227,18 @@ function jsonResponse(data, status = 200) {
                   <label style="display:block;margin-bottom:6px;font-weight:500">Company Address</label>
                   <input type="text" id="reg-company-address" placeholder="123 Main St, City, State ZIP" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary)">
                 </div>
+                <hr style="margin:20px 0;border:none;border-top:1px solid var(--border)">
+                <h4 style="margin:0 0 20px;color:var(--text-primary)">Login Credentials</h4>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+                  <div class="form-group">
+                    <label style="display:block;margin-bottom:6px;font-weight:500">Password *</label>
+                    <input type="password" id="reg-password" required minlength="6" placeholder="Min 6 characters" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary)">
+                  </div>
+                  <div class="form-group">
+                    <label style="display:block;margin-bottom:6px;font-weight:500">Confirm Password *</label>
+                    <input type="password" id="reg-password-confirm" required minlength="6" placeholder="Confirm password" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary)">
+                  </div>
+                </div>
                 <div class="form-group" style="margin-bottom:24px">
                   <label style="display:block;margin-bottom:6px;font-weight:500">Additional Notes</label>
                   <textarea id="reg-notes" rows="3" placeholder="Tell us about your dealership, volume expectations, etc." style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);resize:vertical"></textarea>
@@ -47263,8 +47275,17 @@ function jsonResponse(data, status = 200) {
         const paymentTerms = document.getElementById('reg-payment-terms').value;
         const notes = document.getElementById('reg-notes').value.trim();
 
+        const regPassword = document.getElementById('reg-password').value;
+        const regPasswordConfirm = document.getElementById('reg-password-confirm').value;
+
         if (!companyName || !contactName || !contactEmail) {
           throw new Error('Company name, contact name, and email are required.');
+        }
+        if (!regPassword || regPassword.length < 6) {
+          throw new Error('Password must be at least 6 characters.');
+        }
+        if (regPassword !== regPasswordConfirm) {
+          throw new Error('Passwords do not match.');
         }
 
         // Check for duplicate email
@@ -47286,6 +47307,7 @@ function jsonResponse(data, status = 200) {
           company_address: companyAddress,
           payment_terms: paymentTerms,
           notes: notes,
+          password: regPassword,
           status: 'pending'
         }]);
 
@@ -47461,11 +47483,14 @@ function jsonResponse(data, status = 200) {
 
       if (!confirm('Approve dealer application from "' + app.company_name + '"?\n\nThis will create a dealer account with login credentials.')) return;
 
-      // Generate a strong temporary password
-      var chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-      var randPart = '';
-      for (var i = 0; i < 8; i++) randPart += chars.charAt(Math.floor(Math.random() * chars.length));
-      var tempPassword = 'Dlr!' + randPart + 'A1';
+      // Use the password the dealer set during registration, or generate a fallback
+      var tempPassword = app.password;
+      if (!tempPassword || tempPassword.length < 6) {
+        var chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+        var randPart = '';
+        for (var i = 0; i < 8; i++) randPart += chars.charAt(Math.floor(Math.random() * chars.length));
+        tempPassword = 'Dlr!' + randPart + 'A1';
+      }
       var authCreatedFresh = false;
       var dealerCode = '';
 
@@ -47559,7 +47584,7 @@ function jsonResponse(data, status = 200) {
         await loadAllData(true);
 
         // ── Step 4: Show result to admin ──
-        var passwordDisplay = authCreatedFresh ? tempPassword : '(password reset email sent to dealer)';
+        var passwordDisplay = authCreatedFresh ? '(set by dealer during registration)' : '(existing account — dealer knows their password)';
 
         var credModal = document.createElement('div');
         credModal.className = 'modal-overlay';
