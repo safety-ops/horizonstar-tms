@@ -1,107 +1,104 @@
 /* ============================================================
    HORIZON STAR TMS - CSS Variables & Theming
-   Design System v2 — Green brand, Zinc surfaces
+   Design System v3 — Stripe/Linear aesthetic, Slate surfaces
    ============================================================ */
 
 :root {
-  /* Brand Colors — Green primary */
-  --primary: #22c55e;
-  --primary-hover: #16a34a;
-  --primary-light: rgba(34, 197, 94, 0.12);
+  /* Brand Colors */
+  --primary: #16a34a;
+  --primary-hover: #15803d;
+  --primary-light: rgba(22,163,74,0.08);
   --primary-dark: #15803d;
   --secondary: #64748b;
   --purple: #a855f7;
 
-  /* Semantic Brand Palette */
-  --green: #22c55e;
-  --green-dim: rgba(34, 197, 94, 0.12);
-  --blue: #3b82f6;
-  --blue-dim: rgba(59, 130, 246, 0.12);
-  --amber: #f59e0b;
-  --amber-dim: rgba(245, 158, 11, 0.12);
-  --red: #ef4444;
-  --red-dim: rgba(239, 68, 68, 0.12);
-  --purple-dim: rgba(168, 85, 247, 0.12);
+  /* Semantic Colors */
+  --green: #16a34a;
+  --green-dim: rgba(22,163,74,0.08);
+  --blue: #2563eb;
+  --blue-dim: rgba(37,99,235,0.08);
+  --amber: #d97706;
+  --amber-dim: rgba(217,119,6,0.08);
+  --red: #dc2626;
+  --red-dim: rgba(220,38,38,0.08);
+  --purple-dim: rgba(168,85,247,0.08);
 
-  /* Status Colors (backward-compat aliases) */
-  --success: #22c55e;
-  --success-light: rgba(34, 197, 94, 0.12);
-  --warning: #f59e0b;
-  --warning-light: rgba(245, 158, 11, 0.12);
-  --danger: #ef4444;
-  --danger-light: rgba(239, 68, 68, 0.12);
-  --info: #3b82f6;
-  --info-light: rgba(59, 130, 246, 0.12);
+  /* Status Aliases */
+  --success: #16a34a;
+  --success-light: rgba(22,163,74,0.08);
+  --warning: #d97706;
+  --warning-light: rgba(217,119,6,0.08);
+  --danger: #dc2626;
+  --danger-light: rgba(220,38,38,0.08);
+  --info: #2563eb;
+  --info-light: rgba(37,99,235,0.08);
 
-  /* Light Theme Backgrounds — Warm Neutral */
-  --bg-primary: #f5f5f7;
+  /* Backgrounds — Slate scale */
+  --bg-primary: #f8fafc;
   --bg-secondary: #ffffff;
-  --bg-tertiary: #f0f0f2;
+  --bg-tertiary: #f1f5f9;
   --bg-card: #ffffff;
-  --bg-card-hover: #f3f4f6;
-  --bg-hover: #f5f5f7;
-  --bg-darker: #e5e5e7;
-  --bg-elevated: #e5e7eb;
-  --bg-float: #d4d4d8;
-
-  /* Backward-compat aliases */
+  --bg-card-hover: #f8fafc;
+  --bg-hover: #f1f5f9;
+  --bg-darker: #e2e8f0;
+  --bg-elevated: #f1f5f9;
+  --bg-float: #e2e8f0;
   --bg-app: var(--bg-primary);
 
-  /* Text Colors */
-  --text-primary: #111827;
-  --text-secondary: #4b5563;
-  --text-muted: #9ca3af;
+  /* Text — Slate */
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
 
-  /* Borders */
-  --border: rgba(0,0,0,0.08);
-  --border-light: rgba(0,0,0,0.04);
-  --border-active: rgba(34, 197, 94, 0.4);
+  /* Borders — Solid hex */
+  --border: #e2e8f0;
+  --border-light: #f1f5f9;
+  --border-strong: #cbd5e1;
+  --border-active: #2563eb;
 
-  /* Shadows - Softer, more diffused */
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
-
-  /* Backward-compatible shadow mappings */
-  --shadow-xs: var(--shadow-sm);
-  --shadow: var(--shadow-sm);
-  --shadow-xl: var(--shadow-lg);
-  --shadow-card: var(--shadow-sm);
-  --shadow-card-hover: var(--shadow-md);
-  --shadow-float: var(--shadow-lg);
+  /* Shadows — 3 levels, near-invisible */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-sm: 0 1px 3px rgba(16,24,40,0.06), 0 1px 2px rgba(16,24,40,0.03);
+  --shadow-md: 0 4px 8px -2px rgba(16,24,40,0.08), 0 2px 4px -2px rgba(16,24,40,0.04);
+  --shadow: var(--shadow-xs);
+  --shadow-lg: var(--shadow-md);
+  --shadow-xl: var(--shadow-md);
+  --shadow-card: var(--shadow-xs);
+  --shadow-card-hover: var(--shadow-sm);
+  --shadow-float: var(--shadow-md);
   --shadow-inset: none;
   --shadow-glow-green: none;
   --shadow-glow-blue: none;
   --shadow-inner-glow: none;
 
-  /* Gradients — Green brand */
-  --accent-gradient: #22c55e;
-  --gradient-primary: #22c55e;
-  --gradient-primary-hover: #16a34a;
-  --gradient-secondary: #3b82f6;
-  --gradient-warning: #f59e0b;
-  --gradient-danger: #ef4444;
+  /* Gradients — Flat solid values */
+  --accent-gradient: #16a34a;
+  --gradient-primary: #16a34a;
+  --gradient-primary-hover: #15803d;
+  --gradient-secondary: #2563eb;
+  --gradient-warning: #d97706;
+  --gradient-danger: #dc2626;
   --gradient-purple: #a855f7;
-  --gradient-sidebar: #111113;
+  --gradient-sidebar: #0f172a;
   --gradient-card: var(--bg-card);
 
-  /* Glass Effect */
+  /* Glass — None */
   --glass-bg: var(--bg-card);
   --glass-border: var(--border);
   --glass-blur: none;
 
-  /* Border Radius */
-  --radius-sm: 8px;
-  --radius: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
+  /* Border Radius — Tighter */
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 12px;
 
-  /* Layout */
+  /* Layout (unchanged) */
   --sidebar-width: 240px;
   --sidebar-collapsed-width: 72px;
   --header-height: 64px;
 
-  /* Spacing Scale (4px base) */
+  /* Spacing (unchanged) */
   --space-0-5: 2px;
   --space-1: 4px;
   --space-1-5: 6px;
@@ -116,7 +113,7 @@
   --space-8: 32px;
   --space-10: 40px;
 
-  /* Typography */
+  /* Typography (sizes unchanged) */
   --text-xs: 11px;
   --text-sm: 13px;
   --text-base: 14px;
@@ -128,8 +125,8 @@
   --weight-normal: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
-  --weight-bold: 700;
-  --weight-heavy: 800;
+  --weight-bold: 600;
+  --weight-heavy: 600;
 
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
@@ -138,18 +135,28 @@
   --leading-normal: 1.5;
   --leading-relaxed: 1.6;
 
-  /* Animation */
-  --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --tracking-wide: 0.05em;
+
+  /* Animation — Simplified */
+  --transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, color 150ms ease;
+  --ease-spring: ease;
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-bounce: ease;
+  --ease-out-expo: ease;
   --duration-instant: 100ms;
   --duration-fast: 150ms;
-  --duration-normal: 250ms;
-  --duration-slow: 400ms;
+  --duration-normal: 200ms;
+  --duration-slow: 250ms;
+
+  /* Buttons */
+  --btn-primary-bg: #0f172a;
+  --btn-primary-color: #ffffff;
+  --btn-primary-hover: #1e293b;
+
+  /* Focus */
+  --focus-ring: 0 0 0 3px rgba(37,99,235,0.1);
+  --focus-border: #2563eb;
 
   /* Icon defaults */
   --icon-default: var(--text-secondary);
 }
-
