@@ -180,7 +180,12 @@ Plans:
 3. Broker cards display revenue/profit metrics with flat surfaces and the label-above-number pattern -- no gradient metric cards
 4. Dispatchers page uses the same flat card/table treatment as other people pages
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 23-01-PLAN.md -- Restyle Drivers page (renderDrivers + viewDriverProfile)
+- [ ] 23-02-PLAN.md -- Restyle Local Drivers + Trucks pages (renderLocalDrivers + viewLocalDriverDetails + renderTrucks)
+- [ ] 23-03-PLAN.md -- Restyle Brokers + Dispatchers pages (renderBrokers + viewBrokerDetails + renderDispatchers + renderDispatcherRanking)
 
 ---
 
@@ -259,7 +264,7 @@ Phases execute in numeric order: 19 → 20 → 21 → 22 → 23 → 24 → 25 �
 | 20. Dashboard Restyle | v1.4 | 2/2 | Complete | 2026-03-13 |
 | 21. Orders Page Restyle | v1.4 | 2/2 | Complete | 2026-03-13 |
 | 22. Trips & Load Board Restyle | v1.4 | 3/3 | Complete | 2026-03-13 |
-| 23. People & Fleet Restyle | v1.4 | 0/TBD | Not started | - |
+| 23. People & Fleet Restyle | v1.4 | 0/3 | Not started | - |
 | 24. Finance Pages Restyle | v1.4 | 0/TBD | Not started | - |
 | 25. Operations & Admin Restyle | v1.4 | 0/TBD | Not started | - |
 | 26. Shared Chrome & Quality Verification | v1.4 | 0/TBD | Not started | - |
@@ -267,4 +272,4 @@ Phases execute in numeric order: 19 → 20 → 21 → 22 → 23 → 24 → 25 �
 ---
 
 **Roadmap created**: 2026-02-10
-**Last updated**: 2026-03-13 (Phase 22 complete: 3/3 plans)
+**Last updated**: 2026-03-13 (Phase 23 planned: 3 plans)
