@@ -19197,15 +19197,10 @@
       const truckTrips = selectedTruckTab ? yearFilteredTrips.filter(t => t.truck_id === selectedTruckTab).sort((a,b) => new Date(b.trip_date) - new Date(a.trip_date)) : [];
       const selectedTruck = appData.trucks.find(t => t.id === selectedTruckTab);
 
-      // Build truck tabs (showing year-filtered trip counts)
+      // Build truck tabs
       const truckTabs = trucksWithTrips.map(t => {
-        const tripCount = yearFilteredTrips.filter(tr => tr.truck_id === t.id).length;
         const isActive = t.id === selectedTruckTab;
-        const inactiveBg = 'white';
-        const inactiveColor = '#475569';
-        const inactiveBorder = '#e2e8f0';
-        const badgeBg = isActive ? 'rgba(255,255,255,0.2)' : ('#e2e8f0');
-        return '<button class="truck-tab" onclick="selectedTruckTab=' + t.id + ';renderTrips(document.getElementById(\'main-content\'))" style="padding:10px 16px;border:2px solid ' + (isActive ? '#1e40af' : inactiveBorder) + ';cursor:pointer;font-weight:600;border-radius:8px;margin:4px;transition:all 0.2s;background:' + (isActive ? '#1e40af' : inactiveBg) + ';color:' + (isActive ? 'white' : inactiveColor) + '">[[icon:truck]] ' + t.truck_number + ' <span style="background:' + badgeBg + ';padding:2px 8px;border-radius:12px;font-size:12px;margin-left:4px">' + tripCount + '</span></button>';
+        return '<button class="segmented-control-btn' + (isActive ? ' active' : '') + '" onclick="selectedTruckTab=' + t.id + ';renderTrips(document.getElementById(\'main-content\'))">[[icon:truck]] ' + t.truck_number + '</button>';
       }).join('');
       
       // Build trip rows (desktop table) and mobile cards in a single pass
@@ -19216,36 +19211,36 @@
         const driver = appData.drivers.find(d => d.id === trip.driver_id);
         const driverName = driver ? driver.first_name + ' ' + driver.last_name : '-';
         const f = getTripFin(trip.id);
-        const completeBtn = trip.status !== 'COMPLETED' ? '<button class="action-btn" style="background:#10b981;color:white" onclick="event.stopPropagation();markTripCompleted(' + trip.id + ',true)">[[icon:check]]</button>' : '';
+        const completeBtn = trip.status !== 'COMPLETED' ? '<button class="action-btn" style="background:var(--green);color:white" onclick="event.stopPropagation();markTripCompleted(' + trip.id + ',true)">[[icon:check]]</button>' : '';
         const tripStartText = trip.period_start_date ? formatDate(trip.period_start_date) : '-';
         const isTripClosed = ['COMPLETED', 'DELIVERED'].includes(String(trip.status || '').toUpperCase());
         const tripEndText = (isTripClosed && trip.period_end_date) ? formatDate(trip.period_end_date) : '-';
         const truckNum = selectedTruck ? selectedTruck.truck_number : '-';
 
         // Desktop table row
-        tripRows += '<tr><td><strong>' + trip.trip_number + '</strong></td><td>' + formatDate(trip.trip_date) + '</td><td>' + tripStartText + '</td><td>' + tripEndText + '</td><td>' + orders.length + '</td><td>' + driverName + '</td><td class="money">' + formatMoney(f.loadRevenue) + '</td><td><span class="badge ' + getBadge(trip.status) + '">' + trip.status + '</span></td><td class="sticky-col"><div class="actions">' + completeBtn + '<button class="action-btn view" onclick="viewTrip(' + trip.id + ')">View</button><button class="action-btn edit" onclick="openTripModal(' + trip.id + ')">Edit</button><button class="action-btn delete" onclick="deleteTrip(' + trip.id + ')">Del</button></div></td></tr>';
+        tripRows += '<tr><td><strong>' + trip.trip_number + '</strong></td><td>' + formatDate(trip.trip_date) + '</td><td>' + tripStartText + '</td><td>' + tripEndText + '</td><td>' + orders.length + '</td><td>' + driverName + '</td><td class="money" style="font-family:var(--font-mono)">' + formatMoney(f.loadRevenue) + '</td><td><span class="badge ' + getBadge(trip.status) + '">' + trip.status + '</span></td><td class="sticky-col"><div class="actions">' + completeBtn + '<button class="action-btn view" onclick="viewTrip(' + trip.id + ')">View</button><button class="action-btn edit" onclick="openTripModal(' + trip.id + ')">Edit</button><button class="action-btn delete" onclick="deleteTrip(' + trip.id + ')">Del</button></div></td></tr>';
 
         // Mobile card
         const cardCompleteBtn = trip.status !== 'COMPLETED'
-          ? '<button class="action-btn" style="background:#10b981;color:white;min-height:44px;padding:10px 14px" onclick="event.stopPropagation();markTripCompleted(' + trip.id + ',true)">[[icon:check]] Done</button>'
+          ? '<button class="action-btn" style="background:var(--green);color:white;min-height:44px;flex:0 0 auto" onclick="event.stopPropagation();markTripCompleted(' + trip.id + ',true)">[[icon:check]] Done</button>'
           : '';
         tripMobileCards +=
-          '<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px;cursor:pointer" onclick="viewTrip(' + trip.id + ')">' +
-            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
-              '<span style="font-weight:700;color:var(--primary);font-size:15px">' + escapeHtml(trip.trip_number) + '</span>' +
+          '<div class="trip-card" style="margin-bottom:var(--space-2)" onclick="viewTrip(' + trip.id + ')">' +
+            '<div class="trip-card-header">' +
+              '<span class="trip-number">' + escapeHtml(trip.trip_number) + '</span>' +
               '<span class="badge ' + getBadge(trip.status) + '">' + escapeHtml(trip.status) + '</span>' +
             '</div>' +
-            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:13px;color:var(--text-secondary);margin-bottom:10px">' +
-              '<div>Driver: <span style="color:var(--text-primary);font-weight:500">' + escapeHtml(driverName) + '</span></div>' +
-              '<div>Truck: <span style="color:var(--text-primary);font-weight:500">#' + escapeHtml(String(truckNum)) + '</span></div>' +
+            '<div class="trip-card-meta">' +
+              '<div>Driver: <strong>' + escapeHtml(driverName) + '</strong></div>' +
+              '<div>Truck: <strong>#' + escapeHtml(String(truckNum)) + '</strong></div>' +
               '<div>' + orders.length + ' car' + (orders.length !== 1 ? 's' : '') + ' | ' + formatDate(trip.trip_date) + '</div>' +
-              '<div style="text-align:right;font-weight:600;color:var(--success,#10b981)">' + formatMoney(f.loadRevenue) + '</div>' +
+              '<div style="text-align:right;font-weight:500;font-family:var(--font-mono);color:var(--text-primary)">' + formatMoney(f.loadRevenue) + '</div>' +
             '</div>' +
-            '<div style="display:flex;gap:8px" onclick="event.stopPropagation()">' +
+            '<div class="trip-card-actions" onclick="event.stopPropagation()">' +
               cardCompleteBtn +
-              '<button class="action-btn view" style="min-height:44px;padding:10px 14px;flex:1" onclick="viewTrip(' + trip.id + ')">View</button>' +
-              '<button class="action-btn edit" style="min-height:44px;padding:10px 14px;flex:1" onclick="openTripModal(' + trip.id + ')">Edit</button>' +
-              '<button class="action-btn delete" style="min-height:44px;padding:10px 14px;flex:1" onclick="deleteTrip(' + trip.id + ')">Del</button>' +
+              '<button class="action-btn view" style="min-height:44px;flex:1" onclick="viewTrip(' + trip.id + ')">View</button>' +
+              '<button class="action-btn edit" style="min-height:44px;flex:1" onclick="openTripModal(' + trip.id + ')">Edit</button>' +
+              '<button class="action-btn delete" style="min-height:44px;flex:1" onclick="deleteTrip(' + trip.id + ')">Del</button>' +
             '</div>' +
           '</div>';
       });
@@ -19257,11 +19252,10 @@
       ).join('');
 
       // Status filter tabs
-      const statusTabStyle = (isActive) => 'padding:4px 12px;font-size:12px;border:none;cursor:pointer;font-weight:600;border-radius:6px;transition:all 0.2s;background:' + (isActive ? '#1e40af' : '#f1f5f9') + ';color:' + (isActive ? 'white' : ('#475569'));
-      const statusTabs = '<div style="display:flex;gap:8px;margin-bottom:16px">' +
-        '<button onclick="tripStatusFilter=\'active\';renderTrips(document.getElementById(\'main-content\'))" style="' + statusTabStyle(tripStatusFilter === 'active') + '">Active <span style="background:' + (tripStatusFilter === 'active' ? 'rgba(255,255,255,0.2)' : ('#e2e8f0')) + ';padding:2px 8px;border-radius:12px;font-size:12px;margin-left:4px">' + activeCount + '</span></button>' +
-        '<button onclick="tripStatusFilter=\'completed\';renderTrips(document.getElementById(\'main-content\'))" style="' + statusTabStyle(tripStatusFilter === 'completed') + '">Completed <span style="background:' + (tripStatusFilter === 'completed' ? 'rgba(255,255,255,0.2)' : ('#e2e8f0')) + ';padding:2px 8px;border-radius:12px;font-size:12px;margin-left:4px">' + completedCount + '</span></button>' +
-        '<button onclick="tripStatusFilter=\'all\';renderTrips(document.getElementById(\'main-content\'))" style="' + statusTabStyle(tripStatusFilter === 'all') + '">All <span style="background:' + (tripStatusFilter === 'all' ? 'rgba(255,255,255,0.2)' : ('#e2e8f0')) + ';padding:2px 8px;border-radius:12px;font-size:12px;margin-left:4px">' + allCount + '</span></button>' +
+      const statusTabs = '<div class="segmented-control" style="margin-bottom:var(--space-4)">' +
+        '<button class="segmented-control-btn' + (tripStatusFilter === 'active' ? ' active' : '') + '" onclick="tripStatusFilter=\'active\';renderTrips(document.getElementById(\'main-content\'))">Active (' + activeCount + ')</button>' +
+        '<button class="segmented-control-btn' + (tripStatusFilter === 'completed' ? ' active' : '') + '" onclick="tripStatusFilter=\'completed\';renderTrips(document.getElementById(\'main-content\'))">Completed (' + completedCount + ')</button>' +
+        '<button class="segmented-control-btn' + (tripStatusFilter === 'all' ? ' active' : '') + '" onclick="tripStatusFilter=\'all\';renderTrips(document.getElementById(\'main-content\'))">All (' + allCount + ')</button>' +
         '</div>';
 
       // Density toggle
@@ -19295,41 +19289,37 @@
         '</label>'
       ).join('');
 
-      // Density button helper
-      const densityBtnStyle = (d) => 'padding:5px 10px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:' + (tripsDensity===d ? 'var(--primary)' : 'transparent') + ';color:' + (tripsDensity===d ? 'white' : 'var(--text-secondary)') + ';transition:all 0.15s';
+      // Density toggle uses segmented-control classes
 
       c.innerHTML =
         '<style>' +
-        '.density-compact #trips-table td,.density-compact #trips-table th{padding:6px 12px}' +
-        '.density-default #trips-table td,.density-default #trips-table th{padding:10px 16px}' +
-        '.density-comfortable #trips-table td,.density-comfortable #trips-table th{padding:14px 20px}' +
         '#trips-col-menu{display:none;position:absolute;right:0;top:calc(100% + 4px);background:var(--surface-elevated);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.15);z-index:200;min-width:150px;padding:6px 0}' +
         '#trips-col-menu.open{display:block}' +
         hiddenColCSS +
         '</style>' +
-        '<div class="header"><h2>[[icon:truck]] Trips by Truck</h2><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">' +
-        '<div style="display:flex;align-items:center;gap:8px;background:var(--surface-elevated);padding:8px 12px;border-radius:6px;border:1px solid var(--border)"><label style="font-weight:600;color:var(--text-secondary);font-size:13px">Year:</label><select onchange="tripsYear=parseInt(this.value);renderTrips(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px">' + tripsYearOptions + '</select></div>' +
-        '<div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden" title="Row density">' +
-        '<button onclick="localStorage.setItem(\'tripsDensity\',\'compact\');renderTrips(document.getElementById(\'main-content\'))" style="' + densityBtnStyle('compact') + '" title="Compact">Compact</button>' +
-        '<button onclick="localStorage.setItem(\'tripsDensity\',\'default\');renderTrips(document.getElementById(\'main-content\'))" style="' + densityBtnStyle('default') + ';border-left:1px solid var(--border);border-right:1px solid var(--border)" title="Default">Default</button>' +
-        '<button onclick="localStorage.setItem(\'tripsDensity\',\'comfortable\');renderTrips(document.getElementById(\'main-content\'))" style="' + densityBtnStyle('comfortable') + '" title="Comfortable">Comfy</button>' +
+        '<div class="header"><h2 style="font-size:18px;font-weight:600">Trips by Truck</h2><div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap">' +
+        '<div style="display:flex;align-items:center;gap:var(--space-2)"><label style="font-weight:500;color:var(--text-secondary);font-size:13px">Year:</label><select class="select" onchange="tripsYear=parseInt(this.value);renderTrips(document.getElementById(\'main-content\'))">' + tripsYearOptions + '</select></div>' +
+        '<div class="segmented-control" title="Row density">' +
+        '<button class="segmented-control-btn' + (tripsDensity==='compact' ? ' active' : '') + '" onclick="localStorage.setItem(\'tripsDensity\',\'compact\');renderTrips(document.getElementById(\'main-content\'))" title="Compact">Compact</button>' +
+        '<button class="segmented-control-btn' + (tripsDensity==='default' ? ' active' : '') + '" onclick="localStorage.setItem(\'tripsDensity\',\'default\');renderTrips(document.getElementById(\'main-content\'))" title="Default">Default</button>' +
+        '<button class="segmented-control-btn' + (tripsDensity==='comfortable' ? ' active' : '') + '" onclick="localStorage.setItem(\'tripsDensity\',\'comfortable\');renderTrips(document.getElementById(\'main-content\'))" title="Comfortable">Comfy</button>' +
         '</div>' +
         '<div style="position:relative">' +
-        '<button onclick="(function(btn){var m=document.getElementById(\'trips-col-menu\');m.classList.toggle(\'open\');if(m.classList.contains(\'open\')){var close=function(e){if(!btn.contains(e.target)&&!m.contains(e.target)){m.classList.remove(\'open\');document.removeEventListener(\'click\',close)}};setTimeout(function(){document.addEventListener(\'click\',close)},10)}})(this)" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface-elevated);color:var(--text-secondary);cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px" title="Column visibility">&#9881; Columns</button>' +
+        '<button class="btn btn-secondary" onclick="(function(btn){var m=document.getElementById(\'trips-col-menu\');m.classList.toggle(\'open\');if(m.classList.contains(\'open\')){var close=function(e){if(!btn.contains(e.target)&&!m.contains(e.target)){m.classList.remove(\'open\');document.removeEventListener(\'click\',close)}};setTimeout(function(){document.addEventListener(\'click\',close)},10)}})(this)" title="Column visibility">&#9881; Columns</button>' +
         '<div id="trips-col-menu">' + colCheckboxes + '</div>' +
         '</div>' +
         '<button class="btn btn-primary" onclick="openTripModal()">+ New Trip</button>' +
         '</div></div>' +
         statusTabs +
-        '<div style="display:flex;overflow-x:auto;gap:4px;margin-bottom:16px;padding-bottom:4px;scrollbar-width:none;-webkit-overflow-scrolling:touch">' + truckTabs + '</div>' +
+        '<div class="segmented-control-scroll" style="margin-bottom:var(--space-4)">' + truckTabs + '</div>' +
         // Desktop table (hidden on mobile via .desktop-only)
-        '<div class="desktop-only card density-' + tripsDensity + '"><div style="padding:16px;background:#f8fafc;border-bottom:1px solid #e2e8f0"><div><strong style="font-size:18px">TRUCK ' + (selectedTruck ? selectedTruck.truck_number : '-') + '</strong><span style="color:var(--text-secondary);margin-left:12px">' + truckTrips.length + ' trips | Home: Fairless Hills, PA</span></div></div><div class="table-wrapper"><table id="trips-table"><thead><tr><th>Trip #</th><th>Date</th><th>Start</th><th>End</th><th>Cars</th><th>Driver</th><th>Revenue</th><th>Status</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
+        '<div class="desktop-only card card-flush density-' + tripsDensity + '"><div style="padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--border)"><div><strong style="font-size:15px;font-weight:600">Truck ' + (selectedTruck ? selectedTruck.truck_number : '-') + '</strong><span style="color:var(--text-secondary);margin-left:var(--space-3);font-size:13px">' + truckTrips.length + ' trips | Home: Fairless Hills, PA</span></div></div><div class="table-wrapper"><table id="trips-table" class="data-table"><thead><tr><th>Trip #</th><th>Date</th><th>Start</th><th>End</th><th>Cars</th><th>Driver</th><th>Revenue</th><th>Status</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
         (tripRows || '<tr><td colspan="9">' + renderEmptyState('truck', 'No trips yet', 'Create your first trip to start dispatching', '+ New Trip', 'openTripModal()') + '</td></tr>') +
         '</tbody></table></div></div>' +
         // Mobile cards (hidden on desktop via .mobile-only)
-        '<div class="mobile-only" style="padding:4px 0">' +
-          '<div style="padding:10px 0 12px;font-weight:700;font-size:15px;color:var(--text-secondary)">TRUCK ' + (selectedTruck ? escapeHtml(String(selectedTruck.truck_number)) : '-') + ' &mdash; ' + truckTrips.length + ' trip' + (truckTrips.length !== 1 ? 's' : '') + '</div>' +
-          (tripMobileCards || '<div style="text-align:center;padding:40px 16px;color:var(--text-muted)">No trips yet &mdash; tap + to create one.</div>') +
+        '<div class="mobile-only" style="padding:var(--space-1) 0">' +
+          '<div style="padding:var(--space-2-5) 0 var(--space-3);font-weight:600;font-size:14px;color:var(--text-secondary)">Truck ' + (selectedTruck ? escapeHtml(String(selectedTruck.truck_number)) : '-') + ' &mdash; ' + truckTrips.length + ' trip' + (truckTrips.length !== 1 ? 's' : '') + '</div>' +
+          (tripMobileCards || '<div style="text-align:center;padding:var(--space-10) var(--space-4);color:var(--text-muted);font-size:13px">No trips yet &mdash; tap + to create one.</div>') +
         '</div>';
     }
 
