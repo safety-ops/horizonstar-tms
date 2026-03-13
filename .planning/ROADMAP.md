@@ -114,7 +114,11 @@ Plans:
 2. The attention strip, main content grid, and sidebar all use consistent neutral surfaces with whitespace as the primary section separator
 3. Dashboard analytics section (charts, sparklines) displays with clean flat styling consistent with the rest of the page
 
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 20-01-PLAN.md -- CSS classes + dashboard top section restyle (header, attention strip, KPI cards, recent trips, profitability)
+- [ ] 20-02-PLAN.md -- Dashboard bottom section restyle (sidebar cards, collapsible analytics)
 
 ---
 
@@ -243,7 +247,7 @@ Phases execute in numeric order: 19 → 20 → 21 → 22 → 23 → 24 → 25 �
 | 13-15. Remaining Pages | v1.2 | 0/0 | Abandoned | 2026-02-11 |
 | 16-18. CSS Polish | v1.3 | 0/0 | Abandoned | 2026-03-12 |
 | 19. Token Foundation & Component Classes | v1.4 | 3/3 | Complete | 2026-03-12 |
-| 20. Dashboard Restyle | v1.4 | 0/TBD | Not started | - |
+| 20. Dashboard Restyle | v1.4 | 0/2 | Not started | - |
 | 21. Orders Page Restyle | v1.4 | 0/TBD | Not started | - |
 | 22. Trips & Load Board Restyle | v1.4 | 0/TBD | Not started | - |
 | 23. People & Fleet Restyle | v1.4 | 0/TBD | Not started | - |
@@ -254,4 +258,4 @@ Phases execute in numeric order: 19 → 20 → 21 → 22 → 23 → 24 → 25 �
 ---
 
 **Roadmap created**: 2026-02-10
-**Last updated**: 2026-03-12 (Phase 19 planned: 3 plans in 2 waves)
+**Last updated**: 2026-03-13 (Phase 20 planned: 2 plans in 2 waves)
