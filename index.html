@@ -26977,20 +26977,20 @@
 
       // Tab buttons
       const tabs = [
-        { id: 'dashboard', label: '[[icon:chart]] Dashboard', color: 'var(--blue)' },
-        { id: 'tasks', label: '[[icon:clipboard]] Compliance Tasks', color: 'var(--purple)' },
-        { id: 'driver_files', label: '[[icon:user]] Driver Files', color: 'var(--blue)' },
-        { id: 'truck_files', label: '[[icon:truck]] Truck Files', color: '#0891b2' },
-        { id: 'company_files', label: '[[icon:building]] Company Files', color: 'var(--green)' },
-        { id: 'driver_compliance', label: '[[icon:ticket]] Tickets/Violations', color: 'var(--red)' },
-        { id: 'accidents', label: '[[icon:siren]] Accident Registry', color: 'var(--amber)' }
+        { id: 'dashboard', label: '[[icon:chart]] Dashboard' },
+        { id: 'tasks', label: '[[icon:clipboard]] Compliance Tasks' },
+        { id: 'driver_files', label: '[[icon:user]] Driver Files' },
+        { id: 'truck_files', label: '[[icon:truck]] Truck Files' },
+        { id: 'company_files', label: '[[icon:building]] Company Files' },
+        { id: 'driver_compliance', label: '[[icon:ticket]] Tickets/Violations' },
+        { id: 'accidents', label: '[[icon:siren]] Accident Registry' }
       ];
-      
-      const tabsHtml = '<div style="display:flex;gap:4px;margin-bottom:20px;flex-wrap:wrap">' +
-        tabs.map(t => '<button onclick="complianceMainTab=\'' + t.id + '\';renderCompliance(document.getElementById(\'main-content\'))" style="padding:10px 16px;border:none;cursor:pointer;font-weight:600;border-radius:8px;font-size:13px;' + (complianceMainTab === t.id ? 'background:' + t.color + ';color:white' : 'background:var(--border);color:var(--text-secondary)') + '">' + t.label + '</button>').join('') +
+
+      const tabsHtml = '<div class="segmented-control-scroll" style="margin-bottom:20px">' +
+        tabs.map(t => '<button class="segmented-control-btn' + (complianceMainTab === t.id ? ' active' : '') + '" onclick="complianceMainTab=\'' + t.id + '\';renderCompliance(document.getElementById(\'main-content\'))">' + t.label + '</button>').join('') +
         '</div>';
-      
-      c.innerHTML = '<div class="header"><h2>[[icon:clipboard]] Compliance Center</h2></div>' + tabsHtml + '<div id="complianceContent"></div>';
+
+      c.innerHTML = '<div class="header"><h2 style="font-size:18px;font-weight:600">[[icon:clipboard]] Compliance Center</h2></div>' + tabsHtml + '<div id="complianceContent"></div>';
       
       const content = document.getElementById('complianceContent');
       if (complianceMainTab === 'dashboard') renderComplianceDashboard(content);
@@ -27096,32 +27096,31 @@
       const upcomingCompTasks = compTasks.filter(t => t.next_due_date && new Date(t.next_due_date) >= today && new Date(t.next_due_date) <= new Date(next30Days))
         .map(t => ({ task: t.task_name, due: t.next_due_date }));
       
-      c.innerHTML = '<div class="card" style="margin-bottom:24px;background:var(--blue);color:white;padding:24px"><h3 style="margin:0 0 16px">[[icon:chart]] Compliance Report</h3>' +
-        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">' +
-        '<div style="background:rgba(255,255,255,0.15);padding:20px;border-radius:12px;text-align:center"><div style="font-size:14px;opacity:0.9">Open Tickets</div><div style="font-size:36px;font-weight:600">' + openTickets + '</div></div>' +
-        '<div style="background:rgba(255,255,255,0.15);padding:20px;border-radius:12px;text-align:center"><div style="font-size:14px;opacity:0.9">Open Claims</div><div style="font-size:36px;font-weight:600">' + openClaims + '</div></div>' +
-        '<div style="background:rgba(255,255,255,0.15);padding:20px;border-radius:12px;text-align:center"><div style="font-size:14px;opacity:0.9">Days Without Accidents</div><div style="font-size:36px;font-weight:600;color:#4ade80">' + daysWithoutAccident + '</div></div>' +
-        '</div></div>' +
-        
+      c.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px">' +
+        '<div class="stat-flat stat-card--blue"><div class="stat-card-label">Open Tickets</div><div class="stat-card-value" style="font-family:var(--font-mono)">' + openTickets + '</div></div>' +
+        '<div class="stat-flat stat-card--amber"><div class="stat-card-label">Open Claims</div><div class="stat-card-value" style="font-family:var(--font-mono)">' + openClaims + '</div></div>' +
+        '<div class="stat-flat stat-card--green"><div class="stat-card-label">Days Without Accidents</div><div class="stat-card-value" style="font-family:var(--font-mono)">' + daysWithoutAccident + '</div></div>' +
+        '</div>' +
+
         // Grid of upcoming items
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px">' +
-        
+
         // Driver Tasks
-        '<div class="card"><div class="card-header"><h4 style="margin:0">[[icon:user]] Driver Tasks (Next 7 Days)</h4></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
+        '<div class="card"><div class="section-header"><span class="section-header-title">[[icon:user]] Driver Tasks (Next 7 Days)</span></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
         (driverTasks.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px">No tasks due</div>' :
-        driverTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + t.driver + '</strong><br><span style="font-size:12px;color:var(--text-muted)">' + t.task + '</span></div><div style="font-size:12px;color:var(--amber)">' + formatDate(t.due) + '</div></div>').join('')) +
+        driverTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-secondary);border-radius:6px;margin-bottom:8px"><div><strong>' + t.driver + '</strong><br><span style="font-size:12px;color:var(--text-muted)">' + t.task + '</span></div><div style="font-size:12px;color:var(--amber)">' + formatDate(t.due) + '</div></div>').join('')) +
         '</div></div>' +
-        
+
         // Birthdays
-        '<div class="card"><div class="card-header"><h4 style="margin:0">[[icon:cake]] Birthdays (Next 7 Days)</h4></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
+        '<div class="card"><div class="section-header"><span class="section-header-title">[[icon:cake]] Birthdays (Next 7 Days)</span></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
         (birthdays.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px">No birthdays this week</div>' :
-        birthdays.map(b => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + b.driver + '</strong></div><div style="font-size:12px;color:#ec4899">' + formatDate(b.date) + '</div></div>').join('')) +
+        birthdays.map(b => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-secondary);border-radius:6px;margin-bottom:8px"><div><strong>' + b.driver + '</strong></div><div style="font-size:12px;color:var(--purple)">' + formatDate(b.date) + '</div></div>').join('')) +
         '</div></div>' +
-        
+
         // Vehicle Tasks
-        '<div class="card"><div class="card-header"><h4 style="margin:0">[[icon:truck]] Vehicle Tasks (Next 7 Days)</h4></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
+        '<div class="card"><div class="section-header"><span class="section-header-title">[[icon:truck]] Vehicle Tasks (Next 7 Days)</span></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
         (vehicleTasks.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px">No tasks due</div>' :
-        vehicleTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + t.unit + '</strong><br><span style="font-size:12px;color:var(--text-muted)">' + t.task + '</span></div><div style="font-size:12px;color:var(--amber)">' + formatDate(t.due) + '</div></div>').join('')) +
+        vehicleTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-secondary);border-radius:6px;margin-bottom:8px"><div><strong>' + t.unit + '</strong><br><span style="font-size:12px;color:var(--text-muted)">' + t.task + '</span></div><div style="font-size:12px;color:var(--amber)">' + formatDate(t.due) + '</div></div>').join('')) +
         '</div></div>' +
 
         // Company Files Tasks
@@ -27136,24 +27135,24 @@
               }
             }
           });
-          return '<div class="card"><div class="card-header"><h4 style="margin:0">[[icon:building]] Company Files (Next 7 Days)</h4></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
+          return '<div class="card"><div class="section-header"><span class="section-header-title">[[icon:building]] Company Files (Next 7 Days)</span></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
             (companyFileTasks.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px">No files expiring</div>' :
-            companyFileTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + t.doc + '</strong></div><div style="font-size:12px;color:' + (t.days < 0 ? 'var(--red)' : 'var(--green)') + '">' + (t.days < 0 ? 'EXPIRED' : formatDate(t.due)) + '</div></div>').join('')) +
+            companyFileTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-secondary);border-radius:6px;margin-bottom:8px"><div><strong>' + t.doc + '</strong></div><div style="font-size:12px;color:' + (t.days < 0 ? 'var(--red)' : 'var(--green)') + '">' + (t.days < 0 ? 'EXPIRED' : formatDate(t.due)) + '</div></div>').join('')) +
             '</div></div>';
         })() +
 
         // Court Dates
-        '<div class="card"><div class="card-header"><h4 style="margin:0">[[icon:scale]] Court Dates (Next 30 Days)</h4></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
+        '<div class="card"><div class="section-header"><span class="section-header-title">[[icon:scale]] Court Dates (Next 30 Days)</span></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
         (courtDates.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px">No court dates found</div>' :
-        courtDates.map(cd => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + cd.driver + '</strong></div><div style="font-size:12px;color:var(--red)">' + formatDate(cd.date) + '</div></div>').join('')) +
+        courtDates.map(cd => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-secondary);border-radius:6px;margin-bottom:8px"><div><strong>' + cd.driver + '</strong></div><div style="font-size:12px;color:var(--red)">' + formatDate(cd.date) + '</div></div>').join('')) +
         '</div></div>' +
-        
+
         // Compliance Tasks
-        '<div class="card"><div class="card-header"><h4 style="margin:0">[[icon:clipboard]] Compliance Tasks (Next 30 Days)</h4></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
+        '<div class="card"><div class="section-header"><span class="section-header-title">[[icon:clipboard]] Compliance Tasks (Next 30 Days)</span></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
         (upcomingCompTasks.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px">No tasks found</div>' :
-        upcomingCompTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + t.task + '</strong></div><div style="font-size:12px;color:var(--purple)">' + formatDate(t.due) + '</div></div>').join('')) +
+        upcomingCompTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-secondary);border-radius:6px;margin-bottom:8px"><div><strong>' + t.task + '</strong></div><div style="font-size:12px;color:var(--purple)">' + formatDate(t.due) + '</div></div>').join('')) +
         '</div></div>' +
-        
+
         '</div>';
     }
     
