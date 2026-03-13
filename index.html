@@ -23488,7 +23488,7 @@
         };
       });
 
-      c.innerHTML = '<div class="header responsive-page-header"><h2>[[icon:truck]] Fleet</h2><div class="responsive-page-actions"><button class="btn btn-primary" onclick="openTruckModal()">+ New Unit</button></div></div>' +
+      c.innerHTML = '<div class="header responsive-page-header"><h2 style="font-size:18px;font-weight:600">Fleet</h2><div class="responsive-page-actions"><button class="btn btn-primary" onclick="openTruckModal()">+ New Unit</button></div></div>' +
         '<div class="desktop-only card card-flush"><div class="table-wrapper"><table class="data-table"><thead><tr><th>Unit #</th><th>Type</th><th>Year/Make/Model</th><th>VIN</th><th>Plate</th><th>Ownership</th><th>Compliance</th><th>Status</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
         (truckRows.length === 0 ? '<tr><td colspan="9">' + renderEmptyState('truck', 'No trucks yet', 'Add your first truck to start tracking your fleet', '+ Add Truck', 'openTruckModal()') + '</td></tr>' : truckRows.map(item => item.row).join('')) +
         '</tbody></table></div></div>' +
