@@ -27,7 +27,7 @@ Requirements for restyling the entire Web TMS to a Stripe/Linear aesthetic. Page
 ### Page Restyles -- Dispatch
 
 - [x] **DSP-01**: Dashboard restyled to Stripe/Linear aesthetic
-- [ ] **DSP-02**: Orders page restyled
+- [x] **DSP-02**: Orders page restyled
 - [ ] **DSP-03**: Trips page restyled
 - [ ] **DSP-04**: Load Board restyled
 
@@ -105,7 +105,7 @@ Requirements for restyling the entire Web TMS to a Stripe/Linear aesthetic. Page
 | CMP-05 | Phase 19 | Complete |
 | CMP-06 | Phase 19 | Complete |
 | DSP-01 | Phase 20 | Complete |
-| DSP-02 | Phase 21 | Pending |
+| DSP-02 | Phase 21 | Complete |
 | DSP-03 | Phase 22 | Pending |
 | DSP-04 | Phase 22 | Pending |
 | PFL-01 | Phase 23 | Pending |
@@ -142,4 +142,4 @@ Requirements for restyling the entire Web TMS to a Stripe/Linear aesthetic. Page
 
 ---
 *Requirements defined: 2026-03-12*
-*Last updated: 2026-03-12 -- traceability updated with phase mappings*
+*Last updated: 2026-03-13 -- DSP-02 complete (Phase 21)*

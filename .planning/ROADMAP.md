@@ -68,7 +68,7 @@ Requirements and roadmap defined (16 requirements across 3 phases). Never starte
 
 - [x] **Phase 19: Token Foundation & Component Classes** - Swap CSS variables to Stripe/Linear values and build reusable component classes
 - [x] **Phase 20: Dashboard Restyle** - Restyle the landing page (KPI strip, main grid, sidebar, analytics)
-- [ ] **Phase 21: Orders Page Restyle** - Restyle orders page (card view, table view, filters, shared helpers)
+- [x] **Phase 21: Orders Page Restyle** - Restyle orders page (card view, table view, filters, shared helpers)
 - [ ] **Phase 22: Trips & Load Board Restyle** - Restyle trips (dual view, density toggle) and load board
 - [ ] **Phase 23: People & Fleet Restyle** - Restyle drivers, local drivers, trucks, brokers, dispatchers pages
 - [ ] **Phase 24: Finance Pages Restyle** - Restyle billing, payroll, financials, trip profitability, fuel, IFTA
@@ -139,8 +139,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 21-01-PLAN.md -- Restyle shared helpers (renderOrderPreviewCard, renderPaginationControls) + badge CSS rules
-- [ ] 21-02-PLAN.md -- Restyle orders page (header, filters, table view, button hierarchy)
+- [x] 21-01-PLAN.md -- Restyle shared helpers (renderOrderPreviewCard, renderPaginationControls) + badge CSS rules
+- [x] 21-02-PLAN.md -- Restyle orders page (header, filters, table view, button hierarchy)
 
 ---
 
@@ -252,7 +252,7 @@ Phases execute in numeric order: 19 → 20 → 21 → 22 → 23 → 24 → 25 �
 | 16-18. CSS Polish | v1.3 | 0/0 | Abandoned | 2026-03-12 |
 | 19. Token Foundation & Component Classes | v1.4 | 3/3 | Complete | 2026-03-12 |
 | 20. Dashboard Restyle | v1.4 | 2/2 | Complete | 2026-03-13 |
-| 21. Orders Page Restyle | v1.4 | 0/2 | Not started | - |
+| 21. Orders Page Restyle | v1.4 | 2/2 | Complete | 2026-03-13 |
 | 22. Trips & Load Board Restyle | v1.4 | 0/TBD | Not started | - |
 | 23. People & Fleet Restyle | v1.4 | 0/TBD | Not started | - |
 | 24. Finance Pages Restyle | v1.4 | 0/TBD | Not started | - |
@@ -262,4 +262,4 @@ Phases execute in numeric order: 19 → 20 → 21 → 22 → 23 → 24 → 25 �
 ---
 
 **Roadmap created**: 2026-02-10
-**Last updated**: 2026-03-13 (Phase 21 planned: 2 plans in 2 waves)
+**Last updated**: 2026-03-13 (Phase 21 complete: 2/2 plans)
