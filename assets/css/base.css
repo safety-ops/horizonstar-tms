@@ -1181,6 +1181,25 @@ h4 { font-size: var(--text-lg); }
 .badge-info { background: var(--blue-dim); color: var(--blue); }
 .badge-neutral { background: var(--bg-tertiary); color: var(--text-secondary); }
 
+/* getBadge() compatibility — maps to same tokens as semantic badge names */
+.badge-green { background: var(--green-dim); color: var(--green); }
+.badge-amber { background: var(--amber-dim); color: var(--amber); }
+.badge-blue { background: var(--blue-dim); color: var(--blue); }
+.badge-red { background: var(--red-dim); color: var(--red); }
+.badge-gray { background: var(--bg-tertiary); color: var(--text-secondary); }
+
+/* --- Flat Pagination --- */
+.pagination-flat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border-primary);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
 /* --- Flat Stat Card --- */
 .stat-flat {
   padding: 16px;
