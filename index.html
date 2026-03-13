@@ -12917,34 +12917,32 @@
         
         <!-- Trip Volume & Seasonality -->
         <div class="card" style="margin-bottom:24px">
-          <div class="card-header" style="background:linear-gradient(135deg,#7c3aed,#a855f7);color:white">
-            <h3 style="color:white">[[icon:calendar]] Trip Volume & Seasonality Analysis</h3>
-            <div style="display:flex;gap:12px;align-items:center">
-              <span style="font-size:13px;opacity:0.9">Target: 2 trips/truck/month</span>
-            </div>
+          <div class="section-header" style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
+            <span class="section-header-title">[[icon:calendar]] Trip Volume & Seasonality Analysis</span>
+            <span style="font-size:12px;color:var(--text-secondary)">Target: 2 trips/truck/month</span>
           </div>
-          <div style="padding:20px">
+          <div style="padding:16px">
             <!-- Trip Volume Stats -->
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:24px">
-              <div style="background:var(--dim-purple);padding:16px;border-radius:12px;text-align:center">
-                <div style="font-size:11px;color:#7c3aed;font-weight:600">TOTAL TRIPS</div>
-                <div style="font-size:28px;font-weight:800;color:#7c3aed">${tripVolume.totalTrips}</div>
-                <div style="font-size:12px;color:#64748b">${tripVolume.totalTripValue.toFixed(1)} trip value</div>
+              <div class="stat-flat stat-card--purple">
+                <div class="stat-flat-label">Total Trips</div>
+                <div class="stat-flat-value" style="font-family:var(--font-mono)">${tripVolume.totalTrips}</div>
+                <div style="font-size:12px;color:var(--text-muted)">${tripVolume.totalTripValue.toFixed(1)} trip value</div>
               </div>
-              <div style="background:var(--dim-blue);padding:16px;border-radius:12px;text-align:center">
-                <div style="font-size:11px;color:#1e40af;font-weight:600">AVG TRIPS/MONTH</div>
-                <div style="font-size:28px;font-weight:800;color:${tripVolume.monthlyAvg >= 2 * efficiency.truckCount ? '#22c55e' : '#f59e0b'}">${tripVolume.monthlyAvg.toFixed(1)}</div>
-                <div style="font-size:12px;color:#64748b">Target: ${2 * efficiency.truckCount}/mo</div>
+              <div class="stat-flat stat-card--blue">
+                <div class="stat-flat-label">Avg Trips/Month</div>
+                <div class="stat-flat-value" style="font-family:var(--font-mono);color:var(--${tripVolume.monthlyAvg >= 2 * efficiency.truckCount ? 'green' : 'amber'})">${tripVolume.monthlyAvg.toFixed(1)}</div>
+                <div style="font-size:12px;color:var(--text-muted)">Target: ${2 * efficiency.truckCount}/mo</div>
               </div>
-              <div style="background:var(--dim-green);padding:16px;border-radius:12px;text-align:center">
-                <div style="font-size:11px;color:#166534;font-weight:600">TRIPS/TRUCK/MONTH</div>
-                <div style="font-size:28px;font-weight:800;color:${efficiency.metrics.tripsPerTruckPerMonth >= 2 ? '#22c55e' : efficiency.metrics.tripsPerTruckPerMonth >= 1.5 ? '#f59e0b' : '#ef4444'}">${efficiency.metrics.tripsPerTruckPerMonth.toFixed(2)}</div>
-                <div style="font-size:12px;color:#64748b">${efficiency.metrics.tripsPerTruckPerMonth >= 2 ? '[[icon:check_circle]] On Target' : '[[icon:alert]] Below Target'}</div>
+              <div class="stat-flat stat-card--green">
+                <div class="stat-flat-label">Trips/Truck/Month</div>
+                <div class="stat-flat-value" style="font-family:var(--font-mono);color:var(--${efficiency.metrics.tripsPerTruckPerMonth >= 2 ? 'green' : efficiency.metrics.tripsPerTruckPerMonth >= 1.5 ? 'amber' : 'red'})">${efficiency.metrics.tripsPerTruckPerMonth.toFixed(2)}</div>
+                <div style="font-size:12px;color:var(--text-muted)">${efficiency.metrics.tripsPerTruckPerMonth >= 2 ? '[[icon:check_circle]] On Target' : '[[icon:alert]] Below Target'}</div>
               </div>
-              <div style="background:var(--dim-amber);padding:16px;border-radius:12px;text-align:center">
-                <div style="font-size:11px;color:#92400e;font-weight:600">DATA PERIOD</div>
-                <div style="font-size:28px;font-weight:800;color:#92400e">${tripVolume.monthCount}</div>
-                <div style="font-size:12px;color:#64748b">months of data</div>
+              <div class="stat-flat stat-card--amber">
+                <div class="stat-flat-label">Data Period</div>
+                <div class="stat-flat-value" style="font-family:var(--font-mono)">${tripVolume.monthCount}</div>
+                <div style="font-size:12px;color:var(--text-muted)">months of data</div>
               </div>
             </div>
             
@@ -12960,7 +12958,7 @@
                     <div style="display:flex;align-items:center;gap:12px">
                       <div style="width:80px;font-size:13px;font-weight:500;color:var(--text-secondary)">${month}</div>
                       <div style="flex:1;background:var(--bg-tertiary);border-radius:4px;height:24px;overflow:hidden">
-                        <div style="background:${isGoodMonth ? 'linear-gradient(90deg,#22c55e,#16a34a)' : 'linear-gradient(90deg,#f59e0b,#d97706)'};height:100%;width:${barWidth}%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px">
+                        <div style="background:var(--${isGoodMonth ? 'green' : 'amber'});height:100%;width:${barWidth}%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px">
                           <span style="font-size:11px;font-weight:600;color:white">${data.tripValue.toFixed(1)}</span>
                         </div>
                       </div>
@@ -12973,8 +12971,8 @@
             
             <!-- Truck Performance Table -->
             <div style="font-weight:600;margin-bottom:12px;color:var(--text-primary)">Performance by Truck</div>
-            <div class="table-wrapper" style="border-radius:12px;border:1px solid var(--border)">
-              <table>
+            <div class="card-flush">
+              <table class="data-table">
                 <thead>
                   <tr>
                     <th>Truck</th>
@@ -12989,14 +12987,15 @@
                     const truckVolume = tripVolume.truckData[truck.id] || { totalTrips: 0, totalTripValue: 0 };
                     const avgPerMonth = tripVolume.monthCount > 0 ? truckVolume.totalTripValue / tripVolume.monthCount : 0;
                     const status = avgPerMonth >= 2 ? 'EXCELLENT' : avgPerMonth >= 1.5 ? 'GOOD' : avgPerMonth >= 1 ? 'FAIR' : 'NEEDS_ATTENTION';
-                    const statusColors = { EXCELLENT: '#22c55e', GOOD: '#3b82f6', FAIR: '#f59e0b', NEEDS_ATTENTION: '#ef4444' };
+                    const badgeClass = { EXCELLENT: 'badge-green', GOOD: 'badge-blue', FAIR: 'badge-amber', NEEDS_ATTENTION: 'badge-red' };
+                    const colorVar = { EXCELLENT: 'green', GOOD: 'blue', FAIR: 'amber', NEEDS_ATTENTION: 'red' };
                     return `
                       <tr>
                         <td><strong>#${truck.truck_number}</strong></td>
                         <td>${truckVolume.totalTrips}</td>
                         <td>${truckVolume.totalTripValue.toFixed(1)}</td>
-                        <td style="font-weight:600;color:${statusColors[status]}">${avgPerMonth.toFixed(2)}</td>
-                        <td><span class="badge" style="background:${statusColors[status]}20;color:${statusColors[status]};border:1px solid ${statusColors[status]}40">${status.replace('_', ' ')}</span></td>
+                        <td style="font-weight:600;color:var(--${colorVar[status]});font-family:var(--font-mono)">${avgPerMonth.toFixed(2)}</td>
+                        <td><span class="badge ${badgeClass[status]}">${status.replace('_', ' ')}</span></td>
                       </tr>
                     `;
                   }).join('')}
@@ -13008,29 +13007,29 @@
         
         <!-- Forecasting Section -->
         <div class="card" style="margin-bottom:24px">
-          <div class="card-header" style="background:linear-gradient(135deg,#0891b2,#06b6d4);color:white">
-            <h3 style="color:white">[[icon:magic]] Financial Forecast (Next 6 Months)</h3>
+          <div class="section-header" style="padding:12px 16px">
+            <span class="section-header-title">[[icon:magic]] Financial Forecast (Next 6 Months)</span>
           </div>
-          <div style="padding:20px">
+          <div style="padding:16px">
             <!-- Forecast Summary -->
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px">
-              <div style="background:#ecfeff;padding:16px;border-radius:12px;text-align:center;border:1px solid #06b6d4">
-                <div style="font-size:11px;color:#0891b2;font-weight:600">PROJECTED REVENUE (6MO)</div>
-                <div style="font-size:24px;font-weight:800;color:#0891b2">${formatMoney(forecast.forecasts.reduce((s,f) => s + f.revenue, 0))}</div>
+              <div class="stat-flat stat-card--blue">
+                <div class="stat-flat-label">Projected Revenue (6mo)</div>
+                <div class="stat-flat-value" style="font-family:var(--font-mono)">${formatMoney(forecast.forecasts.reduce((s,f) => s + f.revenue, 0))}</div>
               </div>
-              <div style="background:#f0fdf4;padding:16px;border-radius:12px;text-align:center;border:1px solid #22c55e">
-                <div style="font-size:11px;color:#16a34a;font-weight:600">PROJECTED PROFIT (6MO)</div>
-                <div style="font-size:24px;font-weight:800;color:#16a34a">${formatMoney(forecast.forecasts.reduce((s,f) => s + f.profit, 0))}</div>
+              <div class="stat-flat stat-card--green">
+                <div class="stat-flat-label">Projected Profit (6mo)</div>
+                <div class="stat-flat-value" style="font-family:var(--font-mono)">${formatMoney(forecast.forecasts.reduce((s,f) => s + f.profit, 0))}</div>
               </div>
-              <div style="background:#fefce8;padding:16px;border-radius:12px;text-align:center;border:1px solid #eab308">
-                <div style="font-size:11px;color:#ca8a04;font-weight:600">TREND</div>
-                <div style="font-size:24px;font-weight:800;color:${forecast.trend >= 0 ? '#16a34a' : '#ef4444'}">${forecast.trend >= 0 ? '[[icon:trend_up]]' : '[[icon:trend_down]]'} ${forecast.trend >= 0 ? '+' : ''}${formatMoney(forecast.trend)}/mo</div>
+              <div class="stat-flat stat-card--amber">
+                <div class="stat-flat-label">Trend</div>
+                <div class="stat-flat-value" style="font-family:var(--font-mono);color:var(--${forecast.trend >= 0 ? 'green' : 'red'})">${forecast.trend >= 0 ? '[[icon:trend_up]]' : '[[icon:trend_down]]'} ${forecast.trend >= 0 ? '+' : ''}${formatMoney(forecast.trend)}/mo</div>
               </div>
             </div>
-            
+
             <!-- Monthly Forecasts -->
-            <div class="table-wrapper" style="border-radius:12px;border:1px solid var(--border)">
-              <table>
+            <div class="card-flush">
+              <table class="data-table">
                 <thead>
                   <tr>
                     <th>Month</th>
@@ -13046,14 +13045,14 @@
                   ${forecast.forecasts.map(f => `
                     <tr>
                       <td><strong>${f.month}</strong></td>
-                      <td class="money">${formatMoney(f.revenue)}</td>
-                      <td class="money ${f.profit >= 0 ? 'positive' : 'negative'}">${formatMoney(f.profit)}</td>
+                      <td style="font-family:var(--font-mono)">${formatMoney(f.revenue)}</td>
+                      <td style="font-family:var(--font-mono);color:var(--${f.profit >= 0 ? 'green' : 'red'})">${formatMoney(f.profit)}</td>
                       <td>${f.cars.toFixed(0)}</td>
                       <td>${f.trips.toFixed(1)}</td>
                       <td>${(f.seasonalFactor * 100).toFixed(0)}%</td>
                       <td>
                         <div style="background:var(--bg-tertiary);border-radius:4px;height:8px;width:60px">
-                          <div style="background:${f.confidence >= 0.7 ? '#22c55e' : '#f59e0b'};height:100%;width:${f.confidence * 100}%;border-radius:4px"></div>
+                          <div style="background:var(--${f.confidence >= 0.7 ? 'green' : 'amber'});height:100%;width:${f.confidence * 100}%;border-radius:4px"></div>
                         </div>
                       </td>
                     </tr>
@@ -13061,25 +13060,25 @@
                 </tbody>
               </table>
             </div>
-            
+
             <!-- Scenarios -->
             <div style="margin-top:24px">
               <div style="font-weight:600;margin-bottom:12px">[[icon:chart]] Annual Projection Scenarios</div>
               <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
-                <div style="background:var(--dim-red);padding:16px;border-radius:12px;text-align:center">
-                  <div style="font-size:12px;color:#991b1b;font-weight:600">CONSERVATIVE (-15%)</div>
-                  <div style="font-size:20px;font-weight:700;color:#dc2626;margin-top:8px">${formatMoney(forecast.scenarios.conservative.revenue)}</div>
-                  <div style="font-size:14px;color:#dc2626">Profit: ${formatMoney(forecast.scenarios.conservative.profit)}</div>
+                <div style="background:var(--red-dim);padding:16px;border-radius:8px;text-align:center">
+                  <div style="font-size:12px;color:var(--red);font-weight:600">CONSERVATIVE (-15%)</div>
+                  <div style="font-size:20px;font-weight:600;color:var(--red);margin-top:8px;font-family:var(--font-mono)">${formatMoney(forecast.scenarios.conservative.revenue)}</div>
+                  <div style="font-size:13px;color:var(--red)">Profit: ${formatMoney(forecast.scenarios.conservative.profit)}</div>
                 </div>
-                <div style="background:var(--dim-blue);padding:16px;border-radius:12px;text-align:center;border:2px solid #3b82f6">
-                  <div style="font-size:12px;color:#1e40af;font-weight:600">BASE CASE</div>
-                  <div style="font-size:20px;font-weight:700;color:#2563eb;margin-top:8px">${formatMoney(forecast.scenarios.base.revenue)}</div>
-                  <div style="font-size:14px;color:#2563eb">Profit: ${formatMoney(forecast.scenarios.base.profit)}</div>
+                <div style="background:var(--blue-dim);padding:16px;border-radius:8px;text-align:center;border:2px solid var(--blue)">
+                  <div style="font-size:12px;color:var(--blue);font-weight:600">BASE CASE</div>
+                  <div style="font-size:20px;font-weight:600;color:var(--blue);margin-top:8px;font-family:var(--font-mono)">${formatMoney(forecast.scenarios.base.revenue)}</div>
+                  <div style="font-size:13px;color:var(--blue)">Profit: ${formatMoney(forecast.scenarios.base.profit)}</div>
                 </div>
-                <div style="background:var(--dim-green);padding:16px;border-radius:12px;text-align:center">
-                  <div style="font-size:12px;color:#166534;font-weight:600">OPTIMISTIC (+15%)</div>
-                  <div style="font-size:20px;font-weight:700;color:#16a34a;margin-top:8px">${formatMoney(forecast.scenarios.optimistic.revenue)}</div>
-                  <div style="font-size:14px;color:#16a34a">Profit: ${formatMoney(forecast.scenarios.optimistic.profit)}</div>
+                <div style="background:var(--green-dim);padding:16px;border-radius:8px;text-align:center">
+                  <div style="font-size:12px;color:var(--green);font-weight:600">OPTIMISTIC (+15%)</div>
+                  <div style="font-size:20px;font-weight:600;color:var(--green);margin-top:8px;font-family:var(--font-mono)">${formatMoney(forecast.scenarios.optimistic.revenue)}</div>
+                  <div style="font-size:13px;color:var(--green)">Profit: ${formatMoney(forecast.scenarios.optimistic.profit)}</div>
                 </div>
               </div>
             </div>
@@ -13088,30 +13087,30 @@
         
         <!-- Break-Even & Pricing Guidance -->
         <div class="card" style="margin-bottom:24px">
-          <div class="card-header" style="background:linear-gradient(135deg,#dc2626,#ef4444);color:white">
-            <h3 style="color:white">[[icon:target]] Break-Even Analysis & Pricing Targets</h3>
+          <div class="section-header" style="padding:12px 16px">
+            <span class="section-header-title">[[icon:target]] Break-Even Analysis & Pricing Targets</span>
           </div>
-          <div style="padding:20px">
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px">
-              <div style="background:#fef2f2;padding:20px;border-radius:12px;text-align:center;border:2px solid #fecaca">
-                <div style="font-size:12px;color:#991b1b;font-weight:600;margin-bottom:8px">BREAK-EVEN PPC</div>
-                <div style="font-size:32px;font-weight:800;color:#dc2626">${formatMoney(breakEven.breakEvenPPC)}</div>
-                <div style="font-size:12px;color:#64748b;margin-top:8px">Minimum to cover all costs</div>
+          <div style="padding:16px">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+              <div class="stat-flat stat-card--red">
+                <div class="stat-flat-label">Break-Even PPC</div>
+                <div class="stat-flat-value" style="font-family:var(--font-mono);color:var(--red)">${formatMoney(breakEven.breakEvenPPC)}</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Minimum to cover all costs</div>
               </div>
-              <div style="background:var(--dim-green);padding:20px;border-radius:12px;text-align:center;border:2px solid #bbf7d0">
-                <div style="font-size:12px;color:#166534;font-weight:600;margin-bottom:8px">TARGET PPC (PROFITABLE)</div>
-                <div style="font-size:32px;font-weight:800;color:#16a34a">${formatMoney(breakEven.profitablePPC)}</div>
-                <div style="font-size:12px;color:#64748b;margin-top:8px">15% above break-even</div>
+              <div class="stat-flat stat-card--green">
+                <div class="stat-flat-label">Target PPC (Profitable)</div>
+                <div class="stat-flat-value" style="font-family:var(--font-mono);color:var(--green)">${formatMoney(breakEven.profitablePPC)}</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:4px">15% above break-even</div>
               </div>
-              <div style="background:var(--dim-blue);padding:20px;border-radius:12px;text-align:center;border:2px solid #bfdbfe">
-                <div style="font-size:12px;color:#1e40af;font-weight:600;margin-bottom:8px">CURRENT AVG PPC</div>
-                <div style="font-size:32px;font-weight:800;color:#2563eb">${formatMoney(efficiency.metrics.revenuePerCar)}</div>
-                <div style="font-size:12px;color:#64748b;margin-top:8px">${efficiency.metrics.revenuePerCar >= breakEven.profitablePPC ? '[[icon:check_circle]] Above target' : '[[icon:alert]] Below target'}</div>
+              <div class="stat-flat stat-card--blue">
+                <div class="stat-flat-label">Current Avg PPC</div>
+                <div class="stat-flat-value" style="font-family:var(--font-mono);color:var(--blue)">${formatMoney(efficiency.metrics.revenuePerCar)}</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:4px">${efficiency.metrics.revenuePerCar >= breakEven.profitablePPC ? '[[icon:check_circle]] Above target' : '[[icon:alert]] Below target'}</div>
               </div>
-              <div style="background:var(--dim-purple);padding:20px;border-radius:12px;text-align:center;border:2px solid #e9d5ff">
-                <div style="font-size:12px;color:#7c3aed;font-weight:600;margin-bottom:8px">FIXED COST/TRIP</div>
-                <div style="font-size:32px;font-weight:800;color:#7c3aed">${formatMoney(breakEven.fixedCostPerTrip)}</div>
-                <div style="font-size:12px;color:#64748b;margin-top:8px">Overhead allocation</div>
+              <div class="stat-flat stat-card--purple">
+                <div class="stat-flat-label">Fixed Cost/Trip</div>
+                <div class="stat-flat-value" style="font-family:var(--font-mono);color:var(--purple)">${formatMoney(breakEven.fixedCostPerTrip)}</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Overhead allocation</div>
               </div>
             </div>
             
@@ -13133,7 +13132,7 @@
                 </div>
                 <div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--bg-secondary);border-radius:8px">
                   <span>Truck Gross Ratio</span>
-                  <span style="font-weight:600;color:#22c55e">${(breakEven.truckGrossRatio * 100).toFixed(1)}%</span>
+                  <span style="font-weight:600;color:var(--green)">${(breakEven.truckGrossRatio * 100).toFixed(1)}%</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--bg-secondary);border-radius:8px">
                   <span>Avg Expense/Trip</span>
@@ -13169,15 +13168,15 @@
           description: `Currently averaging ${currentTrips.toFixed(2)} trips/truck/month. Target is 2.0 trips.`,
           action: `Schedule ${additionalTripsNeeded.toFixed(1)} more trips/month across fleet`,
           impact: `Potential additional revenue: ${formatMoney(potentialRevenue)}/month`,
-          color: '#ef4444'
+          color: 'red'
         });
       }
-      
+
       // 2. Utilization Rate
       if (efficiency.metrics.utilizationRate < 85) {
         const currentUtil = efficiency.metrics.utilizationRate;
         const additionalCars = ((85 - currentUtil) / 100) * efficiency.tripCount * 16; // 8 cars × 2 ways
-        
+
         recommendations.push({
           category: 'UTILIZATION',
           priority: 'HIGH',
@@ -13186,14 +13185,14 @@
           description: `Current utilization at ${currentUtil.toFixed(1)}% vs 85% target.`,
           action: `Fill ${additionalCars.toFixed(0)} more car slots per period`,
           impact: `Could increase revenue by ${formatMoney(additionalCars * breakEven.profitablePPC)}`,
-          color: '#f59e0b'
+          color: 'amber'
         });
       }
-      
+
       // 3. Pricing Analysis
       if (efficiency.metrics.revenuePerCar < breakEven.profitablePPC) {
         const ppcGap = breakEven.profitablePPC - efficiency.metrics.revenuePerCar;
-        
+
         recommendations.push({
           category: 'PRICING',
           priority: 'HIGH',
@@ -13202,15 +13201,15 @@
           description: `Current PPC of ${formatMoney(efficiency.metrics.revenuePerCar)} is below target ${formatMoney(breakEven.profitablePPC)}.`,
           action: `Increase average booking price by ${formatMoney(ppcGap)}/car`,
           impact: `Would add ${formatMoney(ppcGap * efficiency.totalCars)} to bottom line`,
-          color: '#ef4444'
+          color: 'red'
         });
       }
-      
+
       // 4. Cost Reduction
       if (efficiency.metrics.operatingRatio > 85) {
         const excessCostRatio = efficiency.metrics.operatingRatio - 85;
         const excessCost = (excessCostRatio / 100) * efficiency.totalRevenue;
-        
+
         recommendations.push({
           category: 'COSTS',
           priority: 'MEDIUM',
@@ -13219,15 +13218,15 @@
           description: `Operating ratio at ${efficiency.metrics.operatingRatio.toFixed(1)}% (target: ≤85%)`,
           action: 'Review fuel efficiency, negotiate better rates with brokers',
           impact: `Potential savings: ${formatMoney(excessCost)}`,
-          color: '#f59e0b'
+          color: 'amber'
         });
       }
-      
+
       // 5. Seasonal Planning
       const lowSeasonMonths = Object.entries(tripVolume.seasonalIndex)
         .filter(([m, idx]) => idx < 0.8)
         .map(([m]) => m);
-      
+
       if (lowSeasonMonths.length > 0) {
         recommendations.push({
           category: 'PLANNING',
@@ -13237,10 +13236,10 @@
           description: `Low-volume periods identified: ${lowSeasonMonths.slice(-3).join(', ')}`,
           action: 'Build cash reserves, consider maintenance scheduling during slow periods',
           impact: 'Maintain profitability during seasonal dips',
-          color: '#3b82f6'
+          color: 'blue'
         });
       }
-      
+
       // 6. Driver Efficiency
       if (breakEven.avgDriverCutRatio > 0.35) {
         recommendations.push({
@@ -13251,10 +13250,10 @@
           description: `Driver cut averaging ${(breakEven.avgDriverCutRatio * 100).toFixed(1)}% of clean gross`,
           action: 'Consider performance-based incentives or adjusted percentage tiers',
           impact: 'Balance driver retention with profitability',
-          color: '#8b5cf6'
+          color: 'purple'
         });
       }
-      
+
       // 7. Positive Reinforcement
       if (efficiency.overallHealthScore >= 80) {
         recommendations.push({
@@ -13265,10 +13264,10 @@
           description: `Health score of ${efficiency.overallHealthScore.toFixed(0)}/100 indicates strong operations`,
           action: 'Continue current practices, consider expansion opportunities',
           impact: 'Maintain competitive advantage',
-          color: '#22c55e'
+          color: 'green'
         });
       }
-      
+
       // 8. Cash Flow Management
       if (cashFlow.outstandingReceivables > cashFlow.inflows.totalCashInflow * 0.3) {
         recommendations.push({
@@ -13279,7 +13278,7 @@
           description: `${formatMoney(cashFlow.outstandingReceivables)} in unpaid invoices (${((cashFlow.outstandingReceivables / cashFlow.inflows.totalRevenue) * 100).toFixed(0)}% of revenue)`,
           action: 'Follow up on overdue invoices, consider COD for new customers',
           impact: 'Improve cash position and reduce risk',
-          color: '#f59e0b'
+          color: 'amber'
         });
       }
       
@@ -13291,16 +13290,16 @@
       return `
         <div style="display:flex;flex-direction:column;gap:16px">
           ${recommendations.map(rec => `
-            <div style="background:${rec.color}10;border:1px solid ${rec.color}30;border-radius:12px;padding:16px;display:flex;gap:16px">
+            <div style="background:var(--${rec.color}-dim);border:1px solid var(--border);border-radius:8px;padding:16px;display:flex;gap:16px">
               <div style="font-size:32px">${rec.icon}</div>
               <div style="flex:1">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-                  <span style="font-weight:700;color:var(--text-primary)">${rec.title}</span>
-                  <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:${rec.color}20;color:${rec.color};font-weight:600">${rec.priority}</span>
+                  <span style="font-weight:600;color:var(--text-primary)">${rec.title}</span>
+                  <span class="badge badge-${rec.color}" style="font-size:10px">${rec.priority}</span>
                 </div>
                 <div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">${rec.description}</div>
                 <div style="font-size:13px;color:var(--text-primary)"><strong>Action:</strong> ${rec.action}</div>
-                <div style="font-size:13px;color:${rec.color};font-weight:500;margin-top:4px">[[icon:lightbulb]] ${rec.impact}</div>
+                <div style="font-size:13px;color:var(--${rec.color});font-weight:500;margin-top:4px">[[icon:lightbulb]] ${rec.impact}</div>
               </div>
             </div>
           `).join('')}
