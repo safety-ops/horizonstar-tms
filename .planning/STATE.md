@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-12)
 ## Current Position
 
 Phase: 19 of 26 (Token Foundation & Component Classes)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-03-12 -- Completed 19-02-PLAN.md (Component Classes)
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-03-12 -- Completed 19-03-PLAN.md (Animation Cleanup)
 
-Progress: [██░░░░░░░░] 8% (2/26 plans)
+Progress: [███░░░░░░░] 12% (3/26 plans)
 
 ## Performance Metrics
 
@@ -48,6 +48,8 @@ Key context for v1.4:
 - Slate surface scale (#f8fafc primary, #0f172a text) -- established in 19-01
 - Reusable component classes: .btn-primary/.btn-secondary/.btn-ghost/.btn-danger, .badge-*, .stat-flat, .input/.select/.textarea -- established in 19-02
 - .font-bold utility kept at 700 for backward compat; page sweeps migrate away -- decided in 19-02
+- All decorative animations removed; functional-only (spin, toast, skeleton, progress, toggle) -- established in 19-03
+- Sidebar toggle hover scale kept as functional toggle -- decided in 19-03
 
 ### Known Issues
 - 4,344 inline style= attributes in index.html bypass CSS variables -- every page sweep requires JS template edits
@@ -64,9 +66,9 @@ Key context for v1.4:
 ## Session Continuity
 
 Last session: 2026-03-12
-Stopped at: Completed 19-02-PLAN.md (Component Classes)
+Stopped at: Completed 19-03-PLAN.md (Animation Cleanup) -- Phase 19 complete
 Resume file: None
 
 ---
 
-**Next action**: Execute 19-03-PLAN.md
+**Next action**: Execute Phase 20 plans
