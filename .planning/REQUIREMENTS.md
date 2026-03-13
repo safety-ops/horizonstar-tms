@@ -93,53 +93,53 @@ Requirements for restyling the entire Web TMS to a Stripe/Linear aesthetic. Page
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TOK-01 | TBD | Pending |
-| TOK-02 | TBD | Pending |
-| TOK-03 | TBD | Pending |
-| TOK-04 | TBD | Pending |
-| TOK-05 | TBD | Pending |
-| CMP-01 | TBD | Pending |
-| CMP-02 | TBD | Pending |
-| CMP-03 | TBD | Pending |
-| CMP-04 | TBD | Pending |
-| CMP-05 | TBD | Pending |
-| CMP-06 | TBD | Pending |
-| DSP-01 | TBD | Pending |
-| DSP-02 | TBD | Pending |
-| DSP-03 | TBD | Pending |
-| DSP-04 | TBD | Pending |
-| PFL-01 | TBD | Pending |
-| PFL-02 | TBD | Pending |
-| PFL-03 | TBD | Pending |
-| PFL-04 | TBD | Pending |
-| PFL-05 | TBD | Pending |
-| FIN-01 | TBD | Pending |
-| FIN-02 | TBD | Pending |
-| FIN-03 | TBD | Pending |
-| FIN-04 | TBD | Pending |
-| FIN-05 | TBD | Pending |
-| FIN-06 | TBD | Pending |
-| OPS-01 | TBD | Pending |
-| OPS-02 | TBD | Pending |
-| OPS-03 | TBD | Pending |
-| OPS-04 | TBD | Pending |
-| OPS-05 | TBD | Pending |
-| OPS-06 | TBD | Pending |
-| OPS-07 | TBD | Pending |
-| CHR-01 | TBD | Pending |
-| CHR-02 | TBD | Pending |
-| CHR-03 | TBD | Pending |
-| CHR-04 | TBD | Pending |
-| QUA-01 | TBD | Pending |
-| QUA-02 | TBD | Pending |
-| QUA-03 | TBD | Pending |
-| QUA-04 | TBD | Pending |
+| TOK-01 | Phase 19 | Pending |
+| TOK-02 | Phase 19 | Pending |
+| TOK-03 | Phase 19 | Pending |
+| TOK-04 | Phase 19 | Pending |
+| TOK-05 | Phase 19 | Pending |
+| CMP-01 | Phase 19 | Pending |
+| CMP-02 | Phase 19 | Pending |
+| CMP-03 | Phase 19 | Pending |
+| CMP-04 | Phase 19 | Pending |
+| CMP-05 | Phase 19 | Pending |
+| CMP-06 | Phase 19 | Pending |
+| DSP-01 | Phase 20 | Pending |
+| DSP-02 | Phase 21 | Pending |
+| DSP-03 | Phase 22 | Pending |
+| DSP-04 | Phase 22 | Pending |
+| PFL-01 | Phase 23 | Pending |
+| PFL-02 | Phase 23 | Pending |
+| PFL-03 | Phase 23 | Pending |
+| PFL-04 | Phase 23 | Pending |
+| PFL-05 | Phase 23 | Pending |
+| FIN-01 | Phase 24 | Pending |
+| FIN-02 | Phase 24 | Pending |
+| FIN-03 | Phase 24 | Pending |
+| FIN-04 | Phase 24 | Pending |
+| FIN-05 | Phase 24 | Pending |
+| FIN-06 | Phase 24 | Pending |
+| OPS-01 | Phase 25 | Pending |
+| OPS-02 | Phase 25 | Pending |
+| OPS-03 | Phase 25 | Pending |
+| OPS-04 | Phase 25 | Pending |
+| OPS-05 | Phase 25 | Pending |
+| OPS-06 | Phase 25 | Pending |
+| OPS-07 | Phase 25 | Pending |
+| CHR-01 | Phase 26 | Pending |
+| CHR-02 | Phase 26 | Pending |
+| CHR-03 | Phase 26 | Pending |
+| CHR-04 | Phase 26 | Pending |
+| QUA-01 | Phase 26 | Pending |
+| QUA-02 | Phase 26 | Pending |
+| QUA-03 | Phase 26 | Pending |
+| QUA-04 | Phase 26 | Pending |
 
 **Coverage:**
 - v1.4 requirements: 35 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 35
+- Mapped to phases: 35
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-12*
-*Last updated: 2026-03-12 -- initial definition*
+*Last updated: 2026-03-12 -- traceability updated with phase mappings*
