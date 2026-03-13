@@ -33,11 +33,11 @@ Requirements for restyling the entire Web TMS to a Stripe/Linear aesthetic. Page
 
 ### Page Restyles -- People & Fleet
 
-- [ ] **PFL-01**: Drivers page restyled
-- [ ] **PFL-02**: Local Drivers page restyled
-- [ ] **PFL-03**: Trucks page restyled
-- [ ] **PFL-04**: Brokers page restyled
-- [ ] **PFL-05**: Dispatchers page restyled
+- [x] **PFL-01**: Drivers page restyled
+- [x] **PFL-02**: Local Drivers page restyled
+- [x] **PFL-03**: Trucks page restyled
+- [x] **PFL-04**: Brokers page restyled
+- [x] **PFL-05**: Dispatchers page restyled
 
 ### Page Restyles -- Finance
 
@@ -106,13 +106,13 @@ Requirements for restyling the entire Web TMS to a Stripe/Linear aesthetic. Page
 | CMP-06 | Phase 19 | Complete |
 | DSP-01 | Phase 20 | Complete |
 | DSP-02 | Phase 21 | Complete |
-| DSP-03 | Phase 22 | Pending |
-| DSP-04 | Phase 22 | Pending |
-| PFL-01 | Phase 23 | Pending |
-| PFL-02 | Phase 23 | Pending |
-| PFL-03 | Phase 23 | Pending |
-| PFL-04 | Phase 23 | Pending |
-| PFL-05 | Phase 23 | Pending |
+| DSP-03 | Phase 22 | Complete |
+| DSP-04 | Phase 22 | Complete |
+| PFL-01 | Phase 23 | Complete |
+| PFL-02 | Phase 23 | Complete |
+| PFL-03 | Phase 23 | Complete |
+| PFL-04 | Phase 23 | Complete |
+| PFL-05 | Phase 23 | Complete |
 | FIN-01 | Phase 24 | Pending |
 | FIN-02 | Phase 24 | Pending |
 | FIN-03 | Phase 24 | Pending |
@@ -142,4 +142,4 @@ Requirements for restyling the entire Web TMS to a Stripe/Linear aesthetic. Page
 
 ---
 *Requirements defined: 2026-03-12*
-*Last updated: 2026-03-13 -- DSP-02 complete (Phase 21)*
+*Last updated: 2026-03-13 -- PFL-01 through PFL-05 complete (Phase 23)*
