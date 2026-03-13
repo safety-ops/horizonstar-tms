@@ -12677,10 +12677,10 @@
       const tripVolume = calculateTripVolume(yearTrips);
       const breakEven = calculateBreakEven({ trips: yearTrips });
 
-      // Health score color (current year)
-      const healthColor = efficiency.overallHealthScore >= 80 ? '#22c55e'
-        : efficiency.overallHealthScore >= 60 ? '#f59e0b'
-        : '#ef4444';
+      // Health score accent (CSS variable name)
+      const healthAccent = efficiency.overallHealthScore >= 80 ? 'green'
+        : efficiency.overallHealthScore >= 60 ? 'amber'
+        : 'red';
 
       const healthGrade = efficiency.overallHealthScore >= 90 ? 'A+'
         : efficiency.overallHealthScore >= 80 ? 'A'
@@ -12689,10 +12689,10 @@
         : efficiency.overallHealthScore >= 50 ? 'D'
         : 'F';
 
-      // All-time health score color
-      const allTimeHealthColor = allTimeEfficiency.overallHealthScore >= 80 ? '#22c55e'
-        : allTimeEfficiency.overallHealthScore >= 60 ? '#f59e0b'
-        : '#ef4444';
+      // All-time health score accent
+      const allTimeHealthAccent = allTimeEfficiency.overallHealthScore >= 80 ? 'green'
+        : allTimeEfficiency.overallHealthScore >= 60 ? 'amber'
+        : 'red';
 
       const allTimeHealthGrade = allTimeEfficiency.overallHealthScore >= 90 ? 'A+'
         : allTimeEfficiency.overallHealthScore >= 80 ? 'A'
@@ -12738,41 +12738,36 @@
           </div>
         </div>
         
-        <!-- Health Score Banner - Current Year + All Time -->
-        <div style="display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap">
+        <!-- Health Score Cards -->
+        <div style="display:grid;grid-template-columns:1fr auto;gap:16px;margin-bottom:24px">
           <!-- Current Year Score -->
-          <div style="flex:1;min-width:280px;background:linear-gradient(135deg,${healthColor}20,${healthColor}10);border:2px solid ${healthColor};border-radius:16px;padding:24px">
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
-              <div>
-                <div style="font-size:12px;color:${healthColor};font-weight:600;margin-bottom:4px">${financialsYear} HEALTH SCORE</div>
-                <div style="font-size:48px;font-weight:800;color:${healthColor};line-height:1">${efficiency.overallHealthScore.toFixed(0)}<span style="font-size:24px">/100</span></div>
-                <div style="font-size:14px;color:var(--text-secondary);margin-top:4px">Grade: ${healthGrade}</div>
-              </div>
-              <div style="display:flex;gap:12px;flex-wrap:wrap">
-                ${Object.entries(efficiency.scores).map(([key, score]) => `
-                  <div style="text-align:center">
-                    <div style="width:50px;height:50px;border-radius:50%;border:3px solid ${score >= 80 ? '#22c55e' : score >= 60 ? '#f59e0b' : '#ef4444'};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:${score >= 80 ? '#22c55e' : score >= 60 ? '#f59e0b' : '#ef4444'}">${score.toFixed(0)}%</div>
-                    <div style="font-size:9px;color:var(--text-muted);margin-top:2px;text-transform:uppercase">${key.replace(/([A-Z])/g, ' $1').trim()}</div>
-                  </div>
-                `).join('')}
-              </div>
+          <div class="stat-flat stat-card--${healthAccent}" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+            <div>
+              <div class="stat-flat-label">${financialsYear} Health Score</div>
+              <div class="stat-flat-value" style="font-family:var(--font-mono)">${healthGrade} (${efficiency.overallHealthScore.toFixed(0)}%)</div>
+            </div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              ${Object.entries(efficiency.scores).map(([key, score]) => {
+                const scoreAccent = score >= 80 ? 'green' : score >= 60 ? 'amber' : 'red';
+                return '<div style="text-align:center">' +
+                  '<div style="width:44px;height:44px;border-radius:50%;border:2px solid var(--' + scoreAccent + ');display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--' + scoreAccent + ')">' + score.toFixed(0) + '%</div>' +
+                  '<div style="font-size:9px;color:var(--text-muted);margin-top:2px;text-transform:uppercase">' + key.replace(/([A-Z])/g, ' $1').trim() + '</div>' +
+                  '</div>';
+              }).join('')}
             </div>
           </div>
           <!-- All Time Score -->
-          <div style="min-width:200px;background:linear-gradient(135deg,${allTimeHealthColor}15,${allTimeHealthColor}05);border:2px solid ${allTimeHealthColor}80;border-radius:16px;padding:24px">
-            <div style="text-align:center">
-              <div style="font-size:12px;color:${allTimeHealthColor};font-weight:600;margin-bottom:4px">ALL TIME SCORE</div>
-              <div style="font-size:36px;font-weight:800;color:${allTimeHealthColor};line-height:1">${allTimeEfficiency.overallHealthScore.toFixed(0)}<span style="font-size:18px">/100</span></div>
-              <div style="font-size:14px;color:var(--text-secondary);margin-top:4px">Grade: ${allTimeHealthGrade}</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:8px">${allTrips.length} total trips</div>
-            </div>
+          <div class="stat-flat stat-card--${allTimeHealthAccent}" style="min-width:180px;text-align:center">
+            <div class="stat-flat-label">All Time Score</div>
+            <div class="stat-flat-value" style="font-family:var(--font-mono)">${allTimeHealthGrade} (${allTimeEfficiency.overallHealthScore.toFixed(0)}%)</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">${allTrips.length} total trips</div>
           </div>
         </div>
         
         <!-- AI-Powered Optimization Recommendations (moved here) -->
         <div class="card" style="margin-bottom:16px">
-          <div class="card-header" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:white;padding:12px 16px">
-            <h3 style="color:white;font-size:14px">[[icon:lightbulb]] AI-Powered Optimization Recommendations</h3>
+          <div class="section-header" style="padding:12px 16px">
+            <span class="section-header-title">[[icon:lightbulb]] AI-Powered Optimization Recommendations</span>
           </div>
           <div style="padding:14px">
             ${generateOptimizationRecommendations(efficiency, tripVolume, breakEven, forecast, cashFlow)}
@@ -12781,37 +12776,25 @@
         
         <!-- Key Financial Metrics Row -->
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px">
-          <div class="stat-card" style="border-left:4px solid #22c55e">
-            <div class="stat-icon green">[[icon:money]]</div>
-            <div class="stat-content">
-              <div class="label">Total Revenue</div>
-              <div class="value green">${formatMoney(efficiency.totalRevenue)}</div>
-              <div class="trend up">↑ ${formatMoney(forecast.avgMonthlyRevenue)}/mo avg</div>
-            </div>
+          <div class="stat-flat stat-card--green">
+            <div class="stat-flat-label">Total Revenue</div>
+            <div class="stat-flat-value" style="font-family:var(--font-mono)">${formatMoney(efficiency.totalRevenue)}</div>
+            <div class="stat-flat-delta positive">${formatMoney(forecast.avgMonthlyRevenue)}/mo avg</div>
           </div>
-          <div class="stat-card" style="border-left:4px solid ${efficiency.totalProfit >= 0 ? '#22c55e' : '#ef4444'}">
-            <div class="stat-icon ${efficiency.totalProfit >= 0 ? 'green' : 'red'}">[[icon:trend_up]]</div>
-            <div class="stat-content">
-              <div class="label">Net Profit</div>
-              <div class="value ${efficiency.totalProfit >= 0 ? 'green' : 'red'}">${formatMoney(efficiency.totalProfit)}</div>
-              <div class="trend ${efficiency.totalProfit >= 0 ? 'up' : 'down'}">${incomeStatement.netProfitMargin.toFixed(1)}% margin</div>
-            </div>
+          <div class="stat-flat stat-card--${efficiency.totalProfit >= 0 ? 'green' : 'red'}">
+            <div class="stat-flat-label">Net Profit</div>
+            <div class="stat-flat-value" style="font-family:var(--font-mono)">${formatMoney(efficiency.totalProfit)}</div>
+            <div class="stat-flat-delta ${efficiency.totalProfit >= 0 ? 'positive' : 'negative'}">${incomeStatement.netProfitMargin.toFixed(1)}% margin</div>
           </div>
-          <div class="stat-card" style="border-left:4px solid #3b82f6">
-            <div class="stat-icon blue">[[icon:dollar]]</div>
-            <div class="stat-content">
-              <div class="label">Cash Position</div>
-              <div class="value">${formatMoney(cashFlow.netCashFlow)}</div>
-              <div style="font-size:11px;color:var(--text-muted)">${formatMoney(cashFlow.outstandingReceivables)} outstanding</div>
-            </div>
+          <div class="stat-flat stat-card--blue">
+            <div class="stat-flat-label">Cash Position</div>
+            <div class="stat-flat-value" style="font-family:var(--font-mono)">${formatMoney(cashFlow.netCashFlow)}</div>
+            <div style="font-size:11px;color:var(--text-muted)">${formatMoney(cashFlow.outstandingReceivables)} outstanding</div>
           </div>
-          <div class="stat-card" style="border-left:4px solid #8b5cf6">
-            <div class="stat-icon" style="background:rgba(139,92,246,0.12);color:#8b5cf6">[[icon:truck]]</div>
-            <div class="stat-content">
-              <div class="label">Profit Per Mile</div>
-              <div class="value" style="color:${efficiency.metrics.profitPerMile >= 0.50 ? '#22c55e' : '#f59e0b'}">${formatMoney(efficiency.metrics.profitPerMile)}</div>
-              <div style="font-size:11px;color:var(--text-muted)">Target: $0.50+</div>
-            </div>
+          <div class="stat-flat stat-card--purple">
+            <div class="stat-flat-label">Profit Per Mile</div>
+            <div class="stat-flat-value" style="font-family:var(--font-mono);color:var(--${efficiency.metrics.profitPerMile >= 0.50 ? 'green' : 'amber'})">${formatMoney(efficiency.metrics.profitPerMile)}</div>
+            <div style="font-size:11px;color:var(--text-muted)">Target: $0.50+</div>
           </div>
         </div>
         
@@ -12830,43 +12813,42 @@
           const currentAvgPrice = efficiency.totalCars > 0 ? (efficiency.totalRevenue / efficiency.totalCars) : 0;
           const targetVehiclePrice = breakEven.profitablePPC || 0;
           const priceGap = targetVehiclePrice - currentAvgPrice;
-          
-          return '<div class="card" style="margin-bottom:24px;background:linear-gradient(135deg,#1e293b,#334155);color:white;overflow:hidden">' +
-            '<div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.1)">' +
-            '<div style="display:flex;align-items:center;justify-content:space-between">' +
-            '<h3 style="margin:0;color:white;font-size:16px">[[icon:bolt]] Quick View - Company Profitability</h3>' +
-            '<span style="background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:12px;font-size:11px">' + efficiency.totalMiles.toLocaleString() + ' miles • ' + efficiency.totalCars + ' cars</span>' +
-            '</div></div>' +
+
+          return '<div class="card card-flush" style="margin-bottom:24px">' +
+            '<div class="section-header" style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between">' +
+            '<span class="section-header-title">[[icon:bolt]] Quick View - Company Profitability</span>' +
+            '<span style="background:var(--bg-tertiary);padding:4px 10px;border-radius:12px;font-size:11px;color:var(--text-secondary)">' + efficiency.totalMiles.toLocaleString() + ' miles &bull; ' + efficiency.totalCars + ' cars</span>' +
+            '</div>' +
             '<div class="profitability-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:0">' +
-            '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)">' +
-            '<div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Cost Per Mile</div>' +
-            '<div style="font-size:28px;font-weight:700;color:#f87171">$' + cpm.toFixed(2) + '</div>' +
-            '<div style="font-size:10px;color:#94a3b8;margin-top:4px">Operating CPM</div>' +
+            '<div style="padding:20px;text-align:center;border-right:1px solid var(--border)">' +
+            '<div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Cost Per Mile</div>' +
+            '<div style="font-size:24px;font-weight:600;color:var(--red);font-family:var(--font-mono)">$' + cpm.toFixed(2) + '</div>' +
+            '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Operating CPM</div>' +
             '</div>' +
-            '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)">' +
-            '<div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Revenue Per Mile</div>' +
-            '<div style="font-size:28px;font-weight:700;color:#4ade80">$' + rpm.toFixed(2) + '</div>' +
-            '<div style="font-size:10px;color:#94a3b8;margin-top:4px">Gross RPM</div>' +
+            '<div style="padding:20px;text-align:center;border-right:1px solid var(--border)">' +
+            '<div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Revenue Per Mile</div>' +
+            '<div style="font-size:24px;font-weight:600;color:var(--green);font-family:var(--font-mono)">$' + rpm.toFixed(2) + '</div>' +
+            '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Gross RPM</div>' +
             '</div>' +
-            '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);background:' + (marginPerMile >= 0 ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)') + '">' +
-            '<div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Margin Per Mile</div>' +
-            '<div style="font-size:28px;font-weight:700;color:' + (marginPerMile >= 0 ? '#4ade80' : '#f87171') + '">$' + marginPerMile.toFixed(2) + '</div>' +
-            '<div style="font-size:10px;color:' + (marginPerMile >= 0 ? '#86efac' : '#fca5a5') + ';margin-top:4px">' + (marginPerMile >= 0 ? '[[icon:check]] Profitable' : '[[icon:x]] Losing Money') + '</div>' +
+            '<div style="padding:20px;text-align:center;border-right:1px solid var(--border);background:' + (marginPerMile >= 0 ? 'var(--green-dim)' : 'var(--red-dim)') + '">' +
+            '<div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Margin Per Mile</div>' +
+            '<div style="font-size:24px;font-weight:600;color:var(--' + (marginPerMile >= 0 ? 'green' : 'red') + ');font-family:var(--font-mono)">$' + marginPerMile.toFixed(2) + '</div>' +
+            '<div style="font-size:10px;color:var(--' + (marginPerMile >= 0 ? 'green' : 'red') + ');margin-top:4px">' + (marginPerMile >= 0 ? '[[icon:check]] Profitable' : '[[icon:x]] Losing Money') + '</div>' +
             '</div>' +
-            '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)">' +
-            '<div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Avg Vehicle Price</div>' +
-            '<div style="font-size:28px;font-weight:700;color:#60a5fa">$' + currentAvgPrice.toFixed(0) + '</div>' +
-            '<div style="font-size:10px;color:#94a3b8;margin-top:4px">Current Average</div>' +
+            '<div style="padding:20px;text-align:center;border-right:1px solid var(--border)">' +
+            '<div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Avg Vehicle Price</div>' +
+            '<div style="font-size:24px;font-weight:600;color:var(--blue);font-family:var(--font-mono)">$' + currentAvgPrice.toFixed(0) + '</div>' +
+            '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Current Average</div>' +
             '</div>' +
-            '<div style="padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,0.1)">' +
-            '<div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Break-Even Price</div>' +
-            '<div style="font-size:28px;font-weight:700;color:#a78bfa">$' + targetVehiclePrice.toFixed(0) + '</div>' +
-            '<div style="font-size:10px;color:#94a3b8;margin-top:4px">Min per vehicle</div>' +
+            '<div style="padding:20px;text-align:center;border-right:1px solid var(--border)">' +
+            '<div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Break-Even Price</div>' +
+            '<div style="font-size:24px;font-weight:600;color:var(--purple);font-family:var(--font-mono)">$' + targetVehiclePrice.toFixed(0) + '</div>' +
+            '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Min per vehicle</div>' +
             '</div>' +
-            '<div style="padding:20px;text-align:center;background:' + (priceGap <= 0 ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)') + '">' +
-            '<div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Profit Per Vehicle</div>' +
-            '<div style="font-size:28px;font-weight:700;color:' + (priceGap <= 0 ? '#4ade80' : '#f87171') + '">$' + Math.abs(currentAvgPrice - targetVehiclePrice).toFixed(0) + '</div>' +
-            '<div style="font-size:10px;color:' + (priceGap <= 0 ? '#86efac' : '#fca5a5') + ';margin-top:4px">' + (priceGap <= 0 ? '[[icon:check]] Profitable' : '[[icon:x]] Losing $' + Math.abs(priceGap).toFixed(0) + '/car') + '</div>' +
+            '<div style="padding:20px;text-align:center;background:' + (priceGap <= 0 ? 'var(--green-dim)' : 'var(--red-dim)') + '">' +
+            '<div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Profit Per Vehicle</div>' +
+            '<div style="font-size:24px;font-weight:600;color:var(--' + (priceGap <= 0 ? 'green' : 'red') + ');font-family:var(--font-mono)">$' + Math.abs(currentAvgPrice - targetVehiclePrice).toFixed(0) + '</div>' +
+            '<div style="font-size:10px;color:var(--' + (priceGap <= 0 ? 'green' : 'red') + ');margin-top:4px">' + (priceGap <= 0 ? '[[icon:check]] Profitable' : '[[icon:x]] Losing $' + Math.abs(priceGap).toFixed(0) + '/car') + '</div>' +
             '</div>' +
             '</div></div>';
         })()}
@@ -12876,58 +12858,58 @@
           
           <!-- Income Statement Summary -->
           <div class="card">
-            <div class="card-header" style="background:linear-gradient(135deg,#059669,#10b981);color:white">
-              <h3 style="color:white">[[icon:clipboard]] Income Statement (P&L)</h3>
+            <div class="section-header" style="padding:12px 16px">
+              <span class="section-header-title">[[icon:clipboard]] Income Statement (P&L)</span>
             </div>
-            <div style="padding:20px">
-              <table style="width:100%;font-size:14px">
-                <tr style="background:#f0fdf4"><td colspan="2" style="font-weight:700;color:#166534;padding:10px">REVENUE</td></tr>
-                <tr><td style="padding:8px 10px 8px 24px">Gross Revenue</td><td style="text-align:right;font-weight:600">${formatMoney(incomeStatement.revenue.grossRevenue)}</td></tr>
-                <tr><td style="padding:8px 10px 8px 24px;color:#64748b">Less: Broker Fees</td><td style="text-align:right;color:#ef4444">(${formatMoney(incomeStatement.revenue.brokerFees)})</td></tr>
-                <tr><td style="padding:8px 10px 8px 24px;color:#64748b">Less: Local Fees</td><td style="text-align:right;color:#f59e0b">(${formatMoney(incomeStatement.revenue.localFees)})</td></tr>
-                <tr style="border-top:1px solid var(--border)"><td style="padding:10px;font-weight:600">Net Revenue</td><td style="text-align:right;font-weight:700">${formatMoney(incomeStatement.revenue.netRevenue)}</td></tr>
-                
-                <tr style="background:#fef2f2"><td colspan="2" style="font-weight:700;color:#991b1b;padding:10px">DIRECT COSTS</td></tr>
-                <tr><td style="padding:8px 10px 8px 24px">Driver Cut</td><td style="text-align:right">(${formatMoney(incomeStatement.directCosts.driverCut)})</td></tr>
-                <tr><td style="padding:8px 10px 8px 24px">Fuel</td><td style="text-align:right">(${formatMoney(incomeStatement.directCosts.fuelCosts)})</td></tr>
-                <tr><td style="padding:8px 10px 8px 24px">Tolls & Permits</td><td style="text-align:right">(${formatMoney(incomeStatement.directCosts.tollsPermits)})</td></tr>
-                <tr><td style="padding:8px 10px 8px 24px">Other Direct</td><td style="text-align:right">(${formatMoney(incomeStatement.directCosts.otherDirectCosts)})</td></tr>
-                <tr style="background:#bbf7d0"><td style="padding:10px;font-weight:700">GROSS PROFIT</td><td style="text-align:right;font-weight:700;color:#166534">${formatMoney(incomeStatement.grossProfit)} <span style="font-size:12px">(${incomeStatement.grossProfitMargin.toFixed(1)}%)</span></td></tr>
-                
-                <tr style="background:var(--dim-amber)"><td colspan="2" style="font-weight:700;color:#92400e;padding:10px">OPERATING EXPENSES</td></tr>
-                <tr><td style="padding:8px 10px 8px 24px">Fixed Costs</td><td style="text-align:right">(${formatMoney(incomeStatement.operatingExpenses.fixedCosts)})</td></tr>
-                <tr><td style="padding:8px 10px 8px 24px">Maintenance</td><td style="text-align:right">(${formatMoney(incomeStatement.operatingExpenses.maintenanceCosts)})</td></tr>
-                <tr><td style="padding:8px 10px 8px 24px">Fuel Card Costs</td><td style="text-align:right">(${formatMoney(incomeStatement.operatingExpenses.fuelCardCosts || 0)})</td></tr>
-                <tr><td style="padding:8px 10px 8px 24px">Other Variable Costs</td><td style="text-align:right">(${formatMoney(incomeStatement.operatingExpenses.otherVariableCosts || 0)})</td></tr>
-                <tr style="background:${incomeStatement.netProfit >= 0 ? '#dcfce7' : '#fee2e2'}"><td style="padding:12px;font-weight:700;font-size:16px">NET PROFIT</td><td style="text-align:right;font-weight:700;font-size:18px;color:${incomeStatement.netProfit >= 0 ? '#166534' : '#dc2626'}">${formatMoney(incomeStatement.netProfit)}</td></tr>
+            <div style="padding:16px">
+              <table class="data-table" style="width:100%;font-size:13px">
+                <tr style="background:var(--green-dim)"><td colspan="2" style="font-weight:600;color:var(--green);padding:10px">REVENUE</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px">Gross Revenue</td><td style="text-align:right;font-weight:600;font-family:var(--font-mono)">${formatMoney(incomeStatement.revenue.grossRevenue)}</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px;color:var(--text-secondary)">Less: Broker Fees</td><td style="text-align:right;color:var(--red);font-family:var(--font-mono)">(${formatMoney(incomeStatement.revenue.brokerFees)})</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px;color:var(--text-secondary)">Less: Local Fees</td><td style="text-align:right;color:var(--amber);font-family:var(--font-mono)">(${formatMoney(incomeStatement.revenue.localFees)})</td></tr>
+                <tr style="border-top:1px solid var(--border)"><td style="padding:10px;font-weight:600">Net Revenue</td><td style="text-align:right;font-weight:600;font-family:var(--font-mono)">${formatMoney(incomeStatement.revenue.netRevenue)}</td></tr>
+
+                <tr style="background:var(--red-dim)"><td colspan="2" style="font-weight:600;color:var(--red);padding:10px">DIRECT COSTS</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px">Driver Cut</td><td style="text-align:right;font-family:var(--font-mono)">(${formatMoney(incomeStatement.directCosts.driverCut)})</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px">Fuel</td><td style="text-align:right;font-family:var(--font-mono)">(${formatMoney(incomeStatement.directCosts.fuelCosts)})</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px">Tolls & Permits</td><td style="text-align:right;font-family:var(--font-mono)">(${formatMoney(incomeStatement.directCosts.tollsPermits)})</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px">Other Direct</td><td style="text-align:right;font-family:var(--font-mono)">(${formatMoney(incomeStatement.directCosts.otherDirectCosts)})</td></tr>
+                <tr style="background:var(--green-dim)"><td style="padding:10px;font-weight:600">GROSS PROFIT</td><td style="text-align:right;font-weight:600;color:var(--green);font-family:var(--font-mono)">${formatMoney(incomeStatement.grossProfit)} <span style="font-size:12px">(${incomeStatement.grossProfitMargin.toFixed(1)}%)</span></td></tr>
+
+                <tr style="background:var(--amber-dim)"><td colspan="2" style="font-weight:600;color:var(--amber);padding:10px">OPERATING EXPENSES</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px">Fixed Costs</td><td style="text-align:right;font-family:var(--font-mono)">(${formatMoney(incomeStatement.operatingExpenses.fixedCosts)})</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px">Maintenance</td><td style="text-align:right;font-family:var(--font-mono)">(${formatMoney(incomeStatement.operatingExpenses.maintenanceCosts)})</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px">Fuel Card Costs</td><td style="text-align:right;font-family:var(--font-mono)">(${formatMoney(incomeStatement.operatingExpenses.fuelCardCosts || 0)})</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px">Other Variable Costs</td><td style="text-align:right;font-family:var(--font-mono)">(${formatMoney(incomeStatement.operatingExpenses.otherVariableCosts || 0)})</td></tr>
+                <tr style="background:${incomeStatement.netProfit >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'}"><td style="padding:12px;font-weight:600;font-size:14px">NET PROFIT</td><td style="text-align:right;font-weight:600;font-size:16px;color:var(--${incomeStatement.netProfit >= 0 ? 'green' : 'red'});font-family:var(--font-mono)">${formatMoney(incomeStatement.netProfit)}</td></tr>
               </table>
             </div>
           </div>
           
           <!-- Cash Flow Summary -->
           <div class="card">
-            <div class="card-header" style="background:linear-gradient(135deg,#1e40af,#3b82f6);color:white">
-              <h3 style="color:white">[[icon:dollar]] Cash Flow Statement</h3>
+            <div class="section-header" style="padding:12px 16px">
+              <span class="section-header-title">[[icon:dollar]] Cash Flow Statement</span>
             </div>
-            <div style="padding:20px">
-              <table style="width:100%;font-size:14px">
-                <tr style="background:var(--dim-blue)"><td colspan="2" style="font-weight:700;color:#1e40af;padding:10px">CASH INFLOWS</td></tr>
-                <tr><td style="padding:8px 10px 8px 24px">COD Collected</td><td style="text-align:right;color:#22c55e;font-weight:600">+${formatMoney(cashFlow.inflows.codCollected)}</td></tr>
-                <tr><td style="padding:8px 10px 8px 24px">COP Collected</td><td style="text-align:right;color:#22c55e;font-weight:600">+${formatMoney(cashFlow.inflows.copCollected)}</td></tr>
-                <tr><td style="padding:8px 10px 8px 24px">Local COD</td><td style="text-align:right;color:#22c55e;font-weight:600">+${formatMoney(cashFlow.inflows.localCodCollected)}</td></tr>
-                <tr><td style="padding:8px 10px 8px 24px">Check Payments</td><td style="text-align:right;color:#22c55e;font-weight:600">+${formatMoney(cashFlow.inflows.checkPayments)}</td></tr>
-                <tr style="border-top:1px solid var(--border)"><td style="padding:10px;font-weight:600">Total Cash In</td><td style="text-align:right;font-weight:700;color:#22c55e">${formatMoney(cashFlow.inflows.totalCashInflow)}</td></tr>
-                
-                <tr style="background:var(--dim-red)"><td colspan="2" style="font-weight:700;color:#991b1b;padding:10px">CASH OUTFLOWS</td></tr>
-                <tr><td style="padding:8px 10px 8px 24px">Driver Payments</td><td style="text-align:right;color:#ef4444">-${formatMoney(cashFlow.outflows.driverPayments)}</td></tr>
-                <tr><td style="padding:8px 10px 8px 24px">Fuel</td><td style="text-align:right;color:#ef4444">-${formatMoney(cashFlow.outflows.fuelExpenses)}</td></tr>
-                <tr><td style="padding:8px 10px 8px 24px">Tolls & Permits</td><td style="text-align:right;color:#ef4444">-${formatMoney(cashFlow.outflows.tollsPermits)}</td></tr>
-                <tr><td style="padding:8px 10px 8px 24px">Fixed Costs</td><td style="text-align:right;color:#ef4444">-${formatMoney(cashFlow.outflows.totalFixedCosts)}</td></tr>
-                <tr><td style="padding:8px 10px 8px 24px">Maintenance & Other</td><td style="text-align:right;color:#ef4444">-${formatMoney(cashFlow.outflows.maintenanceExpenses + cashFlow.outflows.otherExpenses)}</td></tr>
-                <tr style="border-top:1px solid var(--border)"><td style="padding:10px;font-weight:600">Total Cash Out</td><td style="text-align:right;font-weight:700;color:#ef4444">${formatMoney(cashFlow.outflows.totalCashOutflow)}</td></tr>
-                
-                <tr style="background:${cashFlow.netCashFlow >= 0 ? '#dcfce7' : '#fee2e2'}"><td style="padding:12px;font-weight:700;font-size:16px">NET CASH FLOW</td><td style="text-align:right;font-weight:700;font-size:18px;color:${cashFlow.netCashFlow >= 0 ? '#166534' : '#dc2626'}">${formatMoney(cashFlow.netCashFlow)}</td></tr>
-                <tr><td style="padding:10px;color:#64748b">Outstanding Receivables</td><td style="text-align:right;font-weight:600;color:#f59e0b">${formatMoney(cashFlow.outstandingReceivables)}</td></tr>
+            <div style="padding:16px">
+              <table class="data-table" style="width:100%;font-size:13px">
+                <tr style="background:var(--blue-dim)"><td colspan="2" style="font-weight:600;color:var(--blue);padding:10px">CASH INFLOWS</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px">COD Collected</td><td style="text-align:right;color:var(--green);font-weight:600;font-family:var(--font-mono)">+${formatMoney(cashFlow.inflows.codCollected)}</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px">COP Collected</td><td style="text-align:right;color:var(--green);font-weight:600;font-family:var(--font-mono)">+${formatMoney(cashFlow.inflows.copCollected)}</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px">Local COD</td><td style="text-align:right;color:var(--green);font-weight:600;font-family:var(--font-mono)">+${formatMoney(cashFlow.inflows.localCodCollected)}</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px">Check Payments</td><td style="text-align:right;color:var(--green);font-weight:600;font-family:var(--font-mono)">+${formatMoney(cashFlow.inflows.checkPayments)}</td></tr>
+                <tr style="border-top:1px solid var(--border)"><td style="padding:10px;font-weight:600">Total Cash In</td><td style="text-align:right;font-weight:600;color:var(--green);font-family:var(--font-mono)">${formatMoney(cashFlow.inflows.totalCashInflow)}</td></tr>
+
+                <tr style="background:var(--red-dim)"><td colspan="2" style="font-weight:600;color:var(--red);padding:10px">CASH OUTFLOWS</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px">Driver Payments</td><td style="text-align:right;color:var(--red);font-family:var(--font-mono)">-${formatMoney(cashFlow.outflows.driverPayments)}</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px">Fuel</td><td style="text-align:right;color:var(--red);font-family:var(--font-mono)">-${formatMoney(cashFlow.outflows.fuelExpenses)}</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px">Tolls & Permits</td><td style="text-align:right;color:var(--red);font-family:var(--font-mono)">-${formatMoney(cashFlow.outflows.tollsPermits)}</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px">Fixed Costs</td><td style="text-align:right;color:var(--red);font-family:var(--font-mono)">-${formatMoney(cashFlow.outflows.totalFixedCosts)}</td></tr>
+                <tr><td style="padding:8px 10px 8px 24px">Maintenance & Other</td><td style="text-align:right;color:var(--red);font-family:var(--font-mono)">-${formatMoney(cashFlow.outflows.maintenanceExpenses + cashFlow.outflows.otherExpenses)}</td></tr>
+                <tr style="border-top:1px solid var(--border)"><td style="padding:10px;font-weight:600">Total Cash Out</td><td style="text-align:right;font-weight:600;color:var(--red);font-family:var(--font-mono)">${formatMoney(cashFlow.outflows.totalCashOutflow)}</td></tr>
+
+                <tr style="background:${cashFlow.netCashFlow >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'}"><td style="padding:12px;font-weight:600;font-size:14px">NET CASH FLOW</td><td style="text-align:right;font-weight:600;font-size:16px;color:var(--${cashFlow.netCashFlow >= 0 ? 'green' : 'red'});font-family:var(--font-mono)">${formatMoney(cashFlow.netCashFlow)}</td></tr>
+                <tr><td style="padding:10px;color:var(--text-secondary)">Outstanding Receivables</td><td style="text-align:right;font-weight:600;color:var(--amber);font-family:var(--font-mono)">${formatMoney(cashFlow.outstandingReceivables)}</td></tr>
               </table>
             </div>
           </div>
