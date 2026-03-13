@@ -473,10 +473,7 @@
       animation: slideInUp 0.3s ease;
     }
     
-    @keyframes slideInUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    /* removed v1.4: slideInUp */
     
     .mini-chat-header {
       padding: 16px;
@@ -1886,7 +1883,7 @@
       animation: fadeIn 0.2s ease;
     }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    /* removed v1.4: slideUp */
 
     .modal {
       background: var(--bg-secondary);
@@ -3893,10 +3890,7 @@
       }
     }
     
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); opacity: 0.5; }
-      50% { transform: scale(1.1); opacity: 0.8; }
-    }
+    /* removed v1.4: pulse */
       border-radius: var(--radius-sm);
       margin-bottom: 20px;
       font-size: 14px;
@@ -4800,10 +4794,7 @@
       font-size: 13px;
     }
 
-    @keyframes chatPulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.92); }
-    }
+    /* removed v1.4: chatPulse */
 
     /* Light mode mini-chat enhancements */
     .mini-chat-messages {
@@ -5299,16 +5290,7 @@
         box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
       }
       
-      @keyframes slideUp {
-        from { 
-          transform: translateY(100%);
-          opacity: 0.5;
-        }
-        to { 
-          transform: translateY(0);
-          opacity: 1;
-        }
-      }
+      /* removed v1.4: slideUp */
       
       .modal::before {
         content: '';
@@ -6527,10 +6509,7 @@
       background: #f59e0b;
     }
 
-    @keyframes live-dot-breathe {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.85); }
-    }
+    /* removed v1.4: live-dot-breathe */
 
     /* ---- Floating KPI bar ---- */
     .live-map-kpi-row {
@@ -6564,13 +6543,10 @@
     }
 
     .live-map-kpi--pulse {
-      animation: kpi-pulse-green 2s ease-in-out infinite;
+      animation: none;
     }
 
-    @keyframes kpi-pulse-green {
-      0%, 100% { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-      50% { box-shadow: 0 2px 12px rgba(34,197,94,0.25); }
-    }
+    /* removed v1.4: kpi-pulse-green */
 
     .live-map-kpi-label {
       font-size: 10px;
@@ -6878,18 +6854,13 @@
       border-left-width: 3px;
       transition: transform 0.15s ease, box-shadow 0.15s ease;
       outline: none;
-      animation: fleet-card-enter 0.3s ease both;
-      animation-delay: calc(var(--card-index, 0) * 0.03s);
+      animation: none;
     }
 
-    @keyframes fleet-card-enter {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    /* removed v1.4: fleet-card-enter */
 
     .fleet-card:hover,
     .fleet-card:focus-visible {
-      transform: translateY(-1px);
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
 
@@ -7024,13 +6995,10 @@
 
     .live-map-marker-pill--selected {
       transform: scale(1.12);
-      animation: marker-pulse 2s ease-in-out infinite;
+      animation: none;
     }
 
-    @keyframes marker-pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.35); }
-      50% { box-shadow: 0 0 0 8px rgba(59,130,246,0); }
-    }
+    /* removed v1.4: marker-pulse */
 
     .live-map-marker-arrow {
       display: inline-block;
@@ -7320,11 +7288,7 @@
       animation: driveTruck 2s ease-in-out infinite;
     }
     
-    @keyframes driveTruck {
-      0% { left: -60px; }
-      50% { left: calc(50% - 25px); }
-      100% { left: calc(100% + 10px); }
-    }
+    /* removed v1.4: driveTruck */
     
     .road {
       position: absolute;
@@ -7348,10 +7312,7 @@
       animation: roadMove 0.5s linear infinite;
     }
     
-    @keyframes roadMove {
-      0% { transform: translateY(-50%) translateX(0); }
-      100% { transform: translateY(-50%) translateX(-40px); }
-    }
+    /* removed v1.4: roadMove */
     
     .loading-text {
       font-size: 16px;
@@ -7378,87 +7339,23 @@
     .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
     .loading-dots span:nth-child(3) { animation-delay: 0s; }
     
-    @keyframes loadingBounce {
-      0%, 80%, 100% { transform: scale(0); }
-      40% { transform: scale(1); }
-    }
-    
-    @keyframes loadingFadeInUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    /* removed v1.4: loadingBounce, loadingFadeInUp */
     
     /* ═══════════════════════════════════════════════════════════════════
        [[icon:palette]] MODERN UI/UX IMPROVEMENTS v3.0 - Comprehensive Design System
        ═══════════════════════════════════════════════════════════════════ */
     
-    /* ============ MICRO-INTERACTIONS & ANIMATIONS ============ */
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    @keyframes fadeInScale {
-      from { opacity: 0; transform: scale(0.96); }
-      to { opacity: 1; transform: scale(1); }
-    }
-    
-    @keyframes slideInRight {
-      from { opacity: 0; transform: translateX(24px); }
-      to { opacity: 1; transform: translateX(0); }
-    }
-    
-    @keyframes slideInLeft {
-      from { opacity: 0; transform: translateX(-24px); }
-      to { opacity: 1; transform: translateX(0); }
-    }
-    
-    @keyframes scaleIn {
-      from { opacity: 0; transform: scale(0.9); }
-      to { opacity: 1; transform: scale(1); }
-    }
-    
-    @keyframes shimmer {
-      0% { background-position: -200% 0; }
-      100% { background-position: 200% 0; }
-    }
-    
-    @keyframes pulse-soft {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
-    }
-    
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-6px); }
-    }
-    
-    @keyframes ripple {
-      0% { transform: scale(0); opacity: 0.4; }
-      100% { transform: scale(4); opacity: 0; }
-    }
-    
-    @keyframes gradient-shift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
+    /* removed v1.4: fadeInUp, fadeInScale, slideInRight, slideInLeft, scaleIn, shimmer, pulse-soft, float, ripple, gradient-shift */
     
     
-    /* Page entry animation - premium */
+    /* Page entry animation - simplified v1.4 */
     .main {
-      animation: pageEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: pageEnter 0.2s ease;
     }
 
     @keyframes pageEnter {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
     
     /* ============ ENHANCED TYPOGRAPHY ============ */
@@ -8090,8 +7987,8 @@
     }
 
     @keyframes overlayFadeIn {
-      from { opacity: 0; backdrop-filter: blur(0); }
-      to { opacity: 1; backdrop-filter: blur(8px); }
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
     .modal {
@@ -8567,27 +8464,7 @@
        ═══════════════════════════════════════════════════════════════════ */
     
     /* ============ STAGGERED ENTRANCE ANIMATIONS - Premium Timing ============ */
-    @keyframes staggerFadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px) scale(0.98);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-
-    @keyframes cardEnter {
-      from {
-        opacity: 0;
-        transform: translateY(30px) scale(0.95);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
+    /* removed v1.4: staggerFadeIn, cardEnter */
 
     /* Stat cards stagger - premium timing */
     .stats-grid .stat-card:nth-child(1) { animation: cardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both; }
@@ -8616,16 +8493,7 @@
       animation: numberPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.3s backwards;
     }
 
-    @keyframes numberPop {
-      from {
-        opacity: 0;
-        transform: scale(0.5);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
+    /* removed v1.4: numberPop */
 
     /* Toast slide-in animation */
     .toast {
@@ -8648,22 +8516,10 @@
       animation: titleEnter 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
     }
 
-    @keyframes titleEnter {
-      from {
-        opacity: 0;
-        transform: translateY(-15px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
+    /* removed v1.4: titleEnter */
     
     /* ============ TABLE ROW ANIMATIONS ============ */
-    @keyframes rowSlideIn {
-      from { opacity: 0; transform: translateX(-8px); }
-      to { opacity: 1; transform: translateX(0); }
-    }
+    /* removed v1.4: rowSlideIn */
     
     tbody tr {
       animation: rowSlideIn 0.3s ease-out both;
@@ -8890,11 +8746,7 @@
       animation: iconBounce 0.4s var(--ease-spring);
     }
     
-    @keyframes iconBounce {
-      0%, 100% { transform: scale(1.1) rotate(0deg); }
-      30% { transform: scale(1.2) rotate(-5deg); }
-      60% { transform: scale(1.05) rotate(3deg); }
-    }
+    /* removed v1.4: iconBounce */
     
     /* ============ DRIVER CARD AVATAR ============ */
     .driver-avatar {
@@ -8950,10 +8802,7 @@
       animation: searchPulse 0.3s var(--ease-spring);
     }
     
-    @keyframes searchPulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.15); }
-    }
+    /* removed v1.4: searchPulse */
     
     /* ============ MODAL ENHANCEMENTS ============ */
     /* Modal content slide up */
@@ -8961,10 +8810,7 @@
       animation: modalContentIn 0.3s ease-out 0.1s both;
     }
     
-    @keyframes modalContentIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    /* removed v1.4: modalContentIn */
     
     /* Modal close button */
     .modal-close {
@@ -9022,10 +8868,7 @@
       animation: badgeBounce 0.5s var(--ease-spring);
     }
     
-    @keyframes badgeBounce {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.2); }
-    }
+    /* removed v1.4: badgeBounce */
     
     /* ============ TABS ANIMATION ============ */
     .direction-tab,
@@ -9043,10 +8886,7 @@
       animation: tabActivate 0.3s var(--ease-spring);
     }
     
-    @keyframes tabActivate {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.03); }
-    }
+    /* removed v1.4: tabActivate */
     
     /* ============ PROGRESS BAR ANIMATION ============ */
     /* Animated fill for progress bars */
@@ -9117,8 +8957,8 @@
     }
     
     @keyframes dropdownIn {
-      from { opacity: 0; transform: scale(0.95) translateY(-8px); }
-      to { opacity: 1; transform: scale(1) translateY(0); }
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
     
     .topbar-dropdown-item,
