@@ -40124,60 +40124,60 @@
       
       const cp = getCompanyProfile();
 
-      container.innerHTML = '<div class="header"><h2>[[icon:settings]] Settings</h2></div>' +
+      container.innerHTML = '<div class="header"><h2 style="font-size:18px;font-weight:600">[[icon:settings]] Settings</h2></div>' +
 
         // Company Profile Section
-        '<div class="card" style="max-width:700px"><div class="card-header"><h3>[[icon:building]] Company Profile</h3></div>' +
+        '<div class="card card-flush" style="max-width:700px"><div class="section-header"><span class="section-header-title">[[icon:building]] Company Profile</span></div>' +
         '<div style="padding:20px">' +
         '<p style="color:var(--text-secondary);margin-bottom:20px">Company info used on invoices, settlements, paystubs, emails, and tracking pages.</p>' +
-        '<div class="form-group"><label>Company Name</label><input type="text" id="cpName" value="' + escapeHtml(cp.name) + '" style="width:100%"></div>' +
-        '<div class="form-group"><label>Address</label><input type="text" id="cpAddress" value="' + escapeHtml(cp.address) + '" style="width:100%"></div>' +
-        '<div class="form-group"><label>Phone</label><input type="text" id="cpPhone" value="' + escapeHtml(cp.phone) + '" style="width:100%"></div>' +
+        '<div class="form-group"><label>Company Name</label><input class="input" type="text" id="cpName" value="' + escapeHtml(cp.name) + '"></div>' +
+        '<div class="form-group"><label>Address</label><input class="input" type="text" id="cpAddress" value="' + escapeHtml(cp.address) + '"></div>' +
+        '<div class="form-group"><label>Phone</label><input class="input" type="text" id="cpPhone" value="' + escapeHtml(cp.phone) + '"></div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
-        '<div class="form-group"><label>Billing Email</label><input type="email" id="cpEmailBilling" value="' + escapeHtml(cp.email_billing) + '" style="width:100%"></div>' +
-        '<div class="form-group"><label>Dispatch Email</label><input type="email" id="cpEmailDispatch" value="' + escapeHtml(cp.email_dispatch) + '" style="width:100%"></div>' +
-        '<div class="form-group"><label>Settlements Email</label><input type="email" id="cpEmailSettlements" value="' + escapeHtml(cp.email_settlements) + '" style="width:100%"></div>' +
-        '<div class="form-group"><label>Info / General Email</label><input type="email" id="cpEmailInfo" value="' + escapeHtml(cp.email_info) + '" style="width:100%"></div>' +
+        '<div class="form-group"><label>Billing Email</label><input class="input" type="email" id="cpEmailBilling" value="' + escapeHtml(cp.email_billing) + '"></div>' +
+        '<div class="form-group"><label>Dispatch Email</label><input class="input" type="email" id="cpEmailDispatch" value="' + escapeHtml(cp.email_dispatch) + '"></div>' +
+        '<div class="form-group"><label>Settlements Email</label><input class="input" type="email" id="cpEmailSettlements" value="' + escapeHtml(cp.email_settlements) + '"></div>' +
+        '<div class="form-group"><label>Info / General Email</label><input class="input" type="email" id="cpEmailInfo" value="' + escapeHtml(cp.email_info) + '"></div>' +
         '</div>' +
         '<button class="btn btn-primary" onclick="saveCompanyProfile({ name: document.getElementById(\'cpName\').value, address: document.getElementById(\'cpAddress\').value, phone: document.getElementById(\'cpPhone\').value, email_billing: document.getElementById(\'cpEmailBilling\').value, email_dispatch: document.getElementById(\'cpEmailDispatch\').value, email_settlements: document.getElementById(\'cpEmailSettlements\').value, email_info: document.getElementById(\'cpEmailInfo\').value })">[[icon:save]] Save Company Profile</button>' +
         '</div></div>' +
 
         // Samsara Integration Section
-        '<div class="card" style="max-width:700px;margin-top:24px"><div class="card-header"><h3>[[icon:map_pin]] Samsara GPS Integration</h3></div>' +
+        '<div class="card card-flush" style="max-width:700px;margin-top:24px"><div class="section-header"><span class="section-header-title">[[icon:map_pin]] Samsara GPS Integration</span></div>' +
         '<div style="padding:20px">' +
         '<p style="color:var(--text-secondary);margin-bottom:20px">Connect to Samsara for real-time truck GPS tracking on the Live Map.</p>' +
-        
-        '<div class="form-group"><label>Samsara API Token</label><div style="display:flex;gap:12px"><input type="password" id="samsaraKeyInput" value="' + samsaraKey + '" placeholder="samsara_api_xxxxxxxx..." style="flex:1"><button class="btn btn-secondary" onclick="toggleSamsaraKeyVisibility()">[[icon:eye]]</button></div></div>' +
-        
-        '<div class="form-group"><label>Proxy URL <span style="color:var(--text-secondary);font-weight:normal">(required for browser access)</span></label><input type="text" id="samsaraProxyInput" value="' + samsaraProxyUrl + '" placeholder="https://samsara-proxy.yourname.workers.dev" style="width:100%"></div>' +
-        
-        (samsaraKey ? '<div style="background:var(--dim-green);padding:12px;border-radius:8px;margin-bottom:16px"><span style="color:#059669">[[icon:check]] Samsara token saved: ' + maskedSamsaraKey + '</span>' + (samsaraProxyUrl ? '<br><span style="color:#059669">[[icon:check]] Proxy configured</span>' : '<br><span style="color:var(--warning)">[[icon:alert]] No proxy - may not work in browser</span>') + '</div>' : '<div style="background:var(--dim-amber);padding:12px;border-radius:8px;margin-bottom:16px"><span style="color:var(--warning)">[[icon:alert]] No Samsara token. Live tracking disabled.</span></div>') +
-        
+
+        '<div class="form-group"><label>Samsara API Token</label><div style="display:flex;gap:12px"><input class="input" type="password" id="samsaraKeyInput" value="' + samsaraKey + '" placeholder="samsara_api_xxxxxxxx..." style="flex:1"><button class="btn btn-secondary" onclick="toggleSamsaraKeyVisibility()">[[icon:eye]]</button></div></div>' +
+
+        '<div class="form-group"><label>Proxy URL <span style="color:var(--text-secondary);font-weight:normal">(required for browser access)</span></label><input class="input" type="text" id="samsaraProxyInput" value="' + samsaraProxyUrl + '" placeholder="https://samsara-proxy.yourname.workers.dev"></div>' +
+
+        (samsaraKey ? '<div style="background:var(--green-dim);padding:12px;border-radius:8px;margin-bottom:16px"><span style="color:var(--green)">[[icon:check]] Samsara token saved: ' + maskedSamsaraKey + '</span>' + (samsaraProxyUrl ? '<br><span style="color:var(--green)">[[icon:check]] Proxy configured</span>' : '<br><span style="color:var(--warning)">[[icon:alert]] No proxy - may not work in browser</span>') + '</div>' : '<div style="background:var(--amber-dim);padding:12px;border-radius:8px;margin-bottom:16px"><span style="color:var(--warning)">[[icon:alert]] No Samsara token. Live tracking disabled.</span></div>') +
+
         '<div style="display:flex;gap:12px;flex-wrap:wrap"><button class="btn btn-primary" onclick="saveSamsaraKey()">[[icon:save]] Save Settings</button>' +
-        (samsaraKey ? '<button class="btn btn-secondary" style="background:var(--dim-red);color:#dc2626" onclick="clearSamsaraKey()">[[icon:trash]] Remove</button>' : '') +
+        (samsaraKey ? '<button class="btn btn-danger" onclick="clearSamsaraKey()">[[icon:trash]] Remove</button>' : '') +
         '<button class="btn btn-secondary" onclick="testSamsaraConnection()">[[icon:flask]] Test Connection</button>' +
         (samsaraKey ? '<button class="btn btn-secondary" onclick="manageTruckSamsaraLinks()">[[icon:link]] Link Trucks to Vehicles</button>' : '') +
         '</div>' +
-        
+
         '<div id="samsaraTestResult" style="margin-top:16px"></div>' +
         '</div></div>' +
-        
-        '<div class="card" style="max-width:700px;margin-top:24px"><div class="card-header"><h3>[[icon:wrench]] Proxy Setup (Required for Browser)</h3></div>' +
+
+        '<div class="card card-flush" style="max-width:700px;margin-top:24px"><div class="section-header"><span class="section-header-title">[[icon:wrench]] Proxy Setup (Required for Browser)</span></div>' +
         '<div style="padding:20px">' +
         '<p style="color:var(--text-secondary);margin-bottom:16px">Samsara blocks direct browser requests (CORS). Set up a free Cloudflare Worker proxy:</p>' +
         '<ol style="color:var(--text-secondary);line-height:2.2">' +
         '<li>Go to <a href="https://dash.cloudflare.com" target="_blank" style="color:var(--info)">dash.cloudflare.com</a> (free account)</li>' +
         '<li>Click <strong>Workers & Pages</strong> → <strong>Create Application</strong> → <strong>Create Worker</strong></li>' +
-        '<li>Name it <code style="background:var(--surface-elevated);padding:2px 6px;border-radius:4px">samsara-proxy</code></li>' +
+        '<li>Name it <code style="background:var(--bg-tertiary);padding:2px 6px;border-radius:4px">samsara-proxy</code></li>' +
         '<li>Click <strong>Deploy</strong>, then <strong>Edit Code</strong></li>' +
         '<li>Replace all code with: <button class="btn btn-secondary" style="padding:4px 12px;font-size:12px;margin-left:8px" onclick="showProxyCode()">[[icon:clipboard]] View Code</button></li>' +
         '<li>Click <strong>Save and Deploy</strong></li>' +
-        '<li>Copy your URL (e.g., <code style="background:var(--surface-elevated);padding:2px 6px;border-radius:4px">https://samsara-proxy.yourname.workers.dev</code>)</li>' +
+        '<li>Copy your URL (e.g., <code style="background:var(--bg-tertiary);padding:2px 6px;border-radius:4px">https://samsara-proxy.yourname.workers.dev</code>)</li>' +
         '<li>Paste it in the Proxy URL field above</li>' +
         '</ol>' +
         '</div></div>' +
-        
-        '<div class="card" style="max-width:700px;margin-top:24px"><div class="card-header"><h3>[[icon:clipboard]] How to Get Samsara API Token</h3></div>' +
+
+        '<div class="card card-flush" style="max-width:700px;margin-top:24px"><div class="section-header"><span class="section-header-title">[[icon:clipboard]] How to Get Samsara API Token</span></div>' +
         '<div style="padding:20px">' +
         '<ol style="color:var(--text-secondary);line-height:2">' +
         '<li>Log into <a href="https://cloud.samsara.com" target="_blank" style="color:var(--info)">cloud.samsara.com</a></li>' +
@@ -40190,22 +40190,22 @@
         '</div></div>' +
 
         // Google Maps Integration Section (for Trip Map)
-        '<div class="card" style="max-width:700px;margin-top:24px"><div class="card-header"><h3>[[icon:map]] Google Maps Integration</h3></div>' +
+        '<div class="card card-flush" style="max-width:700px;margin-top:24px"><div class="section-header"><span class="section-header-title">[[icon:map]] Google Maps Integration</span></div>' +
         '<div style="padding:20px">' +
         '<p style="color:var(--text-secondary);margin-bottom:20px">Enable Trip Map feature with driving routes and geocoding.</p>' +
 
-        '<div class="form-group"><label>Google Maps API Key</label><div style="display:flex;gap:12px"><input type="password" id="googleMapsKeyInput" value="' + getGoogleMapsApiKey() + '" placeholder="AIzaSy..." style="flex:1"><button class="btn btn-secondary" onclick="toggleGoogleMapsKeyVisibility()">[[icon:eye]]</button></div></div>' +
+        '<div class="form-group"><label>Google Maps API Key</label><div style="display:flex;gap:12px"><input class="input" type="password" id="googleMapsKeyInput" value="' + getGoogleMapsApiKey() + '" placeholder="AIzaSy..." style="flex:1"><button class="btn btn-secondary" onclick="toggleGoogleMapsKeyVisibility()">[[icon:eye]]</button></div></div>' +
 
-        (getGoogleMapsApiKey() ? '<div style="background:var(--dim-green);padding:12px;border-radius:8px;margin-bottom:16px"><span style="color:#059669">[[icon:check]] Google Maps API key saved</span></div>' : '<div style="background:var(--dim-amber);padding:12px;border-radius:8px;margin-bottom:16px"><span style="color:var(--warning)">[[icon:alert]] No API key. Trip Map feature disabled.</span></div>') +
+        (getGoogleMapsApiKey() ? '<div style="background:var(--green-dim);padding:12px;border-radius:8px;margin-bottom:16px"><span style="color:var(--green)">[[icon:check]] Google Maps API key saved</span></div>' : '<div style="background:var(--amber-dim);padding:12px;border-radius:8px;margin-bottom:16px"><span style="color:var(--warning)">[[icon:alert]] No API key. Trip Map feature disabled.</span></div>') +
 
         '<div style="display:flex;gap:12px;flex-wrap:wrap"><button class="btn btn-primary" onclick="saveGoogleMapsKey()">[[icon:save]] Save Key</button>' +
-        (getGoogleMapsApiKey() ? '<button class="btn btn-secondary" style="background:var(--dim-red);color:#dc2626" onclick="clearGoogleMapsKey()">[[icon:trash]] Remove</button>' : '') +
+        (getGoogleMapsApiKey() ? '<button class="btn btn-danger" onclick="clearGoogleMapsKey()">[[icon:trash]] Remove</button>' : '') +
         '<button class="btn btn-secondary" onclick="testGoogleMapsKey()">[[icon:flask]] Test Connection</button></div>' +
 
         '<div id="googleMapsTestResult" style="margin-top:16px"></div>' +
         '</div></div>' +
 
-        '<div class="card" style="max-width:700px;margin-top:24px"><div class="card-header"><h3>[[icon:clipboard]] How to Get Google Maps API Key</h3></div>' +
+        '<div class="card card-flush" style="max-width:700px;margin-top:24px"><div class="section-header"><span class="section-header-title">[[icon:clipboard]] How to Get Google Maps API Key</span></div>' +
         '<div style="padding:20px">' +
         '<ol style="color:var(--text-secondary);line-height:2">' +
         '<li>Go to <a href="https://console.cloud.google.com" target="_blank" style="color:var(--info)">console.cloud.google.com</a></li>' +
@@ -40217,17 +40217,17 @@
         '<li>Restrict key to Geocoding and Directions APIs (optional but recommended)</li>' +
         '<li>Copy and paste the key above</li>' +
         '</ol>' +
-        '<div style="background:var(--dim-blue);padding:12px;border-radius:8px;margin-top:16px"><strong style="color:var(--info)">Free Tier:</strong> $200/month credit (~40,000 geocode requests or ~40,000 directions requests)</div>' +
+        '<div style="background:var(--blue-dim);padding:12px;border-radius:8px;margin-top:16px"><span style="color:var(--info);font-weight:600">Free Tier:</span> $200/month credit (~40,000 geocode requests or ~40,000 directions requests)</div>' +
         '</div></div>' +
 
         // Email Integration Section (Supabase Edge Function + Resend)
-        '<div class="card" style="max-width:700px;margin-top:24px"><div class="card-header"><h3>[[icon:mail]] Email Integration (Resend)</h3></div>' +
+        '<div class="card card-flush" style="max-width:700px;margin-top:24px"><div class="section-header"><span class="section-header-title">[[icon:mail]] Email Integration (Resend)</span></div>' +
         '<div style="padding:20px">' +
         '<p style="color:var(--text-secondary);margin-bottom:20px">Send earnings statements directly to drivers via email. Uses Supabase Edge Function + Resend API.</p>' +
 
-        '<div style="background:var(--dim-green);padding:16px;border-radius:8px;margin-bottom:20px">' +
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="color:#059669;font-weight:600">Email sending is ready</span></div>' +
-        '<span style="color:#047857;font-size:13px">Emails are sent via Supabase Edge Function. No configuration needed in the app.</span>' +
+        '<div style="background:var(--green-dim);padding:16px;border-radius:8px;margin-bottom:20px">' +
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="color:var(--green);font-weight:600">Email sending is ready</span></div>' +
+        '<span style="color:var(--green);font-size:13px">Emails are sent via Supabase Edge Function. No configuration needed in the app.</span>' +
         '</div>' +
 
         '<div style="display:flex;gap:12px;flex-wrap:wrap">' +
@@ -40237,36 +40237,36 @@
         '<div id="emailTestResult" style="margin-top:16px"></div>' +
         '</div></div>' +
 
-        '<div class="card" style="max-width:700px;margin-top:24px"><div class="card-header"><h3>[[icon:clipboard]] Resend Setup (One-Time - 100 emails/day free)</h3></div>' +
+        '<div class="card card-flush" style="max-width:700px;margin-top:24px"><div class="section-header"><span class="section-header-title">[[icon:clipboard]] Resend Setup (One-Time - 100 emails/day free)</span></div>' +
         '<div style="padding:20px">' +
         '<p style="color:var(--text-secondary);margin-bottom:16px">If email is not working, follow these steps to set up Resend:</p>' +
         '<ol style="color:var(--text-secondary);line-height:2.2">' +
         '<li>Go to <a href="https://resend.com/" target="_blank" style="color:var(--info)">resend.com</a> and create a free account</li>' +
         '<li>Copy your <strong>API Key</strong> from the dashboard</li>' +
-        '<li>Open terminal and run: <code style="background:var(--surface-elevated);padding:2px 6px;border-radius:4px">supabase secrets set RESEND_API_KEY=re_xxxxx</code></li>' +
-        '<li>Deploy the edge function: <code style="background:var(--surface-elevated);padding:2px 6px;border-radius:4px">supabase functions deploy send-email</code></li>' +
+        '<li>Open terminal and run: <code style="background:var(--bg-tertiary);padding:2px 6px;border-radius:4px">supabase secrets set RESEND_API_KEY=re_xxxxx</code></li>' +
+        '<li>Deploy the edge function: <code style="background:var(--bg-tertiary);padding:2px 6px;border-radius:4px">supabase functions deploy send-email</code></li>' +
         '<li>Test using the button above</li>' +
         '</ol>' +
-        '<div style="background:var(--dim-blue);padding:12px;border-radius:8px;margin-top:16px"><strong style="color:var(--info)">Free Tier:</strong> 100 emails/day, 3,000 emails/month</div>' +
+        '<div style="background:var(--blue-dim);padding:12px;border-radius:8px;margin-top:16px"><span style="color:var(--info);font-weight:600">Free Tier:</span> 100 emails/day, 3,000 emails/month</div>' +
         '</div></div>' +
-        
+
         // Claude API Section
-        '<div class="card" style="max-width:700px;margin-top:24px"><div class="card-header"><h3>[[icon:bot]] AI Integration (Claude API)</h3></div>' +
+        '<div class="card card-flush" style="max-width:700px;margin-top:24px"><div class="section-header"><span class="section-header-title">[[icon:bot]] AI Integration (Claude API)</span></div>' +
         '<div style="padding:20px">' +
         '<p style="color:var(--text-secondary);margin-bottom:20px">Enter your Anthropic API key to enable AI features like automatic invoice data extraction.</p>' +
-        
-        '<div class="form-group"><label>Anthropic API Key</label><div style="display:flex;gap:12px"><input type="password" id="apiKeyInput" value="' + currentKey + '" placeholder="sk-ant-api..." style="flex:1"><button class="btn btn-secondary" onclick="toggleApiKeyVisibility()">[[icon:eye]]</button></div></div>' +
-        
-        (currentKey ? '<div style="background:var(--dim-green);padding:12px;border-radius:8px;margin-bottom:16px"><span style="color:#059669">[[icon:check]] API Key configured: ' + maskedKey + '</span></div>' : '<div style="background:var(--dim-red);padding:12px;border-radius:8px;margin-bottom:16px"><span style="color:var(--danger)">[[icon:alert]] No API key configured. AI features disabled.</span></div>') +
-        
+
+        '<div class="form-group"><label>Anthropic API Key</label><div style="display:flex;gap:12px"><input class="input" type="password" id="apiKeyInput" value="' + currentKey + '" placeholder="sk-ant-api..." style="flex:1"><button class="btn btn-secondary" onclick="toggleApiKeyVisibility()">[[icon:eye]]</button></div></div>' +
+
+        (currentKey ? '<div style="background:var(--green-dim);padding:12px;border-radius:8px;margin-bottom:16px"><span style="color:var(--green)">[[icon:check]] API Key configured: ' + maskedKey + '</span></div>' : '<div style="background:var(--red-dim);padding:12px;border-radius:8px;margin-bottom:16px"><span style="color:var(--red)">[[icon:alert]] No API key configured. AI features disabled.</span></div>') +
+
         '<div style="display:flex;gap:12px;margin-top:20px"><button class="btn btn-primary" onclick="saveApiKey()">[[icon:save]] Save API Key</button>' +
-        (currentKey ? '<button class="btn btn-secondary" style="background:var(--dim-red);color:#dc2626" onclick="clearApiKey()">[[icon:trash]] Remove Key</button>' : '') +
+        (currentKey ? '<button class="btn btn-danger" onclick="clearApiKey()">[[icon:trash]] Remove Key</button>' : '') +
         '<button class="btn btn-secondary" onclick="testApiKey()">[[icon:flask]] Test Connection</button></div>' +
-        
+
         '<div id="apiTestResult" style="margin-top:16px"></div>' +
         '</div></div>' +
-        
-        '<div class="card" style="max-width:700px;margin-top:24px"><div class="card-header"><h3>[[icon:key]] Get Claude API Key</h3></div>' +
+
+        '<div class="card card-flush" style="max-width:700px;margin-top:24px"><div class="section-header"><span class="section-header-title">[[icon:key]] Get Claude API Key</span></div>' +
         '<div style="padding:20px">' +
         '<ol style="color:var(--text-secondary);line-height:2">' +
         '<li>Go to <a href="https://console.anthropic.com/" target="_blank" style="color:var(--info)">console.anthropic.com</a></li>' +
