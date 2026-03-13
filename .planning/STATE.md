@@ -2,17 +2,17 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-11)
+See: .planning/PROJECT.md (updated 2026-03-12)
 
 **Core value:** Efficient end-to-end vehicle transport management
-**Current focus:** v1.3 Phase 16 -- Design Token Cleanup
+**Current focus:** v1.4 — Web TMS Restyle (Stripe/Linear)
 
 ## Current Position
 
-Phase: 16 of 18 (Design Token Cleanup)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-02-11 -- v1.3 roadmap created (3 phases, 16 requirements)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-12 — Milestone v1.4 started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -24,8 +24,9 @@ Progress: [░░░░░░░░░░] 0%
 |-----------|--------|--------|------------|
 | v1.0 MVP | 1-5 | Complete | 2024 |
 | v1.1 UI Redesign Mockups | 6-10 | Complete | 2026-02-10 |
-| v1.2 Apply to Production | 11-15 | Abandoned (reverted) | 2026-02-11 |
-| v1.3 CSS Polish | 16-18 | In progress | - |
+| v1.2 Apply UI Redesign to Production | 11-15 | Abandoned (reverted) | 2026-02-11 |
+| v1.3 CSS Polish | 16-18 | Abandoned (never started) | 2026-03-12 |
+| v1.4 Web TMS Restyle | TBD | In progress | - |
 
 ## Accumulated Context
 
@@ -33,16 +34,17 @@ Progress: [░░░░░░░░░░] 0%
 
 See .planning/PROJECT.md Key Decisions table (cumulative across milestones).
 
-Key context for v1.3:
-- v1.2 work reverted (commit ae70551) -- production at original state
-- User wants flat, professional, muted styling (Stripe dashboard tier)
-- Phase 16: Clean CSS token files first (variables.css, base.css -- small files)
-- Phase 17: Strip inline effects from index.html (144+ gradients, 40+ shadows, 47 animations, 70+ transforms)
-- Phase 18: Verify status colors, theme toggle, layouts, professional appearance
+Key context for v1.4:
+- v1.2 work reverted (commit ae70551) — production at original state
+- User wants Stripe/Linear aesthetic: neutral/monochrome, flat, clean
+- Light mode priority, dark mode follows
+- CSS + JS render function changes allowed
+- Dispatch pages first (Dashboard, Orders, Trips, Load Board), then all remaining
+- Status color coding must be preserved
 
 ### Known Issues
-- Production index.html is ~38K lines -- changes must be carefully targeted per renderXxx() function
-- Supabase CLI not installed -- DB migrations via Dashboard SQL Editor (not relevant for CSS work)
+- Production index.html is ~38K lines — changes must be carefully targeted per renderXxx() function
+- Supabase CLI not installed — DB migrations via Dashboard SQL Editor (not relevant for restyle work)
 
 ### Pending Todos
 - (None)
@@ -52,10 +54,10 @@ Key context for v1.3:
 
 ## Session Continuity
 
-Last session: 2026-02-11
-Stopped at: v1.3 roadmap created, ready to plan Phase 16
+Last session: 2026-03-12
+Stopped at: Milestone v1.4 started, defining requirements
 Resume file: None
 
 ---
 
-**Next action**: `/gsd:plan-phase 16`
+**Next action**: Define requirements, then create roadmap

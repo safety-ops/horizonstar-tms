@@ -1,5 +1,21 @@
 # Milestones
 
+## v1.3 — CSS Polish (Abandoned: 2026-03-12)
+
+**Status:** Abandoned — never started, direction changed to full incremental restyle
+
+**Phases reserved:** 16-18 (0 plans completed)
+
+**What happened:**
+- Requirements and roadmap defined (16 requirements across 3 phases)
+- Phase 16 (Design Token Cleanup) was never planned or executed
+- User decided CSS-only scope was too limiting
+- Direction changed to full page-by-page restyle with CSS + JS changes allowed (v1.4)
+
+**Last phase number:** 18 (reserved, not completed)
+
+---
+
 ## v1.2 — Apply UI Redesign to Production (Abandoned: 2026-02-11)
 
 **Status:** Reverted — production restored to pre-v1.2 state (commit `ae70551`)
@@ -61,4 +77,4 @@
 **Last phase number:** 5
 
 ---
-*Updated: 2026-02-11*
+*Updated: 2026-03-12*
