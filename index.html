@@ -47764,11 +47764,377 @@ function jsonResponse(data, status = 200) {
     // ============================================================
 
     function renderDealerBulkUpload(m) {
-      m.innerHTML = '<div class="page-header"><h1>Bulk Vehicle Upload</h1></div>' +
-        '<div class="card" style="text-align:center;padding:60px">' +
-        '<div style="font-size:48px;margin-bottom:16px">[[icon:upload]]</div>' +
-        '<h3>Coming Soon</h3>' +
-        '<p style="color:var(--text-secondary)">Upload multiple vehicles via CSV file.</p></div>';
+      if (!window._bulkUploadData) {
+        window._bulkUploadData = { rows: [], results: null, phase: 'upload' };
+      }
+      var bd = window._bulkUploadData;
+
+      if (bd.phase === 'results' && bd.results) {
+        renderBulkUploadResults(m, bd.results);
+        return;
+      }
+      if (bd.phase === 'preview' && bd.rows.length) {
+        renderBulkUploadPreview(m, bd.rows);
+        return;
+      }
+
+      m.innerHTML =
+        '<div class="page-header"><h1>Bulk Vehicle Upload</h1></div>' +
+        '<div class="card" style="padding:24px;margin-bottom:16px">' +
+          '<h3 style="margin:0 0 8px">Step 1: Download Template</h3>' +
+          '<p style="color:var(--text-secondary);margin:0 0 12px">Download the CSV template, fill it with your vehicle data, then upload it below.</p>' +
+          '<button class="btn btn-secondary" onclick="downloadDealerCSVTemplate()" style="gap:6px">' +
+            '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
+            'Download CSV Template' +
+          '</button>' +
+        '</div>' +
+        '<div class="card" style="padding:24px">' +
+          '<h3 style="margin:0 0 8px">Step 2: Upload Your CSV</h3>' +
+          '<p style="color:var(--text-secondary);margin:0 0 16px">Drag and drop your CSV file here, or click to browse.</p>' +
+          '<div id="bulkDropZone" style="border:2px dashed var(--border);border-radius:12px;padding:40px 20px;text-align:center;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:border-color 0.2s, background 0.2s">' +
+            '<svg width="40" height="40" fill="none" stroke="var(--text-muted)" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom:12px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>' +
+            '<span style="font-weight:600;color:var(--text-primary)">Drop CSV file here</span>' +
+            '<span style="color:var(--text-muted);font-size:13px;margin-top:4px">or click to browse files</span>' +
+            '<input type="file" id="bulkFileInput" accept=".csv" style="display:none">' +
+          '</div>' +
+        '</div>';
+
+      setTimeout(function() {
+        var zone = document.getElementById('bulkDropZone');
+        var inp = document.getElementById('bulkFileInput');
+        if (!zone || !inp) return;
+
+        zone.addEventListener('click', function() { inp.click(); });
+        inp.addEventListener('change', function(e) {
+          if (e.target.files && e.target.files[0]) handleBulkCSVFile(e.target.files[0]);
+        });
+
+        zone.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          zone.style.borderColor = '#22c55e';
+          zone.style.background = 'rgba(34,197,94,0.06)';
+        });
+        zone.addEventListener('dragleave', function(e) {
+          e.preventDefault();
+          zone.style.borderColor = 'var(--border)';
+          zone.style.background = '';
+        });
+        zone.addEventListener('drop', function(e) {
+          e.preventDefault();
+          zone.style.borderColor = 'var(--border)';
+          zone.style.background = '';
+          if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleBulkCSVFile(e.dataTransfer.files[0]);
+          }
+        });
+      }, 0);
+    }
+
+    function downloadDealerCSVTemplate() {
+      var headers = 'vehicle_year,vehicle_make,vehicle_model,vehicle_vin,vehicle_color,pickup_location,delivery_location,pickup_date,delivery_date,notes';
+      var example = '2024,Toyota,Camry,1HGCG5655WA041833,White,"Los Angeles, CA","Miami, FL",2026-03-15,2026-03-22,Handle with care';
+      var csv = headers + '\n' + example + '\n';
+      var blob = new Blob([csv], { type: 'text/csv' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'vehicle_upload_template.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+      showToast('Template downloaded', 'success');
+    }
+
+    function handleBulkCSVFile(file) {
+      if (!file.name.toLowerCase().endsWith('.csv')) {
+        showToast('Please upload a CSV file', 'error');
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var text = e.target.result;
+        var rows = parseDealerCSV(text);
+        if (!rows || !rows.length) {
+          showToast('No data rows found in CSV', 'error');
+          return;
+        }
+        rows.forEach(function(row, i) {
+          var v = validateDealerCSVRow(row, i);
+          row._valid = v.valid;
+          row._errors = v.errors;
+          row._rowNum = i + 1;
+        });
+        window._bulkUploadData = { rows: rows, results: null, phase: 'preview' };
+        var container = document.getElementById('mainContent') || document.querySelector('[data-page]');
+        if (container) renderDealerBulkUpload(container);
+      };
+      reader.onerror = function() { showToast('Error reading file', 'error'); };
+      reader.readAsText(file);
+    }
+
+    function parseDealerCSV(csvText) {
+      var lines = csvText.split(/\r?\n/).filter(function(l) { return l.trim() !== ''; });
+      if (lines.length < 2) return [];
+
+      function parseCSVLine(line) {
+        var fields = [];
+        var current = '';
+        var inQuotes = false;
+        for (var i = 0; i < line.length; i++) {
+          var ch = line[i];
+          if (inQuotes) {
+            if (ch === '"' && i + 1 < line.length && line[i + 1] === '"') {
+              current += '"';
+              i++;
+            } else if (ch === '"') {
+              inQuotes = false;
+            } else {
+              current += ch;
+            }
+          } else {
+            if (ch === '"') {
+              inQuotes = true;
+            } else if (ch === ',') {
+              fields.push(current.trim());
+              current = '';
+            } else {
+              current += ch;
+            }
+          }
+        }
+        fields.push(current.trim());
+        return fields;
+      }
+
+      var headerFields = parseCSVLine(lines[0]);
+      var knownHeaders = ['vehicle_year','vehicle_make','vehicle_model','vehicle_vin','vehicle_color','pickup_location','delivery_location','pickup_date','delivery_date','notes'];
+      var colMap = {};
+      headerFields.forEach(function(h, idx) {
+        var norm = h.toLowerCase().replace(/[\s\-]+/g, '_').replace(/[^a-z0-9_]/g, '');
+        for (var k = 0; k < knownHeaders.length; k++) {
+          if (norm === knownHeaders[k] || norm.indexOf(knownHeaders[k]) !== -1) {
+            colMap[knownHeaders[k]] = idx;
+            break;
+          }
+        }
+      });
+
+      var rows = [];
+      for (var r = 1; r < lines.length; r++) {
+        var vals = parseCSVLine(lines[r]);
+        var obj = {};
+        knownHeaders.forEach(function(key) {
+          obj[key] = (colMap[key] !== undefined && vals[colMap[key]]) ? vals[colMap[key]] : '';
+        });
+        if (obj.vehicle_make || obj.vehicle_model || obj.vehicle_vin) {
+          rows.push(obj);
+        }
+      }
+      return rows;
+    }
+
+    function validateDealerCSVRow(row, index) {
+      var errors = [];
+      if (!row.vehicle_make) errors.push('Make is required');
+      if (!row.vehicle_model) errors.push('Model is required');
+      if (!row.pickup_location) errors.push('Pickup location is required');
+      if (!row.delivery_location) errors.push('Delivery location is required');
+
+      if (row.vehicle_year) {
+        var yr = parseInt(row.vehicle_year, 10);
+        if (isNaN(yr) || yr < 1900 || yr > 2030) errors.push('Year must be 1900-2030');
+      }
+      if (row.vehicle_vin) {
+        var vin = row.vehicle_vin.replace(/\s/g, '');
+        if (vin.length !== 17) errors.push('VIN must be 17 characters (got ' + vin.length + ')');
+      }
+      if (row.pickup_date) {
+        var pd = new Date(row.pickup_date);
+        if (isNaN(pd.getTime())) errors.push('Invalid pickup date format');
+      }
+      if (row.delivery_date) {
+        var dd = new Date(row.delivery_date);
+        if (isNaN(dd.getTime())) errors.push('Invalid delivery date format');
+      }
+      return { valid: errors.length === 0, errors: errors };
+    }
+
+    function renderBulkUploadPreview(m, rows) {
+      var validCount = rows.filter(function(r) { return r._valid; }).length;
+      var invalidCount = rows.length - validCount;
+
+      var tableRows = '';
+      rows.forEach(function(row) {
+        var statusHtml = row._valid
+          ? '<span style="color:#22c55e;font-weight:600" title="Valid">&#10003;</span>'
+          : '<span style="color:#ef4444;font-weight:600;cursor:help" title="' + escapeHtml(row._errors.join('; ')) + '">&#10007; ' + escapeHtml(row._errors[0]) + (row._errors.length > 1 ? ' (+' + (row._errors.length - 1) + ')' : '') + '</span>';
+
+        tableRows +=
+          '<tr style="' + (row._valid ? '' : 'background:rgba(239,68,68,0.05)') + '">' +
+            '<td style="padding:8px 10px;font-size:13px;color:var(--text-muted)">' + row._rowNum + '</td>' +
+            '<td style="padding:8px 10px;font-size:13px">' + escapeHtml(row.vehicle_year || '-') + '</td>' +
+            '<td style="padding:8px 10px;font-size:13px;font-weight:500">' + escapeHtml(row.vehicle_make || '-') + '</td>' +
+            '<td style="padding:8px 10px;font-size:13px">' + escapeHtml(row.vehicle_model || '-') + '</td>' +
+            '<td style="padding:8px 10px;font-size:13px;font-family:monospace;font-size:12px">' + escapeHtml(row.vehicle_vin ? row.vehicle_vin.substring(0,8) + '...' : '-') + '</td>' +
+            '<td style="padding:8px 10px;font-size:13px">' + escapeHtml(row.pickup_location || '-') + '</td>' +
+            '<td style="padding:8px 10px;font-size:13px">' + escapeHtml(row.delivery_location || '-') + '</td>' +
+            '<td style="padding:8px 10px;font-size:13px">' + statusHtml + '</td>' +
+          '</tr>';
+      });
+
+      m.innerHTML =
+        '<div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">' +
+          '<h1 style="margin:0">Bulk Vehicle Upload</h1>' +
+          '<button class="btn btn-secondary" onclick="window._bulkUploadData={rows:[],results:null,phase:\'upload\'};renderDealerBulkUpload(this.closest(\'[data-page]\') || document.getElementById(\'mainContent\'))" style="font-size:13px">Start Over</button>' +
+        '</div>' +
+        '<div class="card" style="padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">' +
+          '<span style="font-weight:600;font-size:15px">' + rows.length + ' row' + (rows.length !== 1 ? 's' : '') + ' found</span>' +
+          '<span style="display:inline-flex;align-items:center;gap:4px;color:#22c55e;font-size:13px;font-weight:500">' +
+            '<span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block"></span>' +
+            validCount + ' valid' +
+          '</span>' +
+          (invalidCount > 0
+            ? '<span style="display:inline-flex;align-items:center;gap:4px;color:#ef4444;font-size:13px;font-weight:500">' +
+                '<span style="width:8px;height:8px;border-radius:50%;background:#ef4444;display:inline-block"></span>' +
+                invalidCount + ' invalid' +
+              '</span>'
+            : '') +
+          '<div style="margin-left:auto">' +
+            '<button class="btn btn-primary" ' + (validCount === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed"' : 'onclick="startBulkUploadSubmit()"') + '>' +
+              'Upload ' + validCount + ' Vehicle' + (validCount !== 1 ? 's' : '') +
+            '</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="card" style="padding:0;overflow:hidden">' +
+          '<div class="table-wrapper" style="overflow-x:auto">' +
+            '<table style="width:100%;border-collapse:collapse">' +
+              '<thead><tr style="background:var(--bg-tertiary)">' +
+                '<th style="padding:10px;font-size:12px;text-align:left;font-weight:600;color:var(--text-secondary)">#</th>' +
+                '<th style="padding:10px;font-size:12px;text-align:left;font-weight:600;color:var(--text-secondary)">Year</th>' +
+                '<th style="padding:10px;font-size:12px;text-align:left;font-weight:600;color:var(--text-secondary)">Make</th>' +
+                '<th style="padding:10px;font-size:12px;text-align:left;font-weight:600;color:var(--text-secondary)">Model</th>' +
+                '<th style="padding:10px;font-size:12px;text-align:left;font-weight:600;color:var(--text-secondary)">VIN</th>' +
+                '<th style="padding:10px;font-size:12px;text-align:left;font-weight:600;color:var(--text-secondary)">Pickup</th>' +
+                '<th style="padding:10px;font-size:12px;text-align:left;font-weight:600;color:var(--text-secondary)">Delivery</th>' +
+                '<th style="padding:10px;font-size:12px;text-align:left;font-weight:600;color:var(--text-secondary)">Status</th>' +
+              '</tr></thead>' +
+              '<tbody>' + tableRows + '</tbody>' +
+            '</table>' +
+          '</div>' +
+        '</div>';
+    }
+
+    async function startBulkUploadSubmit() {
+      var bd = window._bulkUploadData;
+      if (!bd || !bd.rows.length) return;
+
+      var validRows = bd.rows.filter(function(r) { return r._valid; });
+      if (!validRows.length) { showToast('No valid rows to upload', 'error'); return; }
+
+      var container = document.getElementById('mainContent') || document.querySelector('[data-page]');
+      if (!container) return;
+
+      var results = [];
+      var total = validRows.length;
+
+      function updateProgress(current) {
+        var pct = Math.round((current / total) * 100);
+        container.innerHTML =
+          '<div class="page-header"><h1>Bulk Vehicle Upload</h1></div>' +
+          '<div class="card" style="padding:40px;text-align:center">' +
+            '<div style="font-size:15px;font-weight:600;margin-bottom:16px">Submitting ' + current + ' of ' + total + '...</div>' +
+            '<div style="width:100%;max-width:400px;margin:0 auto;height:8px;background:var(--bg-tertiary);border-radius:4px;overflow:hidden">' +
+              '<div style="width:' + pct + '%;height:100%;background:#22c55e;border-radius:4px;transition:width 0.3s"></div>' +
+            '</div>' +
+            '<div style="margin-top:12px;color:var(--text-muted);font-size:13px">' +
+              'Please do not close this page' +
+            '</div>' +
+          '</div>';
+      }
+
+      updateProgress(0);
+
+      for (var i = 0; i < validRows.length; i++) {
+        var row = validRows[i];
+        updateProgress(i + 1);
+        try {
+          var orderData = {
+            vehicle_year: row.vehicle_year ? parseInt(row.vehicle_year, 10) : null,
+            vehicle_make: row.vehicle_make,
+            vehicle_model: row.vehicle_model,
+            vehicle_vin: row.vehicle_vin ? row.vehicle_vin.replace(/\s/g, '') : null,
+            vehicle_color: row.vehicle_color || null,
+            pickup_location: row.pickup_location,
+            delivery_location: row.delivery_location,
+            pickup_date: row.pickup_date || null,
+            delivery_date: row.delivery_date || null,
+            notes: row.notes || null
+          };
+          var order = await submitDealerOrder(orderData);
+          results.push({ row: row, success: true, orderNumber: order.order_number || 'Created' });
+        } catch (err) {
+          results.push({ row: row, success: false, error: err.message || 'Unknown error' });
+        }
+      }
+
+      bd.results = results;
+      bd.phase = 'results';
+      renderBulkUploadResults(container, results);
+    }
+
+    function renderBulkUploadResults(m, results) {
+      var successCount = results.filter(function(r) { return r.success; }).length;
+      var failCount = results.length - successCount;
+
+      var resultRows = '';
+      results.forEach(function(r, i) {
+        var vehicle = escapeHtml((r.row.vehicle_year || '') + ' ' + (r.row.vehicle_make || '') + ' ' + (r.row.vehicle_model || '')).trim();
+        resultRows +=
+          '<tr>' +
+            '<td style="padding:8px 10px;font-size:13px;color:var(--text-muted)">' + (i + 1) + '</td>' +
+            '<td style="padding:8px 10px;font-size:13px;font-weight:500">' + (vehicle || '-') + '</td>' +
+            '<td style="padding:8px 10px;font-size:13px">' +
+              (r.success
+                ? '<span style="color:#22c55e;font-weight:600">&#10003; ' + escapeHtml(r.orderNumber) + '</span>'
+                : '<span style="color:#ef4444;font-weight:600">&#10007; ' + escapeHtml(r.error) + '</span>') +
+            '</td>' +
+          '</tr>';
+      });
+
+      m.innerHTML =
+        '<div class="page-header"><h1>Upload Complete</h1></div>' +
+        '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">' +
+          '<div class="card" style="padding:20px 24px;flex:1;min-width:140px;text-align:center">' +
+            '<div style="font-size:28px;font-weight:700;color:#22c55e">' + successCount + '</div>' +
+            '<div style="font-size:13px;color:var(--text-secondary);margin-top:4px">Successful</div>' +
+          '</div>' +
+          (failCount > 0
+            ? '<div class="card" style="padding:20px 24px;flex:1;min-width:140px;text-align:center">' +
+                '<div style="font-size:28px;font-weight:700;color:#ef4444">' + failCount + '</div>' +
+                '<div style="font-size:13px;color:var(--text-secondary);margin-top:4px">Failed</div>' +
+              '</div>'
+            : '') +
+          '<div class="card" style="padding:20px 24px;flex:1;min-width:140px;text-align:center">' +
+            '<div style="font-size:28px;font-weight:700;color:var(--text-primary)">' + results.length + '</div>' +
+            '<div style="font-size:13px;color:var(--text-secondary);margin-top:4px">Total</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">' +
+          '<div class="table-wrapper" style="overflow-x:auto">' +
+            '<table style="width:100%;border-collapse:collapse">' +
+              '<thead><tr style="background:var(--bg-tertiary)">' +
+                '<th style="padding:10px;font-size:12px;text-align:left;font-weight:600;color:var(--text-secondary)">#</th>' +
+                '<th style="padding:10px;font-size:12px;text-align:left;font-weight:600;color:var(--text-secondary)">Vehicle</th>' +
+                '<th style="padding:10px;font-size:12px;text-align:left;font-weight:600;color:var(--text-secondary)">Result</th>' +
+              '</tr></thead>' +
+              '<tbody>' + resultRows + '</tbody>' +
+            '</table>' +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
+          '<button class="btn btn-primary" onclick="window._bulkUploadData={rows:[],results:null,phase:\'upload\'};renderDealerBulkUpload(this.closest(\'[data-page]\') || document.getElementById(\'mainContent\'))">Submit More</button>' +
+          '<button class="btn btn-secondary" onclick="navigate(\'dealer_orders\')">View Orders</button>' +
+        '</div>';
     }
 
     function renderDealerDocuments(m) {
