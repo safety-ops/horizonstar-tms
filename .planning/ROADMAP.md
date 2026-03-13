@@ -228,7 +228,14 @@ Plans:
 3. Settings, activity log, and tasks pages use consistent flat styling with no visual outliers
 4. Team chat uses flat message bubbles and clean input styling -- no gradient or glow effects
 
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 25-01-PLAN.md -- Activity log + maintenance page restyle
+- [ ] 25-02-PLAN.md -- Tasks + settings page restyle
+- [ ] 25-03-PLAN.md -- Compliance page restyle (7 tabs, dashboard hero, file tables)
+- [ ] 25-04-PLAN.md -- Team chat CSS variable swaps + pill input
+- [ ] 25-05-PLAN.md -- Executive dashboard restyle (health score, panels, charts, tables)
 
 ---
 
@@ -273,10 +280,10 @@ Phases execute in numeric order: 19 → 20 → 21 → 22 → 23 → 24 → 25 �
 | 22. Trips & Load Board Restyle | v1.4 | 3/3 | Complete | 2026-03-13 |
 | 23. People & Fleet Restyle | v1.4 | 3/3 | Complete | 2026-03-13 |
 | 24. Finance Pages Restyle | v1.4 | 5/5 | Complete | 2026-03-13 |
-| 25. Operations & Admin Restyle | v1.4 | 0/TBD | Not started | - |
+| 25. Operations & Admin Restyle | v1.4 | 0/5 | Not started | - |
 | 26. Shared Chrome & Quality Verification | v1.4 | 0/TBD | Not started | - |
 
 ---
 
 **Roadmap created**: 2026-02-10
-**Last updated**: 2026-03-13 (Phase 24 complete: 5/5 plans, verified)
+**Last updated**: 2026-03-13 (Phase 25 planned: 5 plans in 1 wave)
