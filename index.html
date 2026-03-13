@@ -47357,48 +47357,72 @@ function jsonResponse(data, status = 200) {
       if (!confirm('Approve dealer application from "' + app.company_name + '"?\n\nThis will create a dealer account with login credentials.')) return;
 
       try {
-        // Generate a temporary password
-        var tempPassword = 'Dealer' + Math.floor(1000 + Math.random() * 9000) + '!';
+        // Generate a strong temporary password (uppercase + lowercase + digits + special)
+        var chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+        var randPart = '';
+        for (var i = 0; i < 8; i++) randPart += chars.charAt(Math.floor(Math.random() * chars.length));
+        var tempPassword = 'Dlr!' + randPart + 'A1';
 
-        // Create Supabase Auth user
-        var authId = await createAuthUserWithoutSessionSwitch(
-          app.contact_email,
-          tempPassword,
-          { first_name: app.contact_name || app.company_name, last_name: '' }
-        );
+        // Step 1: Check if user already exists (from a previous partial approval)
+        var existingUsers = await dbFetch('users', { filter: { email: 'eq.' + app.contact_email } });
+        var newUser = existingUsers && existingUsers.length > 0 ? existingUsers[0] : null;
+        var authId = newUser ? newUser.auth_id : null;
 
-        // Create user record
-        var newUser = await dbInsert('users', {
-          auth_id: authId,
-          email: app.contact_email,
-          first_name: app.contact_name || app.company_name,
-          last_name: '',
-          role: 'DEALER',
-          is_active: true
-        });
+        if (!newUser) {
+          // Create Supabase Auth user
+          authId = await createAuthUserWithoutSessionSwitch(
+            app.contact_email,
+            tempPassword,
+            { first_name: app.contact_name || app.company_name, last_name: '' }
+          );
 
-        // Generate dealer code
-        var dealerCode = generateDealerCode(app.company_name);
-        var existingCodes = (appData.dealers || []).map(function(d) { return d.dealer_code; });
-        var attempts = 0;
-        while (existingCodes.includes(dealerCode) && attempts < 10) {
-          dealerCode = generateDealerCode(app.company_name);
-          attempts++;
+          // Create user record
+          newUser = await dbInsert('users', {
+            auth_id: authId,
+            email: app.contact_email,
+            first_name: app.contact_name || app.company_name,
+            last_name: '',
+            role: 'DEALER',
+            is_active: true
+          });
+        } else {
+          // Ensure existing user is active and has DEALER role
+          if (newUser.role !== 'DEALER' || !newUser.is_active) {
+            await dbUpdate('users', newUser.id, { role: 'DEALER', is_active: true });
+          }
+          tempPassword = '(existing account — use current password)';
         }
 
-        // Create dealer profile
-        await dbInsert('dealers', {
-          user_id: newUser.id,
-          company_name: app.company_name,
-          dealer_code: dealerCode,
-          contact_name: app.contact_name,
-          contact_phone: app.contact_phone,
-          company_address: app.company_address,
-          payment_terms: app.payment_terms || 'NET30',
-          is_active: true
-        });
+        // Step 2: Check if dealer profile already exists
+        var existingDealers = (appData.dealers || []).filter(function(d) { return d.user_id === newUser.id; });
+        var dealerCode;
 
-        // Update application status
+        if (existingDealers.length === 0) {
+          // Generate unique dealer code
+          dealerCode = generateDealerCode(app.company_name);
+          var existingCodes = (appData.dealers || []).map(function(d) { return d.dealer_code; });
+          var attempts = 0;
+          while (existingCodes.includes(dealerCode) && attempts < 10) {
+            dealerCode = generateDealerCode(app.company_name);
+            attempts++;
+          }
+
+          // Create dealer profile
+          await dbInsert('dealers', {
+            user_id: newUser.id,
+            company_name: app.company_name,
+            dealer_code: dealerCode,
+            contact_name: app.contact_name,
+            contact_phone: app.contact_phone,
+            company_address: app.company_address,
+            payment_terms: app.payment_terms || 'NET30',
+            is_active: true
+          });
+        } else {
+          dealerCode = existingDealers[0].dealer_code;
+        }
+
+        // Step 3: Update application status
         await sb.from('dealer_applications').update({
           status: 'approved',
           reviewed_at: new Date().toISOString(),
