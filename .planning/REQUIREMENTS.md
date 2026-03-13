@@ -60,17 +60,17 @@ Requirements for restyling the entire Web TMS to a Stripe/Linear aesthetic. Page
 
 ### Shared Chrome
 
-- [ ] **CHR-01**: Sidebar restyled -- light background, clean typography, minimal icons
-- [ ] **CHR-02**: Top header bar restyled
-- [ ] **CHR-03**: Modals restyled -- flat surfaces, consistent padding, tighter radius
-- [ ] **CHR-04**: Login page restyled -- no particle rain, no mesh background, clean flat form
+- [x] **CHR-01**: Sidebar restyled -- light background, clean typography, minimal icons
+- [x] **CHR-02**: Top header bar restyled
+- [x] **CHR-03**: Modals restyled -- flat surfaces, consistent padding, tighter radius
+- [x] **CHR-04**: Login page restyled -- no particle rain, no mesh background, clean flat form
 
 ### Quality Gates
 
-- [ ] **QUA-01**: Status color coding preserved (green/amber/red/blue badges) across all pages
-- [ ] **QUA-02**: No broken layouts from restyle changes
-- [ ] **QUA-03**: All existing functionality works unchanged
-- [ ] **QUA-04**: Professional, muted, Stripe-tier appearance across all pages
+- [x] **QUA-01**: Status color coding preserved (green/amber/red/blue badges) across all pages
+- [x] **QUA-02**: No broken layouts from restyle changes
+- [x] **QUA-03**: All existing functionality works unchanged
+- [x] **QUA-04**: Professional, muted, Stripe-tier appearance across all pages
 
 ## Future Requirements
 
@@ -126,14 +126,14 @@ Requirements for restyling the entire Web TMS to a Stripe/Linear aesthetic. Page
 | OPS-05 | Phase 25 | Complete |
 | OPS-06 | Phase 25 | Complete |
 | OPS-07 | Phase 25 | Complete |
-| CHR-01 | Phase 26 | Pending |
-| CHR-02 | Phase 26 | Pending |
-| CHR-03 | Phase 26 | Pending |
-| CHR-04 | Phase 26 | Pending |
-| QUA-01 | Phase 26 | Pending |
-| QUA-02 | Phase 26 | Pending |
-| QUA-03 | Phase 26 | Pending |
-| QUA-04 | Phase 26 | Pending |
+| CHR-01 | Phase 26 | Complete |
+| CHR-02 | Phase 26 | Complete |
+| CHR-03 | Phase 26 | Complete |
+| CHR-04 | Phase 26 | Complete |
+| QUA-01 | Phase 26 | Complete |
+| QUA-02 | Phase 26 | Complete |
+| QUA-03 | Phase 26 | Complete |
+| QUA-04 | Phase 26 | Complete |
 
 **Coverage:**
 - v1.4 requirements: 35 total
@@ -142,4 +142,4 @@ Requirements for restyling the entire Web TMS to a Stripe/Linear aesthetic. Page
 
 ---
 *Requirements defined: 2026-03-12*
-*Last updated: 2026-03-13 -- PFL-01 through PFL-05 complete (Phase 23)*
+*Last updated: 2026-03-13 -- All 35 requirements complete (Phase 26)*

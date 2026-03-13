@@ -6,7 +6,7 @@
 - ✅ **v1.1 UI Redesign Mockups** - Phases 6-10 (shipped 2026-02-10)
 - ❌ **v1.2 Apply UI Redesign to Production** - Phases 11-15 (abandoned, reverted 2026-02-11)
 - ❌ **v1.3 CSS Polish** - Phases 16-18 (abandoned, never started 2026-03-12)
-- 🚧 **v1.4 Web TMS Restyle (Stripe/Linear)** - Phases 19-26 (in progress)
+- ✅ **v1.4 Web TMS Restyle (Stripe/Linear)** - Phases 19-26 (complete 2026-03-13)
 
 ## Overview
 
@@ -73,7 +73,7 @@ Requirements and roadmap defined (16 requirements across 3 phases). Never starte
 - [x] **Phase 23: People & Fleet Restyle** - Restyle drivers, local drivers, trucks, brokers, dispatchers pages
 - [x] **Phase 24: Finance Pages Restyle** - Restyle billing, payroll, financials, trip profitability, fuel, IFTA
 - [x] **Phase 25: Operations & Admin Restyle** - Restyle compliance, maintenance, settings, activity log, tasks, team chat, executive dashboard
-- [ ] **Phase 26: Shared Chrome & Quality Verification** - Restyle sidebar, topbar, modals, login page and verify full-app quality
+- [x] **Phase 26: Shared Chrome & Quality Verification** - Restyle sidebar, topbar, modals, login page and verify full-app quality
 
 ---
 
@@ -254,7 +254,14 @@ Plans:
 4. Status color coding (green/amber/red/blue badges) is intact and readable on every page that uses them
 5. All existing functionality works unchanged -- no broken layouts, no missing interactions, no regressions from the restyle
 
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [x] 26-01-PLAN.md -- Sidebar restyle (dark to light theme, semantic CSS tokens)
+- [x] 26-02-PLAN.md -- Topbar cleanup (delete duplicate block, remove hover transforms)
+- [x] 26-03-PLAN.md -- Modal consolidation (single CSS definition, flat headers, 12px radius)
+- [x] 26-04-PLAN.md -- Login page restyle (remove particles, flat form on light background)
+- [x] 26-05-PLAN.md -- Quality verification sweep (code audit + visual verification)
 
 ---
 
@@ -281,9 +288,9 @@ Phases execute in numeric order: 19 → 20 → 21 → 22 → 23 → 24 → 25 �
 | 23. People & Fleet Restyle | v1.4 | 3/3 | Complete | 2026-03-13 |
 | 24. Finance Pages Restyle | v1.4 | 5/5 | Complete | 2026-03-13 |
 | 25. Operations & Admin Restyle | v1.4 | 5/5 | Complete | 2026-03-13 |
-| 26. Shared Chrome & Quality Verification | v1.4 | 0/TBD | Not started | - |
+| 26. Shared Chrome & Quality Verification | v1.4 | 5/5 | Complete | 2026-03-13 |
 
 ---
 
 **Roadmap created**: 2026-02-10
-**Last updated**: 2026-03-13 (Phase 25 complete: 5/5 plans, verified)
+**Last updated**: 2026-03-13 (Phase 26 complete: 5/5 plans, verified — v1.4 milestone complete)
