@@ -50,13 +50,13 @@ Requirements for restyling the entire Web TMS to a Stripe/Linear aesthetic. Page
 
 ### Page Restyles -- Operations & Admin
 
-- [ ] **OPS-01**: Compliance page restyled
-- [ ] **OPS-02**: Maintenance page restyled
-- [ ] **OPS-03**: Settings page restyled
-- [ ] **OPS-04**: Activity Log page restyled
-- [ ] **OPS-05**: Tasks page restyled
-- [ ] **OPS-06**: Team Chat restyled
-- [ ] **OPS-07**: Executive Dashboard restyled
+- [x] **OPS-01**: Compliance page restyled
+- [x] **OPS-02**: Maintenance page restyled
+- [x] **OPS-03**: Settings page restyled
+- [x] **OPS-04**: Activity Log page restyled
+- [x] **OPS-05**: Tasks page restyled
+- [x] **OPS-06**: Team Chat restyled
+- [x] **OPS-07**: Executive Dashboard restyled
 
 ### Shared Chrome
 
@@ -119,13 +119,13 @@ Requirements for restyling the entire Web TMS to a Stripe/Linear aesthetic. Page
 | FIN-04 | Phase 24 | Complete |
 | FIN-05 | Phase 24 | Complete |
 | FIN-06 | Phase 24 | Complete |
-| OPS-01 | Phase 25 | Pending |
-| OPS-02 | Phase 25 | Pending |
-| OPS-03 | Phase 25 | Pending |
-| OPS-04 | Phase 25 | Pending |
-| OPS-05 | Phase 25 | Pending |
-| OPS-06 | Phase 25 | Pending |
-| OPS-07 | Phase 25 | Pending |
+| OPS-01 | Phase 25 | Complete |
+| OPS-02 | Phase 25 | Complete |
+| OPS-03 | Phase 25 | Complete |
+| OPS-04 | Phase 25 | Complete |
+| OPS-05 | Phase 25 | Complete |
+| OPS-06 | Phase 25 | Complete |
+| OPS-07 | Phase 25 | Complete |
 | CHR-01 | Phase 26 | Pending |
 | CHR-02 | Phase 26 | Pending |
 | CHR-03 | Phase 26 | Pending |

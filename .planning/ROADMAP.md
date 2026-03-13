@@ -72,7 +72,7 @@ Requirements and roadmap defined (16 requirements across 3 phases). Never starte
 - [x] **Phase 22: Trips & Load Board Restyle** - Restyle trips (dual view, density toggle) and load board
 - [x] **Phase 23: People & Fleet Restyle** - Restyle drivers, local drivers, trucks, brokers, dispatchers pages
 - [x] **Phase 24: Finance Pages Restyle** - Restyle billing, payroll, financials, trip profitability, fuel, IFTA
-- [ ] **Phase 25: Operations & Admin Restyle** - Restyle compliance, maintenance, settings, activity log, tasks, team chat, executive dashboard
+- [x] **Phase 25: Operations & Admin Restyle** - Restyle compliance, maintenance, settings, activity log, tasks, team chat, executive dashboard
 - [ ] **Phase 26: Shared Chrome & Quality Verification** - Restyle sidebar, topbar, modals, login page and verify full-app quality
 
 ---
@@ -231,11 +231,11 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 25-01-PLAN.md -- Activity log + maintenance page restyle
-- [ ] 25-02-PLAN.md -- Tasks + settings page restyle
-- [ ] 25-03-PLAN.md -- Compliance page restyle (7 tabs, dashboard hero, file tables)
-- [ ] 25-04-PLAN.md -- Team chat CSS variable swaps + pill input
-- [ ] 25-05-PLAN.md -- Executive dashboard restyle (health score, panels, charts, tables)
+- [x] 25-01-PLAN.md -- Activity log + maintenance page restyle
+- [x] 25-02-PLAN.md -- Tasks + settings page restyle
+- [x] 25-03-PLAN.md -- Compliance page restyle (7 tabs, dashboard hero, file tables)
+- [x] 25-04-PLAN.md -- Team chat CSS variable swaps + pill input
+- [x] 25-05-PLAN.md -- Executive dashboard restyle (health score, panels, charts, tables)
 
 ---
 
@@ -280,10 +280,10 @@ Phases execute in numeric order: 19 → 20 → 21 → 22 → 23 → 24 → 25 �
 | 22. Trips & Load Board Restyle | v1.4 | 3/3 | Complete | 2026-03-13 |
 | 23. People & Fleet Restyle | v1.4 | 3/3 | Complete | 2026-03-13 |
 | 24. Finance Pages Restyle | v1.4 | 5/5 | Complete | 2026-03-13 |
-| 25. Operations & Admin Restyle | v1.4 | 0/5 | Not started | - |
+| 25. Operations & Admin Restyle | v1.4 | 5/5 | Complete | 2026-03-13 |
 | 26. Shared Chrome & Quality Verification | v1.4 | 0/TBD | Not started | - |
 
 ---
 
 **Roadmap created**: 2026-02-10
-**Last updated**: 2026-03-13 (Phase 25 planned: 5 plans in 1 wave)
+**Last updated**: 2026-03-13 (Phase 25 complete: 5/5 plans, verified)
