@@ -45541,42 +45541,16 @@ function jsonResponse(data, status = 200) {
       pagination.activity_log.total = filtered.length;
       const paginatedData = getPaginatedData(filtered, 'activity_log');
       
-      // Action type colors
-      const actionColors = {
-        'LOGIN_SUCCESS': '#6366f1',
-        'LOGOUT': '#64748b',
-        'SIGNUP': '#3b82f6',
-        'VEHICLE_ADDED': '#10b981',
-        'VEHICLE_UPDATED': '#f59e0b',
-        'VEHICLE_REMOVED_FROM_TRIP': '#ef4444',
-        'TRIP_CREATED': '#6366f1',
-        'TRIP_UPDATED': '#f59e0b',
-        'TRIP_DELETED': '#ef4444',
-        'ORDER_CREATED': '#6366f1',
-        'ORDER_UPDATED': '#f59e0b',
-        'ORDER_DELETED': '#ef4444',
-        'TRUCK_CREATED': '#6366f1',
-        'TRUCK_UPDATED': '#f59e0b',
-        'TRUCK_DELETED': '#ef4444',
-        'DRIVER_CREATED': '#6366f1',
-        'DRIVER_UPDATED': '#f59e0b',
-        'EXPENSE_CREATED': '#f59e0b',
-        'EXPENSE_DELETED': '#ef4444',
-        'TASK_CREATED': '#6366f1',
-        'TASK_COMPLETED': '#10b981',
-        'TASK_REOPENED': '#f59e0b',
-        'TASK_DELETED': '#ef4444',
-        'CLAIM_CREATED': '#f59e0b',
-        'CLAIM_UPDATED': '#3b82f6',
-        'MAINTENANCE_CREATED': '#3b82f6',
-        'MAINTENANCE_UPDATED': '#f59e0b',
-        'USER_CREATED': '#6366f1',
-        'USER_UPDATED': '#f59e0b',
-        'USER_DELETED': '#ef4444',
-        'PASSWORD_RESET_SUCCESS': '#8b5cf6',
-        'DATA_EXPORTED': '#6366f1',
-        'CHAT_MESSAGE_SENT': '#06b6d4'
-      };
+      // Action badge class mapping (5 categories)
+      function getActionBadgeClass(action) {
+        const a = (action || '').toUpperCase();
+        if (a.includes('DELETED') || a.includes('REMOVED') || a.includes('DISABLED') || a.includes('CANCELLED')) return 'badge-red';
+        if (a.includes('COMPLETED') || a.includes('APPROVED') || a.includes('PAID') || a.includes('DELIVERED') || a.includes('RESOLVED') || a.includes('ADDED')) return 'badge-green';
+        if (a.includes('UPDATED') || a.includes('EDITED') || a.includes('MODIFIED') || a.includes('CHANGED') || a.includes('MOVED') || a.includes('REOPENED')) return 'badge-amber';
+        if (a.includes('CREATED') || a.includes('IMPORTED') || a.includes('ENABLED') || a.includes('ASSIGNED') || a.includes('SIGNUP')) return 'badge-blue';
+        if (a.includes('LOGIN') || a.includes('LOGOUT') || a.includes('VIEWED') || a.includes('EXPORTED') || a.includes('PASSWORD') || a.includes('CHAT')) return 'badge-gray';
+        return 'badge-gray';
+      }
       
       // Action category icons
       const actionIcons = {
@@ -45596,55 +45570,55 @@ function jsonResponse(data, status = 200) {
         return '[[icon:note]]';
       }
       
-      c.innerHTML = '<div class="header"><h2>[[icon:clipboard]] ' + 'Audit Trail' + '</h2>' +
-        '<button class="btn btn-secondary" onclick="exportActivityLog()">[[icon:download]] ' + 'Export' + '</button></div>' +
+      c.innerHTML = '<div class="header"><h2 style="font-size:18px;font-weight:600">[[icon:clipboard]] Audit Trail</h2>' +
+        '<button class="btn btn-secondary" onclick="exportActivityLog()">[[icon:download]] Export</button></div>' +
         
         // Stats cards
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px">' +
-        '<div class="stat-card" style="background:linear-gradient(135deg,#6366f122,#6366f111)"><div class="label">' + 'Today' + '</div><div class="value">' + activityLogData.filter(a => new Date(a.created_at).toDateString() === new Date().toDateString()).length + '</div></div>' +
-        '<div class="stat-card" style="background:linear-gradient(135deg,#3b82f622,#3b82f611)"><div class="label">' + 'This Week' + '</div><div class="value">' + activityLogData.filter(a => new Date(a.created_at) > new Date(Date.now() - 7*24*60*60*1000)).length + '</div></div>' +
-        '<div class="stat-card" style="background:linear-gradient(135deg,#f59e0b22,#f59e0b11)"><div class="label">' + 'Unique Users' + '</div><div class="value">' + userEmails.length + '</div></div>' +
-        '<div class="stat-card" style="background:linear-gradient(135deg,#8b5cf622,#8b5cf611)"><div class="label">' + 'Total Records' + '</div><div class="value">' + activityLogData.length + '</div></div>' +
+        '<div class="stat-flat stat-card--blue"><div class="stat-flat-label">Today</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + activityLogData.filter(a => new Date(a.created_at).toDateString() === new Date().toDateString()).length + '</div></div>' +
+        '<div class="stat-flat stat-card--purple"><div class="stat-flat-label">This Week</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + activityLogData.filter(a => new Date(a.created_at) > new Date(Date.now() - 7*24*60*60*1000)).length + '</div></div>' +
+        '<div class="stat-flat stat-card--amber"><div class="stat-flat-label">Unique Users</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + userEmails.length + '</div></div>' +
+        '<div class="stat-flat stat-card--green"><div class="stat-flat-label">Total Records</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + activityLogData.length + '</div></div>' +
         '</div>' +
         
         // Filters
         '<div class="card" style="margin-bottom:20px;padding:16px">' +
         '<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">' +
-        '<div style="display:flex;gap:8px;align-items:center"><label>' + 'Filter:' + '</label>' +
-        '<select onchange="activityLogFilter=this.value;pagination.activity_log.page=1;renderActivityLog(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:6px;border:1px solid var(--border)">' +
-        '<option value="all"' + (activityLogFilter === 'all' ? ' selected' : '') + '>' + 'All Activities' + '</option>' +
-        '<optgroup label="' + 'By Action' + '">' + actionTypes.map(a => '<option value="' + a + '"' + (activityLogFilter === a ? ' selected' : '') + '>' + a.replace(/_/g, ' ') + '</option>').join('') + '</optgroup>' +
-        '<optgroup label="' + 'By User' + '">' + userEmails.map(e => '<option value="' + e + '"' + (activityLogFilter === e ? ' selected' : '') + '>' + e + '</option>').join('') + '</optgroup>' +
+        '<div style="display:flex;gap:8px;align-items:center"><label style="color:var(--text-secondary);font-size:13px;font-weight:500">Filter:</label>' +
+        '<select class="select" onchange="activityLogFilter=this.value;pagination.activity_log.page=1;renderActivityLog(document.getElementById(\'main-content\'))">' +
+        '<option value="all"' + (activityLogFilter === 'all' ? ' selected' : '') + '>All Activities</option>' +
+        '<optgroup label="By Action">' + actionTypes.map(a => '<option value="' + a + '"' + (activityLogFilter === a ? ' selected' : '') + '>' + a.replace(/_/g, ' ') + '</option>').join('') + '</optgroup>' +
+        '<optgroup label="By User">' + userEmails.map(e => '<option value="' + e + '"' + (activityLogFilter === e ? ' selected' : '') + '>' + e + '</option>').join('') + '</optgroup>' +
         '</select></div>' +
-        '<div style="display:flex;gap:8px;align-items:center"><label>' + 'From:' + '</label>' +
-        '<input type="date" value="' + activityDateFrom + '" onchange="activityDateFrom=this.value;pagination.activity_log.page=1;renderActivityLog(document.getElementById(\'main-content\'))" style="padding:8px;border-radius:6px;border:1px solid var(--border)"></div>' +
-        '<div style="display:flex;gap:8px;align-items:center"><label>' + 'To:' + '</label>' +
-        '<input type="date" value="' + activityDateTo + '" onchange="activityDateTo=this.value;pagination.activity_log.page=1;renderActivityLog(document.getElementById(\'main-content\'))" style="padding:8px;border-radius:6px;border:1px solid var(--border)"></div>' +
-        '<button class="btn btn-secondary" onclick="activityLogFilter=\'all\';activityDateFrom=\'\';activityDateTo=\'\';pagination.activity_log.page=1;renderActivityLog(document.getElementById(\'main-content\'))" style="padding:8px 12px">↺ ' + 'Clear' + '</button>' +
-        '<span style="color:var(--text-muted);margin-left:auto">' + 'Showing' + ' ' + paginatedData.data.length + ' / ' + filtered.length + '</span>' +
+        '<div style="display:flex;gap:8px;align-items:center"><label style="color:var(--text-secondary);font-size:13px;font-weight:500">From:</label>' +
+        '<input class="input" type="date" value="' + activityDateFrom + '" onchange="activityDateFrom=this.value;pagination.activity_log.page=1;renderActivityLog(document.getElementById(\'main-content\'))"></div>' +
+        '<div style="display:flex;gap:8px;align-items:center"><label style="color:var(--text-secondary);font-size:13px;font-weight:500">To:</label>' +
+        '<input class="input" type="date" value="' + activityDateTo + '" onchange="activityDateTo=this.value;pagination.activity_log.page=1;renderActivityLog(document.getElementById(\'main-content\'))"></div>' +
+        '<button class="btn btn-secondary" onclick="activityLogFilter=\'all\';activityDateFrom=\'\';activityDateTo=\'\';pagination.activity_log.page=1;renderActivityLog(document.getElementById(\'main-content\'))">↺ Clear</button>' +
+        '<span style="color:var(--text-muted);margin-left:auto;font-size:13px">Showing ' + paginatedData.data.length + ' / ' + filtered.length + '</span>' +
         '</div></div>' +
         
-        '<div class="card"><div class="table-wrapper"><table>' +
-        '<thead><tr><th style="width:50px"></th><th style="width:160px">' + 'Date/Time' + '</th><th style="width:200px">' + 'User' + '</th><th style="width:180px">' + 'Action' + '</th><th>' + 'Details' + '</th></tr></thead>' +
+        '<div class="card-flush"><div class="table-wrapper"><table class="data-table">' +
+        '<thead><tr><th style="width:50px"></th><th style="width:160px">Date/Time</th><th style="width:200px">User</th><th style="width:180px">Action</th><th>Details</th></tr></thead>' +
         '<tbody>' +
-        (paginatedData.data.length === 0 
-          ? '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted)">' + 'No activity logs found' + '</td></tr>' 
+        (paginatedData.data.length === 0
+          ? '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted)">No activity logs found</td></tr>'
           : paginatedData.data.map(a => {
-              const color = actionColors[a.action] || '#64748b';
+              const badgeClass = getActionBadgeClass(a.action);
               const icon = getActionIcon(a.action);
               let details = '';
               try {
                 const d = typeof a.details === 'string' ? JSON.parse(a.details || '{}') : (a.details || {});
                 details = Object.entries(d).map(([k, v]) => '<span style="background:var(--bg-tertiary);padding:2px 6px;border-radius:4px;margin-right:4px;margin-bottom:2px;display:inline-block;font-size:11px"><strong>' + k.replace(/_/g, ' ') + ':</strong> ' + (v || '-') + '</span>').join('');
               } catch (e) { details = a.details || '-'; }
-              
+
               // Display user name if available, otherwise fall back to email
               const displayName = a.user_name || a.user_email || 'System';
               return '<tr style="cursor:pointer" onclick="showActivityDetail(' + JSON.stringify(a).replace(/"/g, '&quot;') + ')">' +
                 '<td style="font-size:20px;text-align:center">' + icon + '</td>' +
                 '<td style="font-size:13px;white-space:nowrap">' + formatDateTime(a.created_at) + '</td>' +
                 '<td style="font-weight:500">' + displayName + '</td>' +
-                '<td><span style="background:' + color + '22;color:' + color + ';padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600">' + a.action.replace(/_/g, ' ') + '</span></td>' +
+                '<td><span class="badge ' + badgeClass + '">' + a.action.replace(/_/g, ' ') + '</span></td>' +
                 '<td style="font-size:12px">' + details + '</td>' +
                 '</tr>';
             }).join('')) +
