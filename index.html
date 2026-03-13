@@ -37596,99 +37596,80 @@
 
       c.innerHTML = `
         <div class="header">
-          <h2>[[icon:chart]] Trip Profitability Analysis</h2>
+          <h2 style="font-size:18px;font-weight:600">Trip Profitability Analysis</h2>
           <div style="display:flex;gap:8px">
-            <button class="btn btn-secondary" onclick="exportTripProfitability()">[[icon:download]] Export CSV</button>
-            ${selectedTripsForCompare.length >= 2 ? '<button class="btn btn-primary" onclick="showTripComparison()">[[icon:scale]] Compare Selected (' + selectedTripsForCompare.length + ')</button>' : ''}
+            <button class="btn btn-secondary" onclick="exportTripProfitability()">Export CSV</button>
+            ${selectedTripsForCompare.length >= 2 ? '<button class="btn btn-primary" onclick="showTripComparison()">Compare Selected (' + selectedTripsForCompare.length + ')</button>' : ''}
           </div>
         </div>
 
         <!-- Date Range & Filters -->
-        <div style="background:var(--surface-card);padding:16px;border-radius:8px;margin-bottom:20px">
-          <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
-            <div style="display:flex;align-items:center;gap:8px">
-              <label style="font-weight:600;color:var(--text-secondary)">From:</label>
-              <input type="date" value="${tripProfitFilter.startDate}" onchange="tripProfitFilter.startDate=this.value;renderTripProfitability(document.getElementById('main-content'))" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px">
-            </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <label style="font-weight:600;color:var(--text-secondary)">To:</label>
-              <input type="date" value="${tripProfitFilter.endDate}" onchange="tripProfitFilter.endDate=this.value;renderTripProfitability(document.getElementById('main-content'))" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px">
-            </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <label style="font-weight:600;color:var(--text-secondary)">Driver:</label>
-              <select onchange="tripProfitFilter.driver=this.value;renderTripProfitability(document.getElementById('main-content'))" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px">
-                <option value="all"${tripProfitFilter.driver === 'all' ? ' selected' : ''}>All Drivers</option>
-                ${driverOptions}
-              </select>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <label style="font-weight:600;color:var(--text-secondary)">Truck:</label>
-              <select onchange="tripProfitFilter.truck=this.value;renderTripProfitability(document.getElementById('main-content'))" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px">
-                <option value="all"${tripProfitFilter.truck === 'all' ? ' selected' : ''}>All Trucks</option>
-                ${truckOptions}
-              </select>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <label style="font-weight:600;color:var(--text-secondary)">Status:</label>
-              <select onchange="tripProfitFilter.profitability=this.value;renderTripProfitability(document.getElementById('main-content'))" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px">
-                <option value="all"${tripProfitFilter.profitability === 'all' ? ' selected' : ''}>All Trips</option>
-                <option value="profitable"${tripProfitFilter.profitability === 'profitable' ? ' selected' : ''}>Profitable Only</option>
-                <option value="unprofitable"${tripProfitFilter.profitability === 'unprofitable' ? ' selected' : ''}>Unprofitable Only</option>
-              </select>
-            </div>
-            <button class="btn btn-secondary" style="padding:8px 16px" onclick="tripProfitFilter={startDate:new Date().getFullYear()+'-01-01',endDate:new Date().getFullYear()+'-12-31',driver:'all',truck:'all',profitability:'all',search:''};selectedTripsForCompare=[];renderTripProfitability(document.getElementById('main-content'))">Clear Filters</button>
-          </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:20px">
+          <label style="font-weight:500;color:var(--text-secondary);font-size:13px">From:</label>
+          <input class="input" type="date" value="${tripProfitFilter.startDate}" onchange="tripProfitFilter.startDate=this.value;renderTripProfitability(document.getElementById('main-content'))">
+          <label style="font-weight:500;color:var(--text-secondary);font-size:13px">To:</label>
+          <input class="input" type="date" value="${tripProfitFilter.endDate}" onchange="tripProfitFilter.endDate=this.value;renderTripProfitability(document.getElementById('main-content'))">
+          <select class="select" onchange="tripProfitFilter.driver=this.value;renderTripProfitability(document.getElementById('main-content'))">
+            <option value="all"${tripProfitFilter.driver === 'all' ? ' selected' : ''}>All Drivers</option>
+            ${driverOptions}
+          </select>
+          <select class="select" onchange="tripProfitFilter.truck=this.value;renderTripProfitability(document.getElementById('main-content'))">
+            <option value="all"${tripProfitFilter.truck === 'all' ? ' selected' : ''}>All Trucks</option>
+            ${truckOptions}
+          </select>
+          <select class="select" onchange="tripProfitFilter.profitability=this.value;renderTripProfitability(document.getElementById('main-content'))">
+            <option value="all"${tripProfitFilter.profitability === 'all' ? ' selected' : ''}>All Trips</option>
+            <option value="profitable"${tripProfitFilter.profitability === 'profitable' ? ' selected' : ''}>Profitable Only</option>
+            <option value="unprofitable"${tripProfitFilter.profitability === 'unprofitable' ? ' selected' : ''}>Unprofitable Only</option>
+          </select>
+          <button class="btn btn-ghost" onclick="tripProfitFilter={startDate:new Date().getFullYear()+'-01-01',endDate:new Date().getFullYear()+'-12-31',driver:'all',truck:'all',profitability:'all',search:''};selectedTripsForCompare=[];renderTripProfitability(document.getElementById('main-content'))">Clear</button>
         </div>
 
         <!-- Summary Stats -->
         <div class="stats-grid" style="margin-bottom:24px">
-          <div class="stat-card" style="border-left:4px solid #22c55e">
-            <div class="label">Total Revenue</div>
-            <div class="value" style="color:#22c55e">${formatMoney(totalRevenue)}</div>
-            <div style="font-size:12px;color:#64748b;margin-top:4px">${displayData.length} trips</div>
+          <div class="stat-flat stat-card--green">
+            <div class="stat-flat-label">Total Revenue</div>
+            <div class="stat-flat-value" style="color:var(--green);font-family:var(--font-mono)">${formatMoney(totalRevenue)}</div>
+            <div class="stat-flat-delta">${displayData.length} trips</div>
           </div>
-          <div class="stat-card" style="border-left:4px solid ${totalProfit >= 0 ? '#22c55e' : '#ef4444'}">
-            <div class="label">Net Profit</div>
-            <div class="value" style="color:${totalProfit >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(totalProfit)}</div>
-            <div style="font-size:12px;color:#64748b;margin-top:4px">${avgMargin.toFixed(1)}% margin</div>
+          <div class="stat-flat ${totalProfit >= 0 ? 'stat-card--green' : 'stat-card--red'}">
+            <div class="stat-flat-label">Net Profit</div>
+            <div class="stat-flat-value" style="color:${totalProfit >= 0 ? 'var(--green)' : 'var(--red)'};font-family:var(--font-mono)">${formatMoney(totalProfit)}</div>
+            <div class="stat-flat-delta">${avgMargin.toFixed(1)}% margin</div>
           </div>
-          <div class="stat-card">
-            <div class="label">Profitable Trips</div>
-            <div class="value" style="color:#22c55e">${profitableCount}/${displayData.length}</div>
-            <div style="font-size:12px;color:#64748b;margin-top:4px">${(displayData.length > 0 ? (profitableCount / displayData.length * 100) : 0).toFixed(0)}% success rate</div>
+          <div class="stat-flat stat-card--blue">
+            <div class="stat-flat-label">Profitable Trips</div>
+            <div class="stat-flat-value" style="color:var(--green);font-family:var(--font-mono)">${profitableCount}/${displayData.length}</div>
+            <div class="stat-flat-delta">${(displayData.length > 0 ? (profitableCount / displayData.length * 100) : 0).toFixed(0)}% success rate</div>
           </div>
-          <div class="stat-card">
-            <div class="label">Avg Profit/Mile</div>
-            <div class="value">${formatMoney(totalMiles > 0 ? totalProfit / totalMiles : 0)}</div>
-            <div style="font-size:12px;color:#64748b;margin-top:4px">${totalMiles.toLocaleString()} total miles</div>
+          <div class="stat-flat stat-card--amber">
+            <div class="stat-flat-label">Avg Profit/Mile</div>
+            <div class="stat-flat-value" style="font-family:var(--font-mono)">${formatMoney(totalMiles > 0 ? totalProfit / totalMiles : 0)}</div>
+            <div class="stat-flat-delta">${totalMiles.toLocaleString()} total miles</div>
           </div>
         </div>
 
         <!-- Best/Worst Performers -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
-          <div class="card" style="border-left:4px solid #22c55e">
-            <div class="card-header"><h3>Top 5 Most Profitable</h3></div>
-            <div style="padding:12px">
-              ${top5.length === 0 ? '<div style="text-align:center;color:#64748b;padding:20px">No data</div>' : top5.map(d => '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0"><span style="font-weight:600">' + d.trip.trip_number + '</span><span style="color:#22c55e;font-weight:700">' + formatMoney(d.fin.netProfit) + ' (' + d.margin.toFixed(1) + '%)</span></div>').join('')}
-            </div>
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-left:2px solid var(--green);border-radius:var(--radius);padding:16px">
+            <h3 style="font-size:14px;font-weight:600;margin-bottom:12px">Top 5 Most Profitable</h3>
+            ${top5.length === 0 ? '<div style="text-align:center;color:var(--text-secondary);padding:20px">No data</div>' : top5.map(d => '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-weight:500">' + d.trip.trip_number + '</span><span style="color:var(--green);font-weight:600;font-family:var(--font-mono)">' + formatMoney(d.fin.netProfit) + ' (' + d.margin.toFixed(1) + '%)</span></div>').join('')}
           </div>
-          <div class="card" style="border-left:4px solid #ef4444">
-            <div class="card-header"><h3>Bottom 5 Performers</h3></div>
-            <div style="padding:12px">
-              ${bottom5.length === 0 ? '<div style="text-align:center;color:#64748b;padding:20px">No data</div>' : bottom5.map(d => '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0"><span style="font-weight:600">' + d.trip.trip_number + '</span><span style="color:' + (d.fin.netProfit >= 0 ? '#f59e0b' : '#ef4444') + ';font-weight:700">' + formatMoney(d.fin.netProfit) + ' (' + d.margin.toFixed(1) + '%)</span></div>').join('')}
-            </div>
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-left:2px solid var(--red);border-radius:var(--radius);padding:16px">
+            <h3 style="font-size:14px;font-weight:600;margin-bottom:12px">Bottom 5 Performers</h3>
+            ${bottom5.length === 0 ? '<div style="text-align:center;color:var(--text-secondary);padding:20px">No data</div>' : bottom5.map(d => '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-weight:500">' + d.trip.trip_number + '</span><span style="color:' + (d.fin.netProfit >= 0 ? 'var(--amber)' : 'var(--red)') + ';font-weight:600;font-family:var(--font-mono)">' + formatMoney(d.fin.netProfit) + ' (' + d.margin.toFixed(1) + '%)</span></div>').join('')}
           </div>
         </div>
 
         <!-- Trips Table -->
         <div class="card">
           <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
-            <h3>All Trips (${displayData.length})</h3>
-            <span style="font-size:12px;color:#64748b">Select trips to compare | Click headers to sort</span>
+            <h3 style="font-size:14px;font-weight:600">All Trips (${displayData.length})</h3>
+            <span style="font-size:12px;color:var(--text-secondary)">Select trips to compare | Click headers to sort</span>
           </div>
           <div class="table-wrapper" style="max-height:500px;overflow-y:auto">
-            <table id="tripProfitTable">
-              <thead style="position:sticky;top:0;z-index:5;background:var(--card-bg)">
+            <table class="data-table" id="tripProfitTable">
+              <thead style="position:sticky;top:0;z-index:5;background:var(--bg-tertiary)">
                 <tr>
                   <th style="width:40px">Compare</th>
                   <th onclick="sortTripProfitTable('date')" style="cursor:pointer">Date ${tripProfitSort.column === 'date' ? (tripProfitSort.direction === 'asc' ? '↑' : '↓') : '↕'}</th>
@@ -37705,7 +37686,7 @@
                 </tr>
               </thead>
               <tbody>
-                ${displayData.length === 0 ? '<tr><td colspan="12" style="text-align:center;padding:40px;color:#64748b">No trips match the selected filters</td></tr>' :
+                ${displayData.length === 0 ? '<tr><td colspan="12" style="text-align:center;padding:40px;color:var(--text-secondary)">No trips match the selected filters</td></tr>' :
                 displayData.map(d => {
                   const isSelected = selectedTripsForCompare.includes(d.trip.id);
                   return '<tr style="' + (isSelected ? 'background:var(--primary-light)' : '') + '">' +
@@ -37714,12 +37695,12 @@
                     '<td><strong>' + d.trip.trip_number + '</strong></td>' +
                     '<td>' + (d.driver ? d.driver.first_name + ' ' + d.driver.last_name : '-') + '</td>' +
                     '<td>' + (d.truck ? '#' + d.truck.truck_number : '-') + '</td>' +
-                    '<td class="money" style="color:#22c55e">' + formatMoney(d.fin.loadRevenue) + '</td>' +
-                    '<td class="money" style="color:#ef4444">' + formatMoney(d.fin.brokerFee) + '</td>' +
-                    '<td class="money" style="color:#ef4444">' + formatMoney(d.fin.driverCut) + '</td>' +
-                    '<td class="money" style="color:#ef4444">' + formatMoney(d.fin.totalExpenses) + '</td>' +
-                    '<td class="money" style="font-weight:700;color:' + (d.isProfitable ? '#22c55e' : '#ef4444') + '">' + formatMoney(d.fin.netProfit) + '</td>' +
-                    '<td style="color:' + (d.margin >= 20 ? '#22c55e' : d.margin >= 0 ? '#f59e0b' : '#ef4444') + '">' + d.margin.toFixed(1) + '%</td>' +
+                    '<td class="money" style="color:var(--green);font-family:var(--font-mono)">' + formatMoney(d.fin.loadRevenue) + '</td>' +
+                    '<td class="money" style="color:var(--red);font-family:var(--font-mono)">' + formatMoney(d.fin.brokerFee) + '</td>' +
+                    '<td class="money" style="color:var(--red);font-family:var(--font-mono)">' + formatMoney(d.fin.driverCut) + '</td>' +
+                    '<td class="money" style="color:var(--red);font-family:var(--font-mono)">' + formatMoney(d.fin.totalExpenses) + '</td>' +
+                    '<td class="money profitability-cell" style="font-weight:600;color:' + (d.isProfitable ? 'var(--green)' : 'var(--red)') + ';background:' + (d.isProfitable ? 'var(--green-dim)' : 'var(--red-dim)') + ';font-family:var(--font-mono)">' + formatMoney(d.fin.netProfit) + '</td>' +
+                    '<td class="profitability-cell" style="color:' + (d.margin >= 20 ? 'var(--green)' : d.margin >= 0 ? 'var(--amber)' : 'var(--red)') + ';background:' + (d.margin >= 20 ? 'var(--green-dim)' : d.margin >= 0 ? 'var(--amber-dim)' : 'var(--red-dim)') + ';font-family:var(--font-mono)">' + d.margin.toFixed(1) + '%</td>' +
                     '<td><button class="action-btn" onclick="showTripProfitDetailModal(' + d.trip.id + ')">Details</button></td>' +
                   '</tr>';
                 }).join('')}
@@ -37781,24 +37762,24 @@
           <div class="modal-body" style="padding:20px">
             <div style="display:grid;grid-template-columns:repeat(${trips.length}, 1fr);gap:16px;margin-bottom:24px">
               ${trips.map(t => `
-                <div class="card" style="border-top:4px solid ${t.fin.netProfit >= 0 ? '#22c55e' : '#ef4444'}">
-                  <div class="card-header"><h3>${t.trip.trip_number}</h3></div>
+                <div class="card" style="border-top:2px solid ${t.fin.netProfit >= 0 ? 'var(--green)' : 'var(--red)'}">
+                  <div class="card-header"><h3 style="font-size:14px;font-weight:600">${t.trip.trip_number}</h3></div>
                   <div style="padding:16px">
                     <div style="margin-bottom:12px"><strong>Date:</strong> ${formatDate(t.trip.trip_date)}</div>
                     <div style="margin-bottom:12px"><strong>Driver:</strong> ${t.driver ? t.driver.first_name + ' ' + t.driver.last_name : '-'}</div>
                     <div style="margin-bottom:12px"><strong>Truck:</strong> ${t.truck ? '#' + t.truck.truck_number : '-'}</div>
                     <div style="margin-bottom:12px"><strong>Miles:</strong> ${t.miles.toLocaleString()}</div>
                     <div style="margin-bottom:12px"><strong>Cars:</strong> ${t.fin.vehicleCount}</div>
-                    <hr style="margin:16px 0">
-                    <div style="margin-bottom:8px"><strong>Revenue:</strong> <span style="color:#22c55e">${formatMoney(t.fin.loadRevenue)}</span></div>
-                    <div style="margin-bottom:8px"><strong>Broker Fees:</strong> <span style="color:#ef4444">${formatMoney(t.fin.brokerFee)}</span></div>
-                    <div style="margin-bottom:8px"><strong>Driver Pay:</strong> <span style="color:#ef4444">${formatMoney(t.fin.driverCut)}</span></div>
-                    <div style="margin-bottom:8px"><strong>Expenses:</strong> <span style="color:#ef4444">${formatMoney(t.fin.totalExpenses)}</span></div>
-                    <hr style="margin:16px 0">
-                    <div style="font-size:18px;font-weight:700;color:${t.fin.netProfit >= 0 ? '#22c55e' : '#ef4444'}">
+                    <hr style="margin:16px 0;border-color:var(--border)">
+                    <div style="margin-bottom:8px"><strong>Revenue:</strong> <span style="color:var(--green);font-family:var(--font-mono)">${formatMoney(t.fin.loadRevenue)}</span></div>
+                    <div style="margin-bottom:8px"><strong>Broker Fees:</strong> <span style="color:var(--red);font-family:var(--font-mono)">${formatMoney(t.fin.brokerFee)}</span></div>
+                    <div style="margin-bottom:8px"><strong>Driver Pay:</strong> <span style="color:var(--red);font-family:var(--font-mono)">${formatMoney(t.fin.driverCut)}</span></div>
+                    <div style="margin-bottom:8px"><strong>Expenses:</strong> <span style="color:var(--red);font-family:var(--font-mono)">${formatMoney(t.fin.totalExpenses)}</span></div>
+                    <hr style="margin:16px 0;border-color:var(--border)">
+                    <div style="font-size:18px;font-weight:600;color:${t.fin.netProfit >= 0 ? 'var(--green)' : 'var(--red)'};font-family:var(--font-mono)">
                       Net Profit: ${formatMoney(t.fin.netProfit)}
                     </div>
-                    <div style="margin-top:8px;color:#64748b">
+                    <div style="margin-top:8px;color:var(--text-secondary)">
                       Margin: ${(t.fin.loadRevenue > 0 ? t.fin.netProfit / t.fin.loadRevenue * 100 : 0).toFixed(1)}%
                     </div>
                   </div>
@@ -37806,20 +37787,20 @@
               `).join('')}
             </div>
 
-            <div class="card" style="background:var(--surface-card)">
-              <div class="card-header"><h3>Benchmark Comparison</h3></div>
+            <div class="card" style="background:var(--bg-secondary)">
+              <div class="card-header"><h3 style="font-size:14px;font-weight:600">Benchmark Comparison</h3></div>
               <div style="padding:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
-                <div style="text-align:center;padding:16px;background:var(--card-bg);border-radius:8px">
-                  <div style="font-size:12px;color:#64748b">Avg Revenue</div>
-                  <div style="font-size:20px;font-weight:700;color:#3b82f6">${formatMoney(avgRevenue)}</div>
+                <div style="text-align:center;padding:16px;background:var(--bg-card);border-radius:8px">
+                  <div style="font-size:12px;color:var(--text-secondary)">Avg Revenue</div>
+                  <div style="font-size:20px;font-weight:600;color:var(--blue);font-family:var(--font-mono)">${formatMoney(avgRevenue)}</div>
                 </div>
-                <div style="text-align:center;padding:16px;background:var(--card-bg);border-radius:8px">
-                  <div style="font-size:12px;color:#64748b">Avg Profit</div>
-                  <div style="font-size:20px;font-weight:700;color:${avgProfit >= 0 ? '#22c55e' : '#ef4444'}">${formatMoney(avgProfit)}</div>
+                <div style="text-align:center;padding:16px;background:var(--bg-card);border-radius:8px">
+                  <div style="font-size:12px;color:var(--text-secondary)">Avg Profit</div>
+                  <div style="font-size:20px;font-weight:600;color:${avgProfit >= 0 ? 'var(--green)' : 'var(--red)'};font-family:var(--font-mono)">${formatMoney(avgProfit)}</div>
                 </div>
-                <div style="text-align:center;padding:16px;background:var(--card-bg);border-radius:8px">
-                  <div style="font-size:12px;color:#64748b">Avg Margin</div>
-                  <div style="font-size:20px;font-weight:700">${avgMargin.toFixed(1)}%</div>
+                <div style="text-align:center;padding:16px;background:var(--bg-card);border-radius:8px">
+                  <div style="font-size:12px;color:var(--text-secondary)">Avg Margin</div>
+                  <div style="font-size:20px;font-weight:600;font-family:var(--font-mono)">${avgMargin.toFixed(1)}%</div>
                 </div>
               </div>
             </div>
@@ -37847,87 +37828,87 @@
       modal.onclick = e => { if (e.target === modal) modal.remove(); };
       modal.innerHTML = `
         <div class="modal" style="max-width:800px;max-height:90vh;overflow-y:auto">
-          <div class="modal-header" style="background:${fin.netProfit >= 0 ? '#dcfce7' : '#fee2e2'}">
-            <h3>Trip Report: ${trip.trip_number}</h3>
+          <div class="modal-header" style="background:${fin.netProfit >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'}">
+            <h3 style="font-size:16px;font-weight:600">Trip Report: ${trip.trip_number}</h3>
             <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
           </div>
           <div class="modal-body" style="padding:20px">
 
             <!-- Trip Summary -->
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:16px;margin-bottom:24px">
-              <div style="text-align:center;padding:16px;background:#f8fafc;border-radius:8px">
-                <div style="font-size:12px;color:#64748b">Date</div>
+              <div style="text-align:center;padding:16px;background:var(--bg-secondary);border-radius:8px">
+                <div style="font-size:12px;color:var(--text-secondary)">Date</div>
                 <div style="font-size:16px;font-weight:600">${formatDate(trip.trip_date)}</div>
               </div>
-              <div style="text-align:center;padding:16px;background:#f8fafc;border-radius:8px">
-                <div style="font-size:12px;color:#64748b">Driver</div>
+              <div style="text-align:center;padding:16px;background:var(--bg-secondary);border-radius:8px">
+                <div style="font-size:12px;color:var(--text-secondary)">Driver</div>
                 <div style="font-size:16px;font-weight:600">${driver ? driver.first_name + ' ' + driver.last_name : '-'}</div>
               </div>
-              <div style="text-align:center;padding:16px;background:#f8fafc;border-radius:8px">
-                <div style="font-size:12px;color:#64748b">Truck</div>
+              <div style="text-align:center;padding:16px;background:var(--bg-secondary);border-radius:8px">
+                <div style="font-size:12px;color:var(--text-secondary)">Truck</div>
                 <div style="font-size:16px;font-weight:600">${truck ? '#' + truck.truck_number : '-'}</div>
               </div>
-              <div style="text-align:center;padding:16px;background:#f8fafc;border-radius:8px">
-                <div style="font-size:12px;color:#64748b">Miles</div>
-                <div style="font-size:16px;font-weight:600">${miles.toLocaleString()}</div>
+              <div style="text-align:center;padding:16px;background:var(--bg-secondary);border-radius:8px">
+                <div style="font-size:12px;color:var(--text-secondary)">Miles</div>
+                <div style="font-size:16px;font-weight:600;font-family:var(--font-mono)">${miles.toLocaleString()}</div>
               </div>
-              <div style="text-align:center;padding:16px;background:#fef3c7;border-radius:8px;border:2px solid #f59e0b">
-                <div style="font-size:12px;color:#92400e">Driver Cut</div>
-                <div style="font-size:16px;font-weight:600;color:#b45309">${trip.driver_cut_percent || 32}%</div>
+              <div style="text-align:center;padding:16px;background:var(--amber-dim);border-radius:8px;border:1px solid var(--amber)">
+                <div style="font-size:12px;color:var(--amber)">Driver Cut</div>
+                <div style="font-size:16px;font-weight:600;color:var(--amber)">${trip.driver_cut_percent || 32}%</div>
               </div>
             </div>
 
             <!-- Financial Breakdown -->
             <div class="card" style="margin-bottom:24px">
-              <div class="card-header"><h3>Financial Breakdown</h3></div>
+              <div class="card-header"><h3 style="font-size:14px;font-weight:600">Financial Breakdown</h3></div>
               <div style="padding:20px">
-                <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0">
+                <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
                   <span>Gross Revenue (${fin.vehicleCount} vehicles)</span>
-                  <strong style="color:#22c55e">${formatMoney(fin.loadRevenue)}</strong>
+                  <strong style="color:var(--green);font-family:var(--font-mono)">${formatMoney(fin.loadRevenue)}</strong>
                 </div>
-                <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0">
-                  <span style="color:#ef4444">− Broker Fees</span>
-                  <span style="color:#ef4444">${formatMoney(fin.brokerFee)}</span>
+                <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+                  <span style="color:var(--red)">− Broker Fees</span>
+                  <span style="color:var(--red);font-family:var(--font-mono)">${formatMoney(fin.brokerFee)}</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0">
-                  <span style="color:#ef4444">− Local Fees</span>
-                  <span style="color:#ef4444">${formatMoney(fin.localFees)}</span>
+                <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+                  <span style="color:var(--red)">− Local Fees</span>
+                  <span style="color:var(--red);font-family:var(--font-mono)">${formatMoney(fin.localFees)}</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;padding:12px 0;background:#f0fdf4;margin:0 -20px;padding-left:20px;padding-right:20px">
+                <div style="display:flex;justify-content:space-between;padding:12px 0;background:var(--green-dim);margin:0 -20px;padding-left:20px;padding-right:20px">
                   <strong>= Clean Revenue</strong>
-                  <strong style="color:#22c55e">${formatMoney(fin.cleanGross)}</strong>
+                  <strong style="color:var(--green);font-family:var(--font-mono)">${formatMoney(fin.cleanGross)}</strong>
                 </div>
-                <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0">
-                  <span style="color:#ef4444">− Driver Pay (${trip.driver_cut_percent || 32}%)</span>
-                  <span style="color:#ef4444">${formatMoney(fin.driverCut)}</span>
+                <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+                  <span style="color:var(--red)">− Driver Pay (${trip.driver_cut_percent || 32}%)</span>
+                  <span style="color:var(--red);font-family:var(--font-mono)">${formatMoney(fin.driverCut)}</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0">
-                  <span style="color:#ef4444">− Trip Expenses</span>
-                  <span style="color:#ef4444">${formatMoney(fin.totalExpenses)}</span>
+                <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+                  <span style="color:var(--red)">− Trip Expenses</span>
+                  <span style="color:var(--red);font-family:var(--font-mono)">${formatMoney(fin.totalExpenses)}</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;padding:16px 0;margin-top:8px;background:${fin.netProfit >= 0 ? '#dcfce7' : '#fee2e2'};margin:8px -20px -20px -20px;padding:16px 20px;border-radius:0 0 8px 8px">
+                <div style="display:flex;justify-content:space-between;padding:16px 0;margin-top:8px;background:${fin.netProfit >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'};margin:8px -20px -20px -20px;padding:16px 20px;border-radius:0 0 8px 8px">
                   <strong style="font-size:18px">NET PROFIT</strong>
-                  <strong style="font-size:18px;color:${fin.netProfit >= 0 ? '#16a34a' : '#dc2626'}">${formatMoney(fin.netProfit)} (${margin.toFixed(1)}%)</strong>
+                  <strong style="font-size:18px;color:${fin.netProfit >= 0 ? 'var(--green)' : 'var(--red)'};font-family:var(--font-mono)">${formatMoney(fin.netProfit)} (${margin.toFixed(1)}%)</strong>
                 </div>
               </div>
             </div>
 
             <!-- Vehicles/Orders -->
             <div class="card" style="margin-bottom:24px">
-              <div class="card-header"><h3>Vehicles (${orders.length})</h3></div>
+              <div class="card-header"><h3 style="font-size:14px;font-weight:600">Vehicles (${orders.length})</h3></div>
               <div class="table-wrapper">
-                <table>
+                <table class="data-table">
                   <thead><tr><th>Order</th><th>Vehicle</th><th>Origin</th><th>Destination</th><th>Revenue</th><th>Broker Fee</th></tr></thead>
                   <tbody>
-                    ${orders.length === 0 ? '<tr><td colspan="6" style="text-align:center;padding:20px;color:#64748b">No orders</td></tr>' :
+                    ${orders.length === 0 ? '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-secondary)">No orders</td></tr>' :
                     orders.map(o => `
                       <tr>
                         <td>${o.order_number || '-'}</td>
                         <td>${o.vehicle_year || ''} ${o.vehicle_make || ''} ${o.vehicle_model || ''}</td>
                         <td>${o.origin || '-'}</td>
                         <td>${o.destination || '-'}</td>
-                        <td class="money">${formatMoney(o.revenue)}</td>
-                        <td class="money" style="color:#ef4444">${formatMoney(o.broker_fee)}</td>
+                        <td class="money" style="font-family:var(--font-mono)">${formatMoney(o.revenue)}</td>
+                        <td class="money" style="color:var(--red);font-family:var(--font-mono)">${formatMoney(o.broker_fee)}</td>
                       </tr>
                     `).join('')}
                   </tbody>
@@ -37937,17 +37918,17 @@
 
             <!-- Trip Expenses -->
             <div class="card">
-              <div class="card-header"><h3>Trip Expenses (${expenses.length})</h3></div>
+              <div class="card-header"><h3 style="font-size:14px;font-weight:600">Trip Expenses (${expenses.length})</h3></div>
               <div class="table-wrapper">
-                <table>
+                <table class="data-table">
                   <thead><tr><th>Category</th><th>Description</th><th>Amount</th></tr></thead>
                   <tbody>
-                    ${expenses.length === 0 ? '<tr><td colspan="3" style="text-align:center;padding:20px;color:#64748b">No expenses recorded</td></tr>' :
+                    ${expenses.length === 0 ? '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--text-secondary)">No expenses recorded</td></tr>' :
                     expenses.map(e => `
                       <tr>
                         <td><span class="badge badge-blue">${e.category || 'OTHER'}</span></td>
                         <td>${e.description || '-'}</td>
-                        <td class="money">${formatMoney(e.amount)}</td>
+                        <td class="money" style="font-family:var(--font-mono)">${formatMoney(e.amount)}</td>
                       </tr>
                     `).join('')}
                   </tbody>
