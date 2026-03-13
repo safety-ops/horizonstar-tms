@@ -15,19 +15,6 @@ async function initApp() {
   // Initialize Supabase client
   initSupabase();
 
-  // Check for password recovery token in URL hash (must happen before any rendering)
-  if (window.location.hash && window.location.hash.includes('type=recovery')) {
-    sb.auth.onAuthStateChange(function(event, session) {
-      if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
-        authSession = session;
-        if (typeof showPasswordResetForm === 'function') {
-          showPasswordResetForm(session);
-        }
-      }
-    });
-    return; // Don't proceed with normal app init — wait for recovery event
-  }
-
   // Check for existing session
   if (currentUser) {
     console.log('✅ User session found:', currentUser.email);

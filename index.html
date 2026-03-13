@@ -45581,8 +45581,12 @@ function jsonResponse(data, status = 200) {
         return;
       }
       
-      // Not logged in or no valid session, show login
-      renderLogin();
+      // Not logged in or no valid session
+      if (window.location.hash && window.location.hash.includes('type=recovery')) {
+        // Password recovery link — don't render login, let onAuthStateChange handler show reset form
+      } else {
+        renderLogin();
+      }
     })();
     
     // ============ PWA SERVICE WORKER ============
