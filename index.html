@@ -27202,10 +27202,10 @@
       const iftaDates = getIFTADueDates();
       const nextIFTA = iftaDates.find(d => d.due >= today) || iftaDates[0];
       
-      c.innerHTML = '<div class="card" style="margin-bottom:24px;background:var(--blue-dim);padding:16px;border:1px solid var(--blue)"><strong>[[icon:calendar]] Next IFTA Filing:</strong> ' + nextIFTA.quarter + ' (' + nextIFTA.period + ') - Due: <strong>' + formatDate(nextIFTA.due) + '</strong></div>' +
-        
-        '<div class="card" style="margin-bottom:24px"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3>[[icon:clipboard]] Compliance Tasks</h3><button class="btn btn-primary" onclick="openComplianceTaskModal()">+ Add Task</button></div>' +
-        '<div class="table-wrapper"><table><thead><tr><th>Task</th><th>Frequency</th><th>Last Completed</th><th>Next Due</th><th>Status</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
+      c.innerHTML = '<div style="background:var(--blue-dim);border-left:3px solid var(--blue);border-radius:6px;padding:14px 16px;margin-bottom:24px"><strong>[[icon:calendar]] Next IFTA Filing:</strong> ' + nextIFTA.quarter + ' (' + nextIFTA.period + ') - Due: <strong>' + formatDate(nextIFTA.due) + '</strong></div>' +
+
+        '<div class="card card-flush" style="margin-bottom:24px"><div class="section-header" style="display:flex;justify-content:space-between;align-items:center"><span class="section-header-title">[[icon:clipboard]] Compliance Tasks</span><button class="btn btn-primary" onclick="openComplianceTaskModal()">+ Add Task</button></div>' +
+        '<div class="table-wrapper"><table class="data-table"><thead><tr><th>Task</th><th>Frequency</th><th>Last Completed</th><th>Next Due</th><th>Status</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
         (tasks.length === 0 ? '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted)">No tasks added. Click "+ Add Task" or use default tasks below.</td></tr>' :
         tasks.map(t => {
           const isOverdue = t.next_due_date && t.next_due_date < today;
@@ -27220,7 +27220,7 @@
         '</tbody></table></div></div>' +
         
         // Default tasks helper
-        '<div class="card"><div class="card-header"><h4>[[icon:note]] Standard Compliance Tasks Reference</h4></div><div class="table-wrapper"><table><thead><tr><th>Task</th><th>Frequency</th><th>Action</th></tr></thead><tbody>' +
+        '<div class="card card-flush"><div class="section-header"><span class="section-header-title">[[icon:note]] Standard Compliance Tasks Reference</span></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Task</th><th>Frequency</th><th>Action</th></tr></thead><tbody>' +
         defaultTasks.map(dt => {
           const exists = tasks.find(t => t.task_name === dt.name);
           return '<tr><td><strong>' + dt.name + '</strong><br><span style="font-size:11px;color:var(--text-muted)">' + dt.description + '</span></td><td><span class="badge badge-blue">' + dt.frequency + '</span></td><td>' + (exists ? '<span class="badge badge-green">Added</span>' : '<button class="btn btn-secondary btn-sm" onclick="addDefaultComplianceTask(\'' + dt.name.replace(/'/g, "\\'") + '\',\'' + dt.frequency + '\',\'' + dt.description.replace(/'/g, "\\'") + '\')">+ Add</button>') + '</td></tr>';
@@ -27334,10 +27334,10 @@
         });
       });
       
-      const alertsHtml = alerts.length > 0 ? '<div style="background:var(--red-dim);border:1px solid #fecaca;border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--danger)">[[icon:alert]] Expiring Soon (' + alerts.length + ')</strong><div style="margin-top:8px">' + alerts.slice(0, 5).map(a => '<span class="badge badge-amber" style="margin:4px">' + a.name + ' - ' + a.doc + ' (' + (a.days < 0 ? 'EXPIRED' : a.days + 'd') + ')</span>').join('') + '</div></div>' : '';
-      
+      const alertsHtml = alerts.length > 0 ? '<div style="background:var(--red-dim);border-left:3px solid var(--red);border-radius:6px;padding:14px 16px;margin-bottom:24px"><strong style="color:var(--red)">[[icon:alert]] Expiring Soon (' + alerts.length + ')</strong><div style="margin-top:8px">' + alerts.slice(0, 5).map(a => '<span class="badge ' + (a.days < 0 ? 'badge-red' : 'badge-amber') + '" style="margin:4px">' + a.name + ' - ' + a.doc + ' (' + (a.days < 0 ? 'EXPIRED' : a.days + 'd') + ')</span>').join('') + '</div></div>' : '';
+
       c.innerHTML = alertsHtml +
-        '<div class="card"><div class="table-wrapper"><table><thead><tr><th>Driver</th><th>CDL</th><th>Medical Card</th><th>MVR</th><th>PSP Report</th><th>Other</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
+        '<div class="card card-flush"><div class="section-header"><span class="section-header-title">[[icon:user]] Driver Files</span></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Driver</th><th>CDL</th><th>Medical Card</th><th>MVR</th><th>PSP Report</th><th>Other</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
         (appData.drivers.length === 0 ? '<tr><td colspan="7" style="text-align:center;padding:40px">No drivers</td></tr>' :
         appData.drivers.map(d => {
           const files = driverFilesData.filter(f => f.driver_id === d.id);
@@ -27370,7 +27370,7 @@
         } catch(e) { console.error('Failed to fetch truck_files:', e); }
       }
       
-      c.innerHTML = '<div class="card"><div class="table-wrapper"><table><thead><tr><th>Truck</th><th>Registration</th><th>Annual Insp</th><th>PA Insp</th><th>IRP</th><th>Insurance</th><th>Actions</th></tr></thead><tbody>' +
+      c.innerHTML = '<div class="card card-flush"><div class="section-header"><span class="section-header-title">[[icon:truck]] Truck Files</span></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Truck</th><th>Registration</th><th>Annual Insp</th><th>PA Insp</th><th>IRP</th><th>Insurance</th><th>Actions</th></tr></thead><tbody>' +
         (appData.trucks.length === 0 ? '<tr><td colspan="7" style="text-align:center;padding:40px">No trucks</td></tr>' :
         appData.trucks.map(t => {
           const files = truckFilesData.filter(f => f.truck_id === t.id);
@@ -27431,7 +27431,7 @@
       const customFiles = files.filter(f => f.category === 'CUSTOM');
       const customFolders = [...new Set(customFiles.map(f => f.folder_name).filter(Boolean))];
 
-      const alertsHtml = alerts.length > 0 ? '<div style="background:var(--red-dim);border:1px solid #fecaca;border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--danger)">[[icon:alert]] Expiring Soon (' + alerts.length + ')</strong><div style="margin-top:8px">' + alerts.slice(0, 5).map(a => '<span class="badge badge-amber" style="margin:4px">' + a.doc + ' (' + (a.days < 0 ? 'EXPIRED' : a.days + 'd') + ')</span>').join('') + '</div></div>' : '';
+      const alertsHtml = alerts.length > 0 ? '<div style="background:var(--red-dim);border-left:3px solid var(--red);border-radius:6px;padding:14px 16px;margin-bottom:24px"><strong style="color:var(--red)">[[icon:alert]] Expiring Soon (' + alerts.length + ')</strong><div style="margin-top:8px">' + alerts.slice(0, 5).map(a => '<span class="badge ' + (a.days < 0 ? 'badge-red' : 'badge-amber') + '" style="margin:4px">' + a.doc + ' (' + (a.days < 0 ? 'EXPIRED' : a.days + 'd') + ')</span>').join('') + '</div></div>' : '';
 
       // Build file status rows
       const getFileStatus = (fileType) => {
@@ -27448,8 +27448,8 @@
       };
 
       c.innerHTML = alertsHtml +
-        '<div class="card" style="margin-bottom:24px"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3>[[icon:building]] Company Qualification Files</h3></div>' +
-        '<div class="table-wrapper"><table><thead><tr><th>Document</th><th>Status</th><th>Expires</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
+        '<div class="card card-flush" style="margin-bottom:24px"><div class="section-header" style="display:flex;justify-content:space-between;align-items:center"><span class="section-header-title">[[icon:building]] Company Qualification Files</span></div>' +
+        '<div class="table-wrapper"><table class="data-table"><thead><tr><th>Document</th><th>Status</th><th>Expires</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
         COMPANY_FILE_TYPES.map(ft => {
           const status = getFileStatus(ft);
           return '<tr><td><strong>' + ft.label + '</strong></td><td>' + status.status + '</td><td>' + status.expires + '</td><td class="sticky-col">' +
@@ -27461,12 +27461,12 @@
         '</tbody></table></div></div>' +
 
         // Custom Folders Section
-        '<div class="card"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3>[[icon:folder_open]] Custom Folders</h3><button class="btn btn-primary btn-sm" onclick="openCompanyFolderModal()">+ New Folder</button></div>' +
+        '<div class="card"><div class="section-header" style="display:flex;justify-content:space-between;align-items:center"><span class="section-header-title">[[icon:folder_open]] Custom Folders</span><button class="btn btn-primary btn-sm" onclick="openCompanyFolderModal()">+ New Folder</button></div>' +
         '<div style="padding:16px">' +
         (customFolders.length === 0 ? '<div style="text-align:center;color:var(--text-muted);padding:20px">No custom folders. Click "+ New Folder" to create one.</div>' :
         customFolders.map(folder => {
           const folderFiles = customFiles.filter(f => f.folder_name === folder);
-          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--bg-darker);border-radius:8px;margin-bottom:8px"><div><strong>[[icon:folder]] ' + folder + '</strong><span style="margin-left:8px;font-size:12px;color:var(--text-muted)">(' + folderFiles.length + ' file' + (folderFiles.length !== 1 ? 's' : '') + ')</span></div><div class="actions"><button class="action-btn view" onclick="viewCompanyFolder(\'' + folder.replace(/'/g, "\\'") + '\')">Manage</button></div></div>';
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--bg-secondary);border-radius:8px;margin-bottom:8px"><div><strong>[[icon:folder]] ' + folder + '</strong><span style="margin-left:8px;font-size:12px;color:var(--text-muted)">(' + folderFiles.length + ' file' + (folderFiles.length !== 1 ? 's' : '') + ')</span></div><div class="actions"><button class="action-btn view" onclick="viewCompanyFolder(\'' + folder.replace(/'/g, "\\'") + '\')">Manage</button></div></div>';
         }).join('')) +
         '</div></div>';
     }
@@ -27662,14 +27662,16 @@
         } catch(e) { console.error('Failed to fetch driver compliance data:', e); }
       }
       
-      c.innerHTML = '<div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">' +
-        '<button class="btn ' + (dcTab === 'tickets' ? 'btn-primary' : 'btn-secondary') + '" onclick="dcTab=\'tickets\';renderCompliance(document.getElementById(\'main-content\'))">[[icon:ticket]] Tickets (' + tickets.length + ')</button>' +
-        '<button class="btn ' + (dcTab === 'violations' ? 'btn-primary' : 'btn-secondary') + '" style="' + (dcTab === 'violations' ? 'background:var(--purple);border-color:var(--purple)' : '') + '" onclick="dcTab=\'violations\';renderCompliance(document.getElementById(\'main-content\'))">[[icon:alert]] Violations (' + violations.length + ')</button>' +
-        '<button class="btn ' + (dcTab === 'claims' ? 'btn-primary' : 'btn-secondary') + '" style="' + (dcTab === 'claims' ? 'background:var(--amber);border-color:var(--amber)' : '') + '" onclick="dcTab=\'claims\';renderCompliance(document.getElementById(\'main-content\'))">[[icon:spark]] Claims (' + claims.length + ')</button>' +
+      c.innerHTML = '<div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center">' +
+        '<div class="segmented-control">' +
+        '<button class="segmented-control-btn' + (dcTab === 'tickets' ? ' active' : '') + '" onclick="dcTab=\'tickets\';renderCompliance(document.getElementById(\'main-content\'))">[[icon:ticket]] Tickets (' + tickets.length + ')</button>' +
+        '<button class="segmented-control-btn' + (dcTab === 'violations' ? ' active' : '') + '" onclick="dcTab=\'violations\';renderCompliance(document.getElementById(\'main-content\'))">[[icon:alert]] Violations (' + violations.length + ')</button>' +
+        '<button class="segmented-control-btn' + (dcTab === 'claims' ? ' active' : '') + '" onclick="dcTab=\'claims\';renderCompliance(document.getElementById(\'main-content\'))">[[icon:spark]] Claims (' + claims.length + ')</button>' +
+        '</div>' +
         '<div style="margin-left:auto;display:flex;gap:8px">' +
-        '<button class="btn btn-primary btn-sm" onclick="openTicketModal()">+ Ticket</button>' +
-        '<button class="btn btn-sm" style="background:var(--purple);border-color:var(--purple);color:white" onclick="openViolationModal()">+ Violation</button>' +
-        '<button class="btn btn-sm" style="background:var(--amber);border-color:var(--amber);color:white" onclick="openClaimModal()">+ Claim</button>' +
+        '<button class="btn btn-secondary btn-sm" onclick="openTicketModal()">+ Ticket</button>' +
+        '<button class="btn btn-secondary btn-sm" onclick="openViolationModal()">+ Violation</button>' +
+        '<button class="btn btn-secondary btn-sm" onclick="openClaimModal()">+ Claim</button>' +
         '</div></div>' +
         '<div id="dcSubContent"></div>';
       
@@ -27691,8 +27693,8 @@
         } catch(e) { console.error('Failed to fetch accidents:', e); }
       }
 
-      c.innerHTML = '<div class="card"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3>[[icon:siren]] Accident Registry</h3><button class="btn btn-primary" onclick="openAccidentModal()">+ Log Accident</button></div>' +
-        '<div class="table-wrapper"><table><thead><tr><th>Date/Time</th><th>Driver</th><th>Type</th><th>Location</th><th>Deaths</th><th>Injuries</th><th>HAZMAT</th><th>Drug Test</th><th>Report</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
+      c.innerHTML = '<div class="card card-flush"><div class="section-header" style="display:flex;justify-content:space-between;align-items:center"><span class="section-header-title">[[icon:siren]] Accident Registry</span><button class="btn btn-primary" onclick="openAccidentModal()">+ Log Accident</button></div>' +
+        '<div class="table-wrapper"><table class="data-table"><thead><tr><th>Date/Time</th><th>Driver</th><th>Type</th><th>Location</th><th>Deaths</th><th>Injuries</th><th>HAZMAT</th><th>Drug Test</th><th>Report</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
         (accidents.length === 0 ? '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted)">No accidents recorded [[icon:check]]</td></tr>' :
         accidents.sort((a, b) => (b.accident_date || '').localeCompare(a.accident_date || '')).map(a => {
           const driver = appData.drivers.find(d => d.id === a.driver_id);
@@ -27794,7 +27796,7 @@
 
     function renderComplianceDrivers() {
       const today = new Date();
-      return '<div class="table-wrapper"><table><thead><tr><th>Driver</th><th>CDL</th><th>Medical Card</th><th>MVR</th><th>PSP Report</th><th>Other Files</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
+      return '<div class="table-wrapper"><table class="data-table"><thead><tr><th>Driver</th><th>CDL</th><th>Medical Card</th><th>MVR</th><th>PSP Report</th><th>Other Files</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
         (appData.drivers.length === 0 ? '<tr><td colspan="7" style="text-align:center;padding:40px">No drivers yet</td></tr>' :
         appData.drivers.map(d => {
           const files = (appData.driver_files || []).filter(f => f.driver_id === d.id);
@@ -27816,7 +27818,7 @@
 
     function renderComplianceTrucks() {
       const today = new Date();
-      return '<div class="table-wrapper"><table><thead><tr><th>Truck</th><th>Registration</th><th>Annual Inspection</th><th>PA Inspection</th><th>Actions</th></tr></thead><tbody>' +
+      return '<div class="table-wrapper"><table class="data-table"><thead><tr><th>Truck</th><th>Registration</th><th>Annual Inspection</th><th>PA Inspection</th><th>Actions</th></tr></thead><tbody>' +
         (appData.trucks.length === 0 ? '<tr><td colspan="5" style="text-align:center;padding:40px">No trucks yet</td></tr>' :
         appData.trucks.map(t => {
           const files = (appData.truck_files || []).filter(f => f.truck_id === t.id);
@@ -27896,13 +27898,13 @@
         '</tbody></table></div></div>' +
         
         // Custom Folders Section
-        '<div class="card" style="margin-bottom:24px"><div class="card-header" style="background:#0891b2;color:white;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">[[icon:folder_open]] Custom Folders</h3><button class="btn" style="background:white;color:#0891b2;padding:6px 12px;font-size:13px" onclick="openCustomFolderModal(' + truckId + ',\'truck\')">+ New Folder</button></div>' +
+        '<div class="card" style="margin-bottom:24px"><div class="section-header" style="display:flex;justify-content:space-between;align-items:center"><span class="section-header-title">[[icon:folder_open]] Custom Folders</span><button class="btn btn-secondary btn-sm" onclick="openCustomFolderModal(' + truckId + ',\'truck\')">+ New Folder</button></div>' +
         (customFolders.length === 0 ? '<div style="padding:40px;text-align:center;color:var(--text-secondary)">No custom folders yet. Click "+ New Folder" to create one.</div>' :
         '<div style="padding:16px">' +
         customFolders.map(folder => {
           const folderFiles = customFiles.filter(f => (f.folder_name || 'Uncategorized') === folder);
-          return '<div style="margin-bottom:16px;border:1px solid #e5e7eb;border-radius:8px"><div style="background:#f0f9ff;padding:12px 16px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><strong>[[icon:folder]] ' + folder + ' (' + folderFiles.length + ' files)</strong><button class="action-btn edit" onclick="openCustomFileUpload(' + truckId + ',\'' + folder.replace(/'/g, "\\'") + '\',\'truck\')">+ Add File</button></div>' +
-            '<div class="table-wrapper"><table><thead><tr><th>File Name</th><th>Type</th><th>Uploaded</th><th>Notes</th><th>Actions</th></tr></thead><tbody>' +
+          return '<div style="margin-bottom:16px;border:1px solid var(--border);border-radius:8px"><div style="background:var(--bg-secondary);padding:12px 16px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><strong>[[icon:folder]] ' + folder + ' (' + folderFiles.length + ' files)</strong><button class="action-btn edit" onclick="openCustomFileUpload(' + truckId + ',\'' + folder.replace(/'/g, "\\'") + '\',\'truck\')">+ Add File</button></div>' +
+            '<div class="table-wrapper"><table class="data-table"><thead><tr><th>File Name</th><th>Type</th><th>Uploaded</th><th>Notes</th><th>Actions</th></tr></thead><tbody>' +
             folderFiles.map(f => '<tr><td>' + f.file_name + '</td><td>' + (f.file_type || '-') + '</td><td>' + formatDate(f.created_at) + '</td><td>' + (f.notes || '-') + '</td><td><div class="actions"><button class="action-btn view" onclick="viewTruckFile(' + f.id + ')">View</button><button class="action-btn delete" onclick="deleteTruckFile(' + f.id + ',' + truckId + ')">Del</button></div></td></tr>').join('') +
             '</tbody></table></div></div>';
         }).join('') +
@@ -27923,7 +27925,7 @@
       m.innerHTML = '<div class="modal" style="max-width:450px"><div class="modal-header"><h3>[[icon:upload]] Upload ' + fileType.replace(/_/g, ' ') + '</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body">' +
         '<div class="form-group"><label>File (PDF, Image, etc.)</label><input type="file" id="truckFileUpload" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"></div>' +
         '<div class="form-group"><label>Notes (Optional)</label><input id="truckFileNotes" placeholder="Any additional notes..."></div>' +
-        (hasExpiry ? '<div class="form-group"><label>Expiration Date</label><input type="date" id="truckFileExpiry"></div><div style="background:var(--dim-amber);padding:12px;border-radius:8px;font-size:13px;color:#92400e">[[icon:alert]] You will receive reminders at 7 days, 3 days, 1 day, and on expiration date.</div>' : '') +
+        (hasExpiry ? '<div class="form-group"><label>Expiration Date</label><input type="date" id="truckFileExpiry"></div><div style="background:var(--amber-dim);border-left:3px solid var(--amber);padding:12px;border-radius:6px;font-size:13px;color:var(--text-secondary)">[[icon:alert]] You will receive reminders at 7 days, 3 days, 1 day, and on expiration date.</div>' : '') +
         '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="uploadTruckFile(' + truckId + ',\'' + fileType + '\',' + hasExpiry + ')">Upload</button></div></div>';
       document.body.appendChild(m);
     }
@@ -28224,7 +28226,7 @@
           
           // Update preview to show it will be saved
           const preview = document.getElementById('invoicePreview');
-          preview.innerHTML = '<span style="color:var(--green)">[[icon:check]] ' + file.name + '</span><br><span style="font-size:11px;color:#047857;background:var(--green-dim);padding:2px 8px;border-radius:4px;margin-top:4px;display:inline-block">[[icon:paperclip]] Invoice will be saved with record</span>';
+          preview.innerHTML = '<span style="color:var(--green)">[[icon:check]] ' + file.name + '</span><br><span style="font-size:11px;color:var(--green);background:var(--green-dim);padding:2px 8px;border-radius:4px;margin-top:4px;display:inline-block">[[icon:paperclip]] Invoice will be saved with record</span>';
           
           showToast('[[icon:check]] Invoice data extracted! Invoice will be saved automatically.');
         } else {
@@ -28440,7 +28442,7 @@
       if (dcFilterDriver) filtered = filtered.filter(t => t.driver_id == dcFilterDriver);
       
       c.innerHTML = '<div class="card" style="padding:16px;margin-bottom:20px"><div style="display:flex;gap:16px;align-items:end;flex-wrap:wrap">' +
-        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Status</label><select onchange="dcFilterStatus=this.value;renderDriverCompliance(document.getElementById(\'main-content\'))">' +
+        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Status</label><select class="select" onchange="dcFilterStatus=this.value;renderDriverCompliance(document.getElementById(\'main-content\'))">' +
         '<option value="">All Statuses</option>' +
         '<option value="OPEN"' + (dcFilterStatus === 'OPEN' ? ' selected' : '') + '>Open</option>' +
         '<option value="IN_PROGRESS"' + (dcFilterStatus === 'IN_PROGRESS' ? ' selected' : '') + '>In Progress</option>' +
@@ -28450,15 +28452,15 @@
         '<option value="RESOLVED"' + (dcFilterStatus === 'RESOLVED' ? ' selected' : '') + '>Resolved</option>' +
         '<option value="DISMISSED"' + (dcFilterStatus === 'DISMISSED' ? ' selected' : '') + '>Dismissed</option>' +
         '</select></div>' +
-        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Driver</label><select onchange="dcFilterDriver=this.value;renderDriverCompliance(document.getElementById(\'main-content\'))">' +
+        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Driver</label><select class="select" onchange="dcFilterDriver=this.value;renderDriverCompliance(document.getElementById(\'main-content\'))">' +
         '<option value="">All Drivers</option>' +
         appData.drivers.map(d => '<option value="' + d.id + '"' + (dcFilterDriver == d.id ? ' selected' : '') + '>' + d.first_name + ' ' + d.last_name + '</option>').join('') +
         '</select></div>' +
         ((dcFilterStatus || dcFilterDriver) ? '<button class="btn btn-secondary" onclick="dcFilterStatus=\'\';dcFilterDriver=\'\';renderDriverCompliance(document.getElementById(\'main-content\'))">[[icon:x]] Clear</button>' : '') +
         '<div style="margin-left:auto;font-size:13px;color:var(--text-muted)">' + filtered.length + ' of ' + tickets.length + ' tickets</div>' +
         '</div></div>' +
-        
-        '<div class="card"><div class="card-header"><h3>[[icon:ticket]] Tickets</h3></div><div class="table-wrapper"><table><thead><tr>' +
+
+        '<div class="card card-flush"><div class="section-header"><span class="section-header-title">[[icon:ticket]] Tickets</span></div><div class="table-wrapper"><table class="data-table"><thead><tr>' +
         '<th>Driver</th><th>Date</th><th>Description</th><th>Status</th><th>Court Date</th><th>Attorney</th><th>Court Decision</th><th>DataQ</th><th>Files</th><th class="sticky-col">Actions</th>' +
         '</tr></thead><tbody>' +
         (filtered.length === 0 ? '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted)">No tickets found</td></tr>' :
@@ -28490,9 +28492,9 @@
       let filtered = violations;
       if (dcFilterStatus) filtered = filtered.filter(v => v.status === dcFilterStatus);
       if (dcFilterDriver) filtered = filtered.filter(v => v.driver_id == dcFilterDriver);
-      
+
       c.innerHTML = '<div class="card" style="padding:16px;margin-bottom:20px"><div style="display:flex;gap:16px;align-items:end;flex-wrap:wrap">' +
-        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Status</label><select onchange="dcFilterStatus=this.value;renderDriverCompliance(document.getElementById(\'main-content\'))">' +
+        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Status</label><select class="select" onchange="dcFilterStatus=this.value;renderDriverCompliance(document.getElementById(\'main-content\'))">' +
         '<option value="">All Statuses</option>' +
         '<option value="OPEN"' + (dcFilterStatus === 'OPEN' ? ' selected' : '') + '>Open</option>' +
         '<option value="IN_PROGRESS"' + (dcFilterStatus === 'IN_PROGRESS' ? ' selected' : '') + '>In Progress</option>' +
@@ -28500,15 +28502,15 @@
         '<option value="RESOLVED"' + (dcFilterStatus === 'RESOLVED' ? ' selected' : '') + '>Resolved</option>' +
         '<option value="DISMISSED"' + (dcFilterStatus === 'DISMISSED' ? ' selected' : '') + '>Dismissed</option>' +
         '</select></div>' +
-        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Driver</label><select onchange="dcFilterDriver=this.value;renderDriverCompliance(document.getElementById(\'main-content\'))">' +
+        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Driver</label><select class="select" onchange="dcFilterDriver=this.value;renderDriverCompliance(document.getElementById(\'main-content\'))">' +
         '<option value="">All Drivers</option>' +
         appData.drivers.map(d => '<option value="' + d.id + '"' + (dcFilterDriver == d.id ? ' selected' : '') + '>' + d.first_name + ' ' + d.last_name + '</option>').join('') +
         '</select></div>' +
         ((dcFilterStatus || dcFilterDriver) ? '<button class="btn btn-secondary" onclick="dcFilterStatus=\'\';dcFilterDriver=\'\';renderDriverCompliance(document.getElementById(\'main-content\'))">[[icon:x]] Clear</button>' : '') +
         '<div style="margin-left:auto;font-size:13px;color:var(--text-muted)">' + filtered.length + ' of ' + violations.length + ' violations</div>' +
         '</div></div>' +
-        
-        '<div class="card"><div class="card-header"><h3>[[icon:alert]] Violations</h3></div><div class="table-wrapper"><table><thead><tr>' +
+
+        '<div class="card card-flush"><div class="section-header"><span class="section-header-title">[[icon:alert]] Violations</span></div><div class="table-wrapper"><table class="data-table"><thead><tr>' +
         '<th>Driver</th><th>Date</th><th>Type</th><th>Description</th><th>Severity</th><th>Status</th><th>Points</th><th>Fine</th><th>Files</th><th class="sticky-col">Actions</th>' +
         '</tr></thead><tbody>' +
         (filtered.length === 0 ? '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted)">No violations found</td></tr>' :
@@ -28540,9 +28542,9 @@
       let filtered = claims;
       if (dcFilterStatus) filtered = filtered.filter(cl => cl.status === dcFilterStatus);
       if (dcFilterDriver) filtered = filtered.filter(cl => cl.driver_id == dcFilterDriver);
-      
+
       c.innerHTML = '<div class="card" style="padding:16px;margin-bottom:20px"><div style="display:flex;gap:16px;align-items:end;flex-wrap:wrap">' +
-        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Status</label><select onchange="dcFilterStatus=this.value;renderDriverCompliance(document.getElementById(\'main-content\'))">' +
+        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Status</label><select class="select" onchange="dcFilterStatus=this.value;renderDriverCompliance(document.getElementById(\'main-content\'))">' +
         '<option value="">All Statuses</option>' +
         '<option value="OPEN"' + (dcFilterStatus === 'OPEN' ? ' selected' : '') + '>Open</option>' +
         '<option value="UNDER_REVIEW"' + (dcFilterStatus === 'UNDER_REVIEW' ? ' selected' : '') + '>Under Review</option>' +
@@ -28550,22 +28552,22 @@
         '<option value="DENIED"' + (dcFilterStatus === 'DENIED' ? ' selected' : '') + '>Denied</option>' +
         '<option value="SETTLED"' + (dcFilterStatus === 'SETTLED' ? ' selected' : '') + '>Settled</option>' +
         '</select></div>' +
-        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Driver</label><select onchange="dcFilterDriver=this.value;renderDriverCompliance(document.getElementById(\'main-content\'))">' +
+        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Driver</label><select class="select" onchange="dcFilterDriver=this.value;renderDriverCompliance(document.getElementById(\'main-content\'))">' +
         '<option value="">All Drivers</option>' +
         appData.drivers.map(d => '<option value="' + d.id + '"' + (dcFilterDriver == d.id ? ' selected' : '') + '>' + d.first_name + ' ' + d.last_name + '</option>').join('') +
         '</select></div>' +
         ((dcFilterStatus || dcFilterDriver) ? '<button class="btn btn-secondary" onclick="dcFilterStatus=\'\';dcFilterDriver=\'\';renderDriverCompliance(document.getElementById(\'main-content\'))">[[icon:x]] Clear</button>' : '') +
         '<div style="margin-left:auto;font-size:13px;color:var(--text-muted)">' + filtered.length + ' of ' + claims.length + ' claims</div>' +
         '</div></div>' +
-        
+
         // Financial Summary
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px">' +
-        '<div style="background:var(--dim-amber);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#92400e">Total Claimed</div><div style="font-size:20px;font-weight:600;color:var(--amber)">' + formatMoney(filtered.reduce((s,cl) => s + parseFloat(cl.claim_amount || 0), 0)) + '</div></div>' +
-        '<div style="background:var(--dim-red);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#991b1b">Driver Fault (Paid)</div><div style="font-size:20px;font-weight:600;color:var(--red)">' + formatMoney(filtered.filter(cl => cl.fault_party === 'DRIVER' && cl.status === 'SETTLED').reduce((s,cl) => s + parseFloat(cl.settlement_amount || cl.claim_amount || 0), 0)) + '</div></div>' +
-        '<div style="background:var(--dim-green);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#166534">Recovered</div><div style="font-size:20px;font-weight:600;color:var(--green)">' + formatMoney(filtered.filter(cl => cl.fault_party !== 'DRIVER' && cl.status === 'SETTLED').reduce((s,cl) => s + parseFloat(cl.settlement_amount || 0), 0)) + '</div></div>' +
+        '<div class="stat-flat stat-card--amber"><div class="stat-card-label">Total Claimed</div><div class="stat-card-value" style="font-family:var(--font-mono)">' + formatMoney(filtered.reduce((s,cl) => s + parseFloat(cl.claim_amount || 0), 0)) + '</div></div>' +
+        '<div class="stat-flat stat-card--red"><div class="stat-card-label">Driver Fault (Paid)</div><div class="stat-card-value" style="font-family:var(--font-mono)">' + formatMoney(filtered.filter(cl => cl.fault_party === 'DRIVER' && cl.status === 'SETTLED').reduce((s,cl) => s + parseFloat(cl.settlement_amount || cl.claim_amount || 0), 0)) + '</div></div>' +
+        '<div class="stat-flat stat-card--green"><div class="stat-card-label">Recovered</div><div class="stat-card-value" style="font-family:var(--font-mono)">' + formatMoney(filtered.filter(cl => cl.fault_party !== 'DRIVER' && cl.status === 'SETTLED').reduce((s,cl) => s + parseFloat(cl.settlement_amount || 0), 0)) + '</div></div>' +
         '</div>' +
-        
-        '<div class="card"><div class="card-header"><h3>[[icon:spark]] Damage Claims</h3></div><div class="table-wrapper"><table><thead><tr>' +
+
+        '<div class="card card-flush"><div class="section-header"><span class="section-header-title">[[icon:spark]] Damage Claims</span></div><div class="table-wrapper"><table class="data-table"><thead><tr>' +
         '<th>Claim #</th><th>Date</th><th>Driver</th><th>Type</th><th>Description</th><th>Fault</th><th>Amount</th><th>Status</th><th>Files</th><th class="sticky-col">Actions</th>' +
         '</tr></thead><tbody>' +
         (filtered.length === 0 ? '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted)">No claims found</td></tr>' :
