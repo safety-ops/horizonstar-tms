@@ -907,6 +907,180 @@ h4 { font-size: var(--text-lg); }
   border-radius: 999px;
 }
 
+/* ============================================================
+   REUSABLE COMPONENT LIBRARY — v1.4 Stripe/Linear Aesthetic
+   Button hierarchy, inputs, badges, stat cards
+   ============================================================ */
+
+/* --- Buttons --- */
+.btn-primary {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
+  border: 1px solid var(--btn-primary-bg);
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+  font-family: inherit;
+  line-height: 1.4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn-primary:hover {
+  background: var(--btn-primary-hover);
+  border-color: var(--btn-primary-hover);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+  font-family: inherit;
+  line-height: 1.4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn-secondary:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+  font-family: inherit;
+  line-height: 1.4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn-ghost:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.btn-ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-danger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+  font-family: inherit;
+  line-height: 1.4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn-danger:hover {
+  background: rgba(220,38,38,0.08);
+}
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --- Inputs --- */
+.input, .select, .textarea {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  width: 100%;
+}
+.input:focus, .select:focus, .textarea:focus {
+  border-color: var(--focus-border);
+  box-shadow: var(--focus-ring);
+  outline: none;
+}
+.input::placeholder, .textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* --- Badge Variants --- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+.badge-success { background: var(--green-dim); color: var(--green); }
+.badge-warning { background: var(--amber-dim); color: var(--amber); }
+.badge-danger { background: var(--red-dim); color: var(--red); }
+.badge-info { background: var(--blue-dim); color: var(--blue); }
+.badge-neutral { background: var(--bg-tertiary); color: var(--text-secondary); }
+
+/* --- Flat Stat Card --- */
+.stat-flat {
+  padding: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.stat-flat-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+.stat-flat-value {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.stat-flat-delta {
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 4px;
+}
+.stat-flat-delta.positive { color: var(--green); }
+.stat-flat-delta.negative { color: var(--red); }
+
 @media (max-width: 1024px) {
   .responsive-split-grid {
     grid-template-columns: 1fr;
