@@ -71,7 +71,7 @@ Requirements and roadmap defined (16 requirements across 3 phases). Never starte
 - [x] **Phase 21: Orders Page Restyle** - Restyle orders page (card view, table view, filters, shared helpers)
 - [x] **Phase 22: Trips & Load Board Restyle** - Restyle trips (dual view, density toggle) and load board
 - [x] **Phase 23: People & Fleet Restyle** - Restyle drivers, local drivers, trucks, brokers, dispatchers pages
-- [ ] **Phase 24: Finance Pages Restyle** - Restyle billing, payroll, financials, trip profitability, fuel, IFTA
+- [x] **Phase 24: Finance Pages Restyle** - Restyle billing, payroll, financials, trip profitability, fuel, IFTA
 - [ ] **Phase 25: Operations & Admin Restyle** - Restyle compliance, maintenance, settings, activity log, tasks, team chat, executive dashboard
 - [ ] **Phase 26: Shared Chrome & Quality Verification** - Restyle sidebar, topbar, modals, login page and verify full-app quality
 
@@ -203,7 +203,14 @@ Plans:
 3. Financials, trip profitability, fuel, and IFTA pages all use clean tab treatments, flat stat cards, and refined tables matching the established aesthetic
 4. Print preview for billing/payroll renders correctly after restyle changes
 
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [x] 24-01-PLAN.md -- Alternating row tint CSS + billing page shell, overview, brokers tabs
+- [x] 24-02-PLAN.md -- Billing invoices/collections tabs + payroll page
+- [x] 24-03-PLAN.md -- Fuel tracking (4 sub-tabs) + IFTA with collapsible sections
+- [x] 24-04-PLAN.md -- Consolidated financials (7 sub-tabs) + trip profitability
+- [x] 24-05-PLAN.md -- Print styles + final anti-pattern sweep
 
 ---
 
@@ -265,11 +272,11 @@ Phases execute in numeric order: 19 → 20 → 21 → 22 → 23 → 24 → 25 �
 | 21. Orders Page Restyle | v1.4 | 2/2 | Complete | 2026-03-13 |
 | 22. Trips & Load Board Restyle | v1.4 | 3/3 | Complete | 2026-03-13 |
 | 23. People & Fleet Restyle | v1.4 | 3/3 | Complete | 2026-03-13 |
-| 24. Finance Pages Restyle | v1.4 | 0/TBD | Not started | - |
+| 24. Finance Pages Restyle | v1.4 | 5/5 | Complete | 2026-03-13 |
 | 25. Operations & Admin Restyle | v1.4 | 0/TBD | Not started | - |
 | 26. Shared Chrome & Quality Verification | v1.4 | 0/TBD | Not started | - |
 
 ---
 
 **Roadmap created**: 2026-02-10
-**Last updated**: 2026-03-13 (Phase 23 complete: 3/3 plans, verified)
+**Last updated**: 2026-03-13 (Phase 24 complete: 5/5 plans, verified)

@@ -41,12 +41,12 @@ Requirements for restyling the entire Web TMS to a Stripe/Linear aesthetic. Page
 
 ### Page Restyles -- Finance
 
-- [ ] **FIN-01**: Billing page restyled
-- [ ] **FIN-02**: Payroll page restyled
-- [ ] **FIN-03**: Financials page restyled
-- [ ] **FIN-04**: Trip Profitability page restyled
-- [ ] **FIN-05**: Fuel page restyled
-- [ ] **FIN-06**: IFTA page restyled
+- [x] **FIN-01**: Billing page restyled
+- [x] **FIN-02**: Payroll page restyled
+- [x] **FIN-03**: Financials page restyled
+- [x] **FIN-04**: Trip Profitability page restyled
+- [x] **FIN-05**: Fuel page restyled
+- [x] **FIN-06**: IFTA page restyled
 
 ### Page Restyles -- Operations & Admin
 
@@ -113,12 +113,12 @@ Requirements for restyling the entire Web TMS to a Stripe/Linear aesthetic. Page
 | PFL-03 | Phase 23 | Complete |
 | PFL-04 | Phase 23 | Complete |
 | PFL-05 | Phase 23 | Complete |
-| FIN-01 | Phase 24 | Pending |
-| FIN-02 | Phase 24 | Pending |
-| FIN-03 | Phase 24 | Pending |
-| FIN-04 | Phase 24 | Pending |
-| FIN-05 | Phase 24 | Pending |
-| FIN-06 | Phase 24 | Pending |
+| FIN-01 | Phase 24 | Complete |
+| FIN-02 | Phase 24 | Complete |
+| FIN-03 | Phase 24 | Complete |
+| FIN-04 | Phase 24 | Complete |
+| FIN-05 | Phase 24 | Complete |
+| FIN-06 | Phase 24 | Complete |
 | OPS-01 | Phase 25 | Pending |
 | OPS-02 | Phase 25 | Pending |
 | OPS-03 | Phase 25 | Pending |
