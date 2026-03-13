@@ -29981,7 +29981,7 @@
 
       // Header with Export button
       html += '<div class="responsive-page-header" style="margin-bottom:24px">';
-      html += '<div><h2 style="margin:0;font-size:18px;font-weight:700;font-family:var(--font-display)">Receivables</h2>';
+      html += '<div><h2 style="margin:0;font-size:18px;font-weight:600;font-family:var(--font-display)">Receivables</h2>';
       html += '<p style="margin:4px 0 0;color:var(--text-muted);font-size:13px">Manage invoices, track payments, monitor aging by broker</p>';
       html += '<div class="responsive-page-actions" style="margin-top:10px"><select onchange="billingPeriod.type=this.value;if(billingPeriod.type===\'year\'&&!billingPeriod.year){billingPeriod.year=new Date().getFullYear();}renderBillingPage(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)"><option value="year"' + (billingPeriod.type === 'year' ? ' selected' : '') + '>Year</option><option value="all"' + (billingPeriod.type === 'all' ? ' selected' : '') + '>All Time</option></select>' + (billingPeriod.type === 'year' ? '<select onchange="billingPeriod.year=parseInt(this.value);renderBillingPage(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)">' + billingYearOptions + '</select>' : '') + '<span style="font-size:12px;background:var(--dim-blue);color:var(--info);padding:6px 10px;border-radius:999px;font-weight:600;border:1px solid var(--info-border)">' + getPeriodLabel(billingPeriod) + '</span>' + (undatedOrderCount > 0 && billingPeriod.type !== 'all' ? '<span style="font-size:12px;background:var(--dim-amber);color:var(--warning);padding:6px 10px;border-radius:999px;font-weight:600;border:1px solid var(--warning-border)">Undated excluded: ' + undatedOrderCount + '</span>' : '') + '</div></div>';
       html += '<div class="responsive-page-actions" style="justify-content:flex-end">';
@@ -29989,20 +29989,13 @@
       html += '</div></div>';
 
       // Segmented Tab Navigation
-      const tabBtnStyle = (key) => {
-        const isActive = billingTab === key;
-        return 'padding:8px 16px;font-size:13px;font-weight:500;border:none;cursor:pointer;transition:all 0.15s;white-space:nowrap;' +
-          (isActive ? 'background:var(--bg-secondary);color:var(--text-primary);box-shadow:var(--shadow-sm);border-radius:var(--radius-sm);' : 'background:transparent;color:var(--text-muted);border-radius:var(--radius-sm);');
-      };
-      html += '<div class="approved-scroll-x" data-scroll-kind="tabs" style="margin-bottom:24px">';
-      html += '<div style="display:inline-flex;min-width:max-content;background:var(--bg-tertiary);border-radius:var(--radius);padding:3px;gap:2px">';
-      html += '<button style="' + tabBtnStyle('overview') + '" onclick="billingTab=\'overview\';renderBillingPage(document.getElementById(\'main-content\'))">Overview</button>';
-      html += '<button style="' + tabBtnStyle('brokers') + '" onclick="billingTab=\'brokers\';renderBillingPage(document.getElementById(\'main-content\'))">Brokers (' + brokerStats.length + ')</button>';
-      html += '<button style="' + tabBtnStyle('invoices') + '" onclick="billingTab=\'invoices\';renderBillingPage(document.getElementById(\'main-content\'))">Invoices (' + unpaidOrders.length + ')</button>';
-
       const followUpCount = getOrdersNeedingFollowUp(resolvedPeriod).length;
-      const collectionsTotal = getOrdersNeedingFollowUp(resolvedPeriod).length + getOrdersWithPromiseToPay(resolvedPeriod).length + getOrdersOnHold(resolvedPeriod).length + getOrdersNoContact(resolvedPeriod).length;
-      html += '<button style="' + tabBtnStyle('collections') + '" onclick="billingTab=\'collections\';renderBillingPage(document.getElementById(\'main-content\'))">Collections' + (followUpCount > 0 ? ' <span style="display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:var(--danger);color:white;font-size:11px;font-weight:700;margin-left:4px">' + followUpCount + '</span>' : '') + '</button>';
+      html += '<div style="margin-bottom:24px">';
+      html += '<div class="segmented-control">';
+      html += '<button class="segmented-control-btn' + (billingTab === 'overview' ? ' active' : '') + '" onclick="billingTab=\'overview\';renderBillingPage(document.getElementById(\'main-content\'))">Overview</button>';
+      html += '<button class="segmented-control-btn' + (billingTab === 'brokers' ? ' active' : '') + '" onclick="billingTab=\'brokers\';renderBillingPage(document.getElementById(\'main-content\'))">Brokers (' + brokerStats.length + ')</button>';
+      html += '<button class="segmented-control-btn' + (billingTab === 'invoices' ? ' active' : '') + '" onclick="billingTab=\'invoices\';renderBillingPage(document.getElementById(\'main-content\'))">Invoices (' + unpaidOrders.length + ')</button>';
+      html += '<button class="segmented-control-btn' + (billingTab === 'collections' ? ' active' : '') + '" onclick="billingTab=\'collections\';renderBillingPage(document.getElementById(\'main-content\'))">Collections' + (followUpCount > 0 ? ' <span style="display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:var(--danger);color:white;font-size:11px;font-weight:600;margin-left:4px">' + followUpCount + '</span>' : '') + '</button>';
       html += '</div></div>';
 
       // Render based on active tab
