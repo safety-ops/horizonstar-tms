@@ -8718,6 +8718,18 @@
       padding: 40px;
       text-align: center;
     }
+
+    /* Dealer portal mobile responsive */
+    @media (max-width: 768px) {
+      .dealer-stats-hero { grid-template-columns: 1fr !important; }
+      .dealer-grid-2col { grid-template-columns: 1fr !important; }
+      .dealer-timeline-steps { flex-direction: column !important; align-items: flex-start !important; }
+      .dealer-timeline-steps .dealer-step { flex-direction: row !important; min-width: unset !important; gap: 12px !important; }
+      .dealer-timeline-steps .dealer-connector { display: none !important; }
+    }
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .dealer-stats-hero { grid-template-columns: repeat(3, 1fr) !important; }
+    }
   </style>
 </head>
 <body>
@@ -16642,7 +16654,8 @@
         } else if (currentPage === 'dealer_submit') {
           renderDealerSubmitVehicle(m);
         } else if (currentPage === 'dealer_bulk_upload') {
-          renderDealerBulkUpload(m);
+          window._dealerSubmitTab = 'bulk';
+          renderDealerSubmitVehicle(m);
         } else if (currentPage === 'dealer_orders') {
           renderDealerOrders(m);
         } else if (currentPage === 'dealer_documents') {
@@ -47693,9 +47706,10 @@ function jsonResponse(data, status = 200) {
           });
         }
 
-        // ── Step 3: Mark application approved (always runs) ──
+        // ── Step 3: Mark application approved and clear stored password (always runs) ──
         await sb.from('dealer_applications').update({
           status: 'approved',
+          password: null,
           reviewed_at: new Date().toISOString(),
           reviewed_by: currentUser?.id
         }).eq('id', id);
@@ -47764,6 +47778,7 @@ function jsonResponse(data, status = 200) {
     // ============================================================
 
     function renderDealerBulkUpload(m) {
+      if (_dealerChatPollInterval) { clearInterval(_dealerChatPollInterval); _dealerChatPollInterval = null; }
       if (!window._bulkUploadData) {
         window._bulkUploadData = { rows: [], results: null, phase: 'upload' };
       }
@@ -47865,7 +47880,7 @@ function jsonResponse(data, status = 200) {
           row._rowNum = i + 1;
         });
         window._bulkUploadData = { rows: rows, results: null, phase: 'preview' };
-        var container = document.getElementById('mainContent') || document.querySelector('[data-page]');
+        var container = document.getElementById('main-content') || document.querySelector('[data-page]');
         if (container) renderDealerBulkUpload(container);
       };
       reader.onerror = function() { showToast('Error reading file', 'error'); };
@@ -48031,7 +48046,7 @@ function jsonResponse(data, status = 200) {
       var validRows = bd.rows.filter(function(r) { return r._valid; });
       if (!validRows.length) { showToast('No valid rows to upload', 'error'); return; }
 
-      var container = document.getElementById('mainContent') || document.querySelector('[data-page]');
+      var container = document.getElementById('main-content') || document.querySelector('[data-page]');
       if (!container) return;
 
       var results = [];
@@ -48138,6 +48153,7 @@ function jsonResponse(data, status = 200) {
     }
 
     async function renderDealerDocuments(m) {
+      if (_dealerChatPollInterval) { clearInterval(_dealerChatPollInterval); _dealerChatPollInterval = null; }
       if (!currentDealerProfile) {
         m.innerHTML = '<div class="page-header"><h1>Documents & Invoices</h1></div>' +
           '<div class="card" style="text-align:center;padding:60px"><h3>Dealer Profile Not Found</h3>' +
@@ -48335,6 +48351,7 @@ function jsonResponse(data, status = 200) {
     let _dealerChatPollInterval = null;
 
     async function renderDealerMessages(m) {
+      if (_dealerChatPollInterval) { clearInterval(_dealerChatPollInterval); _dealerChatPollInterval = null; }
       // Load dealer profile if needed
       if (!currentDealerProfile) {
         await loadDealerProfile();
@@ -48487,12 +48504,17 @@ function jsonResponse(data, status = 200) {
         '</div>';
       document.body.appendChild(overlay);
 
-      // Fetch order info for header
+      // Fetch order info for header (with ownership check)
       try {
-        const orders = await dbFetch('orders', { filter: { id: 'eq.' + orderId } });
+        const orders = await dbFetch('orders', { filter: { id: 'eq.' + orderId, dealer_id: 'eq.' + currentDealerProfile.id } });
         const order = orders && orders.length ? orders[0] : null;
+        if (!order) {
+          closeDealerChat();
+          showToast('Order not found or access denied', 'error');
+          return;
+        }
         const titleEl = document.getElementById('dealer-chat-title');
-        if (titleEl && order) {
+        if (titleEl) {
           titleEl.textContent = 'Order ' + (order.order_number || '#' + String(orderId).slice(0, 8)) + ' — Chat';
         }
       } catch (e) { console.error('Failed to fetch order for chat header:', e); }
@@ -48517,7 +48539,7 @@ function jsonResponse(data, status = 200) {
 
       try {
         const messages = await dbFetch('dealer_order_messages', {
-          filter: { order_id: 'eq.' + orderId },
+          filter: { order_id: 'eq.' + orderId, dealer_id: 'eq.' + (currentDealerProfile ? currentDealerProfile.id : '') },
           order: 'created_at.asc'
         });
 
@@ -48573,6 +48595,12 @@ function jsonResponse(data, status = 200) {
         showToast('Session error. Please refresh.', 'error');
         return;
       }
+
+      // Verify ownership before sending message
+      try {
+        var checkOrder = await dbFetch('orders', { filter: { id: 'eq.' + orderId, dealer_id: 'eq.' + currentDealerProfile.id } });
+        if (!checkOrder || checkOrder.length === 0) { showToast('Order not found or access denied', 'error'); return; }
+      } catch (e) { showToast('Failed to verify order ownership', 'error'); return; }
 
       // Clear input immediately
       input.value = '';
@@ -48658,6 +48686,7 @@ function jsonResponse(data, status = 200) {
     }
 
     async function renderDealerReports(m) {
+      if (_dealerChatPollInterval) { clearInterval(_dealerChatPollInterval); _dealerChatPollInterval = null; }
       if (!currentDealerProfile) {
         m.innerHTML = '<div class="page-header"><h1>Reports & Analytics</h1></div>' +
           '<div class="card" style="text-align:center;padding:60px"><h3>Dealer Profile Not Found</h3></div>';
@@ -48765,8 +48794,8 @@ function jsonResponse(data, status = 200) {
         // Cost Analysis Table (top routes)
         const routeMap = {};
         orders.forEach(o => {
-          const origin = (o.origin_city || o.pickup_city || 'Unknown').trim();
-          const dest = (o.destination_city || o.dropoff_city || 'Unknown').trim();
+          const origin = (o.origin || 'Unknown').trim();
+          const dest = (o.destination || 'Unknown').trim();
           const route = origin + ' → ' + dest;
           if (!routeMap[route]) routeMap[route] = { route, count: 0, total: 0 };
           routeMap[route].count++;
@@ -48799,8 +48828,8 @@ function jsonResponse(data, status = 200) {
           if (statusCounts.hasOwnProperty(s)) statusCounts[s]++;
           else statusCounts.pending++;
         });
-        const statusColors = { pending: '#6b7280', picked_up: '#3b82f6', in_transit: '#f59e0b', delivered: '#22c55e', cancelled: '#ef4444' };
-        const statusLabels = { pending: 'Pending', picked_up: 'Picked Up', in_transit: 'In Transit', delivered: 'Delivered', cancelled: 'Cancelled' };
+        const statusColors = DEALER_STATUS_COLORS;
+        const statusLabels = DEALER_STATUS_LABELS;
         const totalForStatus = orders.length || 1;
 
         html += '<div class="card" style="padding:24px;margin-bottom:16px">' +
@@ -48880,8 +48909,8 @@ function jsonResponse(data, status = 200) {
       const data = orders.map(o => ({
         order_number: o.order_number || String(o.id).slice(0, 8),
         _vehicle: [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).join(' '),
-        _origin: o.origin_city || o.pickup_city || '',
-        _destination: o.destination_city || o.dropoff_city || '',
+        _origin: o.origin || '',
+        _destination: o.destination || '',
         pickup_date: o.pickup_date || '',
         dropoff_date: o.dropoff_date || '',
         revenue: o.revenue || '0',
@@ -48921,6 +48950,7 @@ function jsonResponse(data, status = 200) {
     }
 
     async function renderDealerAccount(m) {
+      if (_dealerChatPollInterval) { clearInterval(_dealerChatPollInterval); _dealerChatPollInterval = null; }
       if (!currentDealerProfile) {
         m.innerHTML = '<div class="page-header"><h1>Account Settings</h1></div>' +
           '<div class="card" style="text-align:center;padding:60px"><h3>Dealer Profile Not Found</h3></div>';
@@ -48940,7 +48970,7 @@ function jsonResponse(data, status = 200) {
         '<button id="dealerProfileEditBtn" class="btn btn-secondary" style="padding:6px 14px;font-size:13px" onclick="toggleDealerProfileEdit()">Edit Profile</button>' +
         '</div>' +
         '<div id="dealerProfileView">' +
-        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px">' +
+        '<div class="dealer-grid-2col" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px">' +
         _dealerAccountField('Company Name', esc(dp.company_name || '—')) +
         _dealerAccountField('Dealer Code', esc(dp.dealer_code || '—')) +
         _dealerAccountField('Contact Name', esc(dp.contact_name || '—')) +
@@ -49031,7 +49061,7 @@ function jsonResponse(data, status = 200) {
         currentDealerProfile.company_address = address.trim();
         showToast('Profile updated successfully', 'success');
         // Re-render to show updated view
-        const container = document.getElementById('mainContent');
+        const container = document.getElementById('main-content');
         if (container) renderDealerAccount(container);
       } catch (e) {
         console.error('Failed to save dealer profile:', e);
@@ -49076,13 +49106,14 @@ function jsonResponse(data, status = 200) {
       // Fetch order data
       let order = null;
       try {
-        const orders = await dbFetch('orders', { filter: { id: 'eq.' + orderId } });
+        const orders = await dbFetch('orders', { filter: { id: 'eq.' + orderId, dealer_id: 'eq.' + currentDealerProfile.id } });
         order = orders && orders.length ? orders[0] : null;
       } catch (e) { console.error('Failed to fetch order:', e); }
 
       if (!order) {
         m.innerHTML = '<div class="card" style="text-align:center;padding:60px">' +
           '<h3>Order Not Found</h3>' +
+          '<p style="color:var(--text-secondary)">This order does not exist or you do not have access.</p>' +
           '<button class="btn btn-primary" onclick="navigate(\'dealer_orders\')" style="margin-top:16px">← Back to My Orders</button></div>';
         return;
       }
@@ -49109,8 +49140,8 @@ function jsonResponse(data, status = 200) {
       }
 
       const esc = escapeHtml;
-      const statusColors = { pending: '#f59e0b', picked_up: '#3b82f6', in_transit: '#3b82f6', delivered: '#22c55e', cancelled: '#ef4444' };
-      const statusLabels = { pending: 'Pending', picked_up: 'Picked Up', in_transit: 'In Transit', delivered: 'Delivered', cancelled: 'Cancelled' };
+      const statusColors = DEALER_STATUS_COLORS;
+      const statusLabels = DEALER_STATUS_LABELS;
       const ds = order.delivery_status || 'pending';
       const vehicleStr = [order.vehicle_year, order.vehicle_make, order.vehicle_model].filter(Boolean).map(v => esc(String(v))).join(' ') || 'Unknown Vehicle';
 
@@ -49138,7 +49169,7 @@ function jsonResponse(data, status = 200) {
       }
 
       // Build timeline stepper HTML
-      let timelineHtml = '<div style="display:flex;align-items:flex-start;justify-content:space-between;padding:24px 16px;overflow-x:auto">';
+      let timelineHtml = '<div class="dealer-timeline-steps" style="display:flex;align-items:flex-start;justify-content:space-between;padding:24px 16px;overflow-x:auto">';
       steps.forEach((step, idx) => {
         const isDone = step.done;
         const isCurrent = idx === currentStepIdx;
@@ -49149,11 +49180,11 @@ function jsonResponse(data, status = 200) {
         const pulse = isCurrent ? 'animation:pulse 2s infinite;' : '';
         const dateStr = step.date ? '<div style="font-size:11px;color:var(--text-muted);margin-top:4px">' + formatDate(step.date) + '</div>' : '';
 
-        timelineHtml += '<div style="display:flex;flex-direction:column;align-items:center;flex:1;position:relative;min-width:80px">';
+        timelineHtml += '<div class="dealer-step" style="display:flex;flex-direction:column;align-items:center;flex:1;position:relative;min-width:80px">';
         // Connector line (not for first)
         if (idx > 0) {
           const lineColor = isDone ? '#22c55e' : '#4b5563';
-          timelineHtml += '<div style="position:absolute;top:16px;right:50%;width:100%;height:3px;background:' + lineColor + ';z-index:0;transform:translateX(0)"></div>';
+          timelineHtml += '<div class="dealer-connector" style="position:absolute;top:16px;right:50%;width:100%;height:3px;background:' + lineColor + ';z-index:0;transform:translateX(0)"></div>';
         }
         timelineHtml += '<div style="width:32px;height:32px;border-radius:50%;border:' + circleBorder + ';background:' + circleBg + ';display:flex;align-items:center;justify-content:center;z-index:1;position:relative;' + pulse + '">' + checkmark + '</div>';
         timelineHtml += '<div style="font-size:12px;font-weight:600;margin-top:8px;color:' + (isDone ? 'var(--text-primary)' : 'var(--text-muted)') + ';text-align:center">' + step.label + '</div>';
@@ -49183,7 +49214,7 @@ function jsonResponse(data, status = 200) {
       if (trip) {
         const driverName = trip.driver_name || 'Unknown Driver';
         const truckNum = trip.truck_number || trip.truck_id || 'N/A';
-        driverHtml += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
+        driverHtml += '<div class="dealer-grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
           '<div><div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Driver</div>' +
           '<div style="font-weight:600">' + esc(driverName) + '</div></div>' +
           '<div><div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Truck</div>' +
@@ -49333,7 +49364,7 @@ function jsonResponse(data, status = 200) {
         timelineHtml + '</div>' +
 
         // Info grid
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">' +
+        '<div class="dealer-grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">' +
         '<div class="card" style="padding:20px">' +
         '<h3 style="font-size:16px;font-weight:700;margin-bottom:12px">🚗 Vehicle Details</h3>' +
         '<div style="display:grid;gap:8px">' +
@@ -49384,6 +49415,14 @@ function jsonResponse(data, status = 200) {
     }
 
     async function saveDealerOrderEdit(orderId) {
+      if (!currentDealerProfile) { showToast('Session error. Please refresh.', 'error'); return; }
+
+      // Verify ownership before allowing edit
+      try {
+        var checkOrder = await dbFetch('orders', { filter: { id: 'eq.' + orderId, dealer_id: 'eq.' + currentDealerProfile.id } });
+        if (!checkOrder || checkOrder.length === 0) { showToast('Order not found or access denied', 'error'); return; }
+      } catch (e) { showToast('Failed to verify order ownership', 'error'); return; }
+
       const year = document.getElementById('dealer-edit-year');
       const make = document.getElementById('dealer-edit-make');
       const model = document.getElementById('dealer-edit-model');
@@ -49420,7 +49459,14 @@ function jsonResponse(data, status = 200) {
     }
 
     async function cancelDealerOrder(orderId) {
+      if (!currentDealerProfile) { showToast('Session error. Please refresh.', 'error'); return; }
       if (!confirm('Are you sure you want to cancel this order? This action cannot be undone.')) return;
+
+      // Verify ownership before cancellation
+      try {
+        var checkOrder = await dbFetch('orders', { filter: { id: 'eq.' + orderId, dealer_id: 'eq.' + currentDealerProfile.id } });
+        if (!checkOrder || checkOrder.length === 0) { showToast('Order not found or access denied', 'error'); return; }
+      } catch (e) { showToast('Failed to verify order ownership', 'error'); return; }
 
       try {
         await dbUpdate('orders', orderId, { delivery_status: 'cancelled', status: 'CANCELLED' });
@@ -49457,6 +49503,12 @@ function jsonResponse(data, status = 200) {
         return;
       }
 
+      // Verify ownership before submitting change request
+      try {
+        var checkOrder = await dbFetch('orders', { filter: { id: 'eq.' + orderId, dealer_id: 'eq.' + currentDealerProfile.id } });
+        if (!checkOrder || checkOrder.length === 0) { showToast('Order not found or access denied', 'error'); return; }
+      } catch (e) { showToast('Failed to verify order ownership', 'error'); return; }
+
       try {
         await dbInsert('order_change_requests', {
           order_id: orderId,
@@ -49480,19 +49532,20 @@ function jsonResponse(data, status = 200) {
     // DEALER PORTAL
     // ============================================================
 
+    var DEALER_STATUS_COLORS = { pending: '#f59e0b', picked_up: '#3b82f6', in_transit: '#3b82f6', delivered: '#22c55e', cancelled: '#ef4444' };
+    var DEALER_STATUS_LABELS = { pending: 'Pending', picked_up: 'Picked Up', in_transit: 'In Transit', delivered: 'Delivered', cancelled: 'Cancelled' };
+
     /**
      * Render dealer-specific navigation
      */
     function renderDealerNav() {
       const dealerNavItems = [
         { id: 'dealer_dashboard', label: 'Dashboard', icon: '[[icon:chart]]' },
-        { id: 'dealer_submit', label: 'Submit Vehicle', icon: '[[icon:car]]' },
-        { id: 'dealer_bulk_upload', label: 'Bulk Upload', icon: '[[icon:upload]]' },
+        { id: 'dealer_submit', label: 'Submit', icon: '[[icon:car]]' },
         { id: 'dealer_orders', label: 'My Orders', icon: '[[icon:clipboard]]' },
         { id: 'dealer_documents', label: 'Documents', icon: '[[icon:folder]]' },
         { id: 'dealer_messages', label: 'Messages', icon: '[[icon:chat]]' },
-        { id: 'dealer_reports', label: 'Reports', icon: '[[icon:reports]]' },
-        { id: 'dealer_account', label: 'Account', icon: '[[icon:settings]]' }
+        { id: 'dealer_reports', label: 'Reports', icon: '[[icon:reports]]' }
       ];
 
       let html = '<div class="nav-section">';
@@ -49503,6 +49556,9 @@ function jsonResponse(data, status = 200) {
           '<span class="icon">' + item.icon + '</span> <span class="nav-item-text">' + item.label + '</span></button>';
       });
 
+      html += '</div>';
+      html += '<div class="nav-section" style="margin-top:auto;border-top:1px solid var(--border);padding-top:8px">';
+      html += '<button class="nav-item ' + (currentPage === 'dealer_account' ? 'active' : '') + '" onclick="navigate(\'dealer_account\')" role="menuitem"><span class="icon">[[icon:settings]]</span> <span class="nav-item-text">Account</span></button>';
       html += '</div>';
       document.getElementById('nav').innerHTML = html;
 
@@ -49516,6 +49572,7 @@ function jsonResponse(data, status = 200) {
      * Render dealer dashboard
      */
     async function renderDealerDashboard(m) {
+      if (_dealerChatPollInterval) { clearInterval(_dealerChatPollInterval); _dealerChatPollInterval = null; }
       // Load dealer profile if not loaded
       if (!currentDealerProfile) {
         await loadDealerProfile();
@@ -49596,8 +49653,8 @@ function jsonResponse(data, status = 200) {
       // Recent orders (last 10)
       var recentOrders = filteredOrders.slice(0, 10);
 
-      var statusColors = { pending: '#f59e0b', picked_up: '#3b82f6', in_transit: '#3b82f6', delivered: '#22c55e' };
-      var statusLabels = { pending: 'Pending', picked_up: 'Picked Up', in_transit: 'In Transit', delivered: 'Delivered' };
+      var statusColors = DEALER_STATUS_COLORS;
+      var statusLabels = DEALER_STATUS_LABELS;
 
       // Period button helper
       function periodBtn(val, label) {
@@ -49615,37 +49672,30 @@ function jsonResponse(data, status = 200) {
         '</div>' +
         '</div>' +
 
-        // 6 KPI stat cards
-        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:24px">' +
+        // Hero KPI row - 3 large action-oriented cards
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px" class="dealer-stats-hero">' +
+        '<div class="card" style="padding:20px;border-left:4px solid #f59e0b">' +
+        '<div style="font-size:32px;font-weight:800;color:#f59e0b">' + pendingCount + '</div>' +
+        '<div style="font-size:13px;color:var(--text-secondary)">Pending Pickup</div></div>' +
+        '<div class="card" style="padding:20px;border-left:4px solid #3b82f6">' +
+        '<div style="font-size:32px;font-weight:800;color:#3b82f6">' + inTransitCount + '</div>' +
+        '<div style="font-size:13px;color:var(--text-secondary)">In Transit</div></div>' +
+        '<div class="card" style="padding:20px;border-left:4px solid #22c55e">' +
+        '<div style="font-size:32px;font-weight:800;color:#22c55e">' + deliveredCount + '</div>' +
+        '<div style="font-size:13px;color:var(--text-secondary)">Delivered</div></div>' +
+        '</div>' +
 
-        '<div class="card" style="padding:20px;text-align:center">' +
-        '<div style="font-size:28px;font-weight:700;color:var(--accent-primary)">' + totalOrders + '</div>' +
-        '<div style="color:var(--text-secondary);font-size:12px;margin-top:4px">Total Orders</div></div>' +
-
-        '<div class="card" style="padding:20px;text-align:center">' +
-        '<div style="font-size:28px;font-weight:700;color:#f59e0b">' + pendingCount + '</div>' +
-        '<div style="color:var(--text-secondary);font-size:12px;margin-top:4px">Pending</div></div>' +
-
-        '<div class="card" style="padding:20px;text-align:center">' +
-        '<div style="font-size:28px;font-weight:700;color:#3b82f6">' + inTransitCount + '</div>' +
-        '<div style="color:var(--text-secondary);font-size:12px;margin-top:4px">In Transit</div></div>' +
-
-        '<div class="card" style="padding:20px;text-align:center">' +
-        '<div style="font-size:28px;font-weight:700;color:#22c55e">' + deliveredCount + '</div>' +
-        '<div style="color:var(--text-secondary);font-size:12px;margin-top:4px">Delivered</div></div>' +
-
-        '<div class="card" style="padding:20px;text-align:center">' +
-        '<div style="font-size:28px;font-weight:700;color:#8b5cf6">' + (avgTransitDays > 0 ? avgTransitDays : '—') + '</div>' +
-        '<div style="color:var(--text-secondary);font-size:12px;margin-top:4px">Avg Transit Days</div></div>' +
-
-        '<div class="card" style="padding:20px;text-align:center">' +
-        '<div style="font-size:28px;font-weight:700;color:#ec4899">' + formatMoney(totalSpent) + '</div>' +
-        '<div style="color:var(--text-secondary);font-size:12px;margin-top:4px">Total Spent</div></div>' +
-
+        // Secondary stats - compact inline row
+        '<div style="display:flex;gap:24px;margin-bottom:24px;font-size:13px;color:var(--text-secondary);flex-wrap:wrap">' +
+        '<span><strong style="color:var(--text-primary)">' + totalOrders + '</strong> total orders</span>' +
+        '<span>·</span>' +
+        '<span><strong style="color:var(--text-primary)">' + (avgTransitDays > 0 ? avgTransitDays : '—') + '</strong> avg transit days</span>' +
+        '<span>·</span>' +
+        '<span><strong style="color:var(--text-primary)">' + formatMoney(totalSpent) + '</strong> total spent</span>' +
         '</div>' +
 
         // Two-column layout: sparkline + top routes | recent orders
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">' +
+        '<div class="dealer-grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">' +
 
         // Monthly volume card
         '<div class="card" style="padding:20px">' +
@@ -49674,7 +49724,7 @@ function jsonResponse(data, status = 200) {
         // Quick action buttons
         '<div style="display:flex;gap:12px;margin-bottom:24px">' +
         '<button class="btn btn-primary" onclick="navigate(\'dealer_submit\')" style="padding:10px 20px">[[icon:car]] Submit Vehicle</button>' +
-        '<button class="btn btn-ghost" onclick="navigate(\'dealer_bulk_upload\')" style="padding:10px 20px">[[icon:upload]] Bulk Upload</button>' +
+        '<button class="btn btn-ghost" onclick="window._dealerSubmitTab=\'bulk\';navigate(\'dealer_submit\')" style="padding:10px 20px">[[icon:upload]] Bulk Upload</button>' +
         '</div>' +
 
         // Recent orders table
@@ -49699,16 +49749,82 @@ function jsonResponse(data, status = 200) {
     /**
      * Render dealer submit vehicle form
      */
-    function renderDealerSubmitVehicle(m) {
-      m.innerHTML = '<div class="page-header">' +
-        '<h1>Submit Vehicle for Transport</h1>' +
-        '<p style="color:var(--text-secondary);margin-top:4px">Fill out the form below to request vehicle transport</p>' +
+    function switchDealerSubmitTab(tab) {
+      var singleBtn = document.getElementById('submit-tab-single');
+      var bulkBtn = document.getElementById('submit-tab-bulk');
+      var contentEl = document.getElementById('dealer-submit-content');
+      if (!contentEl) return;
+      if (singleBtn) { singleBtn.className = tab === 'single' ? 'btn btn-primary' : 'btn btn-secondary'; }
+      if (bulkBtn) { bulkBtn.className = tab === 'bulk' ? 'btn btn-primary' : 'btn btn-secondary'; }
+      if (tab === 'bulk') {
+        window._bulkUploadData = window._bulkUploadData || { rows: [], results: null, phase: 'upload' };
+        renderDealerBulkUploadInline(contentEl);
+      } else {
+        renderDealerSubmitSingleForm(contentEl);
+      }
+    }
+
+    function renderDealerBulkUploadInline(container) {
+      var bd = window._bulkUploadData;
+      if (bd && bd.phase === 'results' && bd.results) {
+        renderBulkUploadResults(container, bd.results);
+        return;
+      }
+      if (bd && bd.phase === 'preview' && bd.rows.length) {
+        renderBulkUploadPreview(container, bd.rows);
+        return;
+      }
+      container.innerHTML =
+        '<div class="card" style="padding:24px;margin-bottom:16px">' +
+          '<h3 style="margin:0 0 8px">Step 1: Download Template</h3>' +
+          '<p style="color:var(--text-secondary);margin:0 0 12px">Download the CSV template, fill it with your vehicle data, then upload it below.</p>' +
+          '<button class="btn btn-secondary" onclick="downloadDealerCSVTemplate()" style="gap:6px">' +
+            '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
+            'Download CSV Template' +
+          '</button>' +
         '</div>' +
+        '<div class="card" style="padding:24px">' +
+          '<h3 style="margin:0 0 8px">Step 2: Upload Your CSV</h3>' +
+          '<p style="color:var(--text-secondary);margin:0 0 16px">Drag and drop your CSV file here, or click to browse.</p>' +
+          '<div id="bulkDropZone" style="border:2px dashed var(--border);border-radius:12px;padding:40px 20px;text-align:center;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:border-color 0.2s, background 0.2s">' +
+            '<svg width="40" height="40" fill="none" stroke="var(--text-muted)" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom:12px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>' +
+            '<span style="font-weight:600;color:var(--text-primary)">Drop CSV file here</span>' +
+            '<span style="color:var(--text-muted);font-size:13px;margin-top:4px">or click to browse files</span>' +
+            '<input type="file" id="bulkFileInput" accept=".csv" style="display:none">' +
+          '</div>' +
+        '</div>';
+      setTimeout(function() {
+        var zone = document.getElementById('bulkDropZone');
+        var inp = document.getElementById('bulkFileInput');
+        if (!zone || !inp) return;
+        zone.addEventListener('click', function() { inp.click(); });
+        inp.addEventListener('change', function(e) {
+          if (e.target.files && e.target.files[0]) handleBulkCSVFile(e.target.files[0]);
+        });
+        zone.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          zone.style.borderColor = '#22c55e';
+          zone.style.background = 'rgba(34,197,94,0.06)';
+        });
+        zone.addEventListener('dragleave', function(e) {
+          e.preventDefault();
+          zone.style.borderColor = 'var(--border)';
+          zone.style.background = '';
+        });
+        zone.addEventListener('drop', function(e) {
+          e.preventDefault();
+          zone.style.borderColor = 'var(--border)';
+          zone.style.background = '';
+          if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleBulkCSVFile(e.dataTransfer.files[0]);
+          }
+        });
+      }, 0);
+    }
 
-        '<div class="card" style="max-width:800px">' +
+    function renderDealerSubmitSingleForm(container) {
+      container.innerHTML = '<div class="card" style="max-width:800px">' +
         '<form onsubmit="handleDealerSubmitVehicle(event)">' +
-
-        // Vehicle Information
         '<div style="margin-bottom:24px">' +
         '<h4 style="margin-bottom:16px;color:var(--text-primary)">[[icon:car]] Vehicle Information</h4>' +
         '<div class="form-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px">' +
@@ -49721,39 +49837,53 @@ function jsonResponse(data, status = 200) {
         '<div class="form-group"><label>Color</label><input type="text" id="dealer-vehicle-color" placeholder="White"></div>' +
         '</div>' +
         '</div>' +
-
-        // Pickup Information
         '<div style="margin-bottom:24px">' +
         '<h4 style="margin-bottom:16px;color:var(--text-primary)">[[icon:map_pin]] Pickup Information</h4>' +
-        '<div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
+        '<div class="form-row dealer-grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
         '<div class="form-group"><label>Pickup Location *</label><input type="text" id="dealer-pickup-location" required placeholder="City, State (e.g., Los Angeles, CA)"></div>' +
         '<div class="form-group"><label>Pickup Date *</label><input type="date" id="dealer-pickup-date" required></div>' +
         '</div>' +
         '</div>' +
-
-        // Delivery Information
         '<div style="margin-bottom:24px">' +
         '<h4 style="margin-bottom:16px;color:var(--text-primary)">[[icon:flag]] Delivery Information</h4>' +
-        '<div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
+        '<div class="form-row dealer-grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
         '<div class="form-group"><label>Delivery Location *</label><input type="text" id="dealer-delivery-location" required placeholder="City, State (e.g., Miami, FL)"></div>' +
         '<div class="form-group"><label>Requested Delivery Date</label><input type="date" id="dealer-delivery-date"></div>' +
         '</div>' +
         '</div>' +
-
-        // Notes
         '<div style="margin-bottom:24px">' +
         '<div class="form-group"><label>Additional Notes</label><textarea id="dealer-notes" rows="3" placeholder="Any special instructions or notes..."></textarea></div>' +
         '</div>' +
-
-        // Submit buttons
         '<div style="display:flex;gap:12px;justify-content:flex-end">' +
         '<button type="button" class="btn btn-secondary" onclick="navigate(\'dealer_dashboard\')">Cancel</button>' +
         '<button type="submit" class="btn btn-primary" id="dealer-submit-btn">Submit Vehicle</button>' +
         '</div>' +
         '</form></div>';
+      setTimeout(function() {
+        var el = document.getElementById('dealer-pickup-date');
+        if (el) el.value = new Date().toISOString().split('T')[0];
+      }, 0);
+    }
 
-      // Set default pickup date to today
-      document.getElementById('dealer-pickup-date').value = new Date().toISOString().split('T')[0];
+    function renderDealerSubmitVehicle(m) {
+      if (_dealerChatPollInterval) { clearInterval(_dealerChatPollInterval); _dealerChatPollInterval = null; }
+      var activeTab = window._dealerSubmitTab || 'single';
+      m.innerHTML = '<div class="page-header">' +
+        '<h1>Submit Vehicle for Transport</h1>' +
+        '<p style="color:var(--text-secondary);margin-top:4px">Fill out the form below to request vehicle transport</p>' +
+        '</div>' +
+        '<div style="display:flex;gap:8px;margin-bottom:20px">' +
+        '<button class="btn ' + (activeTab === 'single' ? 'btn-primary' : 'btn-secondary') + '" id="submit-tab-single" onclick="window._dealerSubmitTab=\'single\';switchDealerSubmitTab(\'single\')">Single Vehicle</button>' +
+        '<button class="btn ' + (activeTab === 'bulk' ? 'btn-primary' : 'btn-secondary') + '" id="submit-tab-bulk" onclick="window._dealerSubmitTab=\'bulk\';switchDealerSubmitTab(\'bulk\')">Bulk Upload (CSV)</button>' +
+        '</div>' +
+        '<div id="dealer-submit-content"></div>';
+      setTimeout(function() {
+        var contentEl = document.getElementById('dealer-submit-content');
+        if (contentEl) {
+          if (activeTab === 'bulk') renderDealerBulkUploadInline(contentEl);
+          else renderDealerSubmitSingleForm(contentEl);
+        }
+      }, 0);
     }
 
     /**
@@ -49793,6 +49923,7 @@ function jsonResponse(data, status = 200) {
      * Render dealer orders list
      */
     async function renderDealerOrders(m) {
+      if (_dealerChatPollInterval) { clearInterval(_dealerChatPollInterval); _dealerChatPollInterval = null; }
       if (!currentDealerProfile) {
         await loadDealerProfile();
       }
@@ -49806,8 +49937,8 @@ function jsonResponse(data, status = 200) {
       const statusFilter = window.dealerOrdersFilter || 'all';
       const orders = await loadDealerOrders(currentDealerProfile.id, { status: statusFilter === 'all' ? null : statusFilter });
 
-      const statusColors = { pending: '#f59e0b', picked_up: '#3b82f6', in_transit: '#3b82f6', delivered: '#22c55e' };
-      const statusLabels = { pending: 'Pending', picked_up: 'Picked Up', in_transit: 'In Transit', delivered: 'Delivered' };
+      const statusColors = DEALER_STATUS_COLORS;
+      const statusLabels = DEALER_STATUS_LABELS;
 
       m.innerHTML = '<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">' +
         '<h1>My Orders</h1>' +
@@ -49853,6 +49984,7 @@ function jsonResponse(data, status = 200) {
      * Render dealer spending/financial page
      */
     async function renderDealerSpending(m) {
+      if (_dealerChatPollInterval) { clearInterval(_dealerChatPollInterval); _dealerChatPollInterval = null; }
       if (!currentDealerProfile) {
         await loadDealerProfile();
       }
@@ -49872,13 +50004,13 @@ function jsonResponse(data, status = 200) {
         // Stats cards
         '<div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px">' +
         '<div class="card" style="padding:24px;text-align:center">' +
-        '<div style="font-size:36px;font-weight:700;color:#8b5cf6">$' + formatMoney(stats.totalSpent) + '</div>' +
+        '<div style="font-size:36px;font-weight:700;color:#8b5cf6">' + formatMoney(stats.totalSpent) + '</div>' +
         '<div style="color:var(--text-secondary);margin-top:4px">Total Spent</div></div>' +
         '<div class="card" style="padding:24px;text-align:center">' +
         '<div style="font-size:36px;font-weight:700;color:var(--accent-primary)">' + stats.totalVehicles + '</div>' +
         '<div style="color:var(--text-secondary);margin-top:4px">Total Vehicles</div></div>' +
         '<div class="card" style="padding:24px;text-align:center">' +
-        '<div style="font-size:36px;font-weight:700;color:#22c55e">$' + formatMoney(stats.avgCostPerVehicle) + '</div>' +
+        '<div style="font-size:36px;font-weight:700;color:#22c55e">' + formatMoney(stats.avgCostPerVehicle) + '</div>' +
         '<div style="color:var(--text-secondary);margin-top:4px">Avg Cost/Vehicle</div></div>' +
         '</div>' +
 
@@ -49888,12 +50020,12 @@ function jsonResponse(data, status = 200) {
         '<div class="table-wrapper"><table><thead><tr><th>Order #</th><th>Vehicle</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>' +
         (stats.orders.length === 0 ? '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted)">No transactions yet</td></tr>' :
         stats.orders.map(o => {
-          const statusColors = { pending: '#f59e0b', picked_up: '#3b82f6', in_transit: '#3b82f6', delivered: '#22c55e' };
+          const statusColors = DEALER_STATUS_COLORS;
           return '<tr>' +
             '<td><strong>' + escapeHtml(o.order_number || '-') + '</strong></td>' +
             '<td>' + [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).map(v => escapeHtml(String(v))).join(' ') + '</td>' +
             '<td>' + formatDate(o.created_at) + '</td>' +
-            '<td style="font-weight:600">$' + formatMoney(o.revenue || 0) + '</td>' +
+            '<td style="font-weight:600">' + formatMoney(o.revenue || 0) + '</td>' +
             '<td><span class="badge" style="background:' + (statusColors[o.delivery_status] || '#6b7280') + '">' + escapeHtml(o.delivery_status || '-') + '</span></td></tr>';
         }).join('')) +
         '</tbody></table></div></div>';
@@ -49939,7 +50071,7 @@ function jsonResponse(data, status = 200) {
             '<td><code style="background:var(--bg-darker);padding:2px 6px;border-radius:4px">' + escapeHtml(d.dealer_code || '-') + '</code></td>' +
             '<td>' + escapeHtml(d.contact_name || '-') + '<br><small style="color:var(--text-muted)">' + escapeHtml(d.contact_phone || '') + '</small></td>' +
             '<td style="text-align:center">' + d.orderCount + ' <small style="color:var(--text-muted)">(' + d.pending + ' pending)</small></td>' +
-            '<td style="font-weight:600">$' + formatMoney(d.totalRevenue) + '</td>' +
+            '<td style="font-weight:600">' + formatMoney(d.totalRevenue) + '</td>' +
             '<td><span class="badge ' + (d.is_active ? 'badge-green' : 'badge-gray') + '">' + (d.is_active ? 'Active' : 'Inactive') + '</span></td>' +
             '<td class="sticky-col"><div class="actions">' +
             '<button class="action-btn edit" onclick="openDealerModal(' + d.id + ')">Edit</button>' +
@@ -49978,26 +50110,26 @@ function jsonResponse(data, status = 200) {
               <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
                 <div class="form-group">
                   <label>Company Name *</label>
-                  <input type="text" id="dealer-company-name" required value="${dealer?.company_name || ''}" placeholder="ABC Auto Dealership">
+                  <input type="text" id="dealer-company-name" required value="${escapeHtml(dealer?.company_name || '')}" placeholder="ABC Auto Dealership">
                 </div>
                 <div class="form-group">
                   <label>Dealer Code *</label>
-                  <input type="text" id="dealer-code" required value="${dealer?.dealer_code || generateDealerCode('')}" placeholder="ABC123" maxlength="10" ${isEdit ? 'readonly style="background:var(--bg-darker)"' : ''}>
+                  <input type="text" id="dealer-code" required value="${escapeHtml(dealer?.dealer_code || generateDealerCode(''))}" placeholder="ABC123" maxlength="10" ${isEdit ? 'readonly style="background:var(--bg-darker)"' : ''}>
                 </div>
               </div>
               <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
                 <div class="form-group">
                   <label>Contact Name</label>
-                  <input type="text" id="dealer-contact-name" value="${dealer?.contact_name || ''}" placeholder="John Smith">
+                  <input type="text" id="dealer-contact-name" value="${escapeHtml(dealer?.contact_name || '')}" placeholder="John Smith">
                 </div>
                 <div class="form-group">
                   <label>Contact Phone</label>
-                  <input type="tel" id="dealer-contact-phone" value="${dealer?.contact_phone || ''}" placeholder="(555) 123-4567">
+                  <input type="tel" id="dealer-contact-phone" value="${escapeHtml(dealer?.contact_phone || '')}" placeholder="(555) 123-4567">
                 </div>
               </div>
               <div class="form-group">
                 <label>Company Address</label>
-                <input type="text" id="dealer-address" value="${dealer?.company_address || ''}" placeholder="123 Main St, City, State">
+                <input type="text" id="dealer-address" value="${escapeHtml(dealer?.company_address || '')}" placeholder="123 Main St, City, State">
               </div>
               <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
                 <div class="form-group">
@@ -50032,7 +50164,7 @@ function jsonResponse(data, status = 200) {
               ` : ''}
               <div class="form-group">
                 <label>Notes</label>
-                <textarea id="dealer-notes" rows="2" placeholder="Internal notes about this dealer...">${dealer?.notes || ''}</textarea>
+                <textarea id="dealer-notes" rows="2" placeholder="Internal notes about this dealer...">${escapeHtml(dealer?.notes || '')}</textarea>
               </div>
             </form>
           </div>
