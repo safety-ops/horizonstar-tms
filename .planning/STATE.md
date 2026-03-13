@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-12)
 
 **Core value:** Efficient end-to-end vehicle transport management
-**Current focus:** v1.4 -- Phase 23 complete (People & Fleet Restyle)
+**Current focus:** v1.4 -- Phase 24 in progress (Finance Pages Restyle)
 
 ## Current Position
 
-Phase: 23 of 26 (People & Fleet Restyle)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-03-13 -- Completed 23-03-PLAN.md (Brokers + Dispatchers restyle)
+Phase: 24 of 26 (Finance Pages Restyle)
+Plan: 1 of 5 in current phase
+Status: In progress
+Last activity: 2026-03-13 -- Completed 24-01-PLAN.md (Billing page shell + overview + brokers tabs)
 
-Progress: [██████░░░░] 58%
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
@@ -81,6 +81,11 @@ Key context for v1.4:
 - Dispatcher spotlight cards use left border accents (green/amber) instead of colored backgrounds (Phase 23)
 - Dispatcher ranking progress bars use var(--bg-tertiary) track with CSS variable fills (Phase 23)
 - Leaderboard card headers neutral (14px/600, text-primary) instead of colored (Phase 23)
+- data-table nth-child(even) alternating row tint added globally in base.css (Phase 24)
+- Billing page tabs use segmented-control component (Phase 24)
+- Billing stat cards use stat-flat + stat-card--{color} accent border pattern (Phase 24)
+- Aging bar keeps #f97316 (orange) and #991b1b (deep red) as intentional intermediate tier colors (Phase 24)
+- renderMiniAgingBar uses CSS variables for primary colors (Phase 24)
 
 ### Known Issues
 - 4,344 inline style= attributes in index.html (in JS render functions) bypass CSS variables -- every page sweep requires JS template edits
@@ -96,9 +101,9 @@ Key context for v1.4:
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 23-03-PLAN.md (Brokers + Dispatchers restyle) -- Phase 23 complete
+Stopped at: Completed 24-01-PLAN.md (Billing page shell + overview + brokers tabs)
 Resume file: None
 
 ---
 
-**Next action**: Begin Phase 24 (Finance Pages Restyle)
+**Next action**: Execute 24-02-PLAN.md (next plan in Phase 24)
