@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-12)
 
 **Core value:** Efficient end-to-end vehicle transport management
-**Current focus:** v1.4 -- Phase 24 complete (Finance Pages Restyle)
+**Current focus:** v1.4 -- Phase 25 in progress (Operations/Admin Restyle)
 
 ## Current Position
 
-Phase: 24 of 26 (Finance Pages Restyle)
-Plan: 5 of 5 in current phase
-Status: Phase complete
-Last activity: 2026-03-13 -- Completed 24-05-PLAN.md (Print styles + final anti-pattern sweep)
+Phase: 25 of 26 (Operations/Admin Restyle)
+Plan: 1 of 5 in current phase
+Status: In progress
+Last activity: 2026-03-13 -- Completed 25-01-PLAN.md (Activity Log + Maintenance restyle)
 
-Progress: [███████░░░] 70%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
@@ -106,6 +106,11 @@ Key context for v1.4:
 - Print styles: segmented-control hidden, print-color-adjust:exact for data viz (Phase 24)
 - Paystub print template excluded from all restyle changes (Phase 24)
 - Finance functions cleaned: zero font-weight>600, zero gradients, zero surface-elevated (Phase 24)
+- Activity log actionColors hex map replaced with getActionBadgeClass() -- 5 badge categories via keyword matching (Phase 25)
+- Activity log stat cards use stat-flat + accent borders (blue/purple/amber/green) (Phase 25)
+- Activity log table uses data-table + card-flush, filters use .select/.input (Phase 25)
+- Maintenance stat cards use stat-flat + accent borders (blue/amber/green), no #10b981 (Phase 25)
+- Maintenance table uses data-table + card-flush, filters use .select class (Phase 25)
 
 ### Known Issues
 - 4,344 inline style= attributes in index.html (in JS render functions) bypass CSS variables -- every page sweep requires JS template edits
@@ -120,9 +125,9 @@ Key context for v1.4:
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 24-05-PLAN.md (Print styles + final anti-pattern sweep) -- Phase 24 complete
+Stopped at: Completed 25-01-PLAN.md (Activity Log + Maintenance restyle)
 Resume file: None
 
 ---
 
-**Next action**: Begin Phase 25
+**Next action**: Execute 25-02-PLAN.md
