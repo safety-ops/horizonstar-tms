@@ -8783,20 +8783,14 @@
         password,
         options: { data: metadata || {} }
       });
-      // If user already registered but Supabase returned user data, use it
-      if (error && data?.user?.id) {
-        // User exists — return their ID anyway (idempotent)
-        return data.user.id;
+      if (error || !data?.user?.id) {
+        // Return user ID if Supabase provided it despite the error
+        if (data?.user?.id) return data.user.id;
+        throw new Error(error?.message || 'Failed to create Supabase Auth user');
       }
-      if (error) {
-        throw new Error(error.message || 'Failed to create Supabase Auth user');
-      }
-      if (!data?.user?.id) {
-        // Supabase returns user with empty identities when email already exists (email confirmation on)
-        if (data?.user && (!data.user.identities || data.user.identities.length === 0)) {
-          throw new Error('USER_ALREADY_EXISTS');
-        }
-        throw new Error('Failed to create Supabase Auth user');
+      // Detect fake success (email already exists with confirmation enabled)
+      if (data.user.identities && data.user.identities.length === 0) {
+        throw new Error('User already registered');
       }
 
       if (previousSession?.access_token && previousSession?.refresh_token) {
@@ -47368,69 +47362,76 @@ function jsonResponse(data, status = 200) {
 
       if (!confirm('Approve dealer application from "' + app.company_name + '"?\n\nThis will create a dealer account with login credentials.')) return;
 
+      // Generate a strong temporary password
+      var chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+      var randPart = '';
+      for (var i = 0; i < 8; i++) randPart += chars.charAt(Math.floor(Math.random() * chars.length));
+      var tempPassword = 'Dlr!' + randPart + 'A1';
+      var authCreatedFresh = false;
+      var dealerCode = '';
+
       try {
-        // Generate a strong temporary password (uppercase + lowercase + digits + special)
-        var chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-        var randPart = '';
-        for (var i = 0; i < 8; i++) randPart += chars.charAt(Math.floor(Math.random() * chars.length));
-        var tempPassword = 'Dlr!' + randPart + 'A1';
-
-        // Step 1: Check if user already exists (from a previous partial approval)
+        // ── Step 1: Find or create user record ──
         var existingUsers = await dbFetch('users', { filter: { email: 'eq.' + app.contact_email } });
-        var newUser = existingUsers && existingUsers.length > 0 ? existingUsers[0] : null;
-        var authId = newUser ? newUser.auth_id : null;
+        var newUser = (existingUsers && existingUsers.length > 0) ? existingUsers[0] : null;
 
-        if (!newUser) {
-          // Try to create Supabase Auth user
+        if (newUser) {
+          // User exists (maybe from partial attempt or pre-existing) — just ensure correct role
+          if (newUser.role !== 'DEALER' || !newUser.is_active) {
+            await dbUpdate('users', newUser.id, { role: 'DEALER', is_active: true });
+          }
+        } else {
+          // No user record — try to create auth user first
+          var authId = null;
           try {
             authId = await createAuthUserWithoutSessionSwitch(
               app.contact_email,
               tempPassword,
               { first_name: app.contact_name || app.company_name, last_name: '' }
             );
+            authCreatedFresh = true;
           } catch (authErr) {
-            // If user already exists in auth but not in users table (orphaned from previous attempt)
-            if (authErr.message === 'USER_ALREADY_EXISTS' || (authErr.message && authErr.message.toLowerCase().includes('already'))) {
-              authId = 'pending_link';
-              tempPassword = '(account exists — dealer should use Forgot Password on login page)';
+            // Auth user already exists (orphaned from prior attempt) — that's OK, proceed without auth_id
+            var msg = (authErr.message || '').toLowerCase();
+            if (msg.includes('already') || msg.includes('registered') || msg.includes('exists')) {
+              authId = null; // Will create user record without auth link
             } else {
-              throw authErr;
+              throw authErr; // Unexpected error — bail out
             }
           }
 
-          // Create user record
-          newUser = await dbInsert('users', {
-            auth_id: authId,
+          // Build user insert payload — only include auth_id if we have a valid UUID
+          var userPayload = {
             email: app.contact_email,
             password: tempPassword,
             first_name: app.contact_name || app.company_name,
             last_name: '',
             role: 'DEALER',
             is_active: true
-          });
-        } else {
-          // Ensure existing user is active and has DEALER role
-          if (newUser.role !== 'DEALER' || !newUser.is_active) {
-            await dbUpdate('users', newUser.id, { role: 'DEALER', is_active: true });
+          };
+          if (authId) {
+            userPayload.auth_id = authId;
           }
-          tempPassword = '(existing account — use current password)';
+
+          newUser = await dbInsert('users', userPayload);
         }
 
-        // Step 2: Check if dealer profile already exists
+        // ── Step 2: Find or create dealer profile ──
+        await loadAllData(true); // Refresh appData.dealers
         var existingDealers = (appData.dealers || []).filter(function(d) { return d.user_id === newUser.id; });
-        var dealerCode;
 
-        if (existingDealers.length === 0) {
+        if (existingDealers.length > 0) {
+          dealerCode = existingDealers[0].dealer_code;
+        } else {
           // Generate unique dealer code
           dealerCode = generateDealerCode(app.company_name);
           var existingCodes = (appData.dealers || []).map(function(d) { return d.dealer_code; });
-          var attempts = 0;
-          while (existingCodes.includes(dealerCode) && attempts < 10) {
+          var codeAttempts = 0;
+          while (existingCodes.includes(dealerCode) && codeAttempts < 10) {
             dealerCode = generateDealerCode(app.company_name);
-            attempts++;
+            codeAttempts++;
           }
 
-          // Create dealer profile
           await dbInsert('dealers', {
             user_id: newUser.id,
             company_name: app.company_name,
@@ -47441,11 +47442,9 @@ function jsonResponse(data, status = 200) {
             payment_terms: app.payment_terms || 'NET30',
             is_active: true
           });
-        } else {
-          dealerCode = existingDealers[0].dealer_code;
         }
 
-        // Step 3: Update application status
+        // ── Step 3: Mark application approved (always runs) ──
         await sb.from('dealer_applications').update({
           status: 'approved',
           reviewed_at: new Date().toISOString(),
@@ -47453,11 +47452,11 @@ function jsonResponse(data, status = 200) {
         }).eq('id', id);
 
         await logActivity('DEALER_APPLICATION_APPROVED', { company_name: app.company_name, email: app.contact_email, dealer_code: dealerCode });
-
-        // Reload dealers
         await loadAllData(true);
 
-        // Show credentials to admin
+        // ── Step 4: Show result to admin ──
+        var passwordDisplay = authCreatedFresh ? tempPassword : '(auth account already existed — dealer should use Forgot Password)';
+
         var credModal = document.createElement('div');
         credModal.className = 'modal-overlay';
         credModal.onclick = function(e) { if (e.target === credModal) credModal.remove(); };
@@ -47469,7 +47468,7 @@ function jsonResponse(data, status = 200) {
           '<p style="color:var(--text-secondary);margin-bottom:20px">Dealer account created successfully. Share these credentials:</p>' +
           '<div style="background:var(--bg-secondary);padding:16px;border-radius:8px;text-align:left;font-family:monospace;font-size:14px">' +
           '<div style="margin-bottom:8px"><strong>Email:</strong> ' + escapeHtml(app.contact_email) + '</div>' +
-          '<div style="margin-bottom:8px"><strong>Password:</strong> ' + escapeHtml(tempPassword) + '</div>' +
+          '<div style="margin-bottom:8px"><strong>Password:</strong> ' + escapeHtml(passwordDisplay) + '</div>' +
           '<div><strong>Dealer Code:</strong> ' + escapeHtml(dealerCode) + '</div>' +
           '</div>' +
           '<p style="color:var(--text-muted);font-size:12px;margin-top:12px">The dealer should change their password after first login.</p>' +
