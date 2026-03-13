@@ -9,20 +9,20 @@ Requirements for restyling the entire Web TMS to a Stripe/Linear aesthetic. Page
 
 ### Design Tokens
 
-- [ ] **TOK-01**: Color palette switched to Tailwind Slate scale (cool blue-gray neutrals)
-- [ ] **TOK-02**: Shadow system reduced to 3 levels (xs/sm/md) with near-invisible values
-- [ ] **TOK-03**: Typography weights capped at 600, medium (500) as primary emphasis
-- [ ] **TOK-04**: Border radius tightened (cards 8px, inputs 6px, modals 12px max)
-- [ ] **TOK-05**: Primary button color changed to dark slate (#0f172a)
+- [x] **TOK-01**: Color palette switched to Tailwind Slate scale (cool blue-gray neutrals)
+- [x] **TOK-02**: Shadow system reduced to 3 levels (xs/sm/md) with near-invisible values
+- [x] **TOK-03**: Typography weights capped at 600, medium (500) as primary emphasis
+- [x] **TOK-04**: Border radius tightened (cards 8px, inputs 6px, modals 12px max)
+- [x] **TOK-05**: Primary button color changed to dark slate (#0f172a)
 
 ### Component Patterns
 
-- [ ] **CMP-01**: All card surfaces use solid flat backgrounds with subtle border -- no gradients, glass, or glow
-- [ ] **CMP-02**: Buttons use flat solid fills -- dark slate primary, gray secondary, no gradient hovers
-- [ ] **CMP-03**: Tables use subtle borders and refined headers -- no heavy zebra striping
-- [ ] **CMP-04**: Status badges use desaturated backgrounds with readable text -- status colors preserved
-- [ ] **CMP-05**: All decorative animations removed -- keep only spinner, toast, and skeleton shimmer
-- [ ] **CMP-06**: Hover states are subtle (opacity/background shift) -- no scale transforms, no glow
+- [x] **CMP-01**: All card surfaces use solid flat backgrounds with subtle border -- no gradients, glass, or glow
+- [x] **CMP-02**: Buttons use flat solid fills -- dark slate primary, gray secondary, no gradient hovers
+- [x] **CMP-03**: Tables use subtle borders and refined headers -- no heavy zebra striping
+- [x] **CMP-04**: Status badges use desaturated backgrounds with readable text -- status colors preserved
+- [x] **CMP-05**: All decorative animations removed -- keep only spinner, toast, and skeleton shimmer
+- [x] **CMP-06**: Hover states are subtle (opacity/background shift) -- no scale transforms, no glow
 
 ### Page Restyles -- Dispatch
 
@@ -93,17 +93,17 @@ Requirements for restyling the entire Web TMS to a Stripe/Linear aesthetic. Page
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TOK-01 | Phase 19 | Pending |
-| TOK-02 | Phase 19 | Pending |
-| TOK-03 | Phase 19 | Pending |
-| TOK-04 | Phase 19 | Pending |
-| TOK-05 | Phase 19 | Pending |
-| CMP-01 | Phase 19 | Pending |
-| CMP-02 | Phase 19 | Pending |
-| CMP-03 | Phase 19 | Pending |
-| CMP-04 | Phase 19 | Pending |
-| CMP-05 | Phase 19 | Pending |
-| CMP-06 | Phase 19 | Pending |
+| TOK-01 | Phase 19 | Complete |
+| TOK-02 | Phase 19 | Complete |
+| TOK-03 | Phase 19 | Complete |
+| TOK-04 | Phase 19 | Complete |
+| TOK-05 | Phase 19 | Complete |
+| CMP-01 | Phase 19 | Complete |
+| CMP-02 | Phase 19 | Complete |
+| CMP-03 | Phase 19 | Complete |
+| CMP-04 | Phase 19 | Complete |
+| CMP-05 | Phase 19 | Complete |
+| CMP-06 | Phase 19 | Complete |
 | DSP-01 | Phase 20 | Pending |
 | DSP-02 | Phase 21 | Pending |
 | DSP-03 | Phase 22 | Pending |
