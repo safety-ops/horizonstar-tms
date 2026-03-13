@@ -29683,7 +29683,7 @@
       const hasOver60 = aging.days61_90 > 0;
       const hasOver30 = aging.days31_60 > 0;
       const hasOver0 = aging.days1_30 > 0;
-      const accentColor = hasOver90 ? '#dc2626' : hasOver60 ? '#ef4444' : hasOver30 ? '#f97316' : hasOver0 ? '#eab308' : '#22c55e';
+      const accentColor = hasOver90 ? 'var(--red)' : hasOver60 ? 'var(--red)' : hasOver30 ? '#f97316' : hasOver0 ? 'var(--amber)' : 'var(--green)';
 
       const tooltipText = 'Current: ' + formatMoney(aging.current) +
         ' | 1-30d: ' + formatMoney(aging.days1_30) +
@@ -29692,15 +29692,15 @@
         ' | 90+d: ' + formatMoney(aging.days90Plus);
 
       return '<div style="display:flex;flex-direction:column;gap:4px;width:120px">' +
-        '<div style="display:flex;height:10px;border-radius:5px;overflow:hidden;width:120px;border:1px solid ' + accentColor + '22" title="' + tooltipText + '">' +
-        (currentPct > 0 ? '<div style="width:' + currentPct + '%;background:#22c55e;transition:width 0.3s"></div>' : '') +
-        (d1_30Pct > 0 ? '<div style="width:' + d1_30Pct + '%;background:#eab308;transition:width 0.3s"></div>' : '') +
+        '<div style="display:flex;height:10px;border-radius:5px;overflow:hidden;width:120px;border:1px solid var(--border)" title="' + tooltipText + '">' +
+        (currentPct > 0 ? '<div style="width:' + currentPct + '%;background:var(--green);transition:width 0.3s"></div>' : '') +
+        (d1_30Pct > 0 ? '<div style="width:' + d1_30Pct + '%;background:var(--amber);transition:width 0.3s"></div>' : '') +
         (d31_60Pct > 0 ? '<div style="width:' + d31_60Pct + '%;background:#f97316;transition:width 0.3s"></div>' : '') +
-        (d61_90Pct > 0 ? '<div style="width:' + d61_90Pct + '%;background:#ef4444;transition:width 0.3s"></div>' : '') +
-        (d90PlusPct > 0 ? '<div style="width:' + d90PlusPct + '%;background:#dc2626;transition:width 0.3s"></div>' : '') +
+        (d61_90Pct > 0 ? '<div style="width:' + d61_90Pct + '%;background:var(--red);transition:width 0.3s"></div>' : '') +
+        (d90PlusPct > 0 ? '<div style="width:' + d90PlusPct + '%;background:#991b1b;transition:width 0.3s"></div>' : '') +
         '</div>' +
-        (hasOver90 ? '<div style="font-size:10px;color:#dc2626;font-weight:700;font-family:var(--font-mono)">90+d: ' + formatMoney(aging.days90Plus) + '</div>' :
-         hasOver60 ? '<div style="font-size:10px;color:#ef4444;font-weight:600;font-family:var(--font-mono)">61-90d: ' + formatMoney(aging.days61_90) + '</div>' : '') +
+        (hasOver90 ? '<div style="font-size:10px;color:var(--red);font-weight:600;font-family:var(--font-mono)">90+d: ' + formatMoney(aging.days90Plus) + '</div>' :
+         hasOver60 ? '<div style="font-size:10px;color:var(--red);font-weight:600;font-family:var(--font-mono)">61-90d: ' + formatMoney(aging.days61_90) + '</div>' : '') +
         '</div>';
     }
 
@@ -30050,32 +30050,28 @@
         html += '</div></div>';
       }
 
-      // Summary Cards (6 cards) - responsive grid with dot indicators
+      // Summary Cards (8 cards) - stat-flat pattern
       html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px">';
 
       const holdCount = getOrdersOnHold().length;
       const followUpNeeded = getOrdersNeedingFollowUp().length;
 
       const cards = [
-        { label: 'Total Invoiced', value: formatMoney(m.totalInvoiced), sub: (unpaidOrders.length + paidOrders.length) + ' invoices', color: '#8b5cf6', click: "billingFilter='all';billingTab='invoices';renderBillingPage(document.getElementById('main-content'))" },
-        { label: 'Total Paid', value: formatMoney(m.collected), sub: paidOrders.length + ' paid', color: 'var(--success)', click: "billingFilter='paid';billingTab='invoices';renderBillingPage(document.getElementById('main-content'))" },
-        { label: 'Outstanding', value: formatMoney(m.totalReceivables), sub: unpaidOrders.length + ' pending', color: 'var(--info)', click: "billingFilter='outstanding';billingTab='invoices';renderBillingPage(document.getElementById('main-content'))" },
-        { label: 'Overdue', value: formatMoney(m.overdueAmount), sub: 'Needs attention', color: 'var(--danger)', click: "billingFilter='overdue';billingTab='invoices';renderBillingPage(document.getElementById('main-content'))" },
-        { label: 'Avg Days to Pay', value: m.avgDaysToPay !== null ? m.avgDaysToPay + '<span style="font-size:14px;font-weight:400"> days</span>' : '-', sub: 'Collection time', color: 'var(--warning)', click: null },
-        { label: 'Collection Rate', value: m.collectionRate + '%', sub: 'Of total billed', color: m.collectionRate >= 70 ? 'var(--success)' : m.collectionRate >= 50 ? 'var(--warning)' : 'var(--danger)', click: null },
-        { label: 'Needs Follow-up', value: String(followUpNeeded), sub: 'Past due or no contact', color: '#f97316', click: "collectionsFilter='follow_up';billingTab='collections';renderBillingPage(document.getElementById('main-content'))" },
-        { label: 'On Hold', value: String(holdCount), sub: 'Billing holds active', color: '#8b5cf6', click: "collectionsFilter='hold';billingTab='collections';renderBillingPage(document.getElementById('main-content'))" }
+        { label: 'Total Invoiced', value: formatMoney(m.totalInvoiced), sub: (unpaidOrders.length + paidOrders.length) + ' invoices', accent: 'stat-card--purple', click: "billingFilter='all';billingTab='invoices';renderBillingPage(document.getElementById('main-content'))" },
+        { label: 'Total Paid', value: formatMoney(m.collected), sub: paidOrders.length + ' paid', accent: 'stat-card--green', click: "billingFilter='paid';billingTab='invoices';renderBillingPage(document.getElementById('main-content'))" },
+        { label: 'Outstanding', value: formatMoney(m.totalReceivables), sub: unpaidOrders.length + ' pending', accent: 'stat-card--blue', click: "billingFilter='outstanding';billingTab='invoices';renderBillingPage(document.getElementById('main-content'))" },
+        { label: 'Overdue', value: formatMoney(m.overdueAmount), sub: 'Needs attention', accent: 'stat-card--red', click: "billingFilter='overdue';billingTab='invoices';renderBillingPage(document.getElementById('main-content'))" },
+        { label: 'Avg Days to Pay', value: m.avgDaysToPay !== null ? m.avgDaysToPay + '<span style="font-size:14px;font-weight:400"> days</span>' : '-', sub: 'Collection time', accent: 'stat-card--amber', click: null },
+        { label: 'Collection Rate', value: m.collectionRate + '%', sub: 'Of total billed', accent: m.collectionRate >= 70 ? 'stat-card--green' : m.collectionRate >= 50 ? 'stat-card--amber' : 'stat-card--red', click: null },
+        { label: 'Needs Follow-up', value: String(followUpNeeded), sub: 'Past due or no contact', accent: 'stat-card--amber', click: "collectionsFilter='follow_up';billingTab='collections';renderBillingPage(document.getElementById('main-content'))" },
+        { label: 'On Hold', value: String(holdCount), sub: 'Billing holds active', accent: 'stat-card--purple', click: "collectionsFilter='hold';billingTab='collections';renderBillingPage(document.getElementById('main-content'))" }
       ];
 
       cards.forEach(cd => {
-        const clickAttr = cd.click ? 'onclick="' + cd.click + '" style="cursor:pointer"' : '';
-        html += '<div ' + clickAttr + ' style="background:var(--bg-card);border-radius:10px;padding:16px;border:1px solid var(--border);transition:all 0.2s;' + (cd.click ? 'cursor:pointer' : '') + '" onmouseover="this.style.transform=\'translateY(-1px)\';this.style.boxShadow=\'0 2px 8px rgba(0,0,0,0.08)\'" onmouseout="this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">';
-        html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">';
-        html += '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + cd.color + '"></span>';
-        html += '<span style="color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">' + cd.label + '</span>';
-        html += '</div>';
-        html += '<div style="font-size:20px;font-weight:700;color:' + cd.color + ';font-family:var(--font-mono);margin-bottom:2px">' + cd.value + '</div>';
-        html += '<div style="color:var(--text-muted);font-size:11px">' + cd.sub + '</div>';
+        html += '<div class="stat-flat ' + cd.accent + '"' + (cd.click ? ' onclick="' + cd.click + '" style="cursor:pointer"' : '') + '>';
+        html += '<div class="stat-flat-label">' + cd.label + '</div>';
+        html += '<div class="stat-flat-value" style="font-family:var(--font-mono)">' + cd.value + '</div>';
+        html += '<div style="color:var(--text-muted);font-size:11px;margin-top:2px">' + cd.sub + '</div>';
         html += '</div>';
       });
 
@@ -30098,11 +30094,11 @@
 
         // Stacked aging bar — rounded pill with gap spacing between segments
         html += '<div style="display:flex;height:24px;border-radius:12px;overflow:hidden;margin:0 0 6px;gap:2px">';
-        if (currentPct > 0) html += '<div style="flex:' + currentPct + ';min-width:4px;background:#22c55e;transition:flex 0.3s;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#14532d" title="Current: ' + formatMoney(m.currentAmt) + ' (' + Math.round(currentPct) + '%)">' + (currentPct > 10 ? Math.round(currentPct) + '%' : '') + '</div>';
-        if (days1_30Pct > 0) html += '<div style="flex:' + days1_30Pct + ';min-width:4px;background:#eab308;transition:flex 0.3s;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#713f12" title="1-30 Days: ' + formatMoney(m.days1_30Amt) + ' (' + Math.round(days1_30Pct) + '%)">' + (days1_30Pct > 10 ? Math.round(days1_30Pct) + '%' : '') + '</div>';
-        if (days31_60Pct > 0) html += '<div style="flex:' + days31_60Pct + ';min-width:4px;background:#f97316;transition:flex 0.3s;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#7c2d12" title="31-60 Days: ' + formatMoney(m.days31_60Amt) + ' (' + Math.round(days31_60Pct) + '%)">' + (days31_60Pct > 10 ? Math.round(days31_60Pct) + '%' : '') + '</div>';
-        if (days61_90Pct > 0) html += '<div style="flex:' + days61_90Pct + ';min-width:4px;background:#ef4444;transition:flex 0.3s;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white" title="61-90 Days: ' + formatMoney(m.days61_90Amt) + ' (' + Math.round(days61_90Pct) + '%)">' + (days61_90Pct > 10 ? Math.round(days61_90Pct) + '%' : '') + '</div>';
-        if (days90PlusPct > 0) html += '<div style="flex:' + days90PlusPct + ';min-width:4px;background:#991b1b;transition:flex 0.3s;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white" title="90+ Days: ' + formatMoney(m.days90PlusAmt) + ' (' + Math.round(days90PlusPct) + '%)">' + (days90PlusPct > 10 ? Math.round(days90PlusPct) + '%' : '') + '</div>';
+        if (currentPct > 0) html += '<div style="flex:' + currentPct + ';min-width:4px;background:var(--green);transition:flex 0.3s;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#14532d" title="Current: ' + formatMoney(m.currentAmt) + ' (' + Math.round(currentPct) + '%)">' + (currentPct > 10 ? Math.round(currentPct) + '%' : '') + '</div>';
+        if (days1_30Pct > 0) html += '<div style="flex:' + days1_30Pct + ';min-width:4px;background:var(--amber);transition:flex 0.3s;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#713f12" title="1-30 Days: ' + formatMoney(m.days1_30Amt) + ' (' + Math.round(days1_30Pct) + '%)">' + (days1_30Pct > 10 ? Math.round(days1_30Pct) + '%' : '') + '</div>';
+        if (days31_60Pct > 0) html += '<div style="flex:' + days31_60Pct + ';min-width:4px;background:#f97316;transition:flex 0.3s;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#7c2d12" title="31-60 Days: ' + formatMoney(m.days31_60Amt) + ' (' + Math.round(days31_60Pct) + '%)">' + (days31_60Pct > 10 ? Math.round(days31_60Pct) + '%' : '') + '</div>';
+        if (days61_90Pct > 0) html += '<div style="flex:' + days61_90Pct + ';min-width:4px;background:var(--red);transition:flex 0.3s;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:white" title="61-90 Days: ' + formatMoney(m.days61_90Amt) + ' (' + Math.round(days61_90Pct) + '%)">' + (days61_90Pct > 10 ? Math.round(days61_90Pct) + '%' : '') + '</div>';
+        if (days90PlusPct > 0) html += '<div style="flex:' + days90PlusPct + ';min-width:4px;background:#991b1b;transition:flex 0.3s;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:white" title="90+ Days: ' + formatMoney(m.days90PlusAmt) + ' (' + Math.round(days90PlusPct) + '%)">' + (days90PlusPct > 10 ? Math.round(days90PlusPct) + '%' : '') + '</div>';
         html += '</div>';
 
         // Scale labels under bar
@@ -30115,10 +30111,10 @@
 
       // Legend card grid — each bucket has a colored left border accent + % of AR
       const ageBuckets = [
-        { label: 'Current', sub: 'Not yet due', amt: m.currentAmt, color: '#22c55e', bg: 'rgba(34,197,94,0.08)' },
-        { label: '1-30 Days', sub: 'Mildly overdue', amt: m.days1_30Amt, color: '#eab308', bg: 'rgba(234,179,8,0.08)' },
+        { label: 'Current', sub: 'Not yet due', amt: m.currentAmt, color: 'var(--green)', bg: 'var(--dim-green, rgba(34,197,94,0.08))' },
+        { label: '1-30 Days', sub: 'Mildly overdue', amt: m.days1_30Amt, color: 'var(--amber)', bg: 'var(--dim-amber, rgba(234,179,8,0.08))' },
         { label: '31-60 Days', sub: 'Follow up now', amt: m.days31_60Amt, color: '#f97316', bg: 'rgba(249,115,22,0.08)' },
-        { label: '61-90 Days', sub: 'Escalate', amt: m.days61_90Amt, color: '#ef4444', bg: 'rgba(239,68,68,0.08)' },
+        { label: '61-90 Days', sub: 'Escalate', amt: m.days61_90Amt, color: 'var(--red)', bg: 'var(--dim-red, rgba(239,68,68,0.08))' },
         { label: '90+ Days', sub: 'Collections', amt: m.days90PlusAmt, color: '#991b1b', bg: 'rgba(153,27,27,0.12)' }
       ];
       const totalAR = m.totalReceivables;
@@ -30130,7 +30126,7 @@
         html += '<span style="width:7px;height:7px;border-radius:2px;background:' + bk.color + ';display:inline-block;flex-shrink:0"></span>';
         html += '<span style="font-size:11px;color:var(--text-secondary);font-weight:600;white-space:nowrap">' + bk.label + '</span>';
         html += '</div>';
-        html += '<div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:' + (bk.amt > 0 ? bk.color : 'var(--text-muted)') + ';margin-bottom:2px">' + formatMoney(bk.amt) + '</div>';
+        html += '<div style="font-size:15px;font-weight:600;font-family:var(--font-mono);color:' + (bk.amt > 0 ? bk.color : 'var(--text-muted)') + ';margin-bottom:2px">' + formatMoney(bk.amt) + '</div>';
         html += '<div style="font-size:11px;color:var(--text-muted)">' + (totalAR > 0 ? pct + '% of AR' : bk.sub) + '</div>';
         html += '</div>';
       });
@@ -30140,26 +30136,26 @@
       if (m.days90PlusAmt > 0) {
         const pct90 = totalAR > 0 ? Math.round((m.days90PlusAmt / totalAR) * 100) : 0;
         html += '<div style="display:flex;align-items:center;gap:10px;margin-top:14px;padding:10px 14px;background:rgba(153,27,27,0.10);border:1px solid rgba(153,27,27,0.25);border-radius:var(--radius-sm)">';
-        html += '<div style="font-size:13px;color:var(--text-primary);flex:1"><strong style="color:#dc2626">' + formatMoney(m.days90PlusAmt) + '</strong> (' + pct90 + '% of AR) is 90+ days overdue &mdash; immediate collections action recommended.</div>';
+        html += '<div style="font-size:13px;color:var(--text-primary);flex:1"><strong style="color:var(--red)">' + formatMoney(m.days90PlusAmt) + '</strong> (' + pct90 + '% of AR) is 90+ days overdue &mdash; immediate collections action recommended.</div>';
         html += '<button onclick="collectionsFilter=\'no_contact\';billingTab=\'collections\';renderBillingPage(document.getElementById(\'main-content\'))" style="white-space:nowrap;background:#991b1b;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer">View Collections</button>';
         html += '</div>';
       } else if (m.days61_90Amt > 0) {
         const pct61 = totalAR > 0 ? Math.round((m.days61_90Amt / totalAR) * 100) : 0;
         html += '<div style="display:flex;align-items:center;gap:10px;margin-top:14px;padding:10px 14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.20);border-radius:var(--radius-sm)">';
-        html += '<div style="font-size:13px;color:var(--text-primary);flex:1"><strong style="color:#ef4444">' + formatMoney(m.days61_90Amt) + '</strong> (' + pct61 + '% of AR) is 61-90 days overdue &mdash; follow up before it ages further.</div>';
-        html += '<button onclick="billingFilter=\'overdue\';billingTab=\'invoices\';renderBillingPage(document.getElementById(\'main-content\'))" style="white-space:nowrap;background:#ef4444;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer">View Overdue</button>';
+        html += '<div style="font-size:13px;color:var(--text-primary);flex:1"><strong style="color:var(--red)">' + formatMoney(m.days61_90Amt) + '</strong> (' + pct61 + '% of AR) is 61-90 days overdue &mdash; follow up before it ages further.</div>';
+        html += '<button onclick="billingFilter=\'overdue\';billingTab=\'invoices\';renderBillingPage(document.getElementById(\'main-content\'))" style="white-space:nowrap;background:var(--red);color:white;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer">View Overdue</button>';
         html += '</div>';
       }
 
       html += '</div>';
 
       // Top Brokers by Outstanding
-      html += '<div class="card" style="margin-bottom:24px">';
+      html += '<div class="card card-flush" style="margin-bottom:24px">';
       html += '<div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">';
-      html += '<h3 style="margin:0;font-size:16px;font-weight:600;font-family:var(--font-display)">Top Brokers by Outstanding</h3>';
+      html += '<h3 style="margin:0;font-size:14px;font-weight:600;font-family:var(--font-display)">Top Brokers by Outstanding</h3>';
       html += '<button class="btn btn-sm btn-secondary" onclick="billingTab=\'brokers\';renderBillingPage(document.getElementById(\'main-content\'))">View All</button>';
       html += '</div>';
-      html += '<div class="table-wrapper"><table>';
+      html += '<div class="table-wrapper"><table class="data-table">';
       html += '<thead><tr><th>Broker</th><th style="text-align:right">Outstanding</th><th style="text-align:right">Total Invoiced</th><th style="text-align:right">Paid</th><th style="text-align:right">Overdue</th><th style="width:120px">Aging</th><th style="width:80px">Actions</th></tr></thead><tbody>';
 
       if (brokerStats.length === 0) {
@@ -30196,27 +30192,26 @@
 
       html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px">';
       const brokerCards = [
-        { label: 'With Outstanding', value: brokersWithOutstanding.length, sub: 'brokers', color: 'var(--info)' },
-        { label: 'Highest AR', value: highestAR ? formatMoney(highestAR.outstanding) : '$0', sub: highestAR ? escapeHtml(highestAR.brokerName) : '-', color: '#f97316' },
-        { label: 'Slowest Payer', value: slowestPayer ? slowestPayer.avgDaysToPay + 'd' : '-', sub: slowestPayer ? escapeHtml(slowestPayer.brokerName) : '-', color: 'var(--danger)' },
-        { label: 'Overdue Brokers', value: overdueBrokers.length, sub: 'need attention', color: 'var(--danger)' }
+        { label: 'With Outstanding', value: brokersWithOutstanding.length, sub: 'brokers', accent: 'stat-card--blue' },
+        { label: 'Highest AR', value: highestAR ? formatMoney(highestAR.outstanding) : '$0', sub: highestAR ? escapeHtml(highestAR.brokerName) : '-', accent: 'stat-card--amber' },
+        { label: 'Slowest Payer', value: slowestPayer ? slowestPayer.avgDaysToPay + 'd' : '-', sub: slowestPayer ? escapeHtml(slowestPayer.brokerName) : '-', accent: 'stat-card--red' },
+        { label: 'Overdue Brokers', value: overdueBrokers.length, sub: 'need attention', accent: 'stat-card--red' }
       ];
       brokerCards.forEach(cd => {
-        html += '<div style="background:var(--bg-card);border-radius:var(--radius-sm);padding:16px;border:1px solid var(--border)">';
-        html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">';
-        html += '<span style="width:8px;height:8px;border-radius:50%;background:' + cd.color + ';display:inline-block"></span>';
-        html += '<span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600">' + cd.label + '</span></div>';
-        html += '<div style="font-size:20px;font-weight:700;font-family:var(--font-mono);margin-bottom:2px">' + cd.value + '</div>';
-        html += '<div style="font-size:12px;color:var(--text-muted)">' + cd.sub + '</div></div>';
+        html += '<div class="stat-flat ' + cd.accent + '">';
+        html += '<div class="stat-flat-label">' + cd.label + '</div>';
+        html += '<div class="stat-flat-value" style="font-family:var(--font-mono)">' + cd.value + '</div>';
+        html += '<div style="font-size:12px;color:var(--text-muted);margin-top:2px">' + cd.sub + '</div>';
+        html += '</div>';
       });
       html += '</div>';
 
       // Search bar
       html += '<div style="margin-bottom:16px">';
-      html += '<input type="text" id="broker-billing-search" placeholder="Search brokers..." ';
+      html += '<input type="text" id="broker-billing-search" class="input" placeholder="Search brokers..." ';
       html += 'value="' + brokerBillingSearchTerm + '" ';
       html += 'oninput="brokerBillingSearchTerm=this.value;renderBillingPage(document.getElementById(\'main-content\'))" ';
-      html += 'style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;width:300px;background:var(--bg-card);color:var(--text-primary)">';
+      html += 'style="width:300px">';
       html += '</div>';
 
       // Filter brokers
@@ -30227,7 +30222,7 @@
       }
 
       // Broker accounts table
-      html += '<div class="card"><div class="table-wrapper"><table>';
+      html += '<div class="card card-flush"><div class="table-wrapper"><table class="data-table">';
       html += '<thead><tr>';
       html += '<th>Broker</th>';
       html += '<th style="text-align:center">Terms</th>';
