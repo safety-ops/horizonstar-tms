@@ -14851,7 +14851,16 @@
         currentPage = savedPage;
       }
       
-      renderNav(); await loadAllData(); renderPage(); startNotificationPolling(); startSessionMonitor(); startRealtimeSync(); updateWorldClocks(); checkAndShowOnboarding();
+      renderNav();
+      if (currentUser && currentUser.role === 'DEALER') {
+        // Dealers only need their profile and orders — skip full TMS data load
+        currentPage = 'dealer_dashboard';
+        await loadDealerProfile();
+        renderPage();
+        startSessionMonitor();
+      } else {
+        await loadAllData(); renderPage(); startNotificationPolling(); startSessionMonitor(); startRealtimeSync(); updateWorldClocks(); checkAndShowOnboarding();
+      }
     }
     
     function toggleMobileMenu() {
