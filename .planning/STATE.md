@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-12)
 
 **Core value:** Efficient end-to-end vehicle transport management
-**Current focus:** v1.4 -- Phase 20 complete, ready for Phase 21 (Orders Page Restyle)
+**Current focus:** v1.4 -- Phase 21 in progress (Orders Page Restyle)
 
 ## Current Position
 
-Phase: 20 of 26 (Dashboard Restyle)
-Plan: 2 of 2 in current phase
-Status: Phase complete
-Last activity: 2026-03-13 -- Completed 20-02-PLAN.md (Dashboard bottom section restyle)
+Phase: 21 of 26 (Orders Page Restyle)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-03-13 -- Completed 21-01-PLAN.md (Shared helpers restyle)
 
-Progress: [███░░░░░░░] 20%
+Progress: [████░░░░░░] 21%
 
 ## Performance Metrics
 
@@ -55,6 +55,9 @@ Key context for v1.4:
 - Analytics section-header pattern: uniform flat headers replacing colored border-bottom h3s (Phase 20)
 - Sparkline SVG colors kept as hex (inline SVG stroke/fill) (Phase 20)
 - font-family: var(--font-mono) on all dashboard numeric metric values (Phase 20)
+- getBadge() CSS classes (badge-green/amber/blue/red/gray) added to base.css (Phase 21)
+- renderOrderPreviewCard uses CSS tokens, no accentColor border-left (Phase 21)
+- renderPaginationControls uses pagination-flat class, no card container (Phase 21)
 
 ### Known Issues
 - 4,344 inline style= attributes in index.html (in JS render functions) bypass CSS variables -- every page sweep requires JS template edits
@@ -70,9 +73,9 @@ Key context for v1.4:
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 20-02-PLAN.md (Phase 20 complete)
+Stopped at: Completed 21-01-PLAN.md (Shared helpers restyle)
 Resume file: None
 
 ---
 
-**Next action**: `/gsd:plan-phase 21`
+**Next action**: `/gsd:execute-phase 21-02`
