@@ -184,7 +184,7 @@ Plans:
 
 Plans:
 - [x] 23-01-PLAN.md -- Restyle Drivers page (renderDrivers + viewDriverProfile)
-- [ ] 23-02-PLAN.md -- Restyle Local Drivers + Trucks pages (renderLocalDrivers + viewLocalDriverDetails + renderTrucks)
+- [x] 23-02-PLAN.md -- Restyle Local Drivers + Trucks pages (renderLocalDrivers + viewLocalDriverDetails + renderTrucks)
 - [ ] 23-03-PLAN.md -- Restyle Brokers + Dispatchers pages (renderBrokers + viewBrokerDetails + renderDispatchers + renderDispatcherRanking)
 
 ---
