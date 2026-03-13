@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-12)
 ## Current Position
 
 Phase: 24 of 26 (Finance Pages Restyle)
-Plan: 2 of 5 in current phase
+Plan: 3 of 5 in current phase
 Status: In progress
-Last activity: 2026-03-13 -- Completed 24-02-PLAN.md (Billing invoices/collections + payroll restyle)
+Last activity: 2026-03-13 -- Completed 24-03-PLAN.md (Fuel tracking + IFTA restyle)
 
-Progress: [██████░░░░] 62%
+Progress: [██████░░░░] 64%
 
 ## Performance Metrics
 
@@ -92,6 +92,11 @@ Key context for v1.4:
 - Payroll stat cards use stat-flat + stat-card--{color} pattern, no stat-icon (Phase 24)
 - Payroll driver cards use flat bg-tertiary stat boxes with font-mono monetary values (Phase 24)
 - getPaymentStatusInfo() and buildPayrollStatusChip() use CSS variables, font-weight:600 (Phase 24)
+- Fuel page tabs use segmented-control (not btn-primary/btn-secondary toggles) (Phase 24)
+- Fuel forecast card: 3-column stat-flat grid replaces dark gradient hero (Phase 24)
+- IFTA Smart Pick card: flat bg-card + green border instead of green gradient (Phase 24)
+- Collapsible table sections: card-flush + onclick toggle + collapse-icon + display:none default (Phase 24)
+- Export button in collapsible header uses event.stopPropagation() (Phase 24)
 
 ### Known Issues
 - 4,344 inline style= attributes in index.html (in JS render functions) bypass CSS variables -- every page sweep requires JS template edits
@@ -107,9 +112,9 @@ Key context for v1.4:
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 24-02-PLAN.md (Billing invoices/collections + payroll restyle)
+Stopped at: Completed 24-03-PLAN.md (Fuel tracking + IFTA restyle)
 Resume file: None
 
 ---
 
-**Next action**: Execute 24-03-PLAN.md (next plan in Phase 24)
+**Next action**: Execute 24-04-PLAN.md (next plan in Phase 24)
