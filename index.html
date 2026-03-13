@@ -8783,8 +8783,20 @@
         password,
         options: { data: metadata || {} }
       });
-      if (error || !data?.user?.id) {
-        throw new Error(error?.message || 'Failed to create Supabase Auth user');
+      // If user already registered but Supabase returned user data, use it
+      if (error && data?.user?.id) {
+        // User exists — return their ID anyway (idempotent)
+        return data.user.id;
+      }
+      if (error) {
+        throw new Error(error.message || 'Failed to create Supabase Auth user');
+      }
+      if (!data?.user?.id) {
+        // Supabase returns user with empty identities when email already exists (email confirmation on)
+        if (data?.user && (!data.user.identities || data.user.identities.length === 0)) {
+          throw new Error('USER_ALREADY_EXISTS');
+        }
+        throw new Error('Failed to create Supabase Auth user');
       }
 
       if (previousSession?.access_token && previousSession?.refresh_token) {
@@ -47369,12 +47381,22 @@ function jsonResponse(data, status = 200) {
         var authId = newUser ? newUser.auth_id : null;
 
         if (!newUser) {
-          // Create Supabase Auth user
-          authId = await createAuthUserWithoutSessionSwitch(
-            app.contact_email,
-            tempPassword,
-            { first_name: app.contact_name || app.company_name, last_name: '' }
-          );
+          // Try to create Supabase Auth user
+          try {
+            authId = await createAuthUserWithoutSessionSwitch(
+              app.contact_email,
+              tempPassword,
+              { first_name: app.contact_name || app.company_name, last_name: '' }
+            );
+          } catch (authErr) {
+            // If user already exists in auth but not in users table (orphaned from previous attempt)
+            if (authErr.message === 'USER_ALREADY_EXISTS' || (authErr.message && authErr.message.toLowerCase().includes('already'))) {
+              authId = 'pending_link';
+              tempPassword = '(account exists — dealer should use Forgot Password on login page)';
+            } else {
+              throw authErr;
+            }
+          }
 
           // Create user record
           newUser = await dbInsert('users', {
