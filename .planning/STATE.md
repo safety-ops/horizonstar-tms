@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-12)
 ## Current Position
 
 Phase: 24 of 26 (Finance Pages Restyle)
-Plan: 3 of 5 in current phase
+Plan: 4 of 5 in current phase
 Status: In progress
-Last activity: 2026-03-13 -- Completed 24-03-PLAN.md (Fuel tracking + IFTA restyle)
+Last activity: 2026-03-13 -- Completed 24-04-PLAN.md (Financials + Trip Profitability restyle)
 
-Progress: [██████░░░░] 64%
+Progress: [██████░░░░] 66%
 
 ## Performance Metrics
 
@@ -97,6 +97,12 @@ Key context for v1.4:
 - IFTA Smart Pick card: flat bg-card + green border instead of green gradient (Phase 24)
 - Collapsible table sections: card-flush + onclick toggle + collapse-icon + display:none default (Phase 24)
 - Export button in collapsible header uses event.stopPropagation() (Phase 24)
+- Financials 8-tab bar uses segmented-control-scroll (not btn-primary/btn-secondary) (Phase 24)
+- Financials overview/costs stat cards use stat-flat + stat-card--{color} (Phase 24)
+- All financials sub-tab tables use data-table class (Phase 24)
+- Trip Profitability filter bar uses input/select component classes (Phase 24)
+- Trip Profitability table uses data-table with profitability-cell CSS variable dim tints (Phase 24)
+- Trip comparison/detail modals restyled with CSS variables, no hardcoded hex (Phase 24)
 
 ### Known Issues
 - 4,344 inline style= attributes in index.html (in JS render functions) bypass CSS variables -- every page sweep requires JS template edits
@@ -112,9 +118,9 @@ Key context for v1.4:
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 24-03-PLAN.md (Fuel tracking + IFTA restyle)
+Stopped at: Completed 24-04-PLAN.md (Financials + Trip Profitability restyle)
 Resume file: None
 
 ---
 
-**Next action**: Execute 24-04-PLAN.md (next plan in Phase 24)
+**Next action**: Execute 24-05-PLAN.md (next plan in Phase 24)
