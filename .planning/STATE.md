@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-12)
 
 **Core value:** Efficient end-to-end vehicle transport management
-**Current focus:** v1.4 -- Phase 25 in progress (Operations/Admin Restyle)
+**Current focus:** v1.4 -- Phase 25 complete (Operations/Admin Restyle)
 
 ## Current Position
 
 Phase: 25 of 26 (Operations/Admin Restyle)
-Plan: 4 of 5 in current phase
-Status: In progress
-Last activity: 2026-03-13 -- Completed 25-04-PLAN.md (Team Chat CSS restyle)
+Plan: 5 of 5 in current phase
+Status: Phase complete
+Last activity: 2026-03-13 -- Completed 25-05-PLAN.md (Executive Dashboard restyle)
 
-Progress: [████████░░] 81%
+Progress: [█████████░] 85%
 
 ## Performance Metrics
 
@@ -135,6 +135,12 @@ Key context for v1.4:
 - Chat composer shell: pill-style border-radius:24px, var(--bg-card) background (Phase 25)
 - Mini-chat bubbles flattened: own=var(--bg-tertiary), other=var(--bg-card), no gradients/glows (Phase 25)
 - Entity card presence dots in base.css use CSS variables (Phase 25)
+- Executive dashboard health score: stat-flat + stat-card--{accent} pattern (Phase 25)
+- Executive dashboard dark profitability panel replaced with flat card + section-header (Phase 25)
+- Executive dashboard P&L table uses CSS variable dim colors for semantic row backgrounds (Phase 25)
+- Recommendation engine color property uses CSS variable names (green/red/amber/blue/purple) instead of hex (Phase 25)
+- Truck performance status badges use badge-green/amber/red/blue classes (Phase 25)
+- Executive dashboard: zero gradients, zero font-weight>600, zero hardcoded hex (Phase 25)
 
 ### Known Issues
 - 4,344 inline style= attributes in index.html (in JS render functions) bypass CSS variables -- every page sweep requires JS template edits
@@ -149,9 +155,9 @@ Key context for v1.4:
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 25-04-PLAN.md (Team Chat CSS restyle)
+Stopped at: Completed 25-05-PLAN.md (Executive Dashboard restyle) -- Phase 25 complete
 Resume file: None
 
 ---
 
-**Next action**: Execute 25-05-PLAN.md
+**Next action**: Begin Phase 26
