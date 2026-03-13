@@ -25751,7 +25751,7 @@
         '<div style="background:var(--dim-blue);padding:16px;border-radius:8px;margin-bottom:16px"><strong style="color:var(--info)">Supported Formats:</strong><p style="color:var(--info);margin-top:8px;font-size:14px">• <strong>CSV</strong> (Recommended) - More reliable<br>• <strong>PDF</strong> - Love\'s / TA Transaction Reports</p></div>' +
         '<div class="form-group"><label>Select File (CSV or PDF)</label><input type="file" id="fuelFile" accept=".csv,.pdf"></div>' +
         '<div id="fuelParsePreview" style="display:none;margin-top:16px;max-height:300px;overflow-y:auto"></div>' +
-        '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="parseFuelFile()">[[icon:search]] Parse File</button><button class="btn btn-primary" id="saveFuelBtn" style="display:none;background:#10b981" onclick="saveFuelTransactions()">[[icon:save]] Save Transactions</button></div></div>';
+        '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="parseFuelFile()">[[icon:search]] Parse File</button><button class="btn btn-primary" id="saveFuelBtn" style="display:none;background:var(--green)" onclick="saveFuelTransactions()">[[icon:save]] Save Transactions</button></div></div>';
       document.body.appendChild(m);
     }
 
@@ -25948,10 +25948,10 @@
         const totalCost = parsedFuelData.reduce((s, t) => s + t.amount, 0);
         
         preview.style.display = 'block';
-        preview.innerHTML = '<div style="background:var(--dim-green);padding:12px;border-radius:8px;margin-bottom:12px"><strong style="color:#059669">[[icon:check]] Found ' + parsedFuelData.length + ' transactions</strong><br><span style="font-size:12px">ULSD: ' + totalUlsdGal.toFixed(2) + ' gal | DEF: ' + totalDefGal.toFixed(2) + ' gal | Total: $' + totalCost.toFixed(2) + '</span></div>' +
+        preview.innerHTML = '<div style="background:var(--dim-green);padding:12px;border-radius:8px;margin-bottom:12px"><strong style="color:var(--green)">[[icon:check]] Found ' + parsedFuelData.length + ' transactions</strong><br><span style="font-size:12px">ULSD: ' + totalUlsdGal.toFixed(2) + ' gal | DEF: ' + totalDefGal.toFixed(2) + ' gal | Total: $' + totalCost.toFixed(2) + '</span></div>' +
           '<table style="width:100%;font-size:12px"><thead><tr><th>Date</th><th>Truck</th><th>State</th><th>Product</th><th>Gallons</th><th>Amount</th></tr></thead><tbody>' +
           parsedFuelData.filter(t => t.product !== 'Txn Fee').slice(0, 10).map(t => '<tr><td>' + t.transaction_date + '</td><td>#' + t.truck_number + '</td><td><strong>' + t.state + '</strong></td><td>' + t.product + '</td><td>' + t.gallons.toFixed(2) + '</td><td>$' + t.amount.toFixed(2) + '</td></tr>').join('') +
-          (parsedFuelData.filter(t => t.product !== 'Txn Fee').length > 10 ? '<tr><td colspan="6" style="text-align:center;color:#64748b">... and ' + (parsedFuelData.filter(t => t.product !== 'Txn Fee').length - 10) + ' more</td></tr>' : '') +
+          (parsedFuelData.filter(t => t.product !== 'Txn Fee').length > 10 ? '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary)">... and ' + (parsedFuelData.filter(t => t.product !== 'Txn Fee').length - 10) + ' more</td></tr>' : '') +
           '</tbody></table>';
         document.getElementById('saveFuelBtn').style.display = 'inline-block';
       } else {
@@ -26559,7 +26559,7 @@
 
         // Option 1: Fetch from Samsara API
         (samsaraKey ?
-          '<div style="background:linear-gradient(135deg,#dcfce7,#d1fae5);padding:20px;border-radius:12px;margin-bottom:16px;border:1px solid #86efac">' +
+          '<div style="background:var(--green-dim);padding:20px;border-radius:12px;margin-bottom:16px;border:1px solid var(--green)">' +
           '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">' +
           '<span style="font-size:24px">[[icon:refresh]]</span>' +
           '<div><strong style="color:#166534;font-size:16px">Fetch from Samsara API</strong><br>' +
@@ -26591,9 +26591,9 @@
         (fleetMileageData.length > 0 ? '<div style="background:var(--dim-blue);padding:16px;border-radius:12px;margin-top:16px;border:1px solid #93c5fd">' +
           '<div style="display:flex;justify-content:space-between;align-items:center">' +
           '<div><strong style="color:var(--info)">[[icon:chart]] Current Data Loaded</strong><br>' +
-          '<span style="color:#2563eb;font-size:14px">' + fleetMileageData.length + ' trucks • ' + fleetMileageData.reduce((s,t) => s + parseFloat(t.distance || 0), 0).toLocaleString(undefined, {maximumFractionDigits: 0}) + ' total miles</span><br>' +
-          '<span style="color:#3b82f6;font-size:12px">Period: ' + (fleetMileagePeriod.start || 'N/A') + ' to ' + (fleetMileagePeriod.end || 'N/A') + '</span></div>' +
-          '<button class="btn" style="background:var(--dim-red);color:#dc2626;border-color:#fecaca" onclick="clearFleetMileage()">[[icon:trash]] Clear</button>' +
+          '<span style="color:var(--blue);font-size:14px">' + fleetMileageData.length + ' trucks • ' + fleetMileageData.reduce((s,t) => s + parseFloat(t.distance || 0), 0).toLocaleString(undefined, {maximumFractionDigits: 0}) + ' total miles</span><br>' +
+          '<span style="color:var(--blue);font-size:12px">Period: ' + (fleetMileagePeriod.start || 'N/A') + ' to ' + (fleetMileagePeriod.end || 'N/A') + '</span></div>' +
+          '<button class="btn" style="background:var(--dim-red);color:var(--red);border-color:#fecaca" onclick="clearFleetMileage()">[[icon:trash]] Clear</button>' +
           '</div></div>' : '') +
 
         '</div><div class="modal-footer">' +
@@ -26826,8 +26826,8 @@
       const urgentTasks = tasks.filter(t => t.priority === 'URGENT' && t.status !== 'COMPLETED').length;
       
       const getPriorityBadge = (p) => {
-        if (p === 'URGENT') return '<span class="badge" style="background:#dc2626;color:white">[[icon:fire]] URGENT</span>';
-        if (p === 'HIGH') return '<span class="badge" style="background:#f59e0b;color:white">HIGH</span>';
+        if (p === 'URGENT') return '<span class="badge" style="background:var(--red);color:white">[[icon:fire]] URGENT</span>';
+        if (p === 'HIGH') return '<span class="badge" style="background:var(--amber);color:white">HIGH</span>';
         if (p === 'NORMAL') return '<span class="badge badge-blue">NORMAL</span>';
         return '<span class="badge badge-gray">LOW</span>';
       };
@@ -26844,10 +26844,10 @@
         
         // Stats cards
         '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px">' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px;cursor:pointer;' + (taskFilter === 'all' ? 'border:2px solid #3b82f6' : '') + '" onclick="taskFilter=\'all\';renderTasks(document.getElementById(\'main-content\'))"><div class="label">Pending Tasks</div><div class="value">' + totalPending + '</div></div>' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;cursor:pointer;background:#dbeafe;' + (taskFilter === 'today' ? 'border:2px solid #3b82f6' : '') + '" onclick="taskFilter=\'today\';renderTasks(document.getElementById(\'main-content\'))"><div class="label">Due Today</div><div class="value" style="color:#2563eb">' + todayTasks + '</div></div>' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px;cursor:pointer;background:#fee2e2;' + (taskFilter === 'overdue' ? 'border:2px solid #dc2626' : '') + '" onclick="taskFilter=\'overdue\';renderTasks(document.getElementById(\'main-content\'))"><div class="label">Overdue</div><div class="value" style="color:var(--danger)">' + overdueTasks + '</div></div>' +
-        '<div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px;cursor:pointer;background:#fef3c7;' + (taskFilter === 'urgent' ? 'border:2px solid #f59e0b' : '') + '" onclick="taskFilter=\'urgent\';renderTasks(document.getElementById(\'main-content\'))"><div class="label">[[icon:fire]] Urgent</div><div class="value" style="color:#d97706">' + urgentTasks + '</div></div>' +
+        '<div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px;cursor:pointer;' + (taskFilter === 'all' ? 'border:2px solid var(--blue)' : '') + '" onclick="taskFilter=\'all\';renderTasks(document.getElementById(\'main-content\'))"><div class="label">Pending Tasks</div><div class="value">' + totalPending + '</div></div>' +
+        '<div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;cursor:pointer;background:var(--blue-dim);' + (taskFilter === 'today' ? 'border:2px solid var(--blue)' : '') + '" onclick="taskFilter=\'today\';renderTasks(document.getElementById(\'main-content\'))"><div class="label">Due Today</div><div class="value" style="color:var(--blue)">' + todayTasks + '</div></div>' +
+        '<div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px;cursor:pointer;background:var(--red-dim);' + (taskFilter === 'overdue' ? 'border:2px solid var(--red)' : '') + '" onclick="taskFilter=\'overdue\';renderTasks(document.getElementById(\'main-content\'))"><div class="label">Overdue</div><div class="value" style="color:var(--danger)">' + overdueTasks + '</div></div>' +
+        '<div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px;cursor:pointer;background:var(--amber-dim);' + (taskFilter === 'urgent' ? 'border:2px solid var(--amber)' : '') + '" onclick="taskFilter=\'urgent\';renderTasks(document.getElementById(\'main-content\'))"><div class="label">[[icon:fire]] Urgent</div><div class="value" style="color:var(--amber)">' + urgentTasks + '</div></div>' +
         '</div>' +
         
         // Filter tabs
@@ -26855,7 +26855,7 @@
         '<button class="btn ' + (taskFilter === 'all' ? 'btn-primary' : 'btn-secondary') + '" onclick="taskFilter=\'all\';renderTasks(document.getElementById(\'main-content\'))">All Pending</button>' +
         '<button class="btn ' + (taskFilter === 'today' ? 'btn-primary' : 'btn-secondary') + '" onclick="taskFilter=\'today\';renderTasks(document.getElementById(\'main-content\'))">Today</button>' +
         '<button class="btn ' + (taskFilter === 'upcoming' ? 'btn-primary' : 'btn-secondary') + '" onclick="taskFilter=\'upcoming\';renderTasks(document.getElementById(\'main-content\'))">Upcoming</button>' +
-        '<button class="btn ' + (taskFilter === 'overdue' ? 'btn-primary' : 'btn-secondary') + '" style="' + (taskFilter === 'overdue' ? '' : 'background:#fee2e2;color:#dc2626;border-color:#fecaca') + '" onclick="taskFilter=\'overdue\';renderTasks(document.getElementById(\'main-content\'))">Overdue</button>' +
+        '<button class="btn ' + (taskFilter === 'overdue' ? 'btn-primary' : 'btn-secondary') + '" style="' + (taskFilter === 'overdue' ? '' : 'background:var(--red-dim);color:var(--red);border-color:#fecaca') + '" onclick="taskFilter=\'overdue\';renderTasks(document.getElementById(\'main-content\'))">Overdue</button>' +
         '<button class="btn ' + (taskFilter === 'completed' ? 'btn-primary' : 'btn-secondary') + '" onclick="taskFilter=\'completed\';renderTasks(document.getElementById(\'main-content\'))">Completed</button>' +
         '</div>' +
         
@@ -26866,27 +26866,27 @@
         filteredTasks.map(t => {
           const assignee = appData.dispatchers.find(d => d.id === t.assigned_to);
           const creator = appData.users.find(u => u.id === t.created_by);
-          const overdueStyle = isOverdue(t.due_date, t.status) ? 'border-left:4px solid #dc2626;background:#fef2f2' : '';
-          const urgentStyle = t.priority === 'URGENT' && t.status !== 'COMPLETED' ? 'border-left:4px solid #f59e0b;background:#fffbeb' : '';
+          const overdueStyle = isOverdue(t.due_date, t.status) ? 'border-left:4px solid var(--red);background:var(--red-dim)' : '';
+          const urgentStyle = t.priority === 'URGENT' && t.status !== 'COMPLETED' ? 'border-left:4px solid var(--amber);background:var(--amber-dim)' : '';
           
           return '<div style="padding:16px;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:12px;' + (overdueStyle || urgentStyle) + '">' +
             '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">' +
             '<div style="flex:1">' +
             '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">' +
-            (t.status !== 'COMPLETED' ? '<input type="checkbox" style="width:20px;height:20px;cursor:pointer" onchange="toggleTaskComplete(' + t.id + ',this.checked)" title="Mark as completed">' : '<span style="color:#10b981;font-size:20px">[[icon:check]]</span>') +
-            '<strong style="font-size:16px;' + (t.status === 'COMPLETED' ? 'text-decoration:line-through;color:#94a3b8' : '') + '">' + t.title + '</strong>' +
+            (t.status !== 'COMPLETED' ? '<input type="checkbox" style="width:20px;height:20px;cursor:pointer" onchange="toggleTaskComplete(' + t.id + ',this.checked)" title="Mark as completed">' : '<span style="color:var(--green);font-size:20px">[[icon:check]]</span>') +
+            '<strong style="font-size:16px;' + (t.status === 'COMPLETED' ? 'text-decoration:line-through;color:var(--text-muted)' : '') + '">' + t.title + '</strong>' +
             getPriorityBadge(t.priority) +
             getStatusBadge(t.status) +
             '</div>' +
             (t.description ? '<p style="color:var(--text-secondary);margin:0 0 8px 32px;font-size:14px">' + t.description + '</p>' : '') +
-            '<div style="display:flex;gap:16px;margin-left:32px;font-size:13px;color:#64748b">' +
+            '<div style="display:flex;gap:16px;margin-left:32px;font-size:13px;color:var(--text-secondary)">' +
             '<span>[[icon:calendar]] ' + (isOverdue(t.due_date, t.status) ? '<span style="color:var(--danger);font-weight:600">OVERDUE: </span>' : '') + formatDate(t.due_date) + '</span>' +
             (assignee ? '<span>[[icon:user]] ' + assignee.name + '</span>' : '') +
             (creator ? '<span>Created by: ' + (creator.first_name || creator.email) + '</span>' : '') +
             '</div>' +
             '</div>' +
             '<div class="actions">' +
-            (t.status !== 'COMPLETED' ? '<button class="action-btn" style="background:#10b981;color:white" onclick="toggleTaskComplete(' + t.id + ',true)" title="Complete">[[icon:check]]</button>' : '<button class="action-btn" style="background:#f59e0b;color:white" onclick="toggleTaskComplete(' + t.id + ',false)" title="Reopen">↩</button>') +
+            (t.status !== 'COMPLETED' ? '<button class="action-btn" style="background:var(--green);color:white" onclick="toggleTaskComplete(' + t.id + ',true)" title="Complete">[[icon:check]]</button>' : '<button class="action-btn" style="background:var(--amber);color:white" onclick="toggleTaskComplete(' + t.id + ',false)" title="Reopen">↩</button>') +
             '<button class="action-btn edit" onclick="openTaskModal(' + t.id + ')">Edit</button>' +
             '<button class="action-btn delete" onclick="deleteTask(' + t.id + ')">Del</button>' +
             '</div></div></div>';
@@ -26978,17 +26978,17 @@
 
       // Tab buttons
       const tabs = [
-        { id: 'dashboard', label: '[[icon:chart]] Dashboard', color: '#3b82f6' },
-        { id: 'tasks', label: '[[icon:clipboard]] Compliance Tasks', color: '#8b5cf6' },
-        { id: 'driver_files', label: '[[icon:user]] Driver Files', color: '#1e40af' },
+        { id: 'dashboard', label: '[[icon:chart]] Dashboard', color: 'var(--blue)' },
+        { id: 'tasks', label: '[[icon:clipboard]] Compliance Tasks', color: 'var(--purple)' },
+        { id: 'driver_files', label: '[[icon:user]] Driver Files', color: 'var(--blue)' },
         { id: 'truck_files', label: '[[icon:truck]] Truck Files', color: '#0891b2' },
-        { id: 'company_files', label: '[[icon:building]] Company Files', color: '#059669' },
-        { id: 'driver_compliance', label: '[[icon:ticket]] Tickets/Violations', color: '#dc2626' },
-        { id: 'accidents', label: '[[icon:siren]] Accident Registry', color: '#f59e0b' }
+        { id: 'company_files', label: '[[icon:building]] Company Files', color: 'var(--green)' },
+        { id: 'driver_compliance', label: '[[icon:ticket]] Tickets/Violations', color: 'var(--red)' },
+        { id: 'accidents', label: '[[icon:siren]] Accident Registry', color: 'var(--amber)' }
       ];
       
       const tabsHtml = '<div style="display:flex;gap:4px;margin-bottom:20px;flex-wrap:wrap">' +
-        tabs.map(t => '<button onclick="complianceMainTab=\'' + t.id + '\';renderCompliance(document.getElementById(\'main-content\'))" style="padding:10px 16px;border:none;cursor:pointer;font-weight:600;border-radius:8px;font-size:13px;' + (complianceMainTab === t.id ? 'background:' + t.color + ';color:white' : 'background:#e2e8f0;color:var(--text-secondary)') + '">' + t.label + '</button>').join('') +
+        tabs.map(t => '<button onclick="complianceMainTab=\'' + t.id + '\';renderCompliance(document.getElementById(\'main-content\'))" style="padding:10px 16px;border:none;cursor:pointer;font-weight:600;border-radius:8px;font-size:13px;' + (complianceMainTab === t.id ? 'background:' + t.color + ';color:white' : 'background:var(--border);color:var(--text-secondary)') + '">' + t.label + '</button>').join('') +
         '</div>';
       
       c.innerHTML = '<div class="header"><h2>[[icon:clipboard]] Compliance Center</h2></div>' + tabsHtml + '<div id="complianceContent"></div>';
@@ -27097,11 +27097,11 @@
       const upcomingCompTasks = compTasks.filter(t => t.next_due_date && new Date(t.next_due_date) >= today && new Date(t.next_due_date) <= new Date(next30Days))
         .map(t => ({ task: t.task_name, due: t.next_due_date }));
       
-      c.innerHTML = '<div class="card" style="margin-bottom:24px;background:linear-gradient(135deg,#1e40af,#3b82f6);color:white;padding:24px"><h3 style="margin:0 0 16px">[[icon:chart]] Compliance Report</h3>' +
+      c.innerHTML = '<div class="card" style="margin-bottom:24px;background:var(--blue);color:white;padding:24px"><h3 style="margin:0 0 16px">[[icon:chart]] Compliance Report</h3>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">' +
-        '<div style="background:rgba(255,255,255,0.15);padding:20px;border-radius:12px;text-align:center"><div style="font-size:14px;opacity:0.9">Open Tickets</div><div style="font-size:36px;font-weight:700">' + openTickets + '</div></div>' +
-        '<div style="background:rgba(255,255,255,0.15);padding:20px;border-radius:12px;text-align:center"><div style="font-size:14px;opacity:0.9">Open Claims</div><div style="font-size:36px;font-weight:700">' + openClaims + '</div></div>' +
-        '<div style="background:rgba(255,255,255,0.15);padding:20px;border-radius:12px;text-align:center"><div style="font-size:14px;opacity:0.9">Days Without Accidents</div><div style="font-size:36px;font-weight:700;color:#4ade80">' + daysWithoutAccident + '</div></div>' +
+        '<div style="background:rgba(255,255,255,0.15);padding:20px;border-radius:12px;text-align:center"><div style="font-size:14px;opacity:0.9">Open Tickets</div><div style="font-size:36px;font-weight:600">' + openTickets + '</div></div>' +
+        '<div style="background:rgba(255,255,255,0.15);padding:20px;border-radius:12px;text-align:center"><div style="font-size:14px;opacity:0.9">Open Claims</div><div style="font-size:36px;font-weight:600">' + openClaims + '</div></div>' +
+        '<div style="background:rgba(255,255,255,0.15);padding:20px;border-radius:12px;text-align:center"><div style="font-size:14px;opacity:0.9">Days Without Accidents</div><div style="font-size:36px;font-weight:600;color:#4ade80">' + daysWithoutAccident + '</div></div>' +
         '</div></div>' +
         
         // Grid of upcoming items
@@ -27110,7 +27110,7 @@
         // Driver Tasks
         '<div class="card"><div class="card-header"><h4 style="margin:0">[[icon:user]] Driver Tasks (Next 7 Days)</h4></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
         (driverTasks.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px">No tasks due</div>' :
-        driverTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + t.driver + '</strong><br><span style="font-size:12px;color:var(--text-muted)">' + t.task + '</span></div><div style="font-size:12px;color:#f59e0b">' + formatDate(t.due) + '</div></div>').join('')) +
+        driverTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + t.driver + '</strong><br><span style="font-size:12px;color:var(--text-muted)">' + t.task + '</span></div><div style="font-size:12px;color:var(--amber)">' + formatDate(t.due) + '</div></div>').join('')) +
         '</div></div>' +
         
         // Birthdays
@@ -27122,7 +27122,7 @@
         // Vehicle Tasks
         '<div class="card"><div class="card-header"><h4 style="margin:0">[[icon:truck]] Vehicle Tasks (Next 7 Days)</h4></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
         (vehicleTasks.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px">No tasks due</div>' :
-        vehicleTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + t.unit + '</strong><br><span style="font-size:12px;color:var(--text-muted)">' + t.task + '</span></div><div style="font-size:12px;color:#f59e0b">' + formatDate(t.due) + '</div></div>').join('')) +
+        vehicleTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + t.unit + '</strong><br><span style="font-size:12px;color:var(--text-muted)">' + t.task + '</span></div><div style="font-size:12px;color:var(--amber)">' + formatDate(t.due) + '</div></div>').join('')) +
         '</div></div>' +
 
         // Company Files Tasks
@@ -27139,20 +27139,20 @@
           });
           return '<div class="card"><div class="card-header"><h4 style="margin:0">[[icon:building]] Company Files (Next 7 Days)</h4></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
             (companyFileTasks.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px">No files expiring</div>' :
-            companyFileTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + t.doc + '</strong></div><div style="font-size:12px;color:' + (t.days < 0 ? '#dc2626' : '#059669') + '">' + (t.days < 0 ? 'EXPIRED' : formatDate(t.due)) + '</div></div>').join('')) +
+            companyFileTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + t.doc + '</strong></div><div style="font-size:12px;color:' + (t.days < 0 ? 'var(--red)' : 'var(--green)') + '">' + (t.days < 0 ? 'EXPIRED' : formatDate(t.due)) + '</div></div>').join('')) +
             '</div></div>';
         })() +
 
         // Court Dates
         '<div class="card"><div class="card-header"><h4 style="margin:0">[[icon:scale]] Court Dates (Next 30 Days)</h4></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
         (courtDates.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px">No court dates found</div>' :
-        courtDates.map(cd => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + cd.driver + '</strong></div><div style="font-size:12px;color:#dc2626">' + formatDate(cd.date) + '</div></div>').join('')) +
+        courtDates.map(cd => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + cd.driver + '</strong></div><div style="font-size:12px;color:var(--red)">' + formatDate(cd.date) + '</div></div>').join('')) +
         '</div></div>' +
         
         // Compliance Tasks
         '<div class="card"><div class="card-header"><h4 style="margin:0">[[icon:clipboard]] Compliance Tasks (Next 30 Days)</h4></div><div style="padding:16px;max-height:200px;overflow-y:auto">' +
         (upcomingCompTasks.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px">No tasks found</div>' :
-        upcomingCompTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + t.task + '</strong></div><div style="font-size:12px;color:#8b5cf6">' + formatDate(t.due) + '</div></div>').join('')) +
+        upcomingCompTasks.map(t => '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-darker);border-radius:6px;margin-bottom:8px"><div><strong>' + t.task + '</strong></div><div style="font-size:12px;color:var(--purple)">' + formatDate(t.due) + '</div></div>').join('')) +
         '</div></div>' +
         
         '</div>';
@@ -27204,7 +27204,7 @@
       const iftaDates = getIFTADueDates();
       const nextIFTA = iftaDates.find(d => d.due >= today) || iftaDates[0];
       
-      c.innerHTML = '<div class="card" style="margin-bottom:24px;background:#dbeafe;padding:16px;border:1px solid #3b82f6"><strong>[[icon:calendar]] Next IFTA Filing:</strong> ' + nextIFTA.quarter + ' (' + nextIFTA.period + ') - Due: <strong>' + formatDate(nextIFTA.due) + '</strong></div>' +
+      c.innerHTML = '<div class="card" style="margin-bottom:24px;background:var(--blue-dim);padding:16px;border:1px solid var(--blue)"><strong>[[icon:calendar]] Next IFTA Filing:</strong> ' + nextIFTA.quarter + ' (' + nextIFTA.period + ') - Due: <strong>' + formatDate(nextIFTA.due) + '</strong></div>' +
         
         '<div class="card" style="margin-bottom:24px"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3>[[icon:clipboard]] Compliance Tasks</h3><button class="btn btn-primary" onclick="openComplianceTaskModal()">+ Add Task</button></div>' +
         '<div class="table-wrapper"><table><thead><tr><th>Task</th><th>Frequency</th><th>Last Completed</th><th>Next Due</th><th>Status</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
@@ -27336,7 +27336,7 @@
         });
       });
       
-      const alertsHtml = alerts.length > 0 ? '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--danger)">[[icon:alert]] Expiring Soon (' + alerts.length + ')</strong><div style="margin-top:8px">' + alerts.slice(0, 5).map(a => '<span class="badge badge-amber" style="margin:4px">' + a.name + ' - ' + a.doc + ' (' + (a.days < 0 ? 'EXPIRED' : a.days + 'd') + ')</span>').join('') + '</div></div>' : '';
+      const alertsHtml = alerts.length > 0 ? '<div style="background:var(--red-dim);border:1px solid #fecaca;border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--danger)">[[icon:alert]] Expiring Soon (' + alerts.length + ')</strong><div style="margin-top:8px">' + alerts.slice(0, 5).map(a => '<span class="badge badge-amber" style="margin:4px">' + a.name + ' - ' + a.doc + ' (' + (a.days < 0 ? 'EXPIRED' : a.days + 'd') + ')</span>').join('') + '</div></div>' : '';
       
       c.innerHTML = alertsHtml +
         '<div class="card"><div class="table-wrapper"><table><thead><tr><th>Driver</th><th>CDL</th><th>Medical Card</th><th>MVR</th><th>PSP Report</th><th>Other</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
@@ -27433,7 +27433,7 @@
       const customFiles = files.filter(f => f.category === 'CUSTOM');
       const customFolders = [...new Set(customFiles.map(f => f.folder_name).filter(Boolean))];
 
-      const alertsHtml = alerts.length > 0 ? '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--danger)">[[icon:alert]] Expiring Soon (' + alerts.length + ')</strong><div style="margin-top:8px">' + alerts.slice(0, 5).map(a => '<span class="badge badge-amber" style="margin:4px">' + a.doc + ' (' + (a.days < 0 ? 'EXPIRED' : a.days + 'd') + ')</span>').join('') + '</div></div>' : '';
+      const alertsHtml = alerts.length > 0 ? '<div style="background:var(--red-dim);border:1px solid #fecaca;border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--danger)">[[icon:alert]] Expiring Soon (' + alerts.length + ')</strong><div style="margin-top:8px">' + alerts.slice(0, 5).map(a => '<span class="badge badge-amber" style="margin:4px">' + a.doc + ' (' + (a.days < 0 ? 'EXPIRED' : a.days + 'd') + ')</span>').join('') + '</div></div>' : '';
 
       // Build file status rows
       const getFileStatus = (fileType) => {
@@ -27482,7 +27482,7 @@
       if (file.file_data.startsWith('data:application/pdf') || file.file_data.startsWith('data:image')) {
         w.document.write('<html><head><title>' + file.file_name + '</title></head><body style="margin:0"><iframe src="' + file.file_data + '" style="width:100%;height:100vh;border:none"></iframe></body></html>');
       } else {
-        w.document.write('<html><head><title>' + file.file_name + '</title><style>body{font-family:system-ui;padding:40px;max-width:600px;margin:0 auto}</style></head><body><h2>' + file.file_name + '</h2><p><strong>Type:</strong> ' + file.file_type.replace(/_/g, ' ') + '</p>' + (file.notes ? '<p><strong>Notes:</strong> ' + file.notes + '</p>' : '') + (file.expiration_date ? '<p><strong>Expires:</strong> ' + formatDate(file.expiration_date) + '</p>' : '') + '<a href="' + file.file_data + '" download="' + file.file_name + '" style="display:inline-block;padding:10px 20px;background:#3b82f6;color:white;text-decoration:none;border-radius:6px;margin-top:20px">Download File</a></body></html>');
+        w.document.write('<html><head><title>' + file.file_name + '</title><style>body{font-family:system-ui;padding:40px;max-width:600px;margin:0 auto}</style></head><body><h2>' + file.file_name + '</h2><p><strong>Type:</strong> ' + file.file_type.replace(/_/g, ' ') + '</p>' + (file.notes ? '<p><strong>Notes:</strong> ' + file.notes + '</p>' : '') + (file.expiration_date ? '<p><strong>Expires:</strong> ' + formatDate(file.expiration_date) + '</p>' : '') + '<a href="' + file.file_data + '" download="' + file.file_name + '" style="display:inline-block;padding:10px 20px;background:var(--blue);color:white;text-decoration:none;border-radius:6px;margin-top:20px">Download File</a></body></html>');
       }
       w.document.close();
     }
@@ -27666,12 +27666,12 @@
       
       c.innerHTML = '<div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">' +
         '<button class="btn ' + (dcTab === 'tickets' ? 'btn-primary' : 'btn-secondary') + '" onclick="dcTab=\'tickets\';renderCompliance(document.getElementById(\'main-content\'))">[[icon:ticket]] Tickets (' + tickets.length + ')</button>' +
-        '<button class="btn ' + (dcTab === 'violations' ? 'btn-primary' : 'btn-secondary') + '" style="' + (dcTab === 'violations' ? 'background:#8b5cf6;border-color:#8b5cf6' : '') + '" onclick="dcTab=\'violations\';renderCompliance(document.getElementById(\'main-content\'))">[[icon:alert]] Violations (' + violations.length + ')</button>' +
-        '<button class="btn ' + (dcTab === 'claims' ? 'btn-primary' : 'btn-secondary') + '" style="' + (dcTab === 'claims' ? 'background:#f59e0b;border-color:#f59e0b' : '') + '" onclick="dcTab=\'claims\';renderCompliance(document.getElementById(\'main-content\'))">[[icon:spark]] Claims (' + claims.length + ')</button>' +
+        '<button class="btn ' + (dcTab === 'violations' ? 'btn-primary' : 'btn-secondary') + '" style="' + (dcTab === 'violations' ? 'background:var(--purple);border-color:var(--purple)' : '') + '" onclick="dcTab=\'violations\';renderCompliance(document.getElementById(\'main-content\'))">[[icon:alert]] Violations (' + violations.length + ')</button>' +
+        '<button class="btn ' + (dcTab === 'claims' ? 'btn-primary' : 'btn-secondary') + '" style="' + (dcTab === 'claims' ? 'background:var(--amber);border-color:var(--amber)' : '') + '" onclick="dcTab=\'claims\';renderCompliance(document.getElementById(\'main-content\'))">[[icon:spark]] Claims (' + claims.length + ')</button>' +
         '<div style="margin-left:auto;display:flex;gap:8px">' +
         '<button class="btn btn-primary btn-sm" onclick="openTicketModal()">+ Ticket</button>' +
-        '<button class="btn btn-sm" style="background:#8b5cf6;border-color:#8b5cf6;color:white" onclick="openViolationModal()">+ Violation</button>' +
-        '<button class="btn btn-sm" style="background:#f59e0b;border-color:#f59e0b;color:white" onclick="openClaimModal()">+ Claim</button>' +
+        '<button class="btn btn-sm" style="background:var(--purple);border-color:var(--purple);color:white" onclick="openViolationModal()">+ Violation</button>' +
+        '<button class="btn btn-sm" style="background:var(--amber);border-color:var(--amber);color:white" onclick="openClaimModal()">+ Claim</button>' +
         '</div></div>' +
         '<div id="dcSubContent"></div>';
       
@@ -27703,8 +27703,8 @@
             '<td><strong>' + (driver ? driver.first_name + ' ' + driver.last_name : '-') + '</strong></td>' +
             '<td><span class="badge badge-gray">' + (a.accident_type || '-') + '</span></td>' +
             '<td style="max-width:150px;font-size:12px">' + [a.street_address, a.city, a.state].filter(Boolean).join(', ') + '</td>' +
-            '<td style="text-align:center;color:' + (a.num_deaths > 0 ? '#dc2626' : 'inherit') + '">' + (a.num_deaths || 0) + '</td>' +
-            '<td style="text-align:center;color:' + (a.num_injuries > 0 ? '#f59e0b' : 'inherit') + '">' + (a.num_injuries || 0) + '</td>' +
+            '<td style="text-align:center;color:' + (a.num_deaths > 0 ? 'var(--red)' : 'inherit') + '">' + (a.num_deaths || 0) + '</td>' +
+            '<td style="text-align:center;color:' + (a.num_injuries > 0 ? 'var(--amber)' : 'inherit') + '">' + (a.num_injuries || 0) + '</td>' +
             '<td>' + (a.hazmat_involved ? '<span class="badge badge-red">YES</span>' : '<span class="badge badge-gray">NO</span>') + '</td>' +
             '<td>' + getDrugTestBadge(a.drug_test_result) + '</td>' +
             '<td>' + (a.report_filed ? '<span class="badge badge-green">Filed</span>' : '<span class="badge badge-gray">-</span>') + '</td>' +
@@ -27887,10 +27887,10 @@
       c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px"><button class="btn btn-secondary" onclick="renderCompliance(document.getElementById(\'main-content\'))">← Back</button><h2>[[icon:truck]] Truck #' + t.truck_number + ' Compliance Files</h2><span class="badge ' + getBadge(t.status) + '">' + t.status + '</span></div></div>' +
         
         // Stats
-        '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px"><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Truck Type</div><div class="value" style="font-size:14px">' + t.truck_type + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Capacity</div><div class="value">' + t.capacity + ' cars</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Documents</div><div class="value">' + complianceFiles.length + '/' + truckFileTypes.length + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:130px;padding:12px 16px"><div class="label">Maintenance Records</div><div class="value">' + maintenanceRecords.length + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:140px;padding:12px 16px;background:#fee2e2"><div class="label">Total Maintenance Cost</div><div class="value" style="color:var(--danger)">' + formatMoney(totalMaintenanceCost) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px;background:#dbeafe"><div class="label">Custom Folders</div><div class="value" style="color:var(--info)">' + customFolders.length + '</div></div></div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px"><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Truck Type</div><div class="value" style="font-size:14px">' + t.truck_type + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Capacity</div><div class="value">' + t.capacity + ' cars</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Documents</div><div class="value">' + complianceFiles.length + '/' + truckFileTypes.length + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:130px;padding:12px 16px"><div class="label">Maintenance Records</div><div class="value">' + maintenanceRecords.length + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:140px;padding:12px 16px;background:var(--red-dim)"><div class="label">Total Maintenance Cost</div><div class="value" style="color:var(--danger)">' + formatMoney(totalMaintenanceCost) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px;background:var(--blue-dim)"><div class="label">Custom Folders</div><div class="value" style="color:var(--info)">' + customFolders.length + '</div></div></div>' +
         
         // Truck Files Section
-        '<div class="card" style="margin-bottom:24px"><div class="card-header" style="background:#f59e0b;color:white;border-radius:8px 8px 0 0"><h3 style="margin:0">[[icon:folder]] Truck Compliance Files</h3></div><div class="table-wrapper"><table><thead><tr><th>Document Type</th><th>Status</th><th>Expiration</th><th>Uploaded</th><th>Actions</th></tr></thead><tbody>' +
+        '<div class="card" style="margin-bottom:24px"><div class="card-header" style="background:var(--amber);color:white;border-radius:8px 8px 0 0"><h3 style="margin:0">[[icon:folder]] Truck Compliance Files</h3></div><div class="table-wrapper"><table><thead><tr><th>Document Type</th><th>Status</th><th>Expiration</th><th>Uploaded</th><th>Actions</th></tr></thead><tbody>' +
         truckFileTypes.map(ft => {
           const file = complianceFiles.find(f => f.file_type === ft.type);
           return '<tr><td><strong>' + formatFileType(ft.type) + '</strong></td><td>' + (file ? '<span class="badge badge-green">[[icon:check]] Uploaded</span>' : '<span class="badge badge-gray">Missing</span>') + '</td><td>' + (ft.hasExpiry ? (file ? getExpiryBadge(file) : '<span style="color:var(--text-secondary)">-</span>') : '<span style="color:var(--text-secondary)">N/A</span>') + '</td><td>' + (file ? formatDate(file.created_at) : '-') + '</td><td><div class="actions">' + (file ? '<button class="action-btn view" onclick="viewTruckFile(' + file.id + ')">View</button><button class="action-btn delete" onclick="deleteTruckFile(' + file.id + ',' + truckId + ')">Del</button>' : '<button class="action-btn edit" onclick="openUploadTruckFileModal(' + truckId + ',\'' + ft.type + '\',' + ft.hasExpiry + ')">Upload</button>') + '</div></td></tr>';
@@ -27899,7 +27899,7 @@
         
         // Custom Folders Section
         '<div class="card" style="margin-bottom:24px"><div class="card-header" style="background:#0891b2;color:white;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">[[icon:folder_open]] Custom Folders</h3><button class="btn" style="background:white;color:#0891b2;padding:6px 12px;font-size:13px" onclick="openCustomFolderModal(' + truckId + ',\'truck\')">+ New Folder</button></div>' +
-        (customFolders.length === 0 ? '<div style="padding:40px;text-align:center;color:#64748b">No custom folders yet. Click "+ New Folder" to create one.</div>' :
+        (customFolders.length === 0 ? '<div style="padding:40px;text-align:center;color:var(--text-secondary)">No custom folders yet. Click "+ New Folder" to create one.</div>' :
         '<div style="padding:16px">' +
         customFolders.map(folder => {
           const folderFiles = customFiles.filter(f => (f.folder_name || 'Uncategorized') === folder);
@@ -27912,8 +27912,8 @@
         '</div>' +
         
         // Maintenance Records Section
-        '<div class="card"><div class="card-header" style="background:#059669;color:white;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">[[icon:wrench]] Maintenance Records</h3><button class="btn" style="background:white;color:#059669;padding:8px 16px" onclick="openMaintenanceModal(' + truckId + ')">+ Add Service Record</button></div>' +
-        (maintenanceRecords.length === 0 ? '<div style="padding:40px;text-align:center;color:#64748b">No maintenance records yet. Add a service record or upload an invoice.</div>' :
+        '<div class="card"><div class="card-header" style="background:var(--green);color:white;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">[[icon:wrench]] Maintenance Records</h3><button class="btn" style="background:white;color:var(--green);padding:8px 16px" onclick="openMaintenanceModal(' + truckId + ')">+ Add Service Record</button></div>' +
+        (maintenanceRecords.length === 0 ? '<div style="padding:40px;text-align:center;color:var(--text-secondary)">No maintenance records yet. Add a service record or upload an invoice.</div>' :
         '<div class="table-wrapper"><table><thead><tr><th>Date</th><th>Service Type</th><th>Shop</th><th>Description</th><th>Odometer</th><th>Cost</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
         maintenanceRecords.map(m => '<tr><td>' + formatDate(m.service_date) + '</td><td><span class="badge badge-blue">' + (m.service_type || '-') + '</span></td><td>' + (m.shop_name || '-') + '</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (m.description || '-') + '</td><td>' + (m.odometer ? m.odometer.toLocaleString() + ' mi' : '-') + '</td><td class="money">' + formatMoney(m.total_cost || m.cost || 0) + '</td><td class="sticky-col"><div class="actions">' + (m.invoice_file ? '<button class="action-btn view" onclick="viewMaintenanceInvoice(' + m.id + ')">Invoice</button>' : '') + '<button class="action-btn edit" onclick="openMaintenanceModal(' + truckId + ',' + m.id + ')">Edit</button><button class="action-btn delete" onclick="deleteMaintenanceRecord(' + m.id + ',' + truckId + ')">Del</button></div></td></tr>').join('') +
         '</tbody></table></div>') +
@@ -28043,9 +28043,9 @@
       m.innerHTML = '<div class="modal" style="max-width:550px;max-height:90vh;overflow-y:auto"><div class="modal-header"><h3>[[icon:wrench]] ' + (record ? 'Edit' : 'Add') + ' Maintenance Record</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body">' +
         
         // Upload Invoice Section
-        '<div style="background:var(--dim-blue);padding:16px;border-radius:8px;margin-bottom:16px"><strong style="color:var(--info)">[[icon:upload]] ' + (hasApiKey ? 'Upload Invoice to Auto-Fill' : 'Attach Invoice') + '</strong><p style="font-size:13px;color:#1e40af;margin:8px 0 12px 0">' + (hasApiKey ? 'Upload shop invoice (PDF or image) and AI will extract the details' : 'Upload shop invoice to keep on record') + '</p><input type="file" id="maintenanceInvoice" accept=".pdf,.jpg,.jpeg,.png"><div id="invoicePreview" style="margin-top:8px"></div>' + (hasApiKey ? '<button type="button" id="extractBtn" class="btn btn-primary" style="display:none;margin-top:12px;background:#059669" onclick="extractInvoiceData(' + (truckId || 'null') + ')">[[icon:bot]] Extract Invoice Data</button>' : '') + '</div>' +
+        '<div style="background:var(--dim-blue);padding:16px;border-radius:8px;margin-bottom:16px"><strong style="color:var(--info)">[[icon:upload]] ' + (hasApiKey ? 'Upload Invoice to Auto-Fill' : 'Attach Invoice') + '</strong><p style="font-size:13px;color:var(--blue);margin:8px 0 12px 0">' + (hasApiKey ? 'Upload shop invoice (PDF or image) and AI will extract the details' : 'Upload shop invoice to keep on record') + '</p><input type="file" id="maintenanceInvoice" accept=".pdf,.jpg,.jpeg,.png"><div id="invoicePreview" style="margin-top:8px"></div>' + (hasApiKey ? '<button type="button" id="extractBtn" class="btn btn-primary" style="display:none;margin-top:12px;background:var(--green)" onclick="extractInvoiceData(' + (truckId || 'null') + ')">[[icon:bot]] Extract Invoice Data</button>' : '') + '</div>' +
         
-        '<div id="extractingStatus" style="display:none;background:#fef3c7;padding:12px;border-radius:8px;margin-bottom:16px;text-align:center"><span style="color:var(--warning)">⏳ Reading invoice... Please wait...</span></div>' +
+        '<div id="extractingStatus" style="display:none;background:var(--amber-dim);padding:12px;border-radius:8px;margin-bottom:16px;text-align:center"><span style="color:var(--warning)">⏳ Reading invoice... Please wait...</span></div>' +
         
         truckSelector +
         
@@ -28071,7 +28071,7 @@
         const extractBtn = document.getElementById('extractBtn');
         this.dataset.aiScanned = 'false'; // Reset scan status
         if (this.files && this.files[0]) {
-          preview.innerHTML = '<span style="color:#059669">[[icon:check]] ' + this.files[0].name + ' selected</span><br><span style="font-size:11px;color:#64748b">[[icon:paperclip]] Invoice will be saved with record</span>';
+          preview.innerHTML = '<span style="color:var(--green)">[[icon:check]] ' + this.files[0].name + ' selected</span><br><span style="font-size:11px;color:var(--text-secondary)">[[icon:paperclip]] Invoice will be saved with record</span>';
           if (extractBtn) extractBtn.style.display = 'inline-block';
         } else {
           preview.innerHTML = '';
@@ -28226,7 +28226,7 @@
           
           // Update preview to show it will be saved
           const preview = document.getElementById('invoicePreview');
-          preview.innerHTML = '<span style="color:#059669">[[icon:check]] ' + file.name + '</span><br><span style="font-size:11px;color:#047857;background:#d1fae5;padding:2px 8px;border-radius:4px;margin-top:4px;display:inline-block">[[icon:paperclip]] Invoice will be saved with record</span>';
+          preview.innerHTML = '<span style="color:var(--green)">[[icon:check]] ' + file.name + '</span><br><span style="font-size:11px;color:#047857;background:var(--green-dim);padding:2px 8px;border-radius:4px;margin-top:4px;display:inline-block">[[icon:paperclip]] Invoice will be saved with record</span>';
           
           showToast('[[icon:check]] Invoice data extracted! Invoice will be saved automatically.');
         } else {
@@ -28395,36 +28395,36 @@
       
       c.innerHTML = '<div class="header"><h2>[[icon:ticket]] Driver Compliance</h2><div style="display:flex;gap:12px;flex-wrap:wrap">' +
         '<button class="btn btn-primary" onclick="openTicketModal()">+ Ticket</button>' +
-        '<button class="btn btn-secondary" style="background:#8b5cf6;border-color:#8b5cf6;color:white" onclick="openViolationModal()">+ Violation</button>' +
-        '<button class="btn btn-secondary" style="background:#f59e0b;border-color:#f59e0b;color:white" onclick="openClaimModal()">+ Claim</button>' +
+        '<button class="btn btn-secondary" style="background:var(--purple);border-color:var(--purple);color:white" onclick="openViolationModal()">+ Violation</button>' +
+        '<button class="btn btn-secondary" style="background:var(--amber);border-color:var(--amber);color:white" onclick="openClaimModal()">+ Claim</button>' +
         '</div></div>' +
         
         // Stats
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:24px">' +
-        '<div class="stat-card" style="border-left:4px solid #ef4444"><div class="label">Open Tickets</div><div class="value" style="color:#ef4444">' + openTickets + '</div></div>' +
-        '<div class="stat-card" style="border-left:4px solid #8b5cf6"><div class="label">Open Violations</div><div class="value" style="color:#8b5cf6">' + openViolations + '</div></div>' +
-        '<div class="stat-card" style="border-left:4px solid #f59e0b"><div class="label">Open Claims</div><div class="value" style="color:#f59e0b">' + openClaims + '</div></div>' +
-        '<div class="stat-card" style="border-left:4px solid #22c55e"><div class="label">Resolved</div><div class="value" style="color:#22c55e">' + (resolvedTickets + resolvedViolations) + '</div></div>' +
-        (totalClaimsPaid > 0 ? '<div class="stat-card" style="border-left:4px solid #dc2626;background:#fee2e2"><div class="label">Driver Claims Paid</div><div class="value" style="color:var(--danger)">' + formatMoney(totalClaimsPaid) + '</div></div>' : '') +
+        '<div class="stat-card" style="border-left:4px solid var(--red)"><div class="label">Open Tickets</div><div class="value" style="color:var(--red)">' + openTickets + '</div></div>' +
+        '<div class="stat-card" style="border-left:4px solid var(--purple)"><div class="label">Open Violations</div><div class="value" style="color:var(--purple)">' + openViolations + '</div></div>' +
+        '<div class="stat-card" style="border-left:4px solid var(--amber)"><div class="label">Open Claims</div><div class="value" style="color:var(--amber)">' + openClaims + '</div></div>' +
+        '<div class="stat-card" style="border-left:4px solid var(--green)"><div class="label">Resolved</div><div class="value" style="color:var(--green)">' + (resolvedTickets + resolvedViolations) + '</div></div>' +
+        (totalClaimsPaid > 0 ? '<div class="stat-card" style="border-left:4px solid var(--red);background:var(--red-dim)"><div class="label">Driver Claims Paid</div><div class="value" style="color:var(--danger)">' + formatMoney(totalClaimsPaid) + '</div></div>' : '') +
         '</div>' +
         
         // Upcoming Court Dates Alert
-        (upcomingCourt.length > 0 ? '<div class="card" style="margin-bottom:24px;background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #f59e0b"><div class="card-header" style="background:transparent"><h3 style="color:var(--warning)">[[icon:alert]] Upcoming Court Dates</h3></div><div style="padding:16px">' +
+        (upcomingCourt.length > 0 ? '<div class="card" style="margin-bottom:24px;background:var(--amber-dim);border:1px solid var(--amber)"><div class="card-header" style="background:transparent"><h3 style="color:var(--warning)">[[icon:alert]] Upcoming Court Dates</h3></div><div style="padding:16px">' +
         upcomingCourt.slice(0, 5).map(t => {
           const driver = appData.drivers.find(d => d.id === t.driver_id);
           const driverName = driver ? driver.first_name + ' ' + driver.last_name : 'Unknown';
           const daysUntil = Math.ceil((new Date(t.court_date) - new Date(today)) / (1000 * 60 * 60 * 24));
           return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:white;border-radius:8px;margin-bottom:8px">' +
-            '<div><strong>' + driverName + '</strong><div style="font-size:12px;color:#64748b">' + (t.ticket_description || 'No description') + '</div></div>' +
-            '<div style="text-align:right"><div style="font-weight:600;color:' + (daysUntil <= 3 ? '#dc2626' : daysUntil <= 7 ? '#d97706' : '#059669') + '">' + formatDate(t.court_date) + '</div>' +
-            '<div style="font-size:12px;color:#64748b">' + (daysUntil === 0 ? 'TODAY!' : daysUntil === 1 ? 'Tomorrow' : daysUntil + ' days') + '</div></div></div>';
+            '<div><strong>' + driverName + '</strong><div style="font-size:12px;color:var(--text-secondary)">' + (t.ticket_description || 'No description') + '</div></div>' +
+            '<div style="text-align:right"><div style="font-weight:600;color:' + (daysUntil <= 3 ? 'var(--red)' : daysUntil <= 7 ? 'var(--amber)' : 'var(--green)') + '">' + formatDate(t.court_date) + '</div>' +
+            '<div style="font-size:12px;color:var(--text-secondary)">' + (daysUntil === 0 ? 'TODAY!' : daysUntil === 1 ? 'Tomorrow' : daysUntil + ' days') + '</div></div></div>';
         }).join('') + '</div></div>' : '') +
         
         // Tabs
         '<div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">' +
         '<button class="btn ' + (dcTab === 'tickets' ? 'btn-primary' : 'btn-secondary') + '" onclick="dcTab=\'tickets\';renderDriverCompliance(document.getElementById(\'main-content\'))">[[icon:ticket]] Tickets (' + tickets.length + ')</button>' +
-        '<button class="btn ' + (dcTab === 'violations' ? 'btn-primary' : 'btn-secondary') + '" style="' + (dcTab === 'violations' ? 'background:#8b5cf6;border-color:#8b5cf6' : '') + '" onclick="dcTab=\'violations\';renderDriverCompliance(document.getElementById(\'main-content\'))">[[icon:alert]] Violations (' + violations.length + ')</button>' +
-        '<button class="btn ' + (dcTab === 'claims' ? 'btn-primary' : 'btn-secondary') + '" style="' + (dcTab === 'claims' ? 'background:#f59e0b;border-color:#f59e0b' : '') + '" onclick="dcTab=\'claims\';renderDriverCompliance(document.getElementById(\'main-content\'))">[[icon:spark]] Claims (' + claims.length + ')</button>' +
+        '<button class="btn ' + (dcTab === 'violations' ? 'btn-primary' : 'btn-secondary') + '" style="' + (dcTab === 'violations' ? 'background:var(--purple);border-color:var(--purple)' : '') + '" onclick="dcTab=\'violations\';renderDriverCompliance(document.getElementById(\'main-content\'))">[[icon:alert]] Violations (' + violations.length + ')</button>' +
+        '<button class="btn ' + (dcTab === 'claims' ? 'btn-primary' : 'btn-secondary') + '" style="' + (dcTab === 'claims' ? 'background:var(--amber);border-color:var(--amber)' : '') + '" onclick="dcTab=\'claims\';renderDriverCompliance(document.getElementById(\'main-content\'))">[[icon:spark]] Claims (' + claims.length + ')</button>' +
         '</div>' +
         
         '<div id="dcTabContent"></div>';
@@ -28466,7 +28466,7 @@
         (filtered.length === 0 ? '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted)">No tickets found</td></tr>' :
         filtered.sort((a, b) => (b.ticket_date || '').localeCompare(a.ticket_date || '')).map(t => {
           const driver = appData.drivers.find(d => d.id === t.driver_id);
-          const driverName = driver ? driver.first_name + ' ' + driver.last_name : '<span style="color:#ef4444">Unknown</span>';
+          const driverName = driver ? driver.first_name + ' ' + driver.last_name : '<span style="color:var(--red)">Unknown</span>';
           const files = (appData.ticket_files || []).filter(f => f.ticket_id === t.id);
           
           return '<tr>' +
@@ -28516,7 +28516,7 @@
         (filtered.length === 0 ? '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted)">No violations found</td></tr>' :
         filtered.sort((a, b) => (b.violation_date || '').localeCompare(a.violation_date || '')).map(v => {
           const driver = appData.drivers.find(d => d.id === v.driver_id);
-          const driverName = driver ? driver.first_name + ' ' + driver.last_name : '<span style="color:#ef4444">Unknown</span>';
+          const driverName = driver ? driver.first_name + ' ' + driver.last_name : '<span style="color:var(--red)">Unknown</span>';
           const files = (appData.violation_files || []).filter(f => f.violation_id === v.id);
           
           return '<tr>' +
@@ -28562,9 +28562,9 @@
         
         // Financial Summary
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px">' +
-        '<div style="background:var(--dim-amber);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#92400e">Total Claimed</div><div style="font-size:20px;font-weight:700;color:#d97706">' + formatMoney(filtered.reduce((s,cl) => s + parseFloat(cl.claim_amount || 0), 0)) + '</div></div>' +
-        '<div style="background:var(--dim-red);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#991b1b">Driver Fault (Paid)</div><div style="font-size:20px;font-weight:700;color:#dc2626">' + formatMoney(filtered.filter(cl => cl.fault_party === 'DRIVER' && cl.status === 'SETTLED').reduce((s,cl) => s + parseFloat(cl.settlement_amount || cl.claim_amount || 0), 0)) + '</div></div>' +
-        '<div style="background:var(--dim-green);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#166534">Recovered</div><div style="font-size:20px;font-weight:700;color:#16a34a">' + formatMoney(filtered.filter(cl => cl.fault_party !== 'DRIVER' && cl.status === 'SETTLED').reduce((s,cl) => s + parseFloat(cl.settlement_amount || 0), 0)) + '</div></div>' +
+        '<div style="background:var(--dim-amber);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#92400e">Total Claimed</div><div style="font-size:20px;font-weight:600;color:var(--amber)">' + formatMoney(filtered.reduce((s,cl) => s + parseFloat(cl.claim_amount || 0), 0)) + '</div></div>' +
+        '<div style="background:var(--dim-red);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#991b1b">Driver Fault (Paid)</div><div style="font-size:20px;font-weight:600;color:var(--red)">' + formatMoney(filtered.filter(cl => cl.fault_party === 'DRIVER' && cl.status === 'SETTLED').reduce((s,cl) => s + parseFloat(cl.settlement_amount || cl.claim_amount || 0), 0)) + '</div></div>' +
+        '<div style="background:var(--dim-green);padding:16px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#166534">Recovered</div><div style="font-size:20px;font-weight:600;color:var(--green)">' + formatMoney(filtered.filter(cl => cl.fault_party !== 'DRIVER' && cl.status === 'SETTLED').reduce((s,cl) => s + parseFloat(cl.settlement_amount || 0), 0)) + '</div></div>' +
         '</div>' +
         
         '<div class="card"><div class="card-header"><h3>[[icon:spark]] Damage Claims</h3></div><div class="table-wrapper"><table><thead><tr>' +
@@ -28683,12 +28683,12 @@
     
     function getViolationTypeBadge(type) {
       const badges = {
-        'HOS': '<span class="badge" style="background:#dc2626;color:white">HOS</span>',
-        'SPEEDING': '<span class="badge" style="background:#f59e0b;color:white">SPEEDING</span>',
-        'LOGBOOK': '<span class="badge" style="background:#8b5cf6;color:white">LOGBOOK</span>',
-        'EQUIPMENT': '<span class="badge" style="background:#3b82f6;color:white">EQUIPMENT</span>',
-        'WEIGHT': '<span class="badge" style="background:#64748b;color:white">WEIGHT</span>',
-        'SAFETY': '<span class="badge" style="background:#dc2626;color:white">SAFETY</span>',
+        'HOS': '<span class="badge" style="background:var(--red);color:white">HOS</span>',
+        'SPEEDING': '<span class="badge" style="background:var(--amber);color:white">SPEEDING</span>',
+        'LOGBOOK': '<span class="badge" style="background:var(--purple);color:white">LOGBOOK</span>',
+        'EQUIPMENT': '<span class="badge" style="background:var(--blue);color:white">EQUIPMENT</span>',
+        'WEIGHT': '<span class="badge" style="background:var(--text-secondary);color:white">WEIGHT</span>',
+        'SAFETY': '<span class="badge" style="background:var(--red);color:white">SAFETY</span>',
         'OTHER': '<span class="badge badge-gray">OTHER</span>'
       };
       return badges[type] || '<span class="badge badge-gray">' + (type || 'N/A') + '</span>';
@@ -29026,14 +29026,14 @@
         '<div class="stat-card" style="padding:16px;text-align:center"><div style="font-size:24px;margin-bottom:4px">[[icon:check_circle]]</div><div class="label">Approved</div><div class="value">' + approvedClaims + '</div></div>' +
         '<div class="stat-card" style="padding:16px;text-align:center"><div style="font-size:24px;margin-bottom:4px">[[icon:x_circle]]</div><div class="label">Denied</div><div class="value">' + deniedClaims + '</div></div>' +
         '<div class="stat-card" style="padding:16px;text-align:center"><div style="font-size:24px;margin-bottom:4px">[[icon:money]]</div><div class="label">Settled</div><div class="value">' + settledClaims + '</div></div>' +
-        '<div class="stat-card" style="padding:16px;text-align:center;background:#fef3c7"><div style="font-size:24px;margin-bottom:4px">[[icon:dollar]]</div><div class="label">Total Claimed</div><div class="value" style="color:#f59e0b">' + formatMoney(totalClaimAmount) + '</div></div>' +
-        '<div class="stat-card" style="padding:16px;text-align:center;background:#d1fae5"><div style="font-size:24px;margin-bottom:4px">[[icon:check]]</div><div class="label">Total Settled</div><div class="value" style="color:#10b981">' + formatMoney(settledAmount) + '</div></div>' +
+        '<div class="stat-card" style="padding:16px;text-align:center;background:var(--amber-dim)"><div style="font-size:24px;margin-bottom:4px">[[icon:dollar]]</div><div class="label">Total Claimed</div><div class="value" style="color:var(--amber)">' + formatMoney(totalClaimAmount) + '</div></div>' +
+        '<div class="stat-card" style="padding:16px;text-align:center;background:var(--green-dim)"><div style="font-size:24px;margin-bottom:4px">[[icon:check]]</div><div class="label">Total Settled</div><div class="value" style="color:var(--green)">' + formatMoney(settledAmount) + '</div></div>' +
         '</div>' +
         
         // Claims Table
         '<div class="card"><div class="card-header"><h3>[[icon:clipboard]] All Claims</h3></div>' +
         '<div class="table-wrapper"><table><thead><tr><th>#</th><th>Date</th><th>Truck</th><th>Driver</th><th>Type</th><th>Description</th><th>Claim Amount</th><th>Status</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
-        (claims.length === 0 ? '<tr><td colspan="9" style="text-align:center;padding:40px;color:#64748b">No damage claims recorded. Click "+ New Claim" to add one.</td></tr>' :
+        (claims.length === 0 ? '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-secondary)">No damage claims recorded. Click "+ New Claim" to add one.</td></tr>' :
         claims.sort((a, b) => new Date(b.incident_date) - new Date(a.incident_date)).map((cl, i) => {
           const truck = appData.trucks.find(t => t.id === cl.truck_id);
           const driver = appData.drivers.find(d => d.id === cl.driver_id);
@@ -29182,15 +29182,15 @@
         '<div style="padding:12px;background:var(--bg-tertiary);border-radius:8px"><strong>Assigned Driver</strong><br>' + (driver ? driver.first_name + ' ' + driver.last_name : 'Not assigned') + '</div>' +
         '</div>' +
         
-        (trip ? '<div style="padding:12px;background:#dbeafe;border-radius:8px"><strong>Related Trip:</strong> ' + trip.trip_number + '</div>' : '') +
+        (trip ? '<div style="padding:12px;background:var(--blue-dim);border-radius:8px"><strong>Related Trip:</strong> ' + trip.trip_number + '</div>' : '') +
         
         '<div style="padding:12px;background:var(--bg-tertiary);border-radius:8px"><strong>Description</strong><br>' + (claim.description || '-') + '</div>' +
         
         (claim.incident_location ? '<div style="padding:12px;background:var(--bg-tertiary);border-radius:8px"><strong>Incident Location</strong><br>' + claim.incident_location + '</div>' : '') +
         
-        (claim.insurance_claim_number ? '<div style="padding:12px;background:#fef3c7;border-radius:8px"><strong>Insurance Claim #</strong><br>' + claim.insurance_claim_number + '</div>' : '') +
+        (claim.insurance_claim_number ? '<div style="padding:12px;background:var(--amber-dim);border-radius:8px"><strong>Insurance Claim #</strong><br>' + claim.insurance_claim_number + '</div>' : '') +
         
-        (claim.settlement_amount ? '<div style="padding:12px;background:#d1fae5;border-radius:8px"><strong>Settlement Amount</strong><br><span style="font-size:20px;color:#047857">' + formatMoney(claim.settlement_amount) + '</span></div>' : '') +
+        (claim.settlement_amount ? '<div style="padding:12px;background:var(--green-dim);border-radius:8px"><strong>Settlement Amount</strong><br><span style="font-size:20px;color:#047857">' + formatMoney(claim.settlement_amount) + '</span></div>' : '') +
         
         (claim.resolution_notes ? '<div style="padding:12px;background:#e0e7ff;border-radius:8px"><strong>Resolution Notes</strong><br>' + claim.resolution_notes + '</div>' : '') +
         
@@ -29234,20 +29234,20 @@
       m.className = 'modal-overlay';
       m.onclick = e => { if (e.target === m) m.remove(); };
       m.innerHTML = '<div class="modal" style="max-width:600px">' +
-        '<div class="modal-header" style="background:#8b5cf6;color:white">' +
+        '<div class="modal-header" style="background:var(--purple);color:white">' +
         '<h3 style="margin:0">+ Create New Load</h3>' +
         '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()" style="color:white">×</button>' +
         '</div>' +
         '<div class="modal-body" style="padding:24px">' +
         '<div style="background:var(--dim-purple);padding:16px;border-radius:8px;margin-bottom:20px">' +
-        '<div style="font-weight:600;color:#7c3aed;margin-bottom:8px">Upload Rate Confirmation</div>' +
+        '<div style="font-weight:600;color:var(--purple);margin-bottom:8px">Upload Rate Confirmation</div>' +
         '<div style="color:#6b7280;font-size:13px">Upload a rate confirmation, manifest, or contract. AI will extract all vehicle and order information automatically.</div>' +
         '</div>' +
         '<div class="form-group" style="margin-bottom:16px"><label style="font-size:12px">Format Profile</label><select id="createLoadFormatProfile" style="font-size:14px">' + getImportFormatOptionsHtml('central_dispatch') + '</select><div style="font-size:11px;color:var(--text-muted);margin-top:4px">Use Central Dispatch profile for CD confirmations; switch to Generic for other brokers.</div></div>' +
-        '<div id="createLoadUploadArea" style="border:2px dashed #cbd5e1;border-radius:12px;padding:48px;text-align:center;cursor:pointer;transition:all 0.2s" ' +
+        '<div id="createLoadUploadArea" style="border:2px dashed var(--border);border-radius:12px;padding:48px;text-align:center;cursor:pointer;transition:all 0.2s" ' +
         'onclick="document.getElementById(\'createLoadFile\').click()" ' +
-        'ondragover="event.preventDefault();this.style.borderColor=\'#8b5cf6\';this.style.background=\'#f3e8ff\'" ' +
-        'ondragleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'transparent\'" ' +
+        'ondragover="event.preventDefault();this.style.borderColor=\'var(--purple)\';this.style.background=\'#f3e8ff\'" ' +
+        'ondragleave="this.style.borderColor=\'var(--border)\';this.style.background=\'transparent\'" ' +
         'ondrop="handleCreateLoadDrop(event)">' +
         '<input type="file" id="createLoadFile" accept=".pdf,.jpg,.jpeg,.png" onchange="handleCreateLoadFile(event)" style="display:none">' +
         '<div style="font-size:48px;margin-bottom:16px">[[icon:file]]</div>' +
@@ -29263,7 +29263,7 @@
         '</div>' +
         '<div class="modal-footer">' +
         '<button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>' +
-        '<button class="btn" style="background:#8b5cf6;color:white" id="createLoadBtn" onclick="processCreateLoad()" disabled>Analyze & Create</button>' +
+        '<button class="btn" style="background:var(--purple);color:white" id="createLoadBtn" onclick="processCreateLoad()" disabled>Analyze & Create</button>' +
         '</div></div>';
       document.body.appendChild(m);
     }
@@ -29276,7 +29276,7 @@
     function handleCreateLoadDrop(event) {
       event.preventDefault();
       const area = document.getElementById('createLoadUploadArea');
-      area.style.borderColor = '#cbd5e1';
+      area.style.borderColor = 'var(--border)';
       area.style.background = 'transparent';
       const file = event.dataTransfer.files[0];
       processCreateLoadFile(file);
@@ -29306,13 +29306,13 @@
 
         const preview = document.getElementById('createLoadFilePreview');
         preview.style.display = 'block';
-        preview.innerHTML = '<div style="background:var(--surface-elevated);padding:12px;border-radius:8px;display:flex;align-items:center;gap:12px">' +
+        preview.innerHTML = '<div style="background:var(--bg-tertiary);padding:12px;border-radius:8px;display:flex;align-items:center;gap:12px">' +
           '<span style="font-size:24px">' + (file.type.includes('pdf') ? '[[icon:file]]' : '[[icon:image]]') + '</span>' +
           '<div style="flex:1">' +
           '<div style="font-weight:600">' + file.name + '</div>' +
-          '<div style="font-size:12px;color:#64748b">' + (file.size / 1024).toFixed(1) + ' KB</div>' +
+          '<div style="font-size:12px;color:var(--text-secondary)">' + (file.size / 1024).toFixed(1) + ' KB</div>' +
           '</div>' +
-          '<button onclick="clearCreateLoadFile()" style="background:none;border:none;cursor:pointer;font-size:18px;color:#64748b">[[icon:x]]</button>' +
+          '<button onclick="clearCreateLoadFile()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-secondary)">[[icon:x]]</button>' +
           '</div>';
 
         document.getElementById('createLoadBtn').disabled = false;
@@ -29815,12 +29815,12 @@
       let html = '<div style="padding:8px 0">';
       events.slice(0, 20).forEach(evt => {
         const typeLabels = {
-          invoice_marked: { label: 'Invoice Created', color: '#3b82f6', icon: 'file-text' },
-          invoice_sent: { label: 'Invoice Sent', color: '#8b5cf6', icon: 'send' },
+          invoice_marked: { label: 'Invoice Created', color: 'var(--blue)', icon: 'file-text' },
+          invoice_sent: { label: 'Invoice Sent', color: 'var(--purple)', icon: 'send' },
           reminder_sent: { label: 'Follow-up Logged', color: '#f97316', icon: 'phone' },
           note_added: { label: 'Note Added', color: '#6b7280', icon: 'message-square' },
-          promise_recorded: { label: 'Promise to Pay', color: '#8b5cf6', icon: 'handshake' },
-          payment_marked: { label: 'Payment Received', color: '#22c55e', icon: 'check-circle' },
+          promise_recorded: { label: 'Promise to Pay', color: 'var(--purple)', icon: 'handshake' },
+          payment_marked: { label: 'Payment Received', color: 'var(--green)', icon: 'check-circle' },
           hold_updated: { label: 'Hold Updated', color: '#eab308', icon: 'pause-circle' }
         };
         const info = typeLabels[evt.event_type] || { label: evt.event_type, color: 'var(--text-muted)', icon: 'circle' };
@@ -29860,7 +29860,7 @@
     function getTypeBadge(order) {
       // Default to BILL, could be extended based on broker preferences
       const type = 'BILL';
-      return { text: type, color: '#3b82f6', border: '#3b82f6' };
+      return { text: type, color: 'var(--blue)', border: 'var(--blue)' };
     }
 
     async function markBillingOrderPaid(orderId) {
@@ -29911,7 +29911,7 @@
         <div class="modal-overlay" id="mark-invoiced-modal" onclick="if(event.target===this)this.remove()">
           <div class="modal" style="max-width:440px">
             <div class="modal-header">
-              <h3 style="margin:0;font-family:var(--font-display);font-size:18px;font-weight:700">Mark as Invoiced</h3>
+              <h3 style="margin:0;font-family:var(--font-display);font-size:18px;font-weight:600">Mark as Invoiced</h3>
               <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
             </div>
             <div class="modal-body" style="padding:24px">
@@ -31162,7 +31162,7 @@
       html += '<div class="modal-header">';
       html += '<div style="display:flex;align-items:center;gap:10px">';
       html += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + statusDotColor + '"></span>';
-      html += '<h3 style="margin:0;font-family:var(--font-display);font-weight:700">' + escapeHtml(brokerStats.brokerName) + '</h3>';
+      html += '<h3 style="margin:0;font-family:var(--font-display);font-weight:600">' + escapeHtml(brokerStats.brokerName) + '</h3>';
       html += '</div>';
       html += '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div>';
       html += '<div class="modal-body" style="max-height:75vh;overflow-y:auto">';
@@ -31170,13 +31170,13 @@
       // Hero: Outstanding Balance — full-width large card
       html += '<div style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px;text-align:center">';
       html += '<div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Outstanding Balance</div>';
-      html += '<div style="font-size:36px;font-weight:800;color:' + (brokerStats.outstanding > 0 ? 'var(--text-primary)' : 'var(--success)') + ';font-family:var(--font-mono)">' + formatMoney(brokerStats.outstanding) + '</div>';
+      html += '<div style="font-size:36px;font-weight:600;color:' + (brokerStats.outstanding > 0 ? 'var(--text-primary)' : 'var(--success)') + ';font-family:var(--font-mono)">' + formatMoney(brokerStats.outstanding) + '</div>';
       html += '</div>';
 
       // 4 smaller metric cards
       html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px">';
       const metrics = [
-        { label: 'Total Invoiced', value: formatMoney(brokerStats.totalInvoiced), color: '#8b5cf6' },
+        { label: 'Total Invoiced', value: formatMoney(brokerStats.totalInvoiced), color: 'var(--purple)' },
         { label: 'Paid', value: formatMoney(brokerStats.totalPaid), color: 'var(--success)' },
         { label: 'Overdue', value: formatMoney(brokerStats.overdue), color: 'var(--danger)' },
         { label: 'Avg Days to Pay', value: brokerStats.avgDaysToPay !== null ? brokerStats.avgDaysToPay + 'd' : '-', color: 'var(--text-primary)' }
@@ -31184,7 +31184,7 @@
       metrics.forEach(mt => {
         html += '<div style="background:var(--bg-tertiary);padding:16px;border-radius:var(--radius-sm);text-align:center;border:1px solid var(--border)">';
         html += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.3px">' + mt.label + '</div>';
-        html += '<div style="font-size:18px;font-weight:700;color:' + mt.color + ';font-family:var(--font-mono)">' + mt.value + '</div></div>';
+        html += '<div style="font-size:18px;font-weight:600;color:' + mt.color + ';font-family:var(--font-mono)">' + mt.value + '</div></div>';
       });
       html += '</div>';
 
@@ -31195,20 +31195,20 @@
         const a = brokerStats.aging;
         const total = brokerStats.outstanding;
         html += '<div style="display:flex;height:32px;border-radius:var(--radius-sm);overflow:hidden;margin-bottom:12px">';
-        if (a.current > 0) html += '<div style="width:' + (a.current/total*100) + '%;background:#22c55e" title="Current: ' + formatMoney(a.current) + '"></div>';
+        if (a.current > 0) html += '<div style="width:' + (a.current/total*100) + '%;background:var(--green)" title="Current: ' + formatMoney(a.current) + '"></div>';
         if (a.days1_30 > 0) html += '<div style="width:' + (a.days1_30/total*100) + '%;background:#eab308" title="1-30 Days: ' + formatMoney(a.days1_30) + '"></div>';
         if (a.days31_60 > 0) html += '<div style="width:' + (a.days31_60/total*100) + '%;background:#f97316" title="31-60 Days: ' + formatMoney(a.days31_60) + '"></div>';
-        if (a.days61_90 > 0) html += '<div style="width:' + (a.days61_90/total*100) + '%;background:#ef4444" title="61-90 Days: ' + formatMoney(a.days61_90) + '"></div>';
-        if (a.days90Plus > 0) html += '<div style="width:' + (a.days90Plus/total*100) + '%;background:#dc2626" title="90+ Days: ' + formatMoney(a.days90Plus) + '"></div>';
+        if (a.days61_90 > 0) html += '<div style="width:' + (a.days61_90/total*100) + '%;background:var(--red)" title="61-90 Days: ' + formatMoney(a.days61_90) + '"></div>';
+        if (a.days90Plus > 0) html += '<div style="width:' + (a.days90Plus/total*100) + '%;background:var(--red)" title="90+ Days: ' + formatMoney(a.days90Plus) + '"></div>';
         html += '</div>';
         // Mini-card legend
         html += '<div class="aging-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">';
         const buckets = [
-          { label: 'Current', amt: a.current, color: '#22c55e' },
+          { label: 'Current', amt: a.current, color: 'var(--green)' },
           { label: '1-30d', amt: a.days1_30, color: '#eab308' },
           { label: '31-60d', amt: a.days31_60, color: '#f97316' },
-          { label: '61-90d', amt: a.days61_90, color: '#ef4444' },
-          { label: '90+d', amt: a.days90Plus, color: '#dc2626' }
+          { label: '61-90d', amt: a.days61_90, color: 'var(--red)' },
+          { label: '90+d', amt: a.days90Plus, color: 'var(--red)' }
         ];
         buckets.forEach(bk => {
           html += '<div style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;text-align:center">';
@@ -31239,13 +31239,13 @@
         html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">';
         const collCards = [
           { label: 'Needs Follow-up', value: brokerFollowUp.length, color: '#f97316' },
-          { label: 'Promises', value: brokerPromises.length, color: '#8b5cf6' },
+          { label: 'Promises', value: brokerPromises.length, color: 'var(--purple)' },
           { label: 'On Hold', value: brokerHolds.length, color: 'var(--warning)' }
         ];
         collCards.forEach(cd => {
           html += '<div style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center">';
           html += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">' + cd.label + '</div>';
-          html += '<div style="font-size:18px;font-weight:700;color:' + cd.color + '">' + cd.value + '</div></div>';
+          html += '<div style="font-size:18px;font-weight:600;color:' + cd.color + '">' + cd.value + '</div></div>';
         });
         html += '</div></div>';
       }
@@ -31287,7 +31287,7 @@
           html += '</tr>';
         });
         // Summary row
-        html += '<tr style="border-top:2px solid var(--border);font-weight:700">';
+        html += '<tr style="border-top:2px solid var(--border);font-weight:600">';
         html += '<td colspan="2">Total</td>';
         html += '<td style="text-align:right;font-family:var(--font-mono)">' + formatMoney(unpaidTotal) + '</td>';
         html += '<td colspan="4"></td></tr>';
@@ -31903,7 +31903,7 @@
         emailed: { label: 'Emailed', bg: 'var(--dim-blue)', color: 'var(--info)' },
         partial: { label: 'Partial', bg: 'var(--dim-amber)', color: 'var(--warning)' },
         paid: { label: 'Paid', bg: 'var(--dim-green)', color: 'var(--success)' }
-      }[normalized] || { label: normalized, bg: 'var(--surface-elevated)', color: 'var(--text-secondary)' };
+      }[normalized] || { label: normalized, bg: 'var(--bg-tertiary)', color: 'var(--text-secondary)' };
       return '<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:' + config.bg + ';color:' + config.color + ';font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">' + config.label + '</span>';
     }
 
@@ -31950,7 +31950,7 @@
       const records = getPayrollPeriodRecordsForDriver(driverId);
       const status = getPayrollDriverStatus(driverId);
       const tripRows = (snapshot.lineItems?.trips || []).map(trip =>
-        '<tr><td><strong>' + escapeHtml(trip.tripNumber || 'Trip') + '</strong></td><td>' + escapeHtml((trip.origin || '-') + ' → ' + (trip.destination || '-')) + '</td><td class="money">' + formatMoney(trip.cashCollected || trip.expectedCashCollected || 0) + '</td><td class="money" style="font-weight:700">' + formatMoney(trip.settlementAmount || trip.driverCut || 0) + '</td></tr>'
+        '<tr><td><strong>' + escapeHtml(trip.tripNumber || 'Trip') + '</strong></td><td>' + escapeHtml((trip.origin || '-') + ' → ' + (trip.destination || '-')) + '</td><td class="money">' + formatMoney(trip.cashCollected || trip.expectedCashCollected || 0) + '</td><td class="money" style="font-weight:600">' + formatMoney(trip.settlementAmount || trip.driverCut || 0) + '</td></tr>'
       ).join('');
       const orderRows = (snapshot.lineItems?.orders || []).slice(0, 8).map(order =>
         '<tr><td>' + escapeHtml(order.orderNumber || 'Order') + '</td><td>' + escapeHtml(order.vehicleDescription || 'Vehicle') + '</td><td>' + escapeHtml(order.paymentType || 'BILL') + '</td><td class="money">' + formatMoney(order.cashCollected || order.expectedCashCollected || 0) + '</td><td class="money">' + formatMoney(order.driverCut || order.settlementAmount || 0) + '</td></tr>'
@@ -31967,17 +31967,17 @@
         '<div class="modal-header"><h3>[[icon:file]] Review Payroll</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div>' +
         '<div class="modal-body" style="overflow:auto">' +
         '<div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px">' +
-          '<div><div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em">Driver</div><div style="font-size:22px;font-weight:800">' + escapeHtml(driver.first_name + ' ' + driver.last_name) + '</div><div style="font-size:13px;color:var(--text-secondary)">' + escapeHtml(driver.driver_type === 'OWNER_OP' ? 'Owner-Operator settlement review' : 'Company driver paystub review') + '</div></div>' +
+          '<div><div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em">Driver</div><div style="font-size:22px;font-weight:600">' + escapeHtml(driver.first_name + ' ' + driver.last_name) + '</div><div style="font-size:13px;color:var(--text-secondary)">' + escapeHtml(driver.driver_type === 'OWNER_OP' ? 'Owner-Operator settlement review' : 'Company driver paystub review') + '</div></div>' +
           '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start">' + buildPayrollStatusChip(status) + (records.length ? '<span style="font-size:12px;color:var(--text-secondary);padding-top:7px">' + records.length + ' statement(s) in this period</span>' : '') + '</div>' +
         '</div>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px">' +
-          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Trips</div><div style="font-size:22px;font-weight:800">' + tripIds.length + '</div></div>' +
-          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Gross</div><div style="font-size:22px;font-weight:800">' + formatMoney(snapshot.totals?.grossEarnings || 0) + '</div></div>' +
-          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Cash Deduction</div><div style="font-size:22px;font-weight:800;color:var(--danger)">-' + formatMoney(snapshot.totals?.expectedCashCollected || 0) + '</div></div>' +
-          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Reimbursements</div><div style="font-size:22px;font-weight:800;color:var(--success)">' + formatMoney(snapshot.totals?.reimbursements || 0) + '</div></div>' +
-          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Net Pay</div><div style="font-size:22px;font-weight:800;color:' + ((snapshot.totals?.netPay || 0) >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + formatMoney(snapshot.totals?.netPay || 0) + '</div></div>' +
+          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Trips</div><div style="font-size:22px;font-weight:600">' + tripIds.length + '</div></div>' +
+          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Gross</div><div style="font-size:22px;font-weight:600">' + formatMoney(snapshot.totals?.grossEarnings || 0) + '</div></div>' +
+          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Cash Deduction</div><div style="font-size:22px;font-weight:600;color:var(--danger)">-' + formatMoney(snapshot.totals?.expectedCashCollected || 0) + '</div></div>' +
+          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Reimbursements</div><div style="font-size:22px;font-weight:600;color:var(--success)">' + formatMoney(snapshot.totals?.reimbursements || 0) + '</div></div>' +
+          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Net Pay</div><div style="font-size:22px;font-weight:600;color:' + ((snapshot.totals?.netPay || 0) >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + formatMoney(snapshot.totals?.netPay || 0) + '</div></div>' +
         '</div>' +
-        (blockers.length ? '<div style="margin-bottom:16px;padding:12px 14px;border-radius:12px;background:var(--dim-amber);border:1px solid #f59e0b"><div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:6px">Review blockers</div>' + blockers.map(item => '<div style="font-size:12px;color:#92400e">• ' + escapeHtml(item) + '</div>').join('') + '</div>' : '') +
+        (blockers.length ? '<div style="margin-bottom:16px;padding:12px 14px;border-radius:12px;background:var(--dim-amber);border:1px solid var(--amber)"><div style="font-size:12px;font-weight:600;color:#92400e;margin-bottom:6px">Review blockers</div>' + blockers.map(item => '<div style="font-size:12px;color:#92400e">• ' + escapeHtml(item) + '</div>').join('') + '</div>' : '') +
         '<div style="display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:16px">' +
           '<div>' +
             '<div class="card" style="padding:0;margin-bottom:14px"><div class="card-header"><h3>Trips</h3></div><div class="table-wrapper"><table><thead><tr><th>Trip</th><th>Route</th><th>Cash</th><th>Amount</th></tr></thead><tbody>' + (tripRows || '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-muted)">No trips selected for this payroll period.</td></tr>') + '</tbody></table></div></div>' +
@@ -31988,7 +31988,7 @@
             '<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text-muted)">Period</span><span style="font-size:12px;font-weight:600">' + escapeHtml(getPayrollPeriodLabel(payrollPeriod)) + '</span></div>' +
             '<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text-muted)">Driver Type</span><span style="font-size:12px;font-weight:600">' + escapeHtml(driver.driver_type === 'OWNER_OP' ? 'Owner-Operator' : 'Company Driver') + '</span></div>' +
             '<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text-muted)">Email</span><span style="font-size:12px;font-weight:600;text-align:right">' + escapeHtml(driver.email || 'Missing') + '</span></div>' +
-            '<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0"><span style="font-size:12px;color:var(--text-muted)">Status</span><span style="font-size:12px;font-weight:700">' + escapeHtml(String(status).toUpperCase()) + '</span></div>' +
+            '<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0"><span style="font-size:12px;color:var(--text-muted)">Status</span><span style="font-size:12px;font-weight:600">' + escapeHtml(String(status).toUpperCase()) + '</span></div>' +
           '</div>' +
         '</div>' +
         '</div>' +
@@ -32022,7 +32022,7 @@
           '<td>' + escapeHtml((trip.origin || '-') + ' → ' + (trip.destination || '-')) + '</td>' +
           '<td>' + tripStatusBadge(trip) + '</td>' +
           '<td class="money">' + formatMoney(tripItem?.cashCollected || tripItem?.expectedCashCollected || 0) + '</td>' +
-          '<td class="money" style="font-weight:700">' + formatMoney(tripItem?.settlementAmount || tripItem?.driverCut || 0) + '</td>' +
+          '<td class="money" style="font-weight:600">' + formatMoney(tripItem?.settlementAmount || tripItem?.driverCut || 0) + '</td>' +
           '</tr>';
       }).join('');
 
@@ -32035,24 +32035,24 @@
       m.onclick = e => { if (e.target === m) m.remove(); };
       m.innerHTML =
         '<div class="modal" style="max-width:980px;max-height:92vh;display:flex;flex-direction:column">' +
-        '<div class="modal-header"><h3>[[icon:file]] Payroll Preview</h3><span style="background:var(--dim-amber);color:var(--warning);padding:4px 12px;border-radius:999px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-left:12px">Preview</span><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()" style="margin-left:auto">×</button></div>' +
+        '<div class="modal-header"><h3>[[icon:file]] Payroll Preview</h3><span style="background:var(--dim-amber);color:var(--warning);padding:4px 12px;border-radius:999px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-left:12px">Preview</span><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()" style="margin-left:auto">×</button></div>' +
         '<div class="modal-body" style="overflow:auto">' +
         // Driver info
         '<div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px">' +
-          '<div><div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em">Driver</div><div style="font-size:22px;font-weight:800">' + escapeHtml(driver.first_name + ' ' + driver.last_name) + '</div><div style="font-size:13px;color:var(--text-secondary)">' + escapeHtml(driver.driver_type === 'OWNER_OP' ? 'Owner-Operator settlement preview' : 'Company driver paystub preview') + '</div></div>' +
+          '<div><div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em">Driver</div><div style="font-size:22px;font-weight:600">' + escapeHtml(driver.first_name + ' ' + driver.last_name) + '</div><div style="font-size:13px;color:var(--text-secondary)">' + escapeHtml(driver.driver_type === 'OWNER_OP' ? 'Owner-Operator settlement preview' : 'Company driver paystub preview') + '</div></div>' +
         '</div>' +
         // Banner
-        '<div style="margin-bottom:16px;padding:12px 16px;border-radius:12px;background:var(--dim-amber);border:1px solid #f59e0b">' +
-          '<div style="font-size:13px;font-weight:700;color:#92400e">This is an estimate — not a finalized statement.</div>' +
+        '<div style="margin-bottom:16px;padding:12px 16px;border-radius:12px;background:var(--dim-amber);border:1px solid var(--amber)">' +
+          '<div style="font-size:13px;font-weight:600;color:#92400e">This is an estimate — not a finalized statement.</div>' +
           '<div style="font-size:12px;color:#92400e;margin-top:4px">' + inProgressTrips.length + ' of ' + allTrips.length + ' trip' + (allTrips.length !== 1 ? 's' : '') + ' are still in progress. Amounts may change when trips are completed.</div>' +
         '</div>' +
         // Stat cards
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px">' +
-          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Trips</div><div style="font-size:22px;font-weight:800">' + allTrips.length + ' <span style="font-size:13px;font-weight:600;color:var(--text-muted)">(' + completedTrips.length + ' done)</span></div></div>' +
-          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Gross</div><div style="font-size:22px;font-weight:800">' + formatMoney(snapshot.totals?.grossEarnings || 0) + '</div></div>' +
-          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Cash Deduction</div><div style="font-size:22px;font-weight:800;color:var(--danger)">-' + formatMoney(snapshot.totals?.expectedCashCollected || 0) + '</div></div>' +
-          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Reimbursements</div><div style="font-size:22px;font-weight:800;color:var(--success)">' + formatMoney(snapshot.totals?.reimbursements || 0) + '</div></div>' +
-          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Est. Net Pay</div><div style="font-size:22px;font-weight:800;color:' + ((snapshot.totals?.netPay || 0) >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + formatMoney(snapshot.totals?.netPay || 0) + '</div></div>' +
+          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Trips</div><div style="font-size:22px;font-weight:600">' + allTrips.length + ' <span style="font-size:13px;font-weight:600;color:var(--text-muted)">(' + completedTrips.length + ' done)</span></div></div>' +
+          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Gross</div><div style="font-size:22px;font-weight:600">' + formatMoney(snapshot.totals?.grossEarnings || 0) + '</div></div>' +
+          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Cash Deduction</div><div style="font-size:22px;font-weight:600;color:var(--danger)">-' + formatMoney(snapshot.totals?.expectedCashCollected || 0) + '</div></div>' +
+          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Reimbursements</div><div style="font-size:22px;font-weight:600;color:var(--success)">' + formatMoney(snapshot.totals?.reimbursements || 0) + '</div></div>' +
+          '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Est. Net Pay</div><div style="font-size:22px;font-weight:600;color:' + ((snapshot.totals?.netPay || 0) >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + formatMoney(snapshot.totals?.netPay || 0) + '</div></div>' +
         '</div>' +
         // Tables
         '<div style="display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:16px">' +
@@ -32066,7 +32066,7 @@
             '<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text-muted)">Driver Type</span><span style="font-size:12px;font-weight:600">' + escapeHtml(driver.driver_type === 'OWNER_OP' ? 'Owner-Operator' : 'Company Driver') + '</span></div>' +
             '<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text-muted)">Completed Trips</span><span style="font-size:12px;font-weight:600">' + completedTrips.length + '</span></div>' +
             '<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text-muted)">In-Progress Trips</span><span style="font-size:12px;font-weight:600;color:var(--warning)">' + inProgressTrips.length + '</span></div>' +
-            '<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0"><span style="font-size:12px;color:var(--text-muted)">Mode</span><span style="font-size:12px;font-weight:700;color:var(--warning)">PREVIEW</span></div>' +
+            '<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0"><span style="font-size:12px;color:var(--text-muted)">Mode</span><span style="font-size:12px;font-weight:600;color:var(--warning)">PREVIEW</span></div>' +
           '</div>' +
         '</div>' +
         '</div>' +
@@ -32253,7 +32253,7 @@
           const percentLabel = isOwnerOp ? (d.dispatch_fee_percent || 5) + '% dispatch fee' : (d.cut_percent || 32) + '% cut';
           const tripBadge = p.tripCount > 0
             ? '<span style="background:var(--dim-blue);color:var(--info);padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600">' + p.tripCount + ' trip' + (p.tripCount !== 1 ? 's' : '') + '</span>'
-            : '<span style="background:var(--surface-elevated);color:var(--text-muted);padding:2px 10px;border-radius:12px;font-size:11px">0 trips</span>';
+            : '<span style="background:var(--bg-tertiary);color:var(--text-muted);padding:2px 10px;border-radius:12px;font-size:11px">0 trips</span>';
           const netColor = p.netPay >= 0 ? 'var(--success)' : 'var(--danger)';
           const periodRecords = getPayrollPeriodRecordsForDriver(d.id, currentPeriodRange);
           const status = getPayrollDriverStatus(d.id, currentPeriodRange);
@@ -32543,7 +32543,7 @@
         '<div class="modal" style="max-width:500px">' +
         '<div class="modal-header"><h3>[[icon:money]] Record Payment</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div>' +
         '<div class="modal-body">' +
-        '<div style="margin-bottom:14px;padding:10px 14px;border-radius:8px;background:var(--surface-elevated)">' +
+        '<div style="margin-bottom:14px;padding:10px 14px;border-radius:8px;background:var(--bg-tertiary)">' +
           '<div style="font-size:12px;color:var(--text-muted)">Driver</div>' +
           '<div style="font-weight:600">' + escapeHtml(driver.first_name + ' ' + driver.last_name) + '</div>' +
           '<div style="font-size:12px;color:var(--text-secondary)">' + escapeHtml(getPayrollPeriodLabel(payrollPeriod)) + '</div>' +
@@ -32660,13 +32660,13 @@
         '<div class="modal-header"><h3>[[icon:users]] Batch Payroll Generation</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div>' +
         '<div class="modal-body" style="overflow-y:auto;flex:1">' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px">' +
-        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Period</div><div style="font-size:15px;font-weight:700">' + escapeHtml(periodLabel) + '</div></div>' +
-        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Drivers</div><div style="font-size:22px;font-weight:800">' + driversWithTrips.length + '</div></div>' +
-        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Trips</div><div style="font-size:22px;font-weight:800">' + driversWithTrips.reduce((sum, item) => sum + item.tripCount, 0) + '</div></div>' +
-        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Net Pay</div><div style="font-size:22px;font-weight:800">' + formatMoney(payrollNet) + '</div></div>' +
-        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Exceptions</div><div style="font-size:22px;font-weight:800;color:' + (exceptionCount > 0 ? 'var(--warning)' : 'var(--success)') + '">' + exceptionCount + '</div></div>' +
+        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Period</div><div style="font-size:15px;font-weight:600">' + escapeHtml(periodLabel) + '</div></div>' +
+        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Drivers</div><div style="font-size:22px;font-weight:600">' + driversWithTrips.length + '</div></div>' +
+        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Trips</div><div style="font-size:22px;font-weight:600">' + driversWithTrips.reduce((sum, item) => sum + item.tripCount, 0) + '</div></div>' +
+        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Net Pay</div><div style="font-size:22px;font-weight:600">' + formatMoney(payrollNet) + '</div></div>' +
+        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Exceptions</div><div style="font-size:22px;font-weight:600;color:' + (exceptionCount > 0 ? 'var(--warning)' : 'var(--success)') + '">' + exceptionCount + '</div></div>' +
         '</div>' +
-        (exceptionCount > 0 ? '<div style="margin-bottom:16px;padding:12px 14px;border-radius:12px;background:var(--dim-amber);border:1px solid #f59e0b;font-size:12px;color:#92400e">Review drivers with missing email or negative net pay before emailing statements.</div>' : '') +
+        (exceptionCount > 0 ? '<div style="margin-bottom:16px;padding:12px 14px;border-radius:12px;background:var(--dim-amber);border:1px solid var(--amber);font-size:12px;color:#92400e">Review drivers with missing email or negative net pay before emailing statements.</div>' : '') +
         '<div style="margin-bottom:12px;display:flex;gap:8px">' +
         '<button class="btn btn-secondary btn-sm" onclick="document.querySelectorAll(\'.batch-driver-cb\').forEach(cb=>cb.checked=true)">Select All</button>' +
         '<button class="btn btn-secondary btn-sm" onclick="document.querySelectorAll(\'.batch-driver-cb\').forEach(cb=>cb.checked=false)">Deselect All</button>' +
@@ -32682,9 +32682,9 @@
             '<input type="checkbox" class="batch-driver-cb" value="' + d.id + '" checked data-trip-ids=\'' + JSON.stringify(dw.tripIds) + '\'>' +
             '<div class="driver-avatar" style="width:32px;height:32px;font-size:12px">' + initials + '</div>' +
             '<div style="flex:1"><strong>' + escapeHtml(d.first_name + ' ' + d.last_name) + '</strong>' +
-            (isOwnerOp ? ' <span style="background:#f59e0b;color:white;padding:1px 6px;border-radius:3px;font-size:9px">OO</span>' : '') +
+            (isOwnerOp ? ' <span style="background:var(--amber);color:white;padding:1px 6px;border-radius:3px;font-size:9px">OO</span>' : '') +
             '<div style="font-size:12px;color:var(--text-muted)">' + dw.tripCount + ' trip' + (dw.tripCount !== 1 ? 's' : '') + ' • Net ' + formatMoney(snapshot.totals?.netPay || 0) + '</div></div>' +
-            (hasException ? '<span style="font-size:10px;font-weight:700;color:#92400e;background:var(--dim-amber);padding:4px 8px;border-radius:999px">Review</span>' : '') +
+            (hasException ? '<span style="font-size:10px;font-weight:600;color:#92400e;background:var(--dim-amber);padding:4px 8px;border-radius:999px">Review</span>' : '') +
             '</label>';
         }).join('') +
         '</div>' +
@@ -32693,7 +32693,7 @@
         '<div class="modal-footer" style="gap:8px">' +
         '<button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>' +
         '<button class="btn btn-primary" onclick="executeBatchPayroll(\'print\')">[[icon:print]] Generate & Print All</button>' +
-        '<button class="btn btn-primary" style="background:#059669" onclick="executeBatchPayroll(\'email\')">[[icon:mail]] Generate & Email All</button>' +
+        '<button class="btn btn-primary" style="background:var(--green)" onclick="executeBatchPayroll(\'email\')">[[icon:mail]] Generate & Email All</button>' +
         '</div></div>';
       document.body.appendChild(m);
     }
@@ -32930,17 +32930,17 @@
         '<div class="modal-header"><h3>[[icon:file]] ' + escapeHtml(driver.first_name + ' ' + driver.last_name) + ' Paystub History</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div>' +
         '<div class="modal-body" style="overflow:auto">' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px">' +
-        '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Trips In Period</div><div style="font-size:24px;font-weight:700">' + currentTripIds.length + '</div></div>' +
-        '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">YTD Finalized</div><div style="font-size:24px;font-weight:700">' + formatMoney(ytdNet) + '</div></div>' +
-        '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Statements</div><div style="font-size:24px;font-weight:700">' + driverRecords.length + '</div></div>' +
+        '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Trips In Period</div><div style="font-size:24px;font-weight:600">' + currentTripIds.length + '</div></div>' +
+        '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">YTD Finalized</div><div style="font-size:24px;font-weight:600">' + formatMoney(ytdNet) + '</div></div>' +
+        '<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Statements</div><div style="font-size:24px;font-weight:600">' + driverRecords.length + '</div></div>' +
         '</div>' +
         (driverRecords.length === 0 ? '<div style="text-align:center;padding:32px;color:var(--text-muted)">No finalized statements yet.</div>' :
           driverRecords.map(record =>
             '<div class="card" style="padding:14px;margin-bottom:10px">' +
             '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">' +
-            '<div><div style="font-weight:700">' + escapeHtml(getPayrollRecordDisplayNumber(record)) + ' <span style="font-size:12px;color:var(--text-secondary);font-weight:600">' + (record.type === 'settlement' ? 'Settlement' : 'Paystub') + '</span></div>' +
+            '<div><div style="font-weight:600">' + escapeHtml(getPayrollRecordDisplayNumber(record)) + ' <span style="font-size:12px;color:var(--text-secondary);font-weight:600">' + (record.type === 'settlement' ? 'Settlement' : 'Paystub') + '</span></div>' +
             '<div style="font-size:12px;color:var(--text-secondary)">' + formatDate(record.period_start) + ' - ' + formatDate(record.period_end) + '</div></div>' +
-            '<div style="text-align:right"><div style="font-weight:700;color:' + (toMoneyNumber(record.net_pay) >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + formatMoney(record.net_pay || 0) + '</div><div style="font-size:12px;color:var(--text-muted)">' + escapeHtml(String(record.status || 'finalized')) + '</div></div>' +
+            '<div style="text-align:right"><div style="font-weight:600;color:' + (toMoneyNumber(record.net_pay) >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + formatMoney(record.net_pay || 0) + '</div><div style="font-size:12px;color:var(--text-muted)">' + escapeHtml(String(record.status || 'finalized')) + '</div></div>' +
             '</div>' +
             '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn btn-secondary btn-sm" onclick="openPayrollRecordPreview(' + record.id + ')">Preview</button><button class="btn btn-primary btn-sm" onclick="reprintPayrollRecord(' + record.id + ')">Print</button></div>' +
             '</div>'
@@ -32975,8 +32975,8 @@
             ).join('') || '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-muted)">No expense items stored</td></tr>') + '</tbody></table></div>'
           : activeTab === 'adjustments'
             ? '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px">' +
-                '<div class="card" style="padding:14px"><div style="font-size:12px;font-weight:700;color:var(--text-secondary);margin-bottom:10px">Deductions</div>' + (((snapshot.lineItems?.deductions || []).map(item => '<div style="display:flex;justify-content:space-between;gap:12px;padding:6px 0"><span style="font-size:12px;color:var(--text-secondary)">' + escapeHtml(item.label || item.key || 'Deduction') + '</span><span class="money" style="color:var(--danger)">-' + formatMoney(item.amount || 0) + '</span></div>').join('')) || '<div style="font-size:12px;color:var(--text-muted)">No deductions stored</div>') + '</div>' +
-                '<div class="card" style="padding:14px"><div style="font-size:12px;font-weight:700;color:var(--text-secondary);margin-bottom:10px">Bonuses</div>' + (((snapshot.lineItems?.bonuses || []).map(item => '<div style="display:flex;justify-content:space-between;gap:12px;padding:6px 0"><span style="font-size:12px;color:var(--text-secondary)">' + escapeHtml(item.label || item.key || 'Bonus') + '</span><span class="money" style="color:var(--success)">+' + formatMoney(item.amount || 0) + '</span></div>').join('')) || '<div style="font-size:12px;color:var(--text-muted)">No bonuses stored</div>') + '</div>' +
+                '<div class="card" style="padding:14px"><div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:10px">Deductions</div>' + (((snapshot.lineItems?.deductions || []).map(item => '<div style="display:flex;justify-content:space-between;gap:12px;padding:6px 0"><span style="font-size:12px;color:var(--text-secondary)">' + escapeHtml(item.label || item.key || 'Deduction') + '</span><span class="money" style="color:var(--danger)">-' + formatMoney(item.amount || 0) + '</span></div>').join('')) || '<div style="font-size:12px;color:var(--text-muted)">No deductions stored</div>') + '</div>' +
+                '<div class="card" style="padding:14px"><div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:10px">Bonuses</div>' + (((snapshot.lineItems?.bonuses || []).map(item => '<div style="display:flex;justify-content:space-between;gap:12px;padding:6px 0"><span style="font-size:12px;color:var(--text-secondary)">' + escapeHtml(item.label || item.key || 'Bonus') + '</span><span class="money" style="color:var(--success)">+' + formatMoney(item.amount || 0) + '</span></div>').join('')) || '<div style="font-size:12px;color:var(--text-muted)">No bonuses stored</div>') + '</div>' +
               '</div>'
             : '<div class="table-wrapper"><table><thead><tr><th>Trip</th><th>Route</th><th>Cash</th><th>Amount</th></tr></thead><tbody>' + ((snapshot.lineItems?.trips || []).map(trip =>
                 '<tr><td>' + escapeHtml(trip.tripNumber || 'Trip') + '</td><td>' + escapeHtml((trip.origin || '-') + ' → ' + (trip.destination || '-')) + '</td><td class="money">' + formatMoney(trip.cashCollected || 0) + '</td><td class="money">' + formatMoney(trip.driverCut || trip.settlementAmount || 0) + '</td></tr>'
@@ -32991,12 +32991,12 @@
         '<div style="display:grid;grid-template-columns:minmax(0,1.6fr) minmax(260px,0.8fr);gap:16px;margin-bottom:16px">' +
         '<div>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px">' +
-        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted)">Gross</div><div style="font-weight:700">' + formatMoney(snapshot.totals.grossEarnings || 0) + '</div></div>' +
-        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted)">Cash</div><div style="font-weight:700;color:var(--danger)">-' + formatMoney(snapshot.totals.cashCollected || 0) + '</div></div>' +
-        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted)">Reimbursements</div><div style="font-weight:700;color:var(--success)">' + formatMoney(snapshot.totals.reimbursements || 0) + '</div></div>' +
-        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted)">Deductions</div><div style="font-weight:700;color:var(--danger)">-' + formatMoney(snapshot.totals.deductions || 0) + '</div></div>' +
-        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted)">Bonuses</div><div style="font-weight:700;color:var(--success)">' + formatMoney(snapshot.totals.bonuses || 0) + '</div></div>' +
-        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted)">Net</div><div style="font-weight:700;color:' + ((snapshot.totals.netPay || 0) >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + formatMoney(snapshot.totals.netPay || 0) + '</div></div>' +
+        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted)">Gross</div><div style="font-weight:600">' + formatMoney(snapshot.totals.grossEarnings || 0) + '</div></div>' +
+        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted)">Cash</div><div style="font-weight:600;color:var(--danger)">-' + formatMoney(snapshot.totals.cashCollected || 0) + '</div></div>' +
+        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted)">Reimbursements</div><div style="font-weight:600;color:var(--success)">' + formatMoney(snapshot.totals.reimbursements || 0) + '</div></div>' +
+        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted)">Deductions</div><div style="font-weight:600;color:var(--danger)">-' + formatMoney(snapshot.totals.deductions || 0) + '</div></div>' +
+        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted)">Bonuses</div><div style="font-weight:600;color:var(--success)">' + formatMoney(snapshot.totals.bonuses || 0) + '</div></div>' +
+        '<div class="card" style="padding:12px"><div style="font-size:11px;color:var(--text-muted)">Net</div><div style="font-weight:600;color:' + ((snapshot.totals.netPay || 0) >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + formatMoney(snapshot.totals.netPay || 0) + '</div></div>' +
         '</div>' +
         '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">' + tabButtons + '</div>' +
         '<div class="card" style="padding:0"><div class="card-header"><h3>Statement Detail</h3></div>' + tabContent + '</div>' +
@@ -33022,19 +33022,19 @@
       const mainValue = valueType === 'settlement'
         ? fin.cleanGross - fin.dispatchFee - fin.cashCollected
         : fin.driverCut;
-      const valueColor = valueType === 'settlement' ? '#f59e0b' : '#10b981';
+      const valueColor = valueType === 'settlement' ? 'var(--amber)' : 'var(--green)';
 
       // Payment type badge styles
       const getBadge = (type) => {
         const badges = {
-          'COD': '<span style="background:#f59e0b;color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">COD</span>',
-          'COP': '<span style="background:#f59e0b;color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">COP</span>',
+          'COD': '<span style="background:var(--amber);color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">COD</span>',
+          'COP': '<span style="background:var(--amber);color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">COP</span>',
           'LOCAL_COD': '<span style="background:#eab308;color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">LOCAL</span>',
-          'BILLED': '<span style="background:#3b82f6;color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">BILLED</span>',
-          'CHECK': '<span style="background:#10b981;color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">CHECK</span>',
-          'SPLIT': '<span style="background:#8b5cf6;color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">SPLIT</span>'
+          'BILLED': '<span style="background:var(--blue);color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">BILLED</span>',
+          'CHECK': '<span style="background:var(--green);color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">CHECK</span>',
+          'SPLIT': '<span style="background:var(--purple);color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">SPLIT</span>'
         };
-        return badges[type] || '<span style="background:#94a3b8;color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">' + (type || 'N/A') + '</span>';
+        return badges[type] || '<span style="background:var(--text-muted);color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">' + (type || 'N/A') + '</span>';
       };
 
       // Build order rows
@@ -33053,8 +33053,8 @@
         const isLast = idx === orders.length - 1;
         const prefix = isLast ? '└─' : '├─';
 
-        ordersHTML += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0 4px 24px;font-size:12px;color:#64748b">' +
-          '<span style="color:#cbd5e1">' + prefix + '</span>' +
+        ordersHTML += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0 4px 24px;font-size:12px;color:var(--text-secondary)">' +
+          '<span style="color:var(--border)">' + prefix + '</span>' +
           '<span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="' + orderLabel + '">' + orderLabel + '</span>' +
           '<span style="font-weight:500;color:#1e293b">' + formatMoney(revenue) + '</span>' +
           getBadge(o.payment_type) +
@@ -33063,7 +33063,7 @@
 
       // Add cash collected summary if any
       if (tripCashTotal > 0) {
-        ordersHTML += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0 4px 24px;font-size:11px;color:#f59e0b;font-weight:600">' +
+        ordersHTML += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0 4px 24px;font-size:11px;color:var(--amber);font-weight:600">' +
           '<span style="color:transparent">└─</span>' +
           '<span>[[icon:dollar]] Cash Collected: ' + formatMoney(tripCashTotal) + '</span>' +
           '</div>';
@@ -33071,13 +33071,13 @@
 
       // Build complete trip block
       const checkboxClass = valueType === 'settlement' ? 'settlement-trip' : 'paystub-trip';
-      return '<div style="border-bottom:1px solid #e2e8f0;padding:8px 0">' +
+      return '<div style="border-bottom:1px solid var(--border);padding:8px 0">' +
         '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500">' +
         '<input type="checkbox" class="' + checkboxClass + '" value="' + trip.id + '"' + (isChecked ? ' checked' : '') + (isDisabled ? ' disabled' : '') + '>' +
         '<span><strong>' + trip.trip_number + '</strong> - ' + formatDate(trip.trip_date) + '</span>' +
         '<span style="margin-left:auto;color:' + valueColor + ';font-weight:600">' + formatMoney(mainValue) + '</span>' +
         '</label>' +
-        (orders.length > 0 ? ordersHTML : '<div style="padding:4px 0 4px 24px;font-size:12px;color:#94a3b8;font-style:italic">No orders</div>') +
+        (orders.length > 0 ? ordersHTML : '<div style="padding:4px 0 4px 24px;font-size:12px;color:var(--text-muted);font-style:italic">No orders</div>') +
         '</div>';
     }
 
@@ -33150,7 +33150,7 @@
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
       m.dataset.statementOptions = JSON.stringify(modalOptions);
       m.innerHTML = '<div class="modal" style="max-width:650px;max-height:90vh;display:flex;flex-direction:column"><div class="modal-header"><h3>[[icon:file]] Generate Paystub</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
-        '<div class="form-row"><div class="form-group"><label>Driver</label><input value="' + driver.first_name + ' ' + driver.last_name + '" readonly style="background:var(--surface-elevated)"></div><div class="form-group"><label>Driver Email</label><input type="email" id="driverEmail" value="' + (driver.email || '') + '" placeholder="driver@email.com"></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Driver</label><input value="' + driver.first_name + ' ' + driver.last_name + '" readonly style="background:var(--bg-tertiary)"></div><div class="form-group"><label>Driver Email</label><input type="email" id="driverEmail" value="' + (driver.email || '') + '" placeholder="driver@email.com"></div></div>' +
         (modalOptions.lockTripSelection ? '<div style="margin-bottom:10px;font-size:12px;color:var(--text-secondary);background:var(--dim-blue);border:1px solid var(--info-border);padding:8px 10px;border-radius:8px">Trip selection is locked from Trip Detail.</div>' : '') +
         '<div class="form-group"><label>Select Trip(s) for Paystub</label><div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px">' +
         (tripsForModal.length === 0 ? '<p style="color:var(--text-secondary);text-align:center;padding:20px">No completed trips</p>' :
@@ -33165,7 +33165,7 @@
 
         // Deductions Section (pre-filled from saved defaults)
         '<div style="background:var(--dim-red);padding:12px;border-radius:8px;margin-top:12px">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><label style="font-weight:600;color:#dc2626">[[icon:minus]] DEDUCTIONS</label>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><label style="font-weight:600;color:var(--red)">[[icon:minus]] DEDUCTIONS</label>' +
         '<button class="btn btn-sm btn-secondary" onclick="savePaystubDeductionDefaults(' + driverId + ')" style="font-size:10px;padding:3px 8px">Save as Default</button></div>' +
         '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Insurance (Cargo/Liab/Phys)</label><input type="number" id="dedInsurance" value="' + dedVal('insurance') + '" class="deduction-input" onchange="updatePaystubTotals()"></div>' +
         '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Fuel</label><input type="number" id="dedFuel" value="' + dedVal('fuel') + '" class="deduction-input" onchange="updatePaystubTotals()"></div>' +
@@ -33176,18 +33176,18 @@
         '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Highway Use Tax (2290)</label><input type="number" id="ded2290" value="' + dedVal('hut2290') + '" class="deduction-input" onchange="updatePaystubTotals()"></div>' +
         '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Reg Renewal</label><input type="number" id="dedRegRenewal" value="' + dedVal('regRenewal') + '" class="deduction-input" onchange="updatePaystubTotals()"></div>' +
         '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Other Deductions</label><input type="number" id="dedOther" value="' + dedVal('other') + '" class="deduction-input" onchange="updatePaystubTotals()"></div></div>' +
-        '<div style="text-align:right;margin-top:8px;font-weight:600;color:#dc2626">Total Deductions: $<span id="totalDeductionsDisplay">0.00</span></div></div>' +
+        '<div style="text-align:right;margin-top:8px;font-weight:600;color:var(--red)">Total Deductions: $<span id="totalDeductionsDisplay">0.00</span></div></div>' +
 
         // Bonuses Section
         '<div style="background:var(--dim-green);padding:12px;border-radius:8px;margin-top:12px">' +
-        '<label style="font-weight:600;margin-bottom:8px;display:block;color:#059669">[[icon:plus]] BONUSES</label>' +
+        '<label style="font-weight:600;margin-bottom:8px;display:block;color:var(--green)">[[icon:plus]] BONUSES</label>' +
         '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Level I Inspection</label><input type="number" id="bonusLevel1" value="0" class="bonus-input" onchange="updatePaystubTotals()"></div>' +
         '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Level II Inspection</label><input type="number" id="bonusLevel2" value="0" class="bonus-input" onchange="updatePaystubTotals()"></div>' +
         '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Level III Inspection</label><input type="number" id="bonusLevel3" value="0" class="bonus-input" onchange="updatePaystubTotals()"></div></div>' +
         '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:0"><label style="font-size:12px">Other Bonus</label><input type="number" id="bonusOther" value="0" class="bonus-input" onchange="updatePaystubTotals()"></div></div>' +
-        '<div style="text-align:right;margin-top:8px;font-weight:600;color:#059669">Total Bonuses: $<span id="totalBonusesDisplay">0.00</span></div></div>' +
+        '<div style="text-align:right;margin-top:8px;font-weight:600;color:var(--green)">Total Bonuses: $<span id="totalBonusesDisplay">0.00</span></div></div>' +
 
-        '</div><div class="modal-footer" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="generatePaystub(' + driverId + ', \'print\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/><path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7z"/></svg>Print</button><button class="btn btn-primary" style="background:#059669" onclick="generatePaystub(' + driverId + ', \'email\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>Send Email</button><button class="btn btn-secondary" onclick="generatePaystub(' + driverId + ', \'both\')">Print & Email</button></div></div>';
+        '</div><div class="modal-footer" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="generatePaystub(' + driverId + ', \'print\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/><path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7z"/></svg>Print</button><button class="btn btn-primary" style="background:var(--green)" onclick="generatePaystub(' + driverId + ', \'email\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>Send Email</button><button class="btn btn-secondary" onclick="generatePaystub(' + driverId + ', \'both\')">Print & Email</button></div></div>';
       document.body.appendChild(m);
       updatePaystubTotals();
     }
@@ -33243,10 +33243,10 @@
 
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
       m.dataset.statementOptions = JSON.stringify(modalOptions);
-      m.innerHTML = '<div class="modal" style="max-width:650px;max-height:90vh;display:flex;flex-direction:column"><div class="modal-header" style="background:#f59e0b;color:white"><h3>[[icon:clipboard]] Generate Settlement Statement</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()" style="color:white">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
-        '<div style="background:var(--dim-amber);padding:12px;border-radius:8px;margin-bottom:16px;border:2px solid #f59e0b"><div style="font-weight:600;color:#92400e">[[icon:truck]] Owner-Operator Settlement</div><div style="font-size:12px;color:#92400e">Dispatch Fee: ' + dispatchFeePercent + '%</div></div>' +
-        '<div class="form-row"><div class="form-group"><label>Owner-Operator</label><input value="' + driver.first_name + ' ' + driver.last_name + '" readonly style="background:var(--surface-elevated)"></div><div class="form-group"><label>Email</label><input type="email" id="driverEmail" value="' + (driver.email || '') + '" placeholder="owner@email.com"></div></div>' +
-        (modalOptions.lockTripSelection ? '<div style="margin-bottom:10px;font-size:12px;color:#92400e;background:var(--dim-amber);border:1px solid #f59e0b;padding:8px 10px;border-radius:8px">Trip selection is locked from Trip Detail.</div>' : '') +
+      m.innerHTML = '<div class="modal" style="max-width:650px;max-height:90vh;display:flex;flex-direction:column"><div class="modal-header" style="background:var(--amber);color:white"><h3>[[icon:clipboard]] Generate Settlement Statement</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()" style="color:white">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
+        '<div style="background:var(--dim-amber);padding:12px;border-radius:8px;margin-bottom:16px;border:2px solid var(--amber)"><div style="font-weight:600;color:#92400e">[[icon:truck]] Owner-Operator Settlement</div><div style="font-size:12px;color:#92400e">Dispatch Fee: ' + dispatchFeePercent + '%</div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Owner-Operator</label><input value="' + driver.first_name + ' ' + driver.last_name + '" readonly style="background:var(--bg-tertiary)"></div><div class="form-group"><label>Email</label><input type="email" id="driverEmail" value="' + (driver.email || '') + '" placeholder="owner@email.com"></div></div>' +
+        (modalOptions.lockTripSelection ? '<div style="margin-bottom:10px;font-size:12px;color:#92400e;background:var(--dim-amber);border:1px solid var(--amber);padding:8px 10px;border-radius:8px">Trip selection is locked from Trip Detail.</div>' : '') +
         '<div class="form-group"><label>Select Trip(s) for Settlement</label><div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px">' +
         (tripsForModal.length === 0 ? '<p style="color:var(--text-secondary);text-align:center;padding:20px">No completed trips</p>' :
         tripsForModal.map(t => buildTripOrdersHTML(t.id, 'settlement', {
@@ -33260,7 +33260,7 @@
 
         // Deductions Section for Owner-Operators (pre-filled from saved defaults)
         '<div style="background:var(--dim-red);padding:12px;border-radius:8px;margin-top:12px">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><label style="font-weight:600;color:#dc2626">[[icon:minus]] DEDUCTIONS</label>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><label style="font-weight:600;color:var(--red)">[[icon:minus]] DEDUCTIONS</label>' +
         '<button class="btn btn-sm btn-secondary" onclick="saveSettlementDeductionDefaults(' + driverId + ')" style="font-size:10px;padding:3px 8px">Save as Default</button></div>' +
         '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">IFTA</label><input type="number" id="settDedIFTA" value="' + dedVal('ifta') + '" class="settlement-ded" onchange="updateSettlementTotals()"></div>' +
         '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">ELD</label><input type="number" id="settDedELD" value="' + dedVal('eld') + '" class="settlement-ded" onchange="updateSettlementTotals()"></div>' +
@@ -33271,13 +33271,13 @@
         '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Reg Renewal</label><input type="number" id="settDedReg" value="' + dedVal('regRenewal') + '" class="settlement-ded" onchange="updateSettlementTotals()"></div>' +
         '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Advances</label><input type="number" id="settDedAdvances" value="' + dedVal('advances') + '" class="settlement-ded" onchange="updateSettlementTotals()"></div>' +
         '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Other</label><input type="number" id="settDedOther" value="' + dedVal('other') + '" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
-        '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #fca5a5"><label style="font-size:11px;color:#dc2626;font-weight:600">Custom Deductions:</label></div>' +
+        '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #fca5a5"><label style="font-size:11px;color:var(--red);font-weight:600">Custom Deductions:</label></div>' +
         '<div class="form-row" style="gap:8px;margin-top:4px"><div class="form-group" style="margin-bottom:4px;flex:2"><input type="text" id="settDedCustom1Label" placeholder="Description" style="font-size:12px"></div><div class="form-group" style="margin-bottom:4px;flex:1"><input type="number" id="settDedCustom1" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
         '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:4px;flex:2"><input type="text" id="settDedCustom2Label" placeholder="Description" style="font-size:12px"></div><div class="form-group" style="margin-bottom:4px;flex:1"><input type="number" id="settDedCustom2" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
         '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:4px;flex:2"><input type="text" id="settDedCustom3Label" placeholder="Description" style="font-size:12px"></div><div class="form-group" style="margin-bottom:4px;flex:1"><input type="number" id="settDedCustom3" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
-        '<div style="text-align:right;margin-top:8px;font-weight:600;color:#dc2626">Total Deductions: $<span id="totalSettlementDeductions">0.00</span></div></div>' +
+        '<div style="text-align:right;margin-top:8px;font-weight:600;color:var(--red)">Total Deductions: $<span id="totalSettlementDeductions">0.00</span></div></div>' +
 
-        '</div><div class="modal-footer" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" style="background:#f59e0b" onclick="generateSettlement(' + driverId + ', \'print\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/><path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7z"/></svg>Print</button><button class="btn btn-primary" style="background:#059669" onclick="generateSettlement(' + driverId + ', \'email\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>Send Email</button></div></div>';
+        '</div><div class="modal-footer" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" style="background:var(--amber)" onclick="generateSettlement(' + driverId + ', \'print\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/><path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7z"/></svg>Print</button><button class="btn btn-primary" style="background:var(--green)" onclick="generateSettlement(' + driverId + ', \'email\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>Send Email</button></div></div>';
       document.body.appendChild(m);
       updateSettlementTotals();
     }
@@ -34175,10 +34175,10 @@
       background: #ffffff;
       color: #111827;
       display: flex; align-items: center; justify-content: center;
-      font-size: 20px; font-weight: 700;
+      font-size: 20px; font-weight:600;
       letter-spacing: -1px;
     }
-    .brand-text { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+    .brand-text { font-size: 20px; font-weight:600; letter-spacing: -0.5px; }
     .brand-sub { font-size: 11px; opacity: 0.7; margin-top: 2px; font-weight: 400; }
     .doc-info { text-align: right; }
     .doc-title { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.7; }
@@ -34198,7 +34198,7 @@
       align-items: center;
     }
     .amount-label { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; font-weight: 500; }
-    .amount-value { font-size: 36px; font-weight: 700; letter-spacing: -1px; }
+    .amount-value { font-size: 36px; font-weight:600; letter-spacing: -1px; }
     
     /* Content Area */
     .content { padding: 24px 32px; background: #ffffff; }
@@ -34216,7 +34216,7 @@
     .driver-detail { font-size: 12px; color: #6b7280; margin-top: 4px; }
     .driver-stats { display: flex; gap: 32px; }
     .stat-block { text-align: right; }
-    .stat-value { font-size: 18px; font-weight: 700; color: #111827; }
+    .stat-value { font-size: 18px; font-weight:600; color: #111827; }
     .stat-label { font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
     
     /* Summary Grid */
@@ -34232,9 +34232,9 @@
       padding: 14px;
       text-align: center;
     }
-    .summary-item.highlight { background: #f0fdf4; border-color: #bbf7d0; }
-    .summary-item.negative { background: #fef2f2; border-color: #fecaca; }
-    .summary-amount { font-size: 18px; font-weight: 700; color: #111827; }
+    .summary-item.highlight { background: var(--green-dim); border-color: #bbf7d0; }
+    .summary-item.negative { background: var(--red-dim); border-color: #fecaca; }
+    .summary-amount { font-size: 18px; font-weight:600; color: #111827; }
     .summary-amount.green { color: #047857; }
     .summary-amount.red { color: #b91c1c; }
     .summary-label { font-size: 9px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
@@ -34325,7 +34325,7 @@
     .col-icon {
       width: 20px; height: 20px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 14px; font-weight: 700;
+      font-size: 14px; font-weight:600;
     }
     .line-item {
       display: flex;
@@ -34343,8 +34343,8 @@
       font-weight: 600;
       font-size: 12px;
     }
-    .line-total.red { background: #fef2f2; color: #b91c1c; }
-    .line-total.green { background: #f0fdf4; color: #047857; }
+    .line-total.red { background: var(--red-dim); color: #b91c1c; }
+    .line-total.green { background: var(--green-dim); color: #047857; }
     .empty-state {
       text-align: center;
       padding: 20px;
@@ -34376,16 +34376,16 @@
       align-items: center;
     }
     .pay-to-label { font-size: 10px; color: #6b7280; text-transform: uppercase; }
-    .pay-to-name { font-size: 16px; font-weight: 700; color: #111827; margin: 4px 0; }
+    .pay-to-name { font-size: 16px; font-weight:600; color: #111827; margin: 4px 0; }
     .check-amount-box {
-      background: ${netPay >= 0 ? '#f0fdf4' : '#fef2f2'};
+      background: ${netPay >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'};
       border: 2px solid ${netPay >= 0 ? '#047857' : '#b91c1c'};
       padding: 12px 24px;
       text-align: center;
     }
     .check-amount-value {
       font-size: 24px;
-      font-weight: 700;
+      font-weight:600;
       color: ${netPay >= 0 ? '#047857' : '#b91c1c'};
     }
     .check-footer {
@@ -35511,10 +35511,10 @@
             <div class="modal-header">
               <div style="display:flex;align-items:center;gap:12px">
                 <div style="width:36px;height:36px;background:var(--primary-light);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center">
-                  <span style="font-family:var(--font-display);font-weight:800;font-size:13px;color:var(--primary)">HS</span>
+                  <span style="font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--primary)">HS</span>
                 </div>
                 <div>
-                  <h3 style="margin:0;font-family:var(--font-display);font-size:18px;font-weight:700">Send Invoice</h3>
+                  <h3 style="margin:0;font-family:var(--font-display);font-size:18px;font-weight:600">Send Invoice</h3>
                   <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${escapeHtml(order.order_number || 'Order')} &middot; ${escapeHtml(order.broker_name || 'Broker')}</div>
                 </div>
               </div>
@@ -35538,7 +35538,7 @@
               </div>
 
               <div style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:20px">
-                <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px">Invoice Preview</div>
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px">Invoice Preview</div>
                 <div style="display:grid;gap:8px;font-size:13px;color:var(--text-secondary)">
                   <div style="display:flex;justify-content:space-between">
                     <span>Invoice #</span>
@@ -35628,8 +35628,8 @@
         // Build email body
         const emailHtml = `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
-            <div style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 32px; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">HORIZON STAR</h1>
+            <div style="background: var(--amber); padding: 32px; text-align: center;">
+              <h1 style="color: white; margin: 0; font-size: 28px; font-weight:600;">HORIZON STAR</h1>
               <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0; font-size: 14px;">Transportation Services</p>
             </div>
 
@@ -35637,7 +35637,7 @@
               <h2 style="color: #1f2937; margin: 0 0 8px; font-size: 22px;">Invoice Attached</h2>
               <p style="color: #6b7280; margin: 0 0 24px; font-size: 14px;">Please find your invoice attached to this email.</p>
 
-              <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+              <div style="background: var(--amber-dim); border: 1px solid #fde68a; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
                 <table style="width: 100%; border-collapse: collapse;">
                   <tr>
                     <td style="padding: 8px 0; color: #92400e; font-size: 14px;">Invoice Number</td>
@@ -35657,7 +35657,7 @@
                   </tr>
                   <tr style="border-top: 2px solid #fde68a;">
                     <td style="padding: 12px 0 8px; color: #92400e; font-size: 16px; font-weight: 600;">Amount Due (${basisLabel})</td>
-                    <td style="padding: 12px 0 8px; color: #b45309; font-weight: 700; text-align: right; font-size: 20px;">${fmtMoney(amountDue)}</td>
+                    <td style="padding: 12px 0 8px; color: #b45309; font-weight:600; text-align: right; font-size: 20px;">${fmtMoney(amountDue)}</td>
                   </tr>
                 </table>
               </div>
@@ -36125,31 +36125,31 @@
             subject: 'Tracking Link - Order ' + order.order_number,
             from_name: cp.name,
             html: '<div style="font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif; max-width: 600px; margin: 0 auto;">' +
-              '<div style="background: linear-gradient(135deg, #3b82f6, #2563eb); padding: 24px; text-align: center;">' +
+              '<div style="background: var(--blue); padding: 24px; text-align: center;">' +
                 '<h1 style="color: white; margin: 0; font-size: 24px;">' + cp.name.toUpperCase() + '</h1>' +
                 '<p style="color: rgba(255,255,255,0.9); margin: 8px 0 0;">Live Tracking Available</p>' +
               '</div>' +
-              '<div style="padding: 24px; background: #f8fafc;">' +
+              '<div style="padding: 24px; background: var(--bg-secondary);">' +
                 '<p style="color: var(--text-primary); font-size: 16px; margin-bottom: 20px;">Your shipment is ready to track! Click the button below to view real-time status updates.</p>' +
-                '<div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px;">' +
+                '<div style="background: white; border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 20px;">' +
                   '<table style="width: 100%; border-collapse: collapse;">' +
-                    '<tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Order #</td>' +
+                    '<tr><td style="padding: 8px 0; color: var(--text-secondary); font-size: 14px;">Order #</td>' +
                     '<td style="padding: 8px 0; color: #1e293b; font-weight: 600; text-align: right;">' + order.order_number + '</td></tr>' +
-                    '<tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Vehicle</td>' +
+                    '<tr><td style="padding: 8px 0; color: var(--text-secondary); font-size: 14px;">Vehicle</td>' +
                     '<td style="padding: 8px 0; color: #1e293b; font-weight: 600; text-align: right;">' + (order.vehicle_year || '') + ' ' + (order.vehicle_make || '') + ' ' + (order.vehicle_model || '') + '</td></tr>' +
-                    '<tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Route</td>' +
+                    '<tr><td style="padding: 8px 0; color: var(--text-secondary); font-size: 14px;">Route</td>' +
                     '<td style="padding: 8px 0; color: #1e293b; font-weight: 600; text-align: right;">' + (order.origin || order.pickup_state || 'Origin') + ' → ' + (order.destination || order.delivery_state || 'Destination') + '</td></tr>' +
-                    (driver ? '<tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Driver</td>' +
+                    (driver ? '<tr><td style="padding: 8px 0; color: var(--text-secondary); font-size: 14px;">Driver</td>' +
                     '<td style="padding: 8px 0; color: #1e293b; font-weight: 600; text-align: right;">' + driver.first_name + ' ' + driver.last_name + '</td></tr>' : '') +
                   '</table>' +
                 '</div>' +
                 '<div style="text-align: center; margin: 24px 0;">' +
-                  '<a href="' + trackingUrl + '" style="display: inline-block; background: #3b82f6; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">View Live Tracking</a>' +
+                  '<a href="' + trackingUrl + '" style="display: inline-block; background: var(--blue); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">View Live Tracking</a>' +
                 '</div>' +
-                '<p style="color: var(--text-secondary); font-size: 13px; text-align: center;">Or copy this link: <a href="' + trackingUrl + '" style="color: #3b82f6;">' + trackingUrl + '</a></p>' +
+                '<p style="color: var(--text-secondary); font-size: 13px; text-align: center;">Or copy this link: <a href="' + trackingUrl + '" style="color: var(--blue);">' + trackingUrl + '</a></p>' +
               '</div>' +
               '<div style="background: #1e293b; padding: 20px; text-align: center;">' +
-                '<p style="color: #94a3b8; font-size: 13px; margin: 0 0 8px;">Questions? Contact our dispatch team</p>' +
+                '<p style="color: var(--text-muted); font-size: 13px; margin: 0 0 8px;">Questions? Contact our dispatch team</p>' +
                 '<p style="color: white; font-size: 14px; margin: 0;"><strong>' + cp.phone + '</strong> | ' + cp.email_dispatch + '</p>' +
               '</div>' +
             '</div>'
@@ -36309,26 +36309,26 @@
       // Determine status
       let status = 'pending';
       let statusLabel = 'Pending';
-      let statusColor = '#64748b';
-      let statusBg = 'linear-gradient(135deg, #64748b, #475569)';
+      let statusColor = 'var(--text-secondary)';
+      let statusBg = 'var(--text-secondary)';
 
       if (order) {
         const deliveryStatus = order.delivery_status?.toLowerCase();
         if (deliveryStatus === 'delivered') {
           status = 'delivered';
           statusLabel = 'Delivered';
-          statusColor = '#22c55e';
-          statusBg = 'linear-gradient(135deg, #22c55e, #16a34a)';
+          statusColor = 'var(--green)';
+          statusBg = 'var(--green)';
         } else if (deliveryStatus === 'picked_up' || trip) {
           status = 'in_transit';
           statusLabel = 'In Transit';
-          statusColor = '#3b82f6';
-          statusBg = 'linear-gradient(135deg, #3b82f6, #2563eb)';
+          statusColor = 'var(--blue)';
+          statusBg = 'var(--blue)';
         } else if (order.trip_id) {
           status = 'assigned';
           statusLabel = 'Assigned';
-          statusColor = '#f59e0b';
-          statusBg = 'linear-gradient(135deg, #f59e0b, #d97706)';
+          statusColor = 'var(--amber)';
+          statusBg = 'var(--amber)';
         }
       }
 
@@ -36402,7 +36402,7 @@
             }
             .tracking-logo {
               font-size: 20px;
-              font-weight: 700;
+              font-weight:600;
               color: var(--accent);
             }
             .tracking-logo span {
@@ -36437,7 +36437,7 @@
               border-radius: 8px;
               padding: 12px 16px;
               font-size: 13px;
-              color: #1e40af;
+              color: var(--blue);
               text-align: center;
               margin-bottom: 24px;
             }
@@ -36453,7 +36453,7 @@
             }
             .tracking-status-text {
               font-size: 22px;
-              font-weight: 700;
+              font-weight:600;
             }
             .tracking-status-detail {
               font-size: 14px;
@@ -36496,8 +36496,8 @@
               border-radius: 20px;
               font-size: 12px;
               font-weight: 600;
-              background: ${status === 'delivered' ? '#dcfce7' : status === 'in_transit' ? '#dbeafe' : '#fef3c7'};
-              color: ${status === 'delivered' ? '#166534' : status === 'in_transit' ? '#1d4ed8' : '#92400e'};
+              background: ${status === 'delivered' ? '#dcfce7' : status === 'in_transit' ? 'var(--blue-dim)' : 'var(--amber-dim)'};
+              color: ${status === 'delivered' ? '#166534' : status === 'in_transit' ? 'var(--blue)' : '#92400e'};
             }
             .tracking-timeline {
               position: relative;
@@ -36530,10 +36530,10 @@
               border: 3px solid var(--bg-card);
             }
             .tracking-timeline-dot.completed {
-              background: #22c55e;
+              background: var(--green);
             }
             .tracking-timeline-dot.current {
-              background: #3b82f6;
+              background: var(--blue);
               box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
             }
             .tracking-timeline-content {
@@ -36558,7 +36558,7 @@
             }
             .tracking-timeline-eta {
               font-size: 12px;
-              color: #f59e0b;
+              color: var(--amber);
               margin-top: 4px;
               font-weight: 500;
             }
@@ -36652,7 +36652,7 @@
                 ${trip?.trip_date ? `
                   <div style="text-align:right;">
                     <div style="font-size:12px;opacity:0.8;">Trip Date</div>
-                    <div style="font-size:18px;font-weight:700;">${fmtDate(trip.trip_date)}</div>
+                    <div style="font-size:18px;font-weight:600;">${fmtDate(trip.trip_date)}</div>
                   </div>
                 ` : ''}
               </div>
