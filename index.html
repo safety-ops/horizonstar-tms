@@ -438,7 +438,6 @@
     }
     
     .mini-chat-bubble:hover {
-      transform: scale(1.05);
       box-shadow: var(--shadow-lg);
     }
     
@@ -7285,7 +7284,7 @@
     .truck {
       font-size: 50px;
       position: absolute;
-      animation: driveTruck 2s ease-in-out infinite;
+      animation: none;
     }
     
     /* removed v1.4: driveTruck */
@@ -7309,7 +7308,7 @@
       width: 100%;
       height: 2px;
       background: repeating-linear-gradient(90deg, #fbbf24 0px, #fbbf24 20px, transparent 20px, transparent 40px);
-      animation: roadMove 0.5s linear infinite;
+      animation: none;
     }
     
     /* removed v1.4: roadMove */
@@ -7332,12 +7331,8 @@
       height: 6px;
       background: #10b981;
       border-radius: 50%;
-      animation: loadingBounce 1.4s infinite ease-in-out both;
+      animation: none;
     }
-    
-    .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
-    .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
-    .loading-dots span:nth-child(3) { animation-delay: 0s; }
     
     /* removed v1.4: loadingBounce, loadingFadeInUp */
     
@@ -8055,7 +8050,6 @@
       background: rgba(239, 68, 68, 0.1);
       border-color: var(--danger);
       color: var(--danger);
-      transform: rotate(90deg);
     }
 
     .modal-body {
@@ -8452,12 +8446,12 @@
     }
     
     /* ============ UTILITY CLASSES ============ */
-    .animate-in { animation: fadeInUp var(--duration-normal) var(--ease-out-expo); }
-    .animate-scale { animation: scaleIn var(--duration-normal) var(--ease-spring); }
-    .animate-slide-right { animation: slideInRight var(--duration-normal) var(--ease-out-expo); }
-    .hover-lift { transition: transform var(--duration-fast); }
-    .hover-lift:hover { transform: translateY(-3px); }
-    .hover-glow:hover { box-shadow: var(--shadow-glow-green); }
+    .animate-in { animation: none; }
+    .animate-scale { animation: none; }
+    .animate-slide-right { animation: none; }
+    .hover-lift { transition: none; }
+    .hover-lift:hover { transform: none; }
+    .hover-glow:hover { box-shadow: none; }
     
     /* ═══════════════════════════════════════════════════════════════════
        [[icon:film]] ADDITIONAL SUBTLE ANIMATIONS & EFFECTS
@@ -8466,31 +8460,17 @@
     /* ============ STAGGERED ENTRANCE ANIMATIONS - Premium Timing ============ */
     /* removed v1.4: staggerFadeIn, cardEnter */
 
-    /* Stat cards stagger - premium timing */
-    .stats-grid .stat-card:nth-child(1) { animation: cardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both; }
-    .stats-grid .stat-card:nth-child(2) { animation: cardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both; }
-    .stats-grid .stat-card:nth-child(3) { animation: cardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both; }
-    .stats-grid .stat-card:nth-child(4) { animation: cardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both; }
-    .stats-grid .stat-card:nth-child(5) { animation: cardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both; }
-    .stats-grid .stat-card:nth-child(6) { animation: cardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both; }
+    /* removed v1.4: stat card stagger, driver card stagger */
 
-    /* Driver cards stagger */
-    .drivers-grid .driver-card:nth-child(1) { animation: cardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both; }
-    .drivers-grid .driver-card:nth-child(2) { animation: cardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both; }
-    .drivers-grid .driver-card:nth-child(3) { animation: cardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both; }
-    .drivers-grid .driver-card:nth-child(4) { animation: cardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both; }
-    .drivers-grid .driver-card:nth-child(5) { animation: cardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both; }
-    .drivers-grid .driver-card:nth-child(6) { animation: cardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both; }
-
-    /* Cards animate in */
+    /* Cards - no entrance animation */
     .card {
-      animation: cardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation: none;
     }
 
-    /* Number pop animation for stat values */
+    /* Stat values - no pop animation */
     .stat-card .value {
       display: inline-block;
-      animation: numberPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.3s backwards;
+      animation: none;
     }
 
     /* removed v1.4: numberPop */
@@ -8511,106 +8491,37 @@
       }
     }
 
-    /* Page title animation */
+    /* Page title - no entrance animation */
     .page-title {
-      animation: titleEnter 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+      animation: none;
     }
 
     /* removed v1.4: titleEnter */
     
     /* ============ TABLE ROW ANIMATIONS ============ */
-    /* removed v1.4: rowSlideIn */
-    
+    /* removed v1.4: rowSlideIn, row stagger delays, row hover scale */
+
     tbody tr {
-      animation: rowSlideIn 0.3s ease-out both;
-    }
-    
-    tbody tr:nth-child(1) { animation-delay: 0.02s; }
-    tbody tr:nth-child(2) { animation-delay: 0.04s; }
-    tbody tr:nth-child(3) { animation-delay: 0.06s; }
-    tbody tr:nth-child(4) { animation-delay: 0.08s; }
-    tbody tr:nth-child(5) { animation-delay: 0.1s; }
-    tbody tr:nth-child(6) { animation-delay: 0.12s; }
-    tbody tr:nth-child(7) { animation-delay: 0.14s; }
-    tbody tr:nth-child(8) { animation-delay: 0.16s; }
-    tbody tr:nth-child(9) { animation-delay: 0.18s; }
-    tbody tr:nth-child(10) { animation-delay: 0.2s; }
-    
-    /* Row hover lift effect */
-    tbody tr {
-      transition: transform var(--duration-fast), box-shadow var(--duration-fast);
-    }
-    
-    tbody tr:hover {
-      transform: scale(1.005);
-      position: relative;
-      z-index: 1;
+      animation: none;
     }
     
     /* ============ BUTTON ENHANCEMENTS ============ */
-    /* Icon spin on hover for icon buttons */
-    .btn-icon:hover .icon,
-    .btn-icon:hover svg,
-    .action-icon:hover {
-      transition: transform 0.3s var(--ease-spring);
-    }
-    
-    /* Subtle pulse on primary buttons */
-    .btn-primary {
-      position: relative;
-    }
-    
-    .btn-primary::before {
-      display: none;
-    }
-    
-    /* Action button icons */
+    /* removed v1.4: btn-icon hover transform, action-btn hover lift */
+
     .action-btn {
-      transition: all var(--duration-fast) var(--ease-smooth);
-    }
-    
-    .action-btn:hover {
-      transform: translateY(-2px) scale(1.02);
-    }
-    
-    .action-btn:active {
-      transform: translateY(0) scale(0.98);
+      transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
     }
     
     /* ============ NAVIGATION ENHANCEMENTS ============ */
-    /* Smooth icon transition */
+    /* removed v1.4: nav icon hover transform/rotate */
     .nav-item .icon {
-      transition: transform var(--duration-fast) var(--ease-spring), color var(--duration-fast);
-    }
-    
-    .nav-item:hover .icon {
-      transform: scale(1.15) rotate(-3deg);
-    }
-    
-    .nav-item.active .icon {
-      animation: none;
-      transform: scale(1.1);
-    }
-    
-    /* Nav badge */
-    .nav-badge {
+      transition: color var(--duration-fast) ease;
     }
     
     /* ============ CARD HOVER EFFECTS ============ */
-    /* Subtle inner glow on card hover */
+    /* removed v1.4: card::after radial-gradient glow */
     .card::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      opacity: 0;
-      transition: opacity var(--duration-normal);
-      background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.06) 0%, transparent 60%);
-      pointer-events: none;
-    }
-    
-    .card:hover::after {
-      opacity: 1;
+      display: none;
     }
 
     /* ============ ORDERS LIST HOVER TUNING ============ */
@@ -8644,19 +8555,12 @@
       width: 100%;
       max-width: 100%;
       overflow: hidden;
-      border-color: color-mix(in srgb, var(--border) 80%, white 20%) !important;
-      background: linear-gradient(180deg, color-mix(in srgb, var(--bg-card) 94%, white 6%) 0%, var(--bg-card) 100%) !important;
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.09);
-      transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease;
-      will-change: transform;
+      transition: border-color 150ms ease, box-shadow 150ms ease;
     }
 
     .order-list-item:hover {
-      transform: translateY(-3px) scale(1.004);
-      border-color: var(--info-border) !important;
-      background: color-mix(in srgb, var(--surface-card-hover) 90%, white 10%) !important;
-      box-shadow: 0 14px 32px rgba(15, 23, 42, 0.14);
-      z-index: 1;
+      border-color: var(--border-strong) !important;
+      box-shadow: var(--shadow-sm);
     }
 
     .order-card-top,
@@ -8686,7 +8590,7 @@
       border: none;
       padding: 0;
       font-size: 14px;
-      font-weight: 700;
+      font-weight: 600;
       color: var(--text-primary);
       cursor: pointer;
       text-decoration: underline;
@@ -8723,7 +8627,7 @@
     .order-card-amount {
       margin-left: auto;
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 600;
       white-space: nowrap;
       flex-shrink: 0;
     }
@@ -8741,84 +8645,18 @@
       min-width: 0;
     }
 
-    /* Stat card icon bounce on hover */
-    .stat-card:hover .stat-icon {
-      animation: iconBounce 0.4s var(--ease-spring);
-    }
+    /* removed v1.4: stat-card icon bounce on hover */
     
-    /* removed v1.4: iconBounce */
+    /* removed v1.4: driver avatar hover rotate/scale */
     
-    /* ============ DRIVER CARD AVATAR ============ */
-    .driver-avatar {
-      transition: transform var(--duration-normal) var(--ease-spring), box-shadow var(--duration-normal);
-    }
+    /* removed v1.4: badge hover translate/filter */
     
-    .driver-card:hover .driver-avatar {
-      transform: scale(1.1) rotate(-5deg);
-      box-shadow: var(--shadow-md);
-    }
-    
-    /* ============ BADGE HOVER ============ */
-    .badge {
-      transition: all var(--duration-fast) var(--ease-smooth);
-    }
-    
-    .badge:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.05);
-    }
-    
-    /* Status badge dot */
-    .status-badge::before {
-    }
-    
-    /* ============ FORM FOCUS EFFECTS ============ */
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-      transition: all var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-normal);
-    }
-    
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-      transform: translateY(-1px);
-    }
-    
-    /* ============ SEARCH BOX ANIMATION ============ */
-    .search-box,
-    .search-input-wrap {
-      transition: all var(--duration-fast) var(--ease-smooth);
-    }
-    
-    .search-box:focus-within,
-    .search-input-wrap:focus-within {
-      transform: translateY(-1px);
-    }
-    
-    /* Search icon animation */
-    .search-box:focus-within .search-icon,
-    .search-input-wrap:focus-within .search-icon {
-      animation: searchPulse 0.3s var(--ease-spring);
-    }
-    
-    /* removed v1.4: searchPulse */
+    /* removed v1.4: form focus translateY, search box translateY, search icon pulse */
     
     /* ============ MODAL ENHANCEMENTS ============ */
-    /* Modal content slide up */
+    /* removed v1.4: modal-body entrance animation, modal-close hover rotate */
     .modal-body {
-      animation: modalContentIn 0.3s ease-out 0.1s both;
-    }
-    
-    /* removed v1.4: modalContentIn */
-    
-    /* Modal close button */
-    .modal-close {
-      transition: all var(--duration-fast) var(--ease-spring);
-    }
-    
-    .modal-close:hover {
-      transform: rotate(90deg) scale(1.1);
+      animation: none;
     }
 
     /* ============ ROUTE SEQUENCE STYLES ============ */
@@ -8834,7 +8672,7 @@
     }
 
     .sequence-item:hover {
-      transform: translateX(4px);
+      background: var(--bg-hover);
     }
 
     .sequence-item:active {
@@ -8851,42 +8689,19 @@
     }
 
     /* ============ TOPBAR BUTTON EFFECTS ============ */
+    /* removed v1.4: topbar-btn hover translateY, notification badge bounce, tab active scale */
     .topbar-btn {
-      transition: all var(--duration-fast) var(--ease-smooth);
+      transition: background-color var(--duration-fast) ease;
     }
-    
-    .topbar-btn:hover {
-      transform: translateY(-2px);
-    }
-    
-    .topbar-btn:active {
-      transform: translateY(0) scale(0.98);
-    }
-    
-    /* Notification badge bounce */
+
     .notification-badge {
-      animation: badgeBounce 0.5s var(--ease-spring);
-    }
-    
-    /* removed v1.4: badgeBounce */
-    
-    /* ============ TABS ANIMATION ============ */
-    .direction-tab,
-    .truck-tab {
-      transition: all var(--duration-fast) var(--ease-smooth) !important;
-    }
-    
-    .direction-tab:active,
-    .truck-tab:active {
-      transform: scale(0.96) !important;
+      animation: none;
     }
     
     .direction-tab.active,
     .truck-tab.active {
-      animation: tabActivate 0.3s var(--ease-spring);
+      animation: none;
     }
-    
-    /* removed v1.4: tabActivate */
     
     /* ============ PROGRESS BAR ANIMATION ============ */
     /* Animated fill for progress bars */
@@ -8901,33 +8716,9 @@
       to { transform: scaleX(1); }
     }
     
-    /* ============ AVATAR HOVER ============ */
-    .table-avatar,
-    .topbar-avatar,
-    .user-avatar {
-      transition: transform var(--duration-fast) var(--ease-spring), box-shadow var(--duration-fast);
-    }
-    
-    .table-avatar:hover,
-    .topbar-avatar:hover,
-    .user-avatar:hover {
-      transform: scale(1.1);
-      box-shadow: var(--shadow-md);
-    }
+    /* removed v1.4: avatar hover scale */
 
-    /* ============ WORLD CLOCK PULSE ============ */
-    .world-clock {
-      transition: all var(--duration-fast);
-    }
-    
-    .world-clock:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-sm);
-    }
-    
-    .clock-time {
-      transition: color var(--duration-fast);
-    }
+    /* removed v1.4: world-clock hover translateY */
     
     /* ============ TOAST ENHANCEMENTS ============ */
     .toast {
@@ -8963,50 +8754,15 @@
     
     .topbar-dropdown-item,
     .notification-item {
-      transition: all var(--duration-instant);
+      transition: background-color var(--duration-instant) ease;
     }
     
-    .topbar-dropdown-item:hover,
-    .notification-item:hover {
-      transform: translateX(4px);
-    }
-    
-    /* ============ MINI CHAT BUBBLE ============ */
-    .mini-chat-bubble {
-      transition: all var(--duration-fast) var(--ease-spring);
-    }
-    
-    .mini-chat-bubble:hover {
-      transform: scale(1.08);
-    }
-    
-    .mini-chat-bubble:active {
-      transform: scale(0.95);
-    }
+    /* removed v1.4: mini-chat bubble hover/active scale */
     
     
-    /* ============ SIDEBAR TOGGLE ============ */
-    .sidebar-toggle {
-      transition: all var(--duration-fast) var(--ease-spring);
-    }
+    /* removed v1.4: sidebar toggle hover/active scale */
     
-    .sidebar-toggle:hover {
-      transform: scale(1.15);
-    }
-    
-    .sidebar-toggle:active {
-      transform: scale(0.95);
-    }
-    
-    /* ============ LOGOUT BUTTON ============ */
-    .logout-btn {
-      transition: all var(--duration-fast) var(--ease-smooth);
-    }
-    
-    .logout-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
-    }
+    /* removed v1.4: logout-btn hover translateY */
     
     /* ============ LOADING SPINNER ENHANCEMENT ============ */
     .spinner {
@@ -9014,12 +8770,12 @@
     }
     
     .loading {
-      animation: fadeInUp 0.3s ease-out;
+      animation: none;
     }
-    
+
     /* ============ EMPTY STATE ICON ============ */
     .empty-state-icon {
-      animation: float 3s ease-in-out infinite, fadeInScale 0.5s ease-out;
+      animation: none;
     }
     
     /* ============ HOVER REVEAL FOR ACTIONS ============ */
@@ -9042,15 +8798,11 @@
     
     /* ============ CHECKBOX/TOGGLE ANIMATION ============ */
     .toggle-switch {
-      transition: all var(--duration-fast) var(--ease-smooth);
+      transition: background-color var(--duration-fast) ease;
     }
-    
+
     .toggle-switch::after {
-      transition: all var(--duration-fast) var(--ease-spring);
-    }
-    
-    .toggle-switch:hover {
-      transform: scale(1.05);
+      transition: transform var(--duration-fast) ease;
     }
     
     .toggle-switch.active::after {
@@ -9062,18 +8814,16 @@
       50% { transform: scale(1.15); }
     }
     
-    /* ============ SUBTLE HOVER GLOW FOR MONEY VALUES ============ */
-    .money {
-      transition: all var(--duration-fast);
-    }
+    /* removed v1.4: money hover glow */
     
     
-    /* ============ PAGE HEADER ANIMATION ============ */
+    /* ============ PAGE HEADER ============ */
+    /* removed v1.4: page-header slideInLeft, header icon hover rotate */
     .page-header,
     .header {
-      animation: slideInLeft 0.4s var(--ease-out-expo);
+      animation: none;
     }
-    
+
     .page-title,
     .header h2 {
       display: inline-flex;
@@ -9081,26 +8831,8 @@
       gap: 12px;
     }
     
-    .page-title .icon,
-    .header h2 .icon {
-      display: inline-block;
-      transition: transform var(--duration-fast) var(--ease-spring);
-    }
-    
-    .page-header:hover .page-title .icon,
-    .header:hover h2 .icon {
-      transform: rotate(-5deg) scale(1.1);
-    }
-    
     /* ============ SMOOTH COLOR TRANSITIONS ============ */
-    * {
-      transition-property: color, background-color, border-color, box-shadow, opacity;
-      transition-duration: 0;
-    }
-    
-    a, button, .btn, .nav-item, .badge, .card, input, select, textarea {
-      transition-duration: var(--duration-fast);
-    }
+    /* removed v1.4: global * transition-property override */
     
     /* ============ STICKY ACTIONS COLUMN ============ */
     /* Must be at end for highest CSS specificity */
