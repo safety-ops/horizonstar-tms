@@ -22733,9 +22733,9 @@
         });
       });
       
-      const alertsHtml = alerts.length > 0 ? '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--danger)">[[icon:alert]] Document Expiration Alerts</strong><div style="margin-top:12px">' + alerts.map(a => '<div style="padding:8px;background:white;border-radius:4px;margin-top:8px;display:flex;justify-content:space-between;align-items:center"><span><strong>' + a.driver + '</strong> - ' + a.doc + '</span><span class="badge ' + (a.expired ? 'badge-red' : 'badge-amber') + '">' + (a.expired ? 'EXPIRED ' + a.days + ' days ago' : a.days === 0 ? 'EXPIRES TODAY' : 'Expires in ' + a.days + ' days') + '</span></div>').join('') + '</div></div>' : '';
+      const alertsHtml = alerts.length > 0 ? '<div style="background:var(--bg-card);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:8px;padding:16px;margin-bottom:24px"><strong style="color:var(--red)">Document Expiration Alerts</strong><div style="margin-top:12px">' + alerts.map(a => '<div style="padding:8px;background:var(--bg-primary);border-radius:4px;margin-top:8px;display:flex;justify-content:space-between;align-items:center"><span><strong>' + a.driver + '</strong> - ' + a.doc + '</span><span class="badge ' + (a.expired ? 'badge-red' : 'badge-amber') + '">' + (a.expired ? 'EXPIRED ' + a.days + ' days ago' : a.days === 0 ? 'EXPIRES TODAY' : 'Expires in ' + a.days + ' days') + '</span></div>').join('') + '</div></div>' : '';
       
-      c.innerHTML = '<div class="header"><h2>[[icon:users]] Drivers</h2><div style="display:flex;gap:8px"><button class="btn btn-primary" onclick="openDriverModal()">+ New Driver</button><button class="btn btn-primary" style="background:#f59e0b" onclick="openDriverModal(null, \'OWNER_OP\')">+ Add Owner-OP</button></div></div>' + alertsHtml + '<div class="drivers-grid stagger-enter" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">' + (visibleDrivers.length === 0 ? '<div style="grid-column:1/-1">' + renderEmptyState('users', 'No drivers yet', 'Add your first driver to start managing your fleet', '+ Add Driver', 'openDriverModal()') + '</div>' : visibleDrivers.map(d => {
+      c.innerHTML = '<div class="header"><h2 style="font-size:18px;font-weight:600">Drivers</h2><div style="display:flex;gap:8px"><button class="btn btn-primary" onclick="openDriverModal()">+ New Driver</button><button class="btn btn-secondary" onclick="openDriverModal(null, \'OWNER_OP\')">+ Add Owner-OP</button></div></div>' + alertsHtml + '<div class="drivers-grid stagger-enter" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">' + (visibleDrivers.length === 0 ? '<div style="grid-column:1/-1">' + renderEmptyState('users', 'No drivers yet', 'Add your first driver to start managing your fleet', '+ Add Driver', 'openDriverModal()') + '</div>' : visibleDrivers.map(d => {
         const trips = appData.trips.filter(t => t.driver_id === d.id); 
         let earn = 0; 
         trips.forEach(t => earn += getTripFin(t.id).driverCut); 
@@ -22749,21 +22749,21 @@
         
         const isOwnerOp = d.driver_type === 'OWNER_OP';
         const percentLabel = isOwnerOp ? (d.dispatch_fee_percent || 0) + '% dispatch fee' : (d.cut_percent || 32) + '% cut';
-        const typeBadge = isOwnerOp ? '<span class="badge" style="background:#f59e0b;color:white;font-size:10px;margin-left:8px">Owner-OP</span>' : '';
+        const typeBadge = isOwnerOp ? '<span class="badge badge-amber" style="font-size:10px;margin-left:8px">Owner-OP</span>' : '';
         return '<div class="driver-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px">' +
           '<div style="display:flex;align-items:center;gap:10px">' +
             '<div class="driver-avatar" style="width:32px;height:32px;font-size:12px;flex-shrink:0">' + d.first_name[0] + d.last_name[0] + '</div>' +
-            '<div style="flex:1;min-width:0"><h4 style="margin:0;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + d.first_name + ' ' + d.last_name + typeBadge + '</h4><p style="color:var(--text-muted);font-size:12px;margin:2px 0 0">' + percentLabel + ' · ' + (d.phone || 'No phone') + '</p></div>' +
+            '<div style="flex:1;min-width:0"><h4 style="margin:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + d.first_name + ' ' + d.last_name + typeBadge + '</h4><p style="color:var(--text-muted);font-size:12px;margin:2px 0 0">' + percentLabel + ' · ' + (d.phone || 'No phone') + '</p></div>' +
             '<span class="badge ' + getBadge(d.status) + '" style="font-size:10px;padding:2px 6px;flex-shrink:0">' + d.status + '</span>' +
           '</div>' +
           '<div style="border-top:1px solid var(--border)"></div>' +
           '<div style="display:flex;justify-content:space-between;align-items:center">' +
-            '<div><span style="font-size:18px;font-weight:800;color:var(--text-primary)">' + trips.length + '</span><span style="font-size:11px;color:var(--text-muted);margin-left:4px">Trips</span></div>' +
-            '<div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:var(--success)">' + formatMoney(earn) + '</div>' +
+            '<div><span style="font-size:18px;font-weight:600;color:var(--text-primary)">' + trips.length + '</span><span style="font-size:11px;color:var(--text-muted);margin-left:4px">Trips</span></div>' +
+            '<div style="font-size:15px;font-weight:600;font-family:var(--font-mono);color:var(--success)">' + formatMoney(earn) + '</div>' +
           '</div>' +
           '<div style="display:flex;gap:4px;flex-wrap:wrap">' +
             '<span style="font-size:10px;font-weight:600;background:var(--dim-blue);color:var(--info);padding:3px 6px;border-radius:4px">' + qualFiles + ' Qual</span>' +
-            '<span style="font-size:10px;font-weight:600;background:var(--dim-purple);color:var(--purple, #7c3aed);padding:3px 6px;border-radius:4px">' + persFiles + ' Pers</span>' +
+            '<span style="font-size:10px;font-weight:600;background:var(--dim-purple);color:var(--purple);padding:3px 6px;border-radius:4px">' + persFiles + ' Pers</span>' +
             (expiredCount > 0 ? '<span style="font-size:10px;font-weight:600;background:var(--dim-red);color:var(--danger);padding:3px 6px;border-radius:4px">⚠ ' + expiredCount + ' Exp</span>' : '') +
             (openTickets > 0 ? '<span style="font-size:10px;font-weight:600;background:var(--dim-amber);color:var(--warning);padding:3px 6px;border-radius:4px">' + openTickets + ' Tkt</span>' : '') +
             (openViolations > 0 ? '<span style="font-size:10px;font-weight:600;background:var(--dim-red);color:var(--danger);padding:3px 6px;border-radius:4px">' + openViolations + ' Viol</span>' : '') +
