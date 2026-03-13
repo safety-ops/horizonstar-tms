@@ -28,8 +28,8 @@ Requirements for restyling the entire Web TMS to a Stripe/Linear aesthetic. Page
 
 - [x] **DSP-01**: Dashboard restyled to Stripe/Linear aesthetic
 - [x] **DSP-02**: Orders page restyled
-- [ ] **DSP-03**: Trips page restyled
-- [ ] **DSP-04**: Load Board restyled
+- [x] **DSP-03**: Trips page restyled
+- [x] **DSP-04**: Load Board restyled
 
 ### Page Restyles -- People & Fleet
 
