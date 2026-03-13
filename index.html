@@ -16641,10 +16641,22 @@
           renderDealerDashboard(m);
         } else if (currentPage === 'dealer_submit') {
           renderDealerSubmitVehicle(m);
+        } else if (currentPage === 'dealer_bulk_upload') {
+          renderDealerBulkUpload(m);
         } else if (currentPage === 'dealer_orders') {
           renderDealerOrders(m);
+        } else if (currentPage === 'dealer_documents') {
+          renderDealerDocuments(m);
+        } else if (currentPage === 'dealer_messages') {
+          renderDealerMessages(m);
+        } else if (currentPage === 'dealer_reports') {
+          renderDealerReports(m);
         } else if (currentPage === 'dealer_spending') {
           renderDealerSpending(m);
+        } else if (currentPage === 'dealer_account') {
+          renderDealerAccount(m);
+        } else if (currentPage === 'dealer_order_detail') {
+          renderDealerOrderDetail(m);
         } else {
           // Default to dealer dashboard for any other page
           renderDealerDashboard(m);
@@ -47748,6 +47760,58 @@ function jsonResponse(data, status = 200) {
     }
 
     // ============================================================
+    // DEALER PORTAL — PLACEHOLDER PAGES
+    // ============================================================
+
+    function renderDealerBulkUpload(m) {
+      m.innerHTML = '<div class="page-header"><h1>Bulk Vehicle Upload</h1></div>' +
+        '<div class="card" style="text-align:center;padding:60px">' +
+        '<div style="font-size:48px;margin-bottom:16px">[[icon:upload]]</div>' +
+        '<h3>Coming Soon</h3>' +
+        '<p style="color:var(--text-secondary)">Upload multiple vehicles via CSV file.</p></div>';
+    }
+
+    function renderDealerDocuments(m) {
+      m.innerHTML = '<div class="page-header"><h1>Documents</h1></div>' +
+        '<div class="card" style="text-align:center;padding:60px">' +
+        '<div style="font-size:48px;margin-bottom:16px">[[icon:folder]]</div>' +
+        '<h3>Coming Soon</h3>' +
+        '<p style="color:var(--text-secondary)">View and manage your transport documents, BOLs, and invoices.</p></div>';
+    }
+
+    function renderDealerMessages(m) {
+      m.innerHTML = '<div class="page-header"><h1>Messages</h1></div>' +
+        '<div class="card" style="text-align:center;padding:60px">' +
+        '<div style="font-size:48px;margin-bottom:16px">[[icon:chat]]</div>' +
+        '<h3>Coming Soon</h3>' +
+        '<p style="color:var(--text-secondary)">Communicate directly with your dispatch team.</p></div>';
+    }
+
+    function renderDealerReports(m) {
+      m.innerHTML = '<div class="page-header"><h1>Reports</h1></div>' +
+        '<div class="card" style="text-align:center;padding:60px">' +
+        '<div style="font-size:48px;margin-bottom:16px">[[icon:reports]]</div>' +
+        '<h3>Coming Soon</h3>' +
+        '<p style="color:var(--text-secondary)">Spending analytics, delivery performance, and custom reports.</p></div>';
+    }
+
+    function renderDealerAccount(m) {
+      m.innerHTML = '<div class="page-header"><h1>Account Settings</h1></div>' +
+        '<div class="card" style="text-align:center;padding:60px">' +
+        '<div style="font-size:48px;margin-bottom:16px">[[icon:settings]]</div>' +
+        '<h3>Coming Soon</h3>' +
+        '<p style="color:var(--text-secondary)">Manage your dealer profile, contacts, and preferences.</p></div>';
+    }
+
+    function renderDealerOrderDetail(m) {
+      m.innerHTML = '<div class="page-header"><h1>Order Detail</h1></div>' +
+        '<div class="card" style="text-align:center;padding:60px">' +
+        '<div style="font-size:48px;margin-bottom:16px">[[icon:clipboard]]</div>' +
+        '<h3>Coming Soon</h3>' +
+        '<p style="color:var(--text-secondary)">Detailed order tracking with timeline, documents, and communication.</p></div>';
+    }
+
+    // ============================================================
     // DEALER PORTAL
     // ============================================================
 
@@ -47758,8 +47822,12 @@ function jsonResponse(data, status = 200) {
       const dealerNavItems = [
         { id: 'dealer_dashboard', label: 'Dashboard', icon: '[[icon:chart]]' },
         { id: 'dealer_submit', label: 'Submit Vehicle', icon: '[[icon:car]]' },
+        { id: 'dealer_bulk_upload', label: 'Bulk Upload', icon: '[[icon:upload]]' },
         { id: 'dealer_orders', label: 'My Orders', icon: '[[icon:clipboard]]' },
-        { id: 'dealer_spending', label: 'Spending', icon: '[[icon:money]]' }
+        { id: 'dealer_documents', label: 'Documents', icon: '[[icon:folder]]' },
+        { id: 'dealer_messages', label: 'Messages', icon: '[[icon:chat]]' },
+        { id: 'dealer_reports', label: 'Reports', icon: '[[icon:reports]]' },
+        { id: 'dealer_account', label: 'Account', icon: '[[icon:settings]]' }
       ];
 
       let html = '<div class="nav-section">';
@@ -47792,48 +47860,165 @@ function jsonResponse(data, status = 200) {
         return;
       }
 
-      // Get dealer stats
-      const stats = await getDealerSpending(currentDealerProfile.id);
-      const recentOrders = stats.orders.slice(0, 10);
+      // Fetch all dealer orders
+      var allOrders = await loadDealerOrders(currentDealerProfile.id);
 
-      m.innerHTML = '<div class="page-header">' +
+      // Period filter
+      var period = window.dealerPeriod || 'all';
+      var now = new Date();
+      var filteredOrders = allOrders;
+      if (period === 'mtd') {
+        var mtdStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        filteredOrders = allOrders.filter(function(o) { return new Date(o.created_at) >= mtdStart; });
+      } else if (period === 'qtd') {
+        var qMonth = Math.floor(now.getMonth() / 3) * 3;
+        var qtdStart = new Date(now.getFullYear(), qMonth, 1);
+        filteredOrders = allOrders.filter(function(o) { return new Date(o.created_at) >= qtdStart; });
+      } else if (period === 'ytd') {
+        var ytdStart = new Date(now.getFullYear(), 0, 1);
+        filteredOrders = allOrders.filter(function(o) { return new Date(o.created_at) >= ytdStart; });
+      }
+
+      // Compute KPIs
+      var totalOrders = filteredOrders.length;
+      var pendingCount = filteredOrders.filter(function(o) { return o.delivery_status === 'pending'; }).length;
+      var inTransitCount = filteredOrders.filter(function(o) { return o.delivery_status === 'in_transit' || o.delivery_status === 'picked_up'; }).length;
+      var deliveredCount = filteredOrders.filter(function(o) { return o.delivery_status === 'delivered'; }).length;
+      var totalSpent = filteredOrders.reduce(function(sum, o) { return sum + (parseFloat(o.revenue) || 0); }, 0);
+
+      // Average transit days for delivered orders
+      var deliveredOrders = filteredOrders.filter(function(o) { return o.delivery_status === 'delivered'; });
+      var avgTransitDays = 0;
+      if (deliveredOrders.length > 0) {
+        var totalDays = deliveredOrders.reduce(function(sum, o) {
+          var created = new Date(o.created_at);
+          var dropoff = o.dropoff_date ? new Date(o.dropoff_date) : new Date(o.updated_at || o.created_at);
+          var diff = Math.max(1, Math.round((dropoff - created) / (1000 * 60 * 60 * 24)));
+          return sum + diff;
+        }, 0);
+        avgTransitDays = Math.round(totalDays / deliveredOrders.length);
+      }
+
+      // Monthly volume for sparkline (last 6 months)
+      var monthlyVolume = [];
+      for (var mi = 5; mi >= 0; mi--) {
+        var mDate = new Date(now.getFullYear(), now.getMonth() - mi, 1);
+        var mEnd = new Date(now.getFullYear(), now.getMonth() - mi + 1, 0, 23, 59, 59);
+        var mCount = allOrders.filter(function(o) {
+          var d = new Date(o.created_at);
+          return d >= mDate && d <= mEnd;
+        }).length;
+        monthlyVolume.push(mCount);
+      }
+
+      // Top 5 routes
+      var routeMap = {};
+      filteredOrders.forEach(function(o) {
+        var key = (o.origin || 'Unknown') + ' → ' + (o.destination || 'Unknown');
+        if (!routeMap[key]) routeMap[key] = { count: 0, revenue: 0 };
+        routeMap[key].count++;
+        routeMap[key].revenue += (parseFloat(o.revenue) || 0);
+      });
+      var topRoutes = Object.keys(routeMap).map(function(k) {
+        return { route: k, count: routeMap[k].count, revenue: routeMap[k].revenue };
+      }).sort(function(a, b) { return b.count - a.count; }).slice(0, 5);
+
+      // Recent orders (last 10)
+      var recentOrders = filteredOrders.slice(0, 10);
+
+      var statusColors = { pending: '#f59e0b', picked_up: '#3b82f6', in_transit: '#3b82f6', delivered: '#22c55e' };
+      var statusLabels = { pending: 'Pending', picked_up: 'Picked Up', in_transit: 'In Transit', delivered: 'Delivered' };
+
+      // Period button helper
+      function periodBtn(val, label) {
+        var active = period === val;
+        return '<button class="btn ' + (active ? 'btn-primary' : 'btn-ghost') + '" style="padding:6px 14px;font-size:13px" onclick="window.dealerPeriod=\'' + val + '\';renderPage()">' + label + '</button>';
+      }
+
+      m.innerHTML = '<div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">' +
+        '<div>' +
         '<h1>Welcome, ' + escapeHtml(currentDealerProfile.company_name || 'Dealer') + '</h1>' +
         '<p style="color:var(--text-secondary);margin-top:4px">Dealer Code: <strong>' + escapeHtml(currentDealerProfile.dealer_code) + '</strong></p>' +
         '</div>' +
-
-        // Stats cards
-        '<div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:24px">' +
-        '<div class="stat-card" style="background:var(--bg-card);padding:20px;border-radius:12px;text-align:center">' +
-        '<div style="font-size:32px;font-weight:700;color:var(--accent-primary)">' + stats.totalVehicles + '</div>' +
-        '<div style="color:var(--text-secondary);font-size:13px">Total Orders</div></div>' +
-        '<div class="stat-card" style="background:var(--bg-card);padding:20px;border-radius:12px;text-align:center">' +
-        '<div style="font-size:32px;font-weight:700;color:#f59e0b">' + stats.pending + '</div>' +
-        '<div style="color:var(--text-secondary);font-size:13px">Pending</div></div>' +
-        '<div class="stat-card" style="background:var(--bg-card);padding:20px;border-radius:12px;text-align:center">' +
-        '<div style="font-size:32px;font-weight:700;color:#3b82f6">' + (stats.pickedUp + stats.inTransit) + '</div>' +
-        '<div style="color:var(--text-secondary);font-size:13px">In Transit</div></div>' +
-        '<div class="stat-card" style="background:var(--bg-card);padding:20px;border-radius:12px;text-align:center">' +
-        '<div style="font-size:32px;font-weight:700;color:#22c55e">' + stats.delivered + '</div>' +
-        '<div style="color:var(--text-secondary);font-size:13px">Delivered</div></div>' +
-        '<div class="stat-card" style="background:var(--bg-card);padding:20px;border-radius:12px;text-align:center">' +
-        '<div style="font-size:32px;font-weight:700;color:#8b5cf6">$' + formatMoney(stats.totalSpent) + '</div>' +
-        '<div style="color:var(--text-secondary);font-size:13px">Total Spent</div></div>' +
+        '<div style="display:flex;gap:6px;align-items:center">' +
+        periodBtn('mtd', 'MTD') + periodBtn('qtd', 'QTD') + periodBtn('ytd', 'YTD') + periodBtn('all', 'All') +
+        '</div>' +
         '</div>' +
 
-        // Quick action + Recent orders
+        // 6 KPI stat cards
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:24px">' +
+
+        '<div class="card" style="padding:20px;text-align:center">' +
+        '<div style="font-size:28px;font-weight:700;color:var(--accent-primary)">' + totalOrders + '</div>' +
+        '<div style="color:var(--text-secondary);font-size:12px;margin-top:4px">Total Orders</div></div>' +
+
+        '<div class="card" style="padding:20px;text-align:center">' +
+        '<div style="font-size:28px;font-weight:700;color:#f59e0b">' + pendingCount + '</div>' +
+        '<div style="color:var(--text-secondary);font-size:12px;margin-top:4px">Pending</div></div>' +
+
+        '<div class="card" style="padding:20px;text-align:center">' +
+        '<div style="font-size:28px;font-weight:700;color:#3b82f6">' + inTransitCount + '</div>' +
+        '<div style="color:var(--text-secondary);font-size:12px;margin-top:4px">In Transit</div></div>' +
+
+        '<div class="card" style="padding:20px;text-align:center">' +
+        '<div style="font-size:28px;font-weight:700;color:#22c55e">' + deliveredCount + '</div>' +
+        '<div style="color:var(--text-secondary);font-size:12px;margin-top:4px">Delivered</div></div>' +
+
+        '<div class="card" style="padding:20px;text-align:center">' +
+        '<div style="font-size:28px;font-weight:700;color:#8b5cf6">' + (avgTransitDays > 0 ? avgTransitDays : '—') + '</div>' +
+        '<div style="color:var(--text-secondary);font-size:12px;margin-top:4px">Avg Transit Days</div></div>' +
+
+        '<div class="card" style="padding:20px;text-align:center">' +
+        '<div style="font-size:28px;font-weight:700;color:#ec4899">' + formatMoney(totalSpent) + '</div>' +
+        '<div style="color:var(--text-secondary);font-size:12px;margin-top:4px">Total Spent</div></div>' +
+
+        '</div>' +
+
+        // Two-column layout: sparkline + top routes | recent orders
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">' +
+
+        // Monthly volume card
+        '<div class="card" style="padding:20px">' +
+        '<h4 style="margin-bottom:12px;font-size:14px;color:var(--text-primary)">Monthly Volume (Last 6 Months)</h4>' +
+        '<div style="display:flex;align-items:center;gap:16px">' +
+        renderSparkline(monthlyVolume, '#22c55e', 200, 50) +
+        '<div style="font-size:24px;font-weight:700;color:var(--accent-primary)">' + monthlyVolume[monthlyVolume.length - 1] + '<span style="font-size:12px;font-weight:400;color:var(--text-secondary);margin-left:4px">this month</span></div>' +
+        '</div></div>' +
+
+        // Top routes card
+        '<div class="card" style="padding:20px">' +
+        '<h4 style="margin-bottom:12px;font-size:14px;color:var(--text-primary)">Top Routes</h4>' +
+        (topRoutes.length === 0 ? '<p style="color:var(--text-muted);font-size:13px">No routes yet</p>' :
+        '<div style="display:flex;flex-direction:column;gap:8px">' +
+        topRoutes.map(function(r, i) {
+          return '<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px">' +
+            '<span style="color:var(--text-primary)">' + (i + 1) + '. ' + escapeHtml(r.route) + '</span>' +
+            '<span style="color:var(--text-secondary);white-space:nowrap">' + r.count + ' orders &middot; ' + formatMoney(r.revenue) + '</span>' +
+            '</div>';
+        }).join('') +
+        '</div>') +
+        '</div>' +
+
+        '</div>' +
+
+        // Quick action buttons
+        '<div style="display:flex;gap:12px;margin-bottom:24px">' +
+        '<button class="btn btn-primary" onclick="navigate(\'dealer_submit\')" style="padding:10px 20px">[[icon:car]] Submit Vehicle</button>' +
+        '<button class="btn btn-ghost" onclick="navigate(\'dealer_bulk_upload\')" style="padding:10px 20px">[[icon:upload]] Bulk Upload</button>' +
+        '</div>' +
+
+        // Recent orders table
         '<div class="card">' +
-        '<div class="card-header" style="display:flex;justify-content:space-between;align-items:center">' +
-        '<h3>Recent Orders</h3>' +
-        '<button class="btn btn-primary" onclick="navigate(\'dealer_submit\')">+ Submit New Vehicle</button>' +
+        '<div style="padding:16px 20px;border-bottom:1px solid var(--border-primary);display:flex;justify-content:space-between;align-items:center">' +
+        '<h4 style="font-size:14px;color:var(--text-primary)">Recent Orders</h4>' +
+        '<button class="btn btn-ghost" onclick="navigate(\'dealer_orders\')" style="font-size:13px">View All →</button>' +
         '</div>' +
         '<div class="table-wrapper"><table><thead><tr><th>Order #</th><th>Vehicle</th><th>Route</th><th>Status</th><th>Date</th></tr></thead><tbody>' +
         (recentOrders.length === 0 ? '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted)">No orders yet. Submit your first vehicle!</td></tr>' :
-        recentOrders.map(o => {
-          const statusColors = { pending: '#f59e0b', picked_up: '#3b82f6', in_transit: '#3b82f6', delivered: '#22c55e' };
-          const statusLabels = { pending: 'Pending', picked_up: 'Picked Up', in_transit: 'In Transit', delivered: 'Delivered' };
+        recentOrders.map(function(o) {
           return '<tr>' +
             '<td><strong>' + escapeHtml(o.order_number || '-') + '</strong></td>' +
-            '<td>' + [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).map(v => escapeHtml(String(v))).join(' ') + '</td>' +
+            '<td>' + [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).map(function(v) { return escapeHtml(String(v)); }).join(' ') + '</td>' +
             '<td>' + escapeHtml(o.origin || '-') + ' → ' + escapeHtml(o.destination || '-') + '</td>' +
             '<td><span class="badge" style="background:' + (statusColors[o.delivery_status] || '#6b7280') + '">' + (statusLabels[o.delivery_status] || o.delivery_status || 'Unknown') + '</span></td>' +
             '<td>' + formatDate(o.created_at) + '</td></tr>';
