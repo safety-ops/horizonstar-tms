@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-12)
 ## Current Position
 
 Phase: 25 of 26 (Operations/Admin Restyle)
-Plan: 1 of 5 in current phase
+Plan: 2 of 5 in current phase
 Status: In progress
-Last activity: 2026-03-13 -- Completed 25-01-PLAN.md (Activity Log + Maintenance restyle)
+Last activity: 2026-03-13 -- Completed 25-02-PLAN.md (Tasks + Settings restyle)
 
-Progress: [████████░░] 75%
+Progress: [████████░░] 77%
 
 ## Performance Metrics
 
@@ -111,6 +111,14 @@ Key context for v1.4:
 - Activity log table uses data-table + card-flush, filters use .select/.input (Phase 25)
 - Maintenance stat cards use stat-flat + accent borders (blue/amber/green), no #10b981 (Phase 25)
 - Maintenance table uses data-table + card-flush, filters use .select class (Phase 25)
+- Tasks stat cards use stat-flat + stat-card--{color}, filter uses segmented-control (Phase 25)
+- Task items use CSS variable borders (--border/--red/--amber), no #e5e7eb (Phase 25)
+- openTaskModal uses .input/.textarea/.select component classes (Phase 25)
+- Settings inputs all use .input class, card headers use section-header pattern (Phase 25)
+- Settings status indicators use CSS variables, not #059669/#dc2626/#047857 (Phase 25)
+- Settings --dim-green/red/amber/blue corrected to --green-dim/--red-dim etc. (Phase 25)
+- Settings --surface-elevated replaced with --bg-tertiary (Phase 25)
+- Settings remove buttons use btn-danger class (Phase 25)
 
 ### Known Issues
 - 4,344 inline style= attributes in index.html (in JS render functions) bypass CSS variables -- every page sweep requires JS template edits
@@ -125,9 +133,9 @@ Key context for v1.4:
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 25-01-PLAN.md (Activity Log + Maintenance restyle)
+Stopped at: Completed 25-02-PLAN.md (Tasks + Settings restyle)
 Resume file: None
 
 ---
 
-**Next action**: Execute 25-02-PLAN.md
+**Next action**: Execute 25-03-PLAN.md
