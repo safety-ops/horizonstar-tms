@@ -48137,44 +48137,1343 @@ function jsonResponse(data, status = 200) {
         '</div>';
     }
 
-    function renderDealerDocuments(m) {
-      m.innerHTML = '<div class="page-header"><h1>Documents</h1></div>' +
-        '<div class="card" style="text-align:center;padding:60px">' +
-        '<div style="font-size:48px;margin-bottom:16px">[[icon:folder]]</div>' +
-        '<h3>Coming Soon</h3>' +
-        '<p style="color:var(--text-secondary)">View and manage your transport documents, BOLs, and invoices.</p></div>';
+    async function renderDealerDocuments(m) {
+      if (!currentDealerProfile) {
+        m.innerHTML = '<div class="page-header"><h1>Documents & Invoices</h1></div>' +
+          '<div class="card" style="text-align:center;padding:60px"><h3>Dealer Profile Not Found</h3>' +
+          '<p style="color:var(--text-secondary)">Please contact support.</p></div>';
+        return;
+      }
+
+      m.innerHTML = '<div class="page-header"><h1>Documents & Invoices</h1></div>' +
+        '<div style="text-align:center;padding:40px"><div class="spinner"></div><p style="color:var(--text-secondary);margin-top:12px">Loading documents...</p></div>';
+
+      try {
+        const esc = escapeHtml;
+        const orders = await loadDealerOrders(currentDealerProfile.id);
+
+        if (!orders || orders.length === 0) {
+          m.innerHTML = '<div class="page-header"><h1>Documents & Invoices</h1></div>' +
+            '<div class="card" style="text-align:center;padding:60px">' +
+            '<div style="font-size:48px;margin-bottom:16px">📄</div>' +
+            '<h3>No Documents Yet</h3>' +
+            '<p style="color:var(--text-secondary)">Submit your first vehicle to generate documents.</p>' +
+            '<button class="btn btn-primary" onclick="navigate(\'dealer_submit\')" style="margin-top:16px">Submit a Vehicle</button></div>';
+          return;
+        }
+
+        // Fetch all attachments in one call
+        let attachmentsByOrder = {};
+        try {
+          const orderIds = orders.map(o => o.id);
+          const allAttachments = await dbFetch('order_attachments', { filter: { order_id: 'in.(' + orderIds.join(',') + ')' } });
+          (allAttachments || []).forEach(a => {
+            if (!attachmentsByOrder[a.order_id]) attachmentsByOrder[a.order_id] = [];
+            attachmentsByOrder[a.order_id].push(a);
+          });
+        } catch (e) { console.error('Failed to load attachments:', e); }
+
+        // Build month options for last 12 months
+        const now = new Date();
+        let monthOptions = '';
+        for (let i = 0; i < 12; i++) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const val = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+          const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+          monthOptions += '<option value="' + val + '"' + (i === 0 ? ' selected' : '') + '>' + esc(label) + '</option>';
+        }
+
+        let html = '<div class="page-header"><h1>Documents & Invoices</h1></div>';
+
+        // Account Statement section
+        html += '<div class="card" style="padding:24px;margin-bottom:16px">' +
+          '<h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700">Account Statement</h3>' +
+          '<div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap">' +
+          '<div><label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px">Period</label>' +
+          '<select id="dealerStatementMonth" style="padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);min-width:200px">' +
+          monthOptions + '</select></div>' +
+          '<button class="btn btn-primary" onclick="generateDealerStatement()">Generate Statement</button>' +
+          '</div>' +
+          '<div id="dealerStatementContent" style="margin-top:16px"></div>' +
+          '</div>';
+
+        // Order Documents table
+        html += '<div class="card" style="padding:24px">' +
+          '<h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700">Order Documents</h3>' +
+          '<div class="table-wrapper"><table class="data-table" style="width:100%"><thead><tr>' +
+          '<th>Order #</th><th>Vehicle</th><th>Date</th><th>Amount</th><th>Payment Status</th><th>Documents</th>' +
+          '</tr></thead><tbody>';
+
+        orders.forEach(o => {
+          const orderNum = esc(o.order_number || '#' + String(o.id).slice(0, 8));
+          const vehicle = [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).map(v => esc(String(v))).join(' ') || '—';
+          const date = o.created_at ? formatDate(o.created_at) : '—';
+          const amount = formatMoney(parseFloat(o.revenue) || 0);
+          const ps = (o.payment_status || 'unpaid').toLowerCase();
+          const psColor = ps === 'paid' ? '#22c55e' : ps === 'partial' ? '#f59e0b' : '#ef4444';
+          const psLabel = ps.charAt(0).toUpperCase() + ps.slice(1);
+
+          const atts = attachmentsByOrder[o.id] || [];
+          let docsHtml = '—';
+          if (atts.length > 0) {
+            docsHtml = atts.map(a => {
+              const fname = esc(a.file_name || a.filename || 'Document');
+              const url = esc(a.file_url || a.url || '#');
+              return '<a href="' + url + '" target="_blank" style="color:var(--accent-primary);font-size:12px;text-decoration:none;display:inline-block;margin-right:8px" title="' + fname + '">' + fname + '</a>';
+            }).join('');
+          }
+
+          html += '<tr>' +
+            '<td style="font-weight:600">' + orderNum + '</td>' +
+            '<td>' + vehicle + '</td>' +
+            '<td>' + date + '</td>' +
+            '<td style="font-weight:600">' + amount + '</td>' +
+            '<td><span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;background:' + psColor + '20;color:' + psColor + '">' + esc(psLabel) + '</span></td>' +
+            '<td>' + docsHtml + '</td>' +
+            '</tr>';
+        });
+
+        html += '</tbody></table></div></div>';
+
+        // Store orders on window for statement generator
+        window._dealerDocOrders = orders;
+
+        m.innerHTML = html;
+      } catch (e) {
+        console.error('Failed to load dealer documents:', e);
+        m.innerHTML = '<div class="page-header"><h1>Documents & Invoices</h1></div>' +
+          '<div class="card" style="text-align:center;padding:60px">' +
+          '<h3>Failed to Load Documents</h3>' +
+          '<p style="color:var(--text-secondary)">' + escapeHtml(e.message || 'Unknown error') + '</p>' +
+          '<button class="btn btn-primary" onclick="renderDealerDocuments(document.getElementById(\'mainContent\'))" style="margin-top:16px">Retry</button></div>';
+      }
     }
 
-    function renderDealerMessages(m) {
+    function generateDealerStatement() {
+      const sel = document.getElementById('dealerStatementMonth');
+      const container = document.getElementById('dealerStatementContent');
+      if (!sel || !container) return;
+
+      const [year, month] = sel.value.split('-').map(Number);
+      const orders = (window._dealerDocOrders || []).filter(o => {
+        if (!o.created_at) return false;
+        const d = new Date(o.created_at);
+        return d.getFullYear() === year && d.getMonth() + 1 === month;
+      });
+
+      const esc = escapeHtml;
+      const periodLabel = new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+      if (orders.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-secondary);padding:16px 0">No orders found for ' + esc(periodLabel) + '.</p>';
+        return;
+      }
+
+      let total = 0;
+      let tableRows = '';
+      orders.forEach(o => {
+        const amt = parseFloat(o.revenue) || 0;
+        total += amt;
+        const orderNum = esc(o.order_number || '#' + String(o.id).slice(0, 8));
+        const vehicle = [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).map(v => esc(String(v))).join(' ') || '—';
+        const pickup = o.pickup_date ? formatDate(o.pickup_date) : '—';
+        const delivery = o.dropoff_date ? formatDate(o.dropoff_date) : '—';
+        const ps = (o.payment_status || 'unpaid').toLowerCase();
+        const psColor = ps === 'paid' ? '#22c55e' : ps === 'partial' ? '#f59e0b' : '#ef4444';
+        const psLabel = ps.charAt(0).toUpperCase() + ps.slice(1);
+
+        tableRows += '<tr>' +
+          '<td style="font-weight:600">' + orderNum + '</td>' +
+          '<td>' + vehicle + '</td>' +
+          '<td>' + pickup + '</td>' +
+          '<td>' + delivery + '</td>' +
+          '<td style="font-weight:600">' + formatMoney(amt) + '</td>' +
+          '<td><span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;background:' + psColor + '20;color:' + psColor + '">' + esc(psLabel) + '</span></td>' +
+          '</tr>';
+      });
+
+      container.innerHTML = '<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px">' +
+        '<div style="padding:16px;background:var(--bg-secondary);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">' +
+        '<div><strong>Statement for ' + esc(periodLabel) + '</strong><br><span style="font-size:13px;color:var(--text-secondary)">' + esc(currentDealerProfile.company_name || 'Dealer') + ' &mdash; ' + orders.length + ' order' + (orders.length !== 1 ? 's' : '') + '</span></div>' +
+        '<div style="text-align:right"><span style="font-size:20px;font-weight:700">' + formatMoney(total) + '</span><br><span style="font-size:12px;color:var(--text-secondary)">Total</span></div>' +
+        '</div>' +
+        '<div class="table-wrapper"><table class="data-table" style="width:100%"><thead><tr>' +
+        '<th>Order #</th><th>Vehicle</th><th>Pickup Date</th><th>Delivery Date</th><th>Amount</th><th>Payment Status</th>' +
+        '</tr></thead><tbody>' + tableRows + '</tbody></table></div></div>' +
+        '<button class="btn btn-secondary" onclick="exportDealerStatementCSV(\'' + year + '\',\'' + month + '\')">Export to CSV</button>';
+    }
+
+    function exportDealerStatementCSV(year, month) {
+      year = Number(year);
+      month = Number(month);
+      const orders = (window._dealerDocOrders || []).filter(o => {
+        if (!o.created_at) return false;
+        const d = new Date(o.created_at);
+        return d.getFullYear() === year && d.getMonth() + 1 === month;
+      });
+      const headers = [
+        { key: 'order_number', label: 'Order #' },
+        { key: '_vehicle', label: 'Vehicle' },
+        { key: 'pickup_date', label: 'Pickup Date' },
+        { key: 'dropoff_date', label: 'Delivery Date' },
+        { key: 'revenue', label: 'Amount' },
+        { key: 'payment_status', label: 'Payment Status' }
+      ];
+      const data = orders.map(o => ({
+        order_number: o.order_number || String(o.id).slice(0, 8),
+        _vehicle: [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).join(' '),
+        pickup_date: o.pickup_date || '',
+        dropoff_date: o.dropoff_date || '',
+        revenue: o.revenue || '0',
+        payment_status: o.payment_status || 'unpaid'
+      }));
+      const periodLabel = new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).replace(/\s+/g, '_');
+      generateDealerCSVExport(data, headers, 'Statement_' + periodLabel + '.csv');
+    }
+
+    // ---- Dealer Messaging State ----
+    let _dealerChatPollInterval = null;
+
+    async function renderDealerMessages(m) {
+      // Load dealer profile if needed
+      if (!currentDealerProfile) {
+        await loadDealerProfile();
+      }
+      if (!currentDealerProfile) {
+        m.innerHTML = '<div class="page-header"><h1>Messages</h1></div>' +
+          '<div class="card" style="text-align:center;padding:60px">' +
+          '<div style="font-size:48px;margin-bottom:16px">⚠️</div>' +
+          '<h3>Dealer Profile Not Found</h3>' +
+          '<p style="color:var(--text-secondary)">Your dealer account is not fully set up. Please contact support.</p></div>';
+        return;
+      }
+
       m.innerHTML = '<div class="page-header"><h1>Messages</h1></div>' +
-        '<div class="card" style="text-align:center;padding:60px">' +
-        '<div style="font-size:48px;margin-bottom:16px">[[icon:chat]]</div>' +
-        '<h3>Coming Soon</h3>' +
-        '<p style="color:var(--text-secondary)">Communicate directly with your dispatch team.</p></div>';
+        '<div style="text-align:center;padding:40px"><div class="spinner"></div><p style="color:var(--text-secondary);margin-top:12px">Loading conversations...</p></div>';
+
+      try {
+        // Load orders and all messages for this dealer in parallel
+        const [allOrders, allMessages] = await Promise.all([
+          loadDealerOrders(currentDealerProfile.id),
+          dbFetch('dealer_order_messages', { filter: { dealer_id: 'eq.' + currentDealerProfile.id }, order: 'created_at.desc' }).catch(() => [])
+        ]);
+
+        if (!allOrders || allOrders.length === 0) {
+          m.innerHTML = '<div class="page-header"><h1>Messages</h1></div>' +
+            '<div class="card" style="text-align:center;padding:60px">' +
+            '<div style="font-size:48px;margin-bottom:16px">💬</div>' +
+            '<h3>No Orders Yet</h3>' +
+            '<p style="color:var(--text-secondary)">Submit your first vehicle to start messaging with dispatch.</p>' +
+            '<button class="btn btn-primary" onclick="navigate(\'dealer_submit\')" style="margin-top:16px">Submit a Vehicle</button></div>';
+          return;
+        }
+
+        // Group messages by order_id
+        const msgByOrder = {};
+        (allMessages || []).forEach(msg => {
+          const oid = msg.order_id;
+          if (!msgByOrder[oid]) msgByOrder[oid] = [];
+          msgByOrder[oid].push(msg);
+        });
+
+        // Build thread list: orders with messages first (sorted by latest message), then orders without
+        const ordersWithMessages = [];
+        const ordersWithoutMessages = [];
+
+        allOrders.forEach(order => {
+          const msgs = msgByOrder[order.id] || [];
+          const unreadCount = msgs.filter(msg => msg.sender_type === 'dispatcher' && !msg.is_read).length;
+          const latestMsg = msgs.length > 0 ? msgs[0] : null; // already sorted desc
+          if (msgs.length > 0) {
+            ordersWithMessages.push({ order, msgs, unreadCount, latestMsg });
+          } else {
+            ordersWithoutMessages.push({ order, msgs: [], unreadCount: 0, latestMsg: null });
+          }
+        });
+
+        // Sort by latest message time (most recent first)
+        ordersWithMessages.sort((a, b) => new Date(b.latestMsg.created_at) - new Date(a.latestMsg.created_at));
+
+        const threads = [...ordersWithMessages, ...ordersWithoutMessages];
+
+        const esc = escapeHtml;
+        let html = '<div class="page-header"><h1>Messages</h1></div>';
+
+        html += '<div style="display:flex;flex-direction:column;gap:2px">';
+        threads.forEach(t => {
+          const o = t.order;
+          const vehicleStr = [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).map(v => esc(String(v))).join(' ') || 'Unknown Vehicle';
+          const orderNum = esc(o.order_number || '#' + String(o.id).slice(0, 8));
+          let previewText = 'No messages yet';
+          let timeStr = '';
+          if (t.latestMsg) {
+            const raw = t.latestMsg.message || '';
+            previewText = raw.length > 60 ? esc(raw.slice(0, 60)) + '...' : esc(raw);
+            const senderPrefix = t.latestMsg.sender_type === 'dealer' ? 'You: ' : '';
+            previewText = senderPrefix + previewText;
+            timeStr = _dealerFormatMsgTime(t.latestMsg.created_at);
+          }
+
+          const unreadBadge = t.unreadCount > 0
+            ? '<span style="background:#ef4444;color:white;font-size:11px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px">' + t.unreadCount + '</span>'
+            : '';
+
+          html += '<div class="card card-row" onclick="openDealerOrderChat(\'' + esc(String(o.id)) + '\')" style="cursor:pointer;padding:14px 16px;display:flex;align-items:center;gap:12px;transition:background 0.15s" onmouseover="this.style.background=\'var(--bg-secondary)\'" onmouseout="this.style.background=\'\'">' +
+            '<div style="flex:1;min-width:0">' +
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">' +
+            '<span style="font-weight:700;font-size:13px">Order ' + orderNum + '</span>' +
+            '<span style="font-size:12px;color:var(--text-muted)">' + vehicleStr + '</span>' +
+            '</div>' +
+            '<div style="font-size:13px;color:' + (t.unreadCount > 0 ? 'var(--text-primary);font-weight:600' : 'var(--text-secondary)') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + previewText + '</div>' +
+            '</div>' +
+            '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">' +
+            (timeStr ? '<span style="font-size:11px;color:var(--text-muted)">' + timeStr + '</span>' : '') +
+            unreadBadge +
+            '</div>' +
+            '</div>';
+        });
+        html += '</div>';
+
+        m.innerHTML = html;
+      } catch (e) {
+        console.error('Failed to load dealer messages:', e);
+        m.innerHTML = '<div class="page-header"><h1>Messages</h1></div>' +
+          '<div class="card" style="text-align:center;padding:60px">' +
+          '<div style="font-size:48px;margin-bottom:16px">⚠️</div>' +
+          '<h3>Failed to Load Messages</h3>' +
+          '<p style="color:var(--text-secondary)">' + escapeHtml(e.message || 'Unknown error') + '</p>' +
+          '<button class="btn btn-primary" onclick="renderDealerMessages(document.getElementById(\'main-content\'))" style="margin-top:16px">Retry</button></div>';
+      }
     }
 
-    function renderDealerReports(m) {
-      m.innerHTML = '<div class="page-header"><h1>Reports</h1></div>' +
-        '<div class="card" style="text-align:center;padding:60px">' +
-        '<div style="font-size:48px;margin-bottom:16px">[[icon:reports]]</div>' +
-        '<h3>Coming Soon</h3>' +
-        '<p style="color:var(--text-secondary)">Spending analytics, delivery performance, and custom reports.</p></div>';
+    function _dealerFormatMsgTime(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      const now = new Date();
+      const diffMs = now - d;
+      const diffMins = Math.floor(diffMs / 60000);
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return diffMins + 'm ago';
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) return diffHours + 'h ago';
+      const diffDays = Math.floor(diffHours / 24);
+      if (diffDays < 7) return diffDays + 'd ago';
+      return d.toLocaleDateString();
     }
 
-    function renderDealerAccount(m) {
-      m.innerHTML = '<div class="page-header"><h1>Account Settings</h1></div>' +
-        '<div class="card" style="text-align:center;padding:60px">' +
-        '<div style="font-size:48px;margin-bottom:16px">[[icon:settings]]</div>' +
-        '<h3>Coming Soon</h3>' +
-        '<p style="color:var(--text-secondary)">Manage your dealer profile, contacts, and preferences.</p></div>';
+    async function openDealerOrderChat(orderId) {
+      // Clear any existing poll
+      if (_dealerChatPollInterval) { clearInterval(_dealerChatPollInterval); _dealerChatPollInterval = null; }
+
+      // Build modal manually for chat layout (not using showModal — we need custom structure)
+      const existingModal = document.getElementById('dealer-chat-modal');
+      if (existingModal) existingModal.remove();
+
+      const overlay = document.createElement('div');
+      overlay.id = 'dealer-chat-modal';
+      overlay.className = 'modal-overlay';
+      overlay.onclick = e => { if (e.target === overlay) closeDealerChat(); };
+      overlay.innerHTML =
+        '<div class="modal" style="max-width:500px;display:flex;flex-direction:column;height:80vh;max-height:600px">' +
+        '<div class="modal-header" style="flex-shrink:0">' +
+        '<h3 id="dealer-chat-title">Loading...</h3>' +
+        '<button class="modal-close" onclick="closeDealerChat()">×</button>' +
+        '</div>' +
+        '<div id="dealer-chat-messages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;background:var(--bg-darker)"></div>' +
+        '<div style="flex-shrink:0;padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;background:var(--bg-primary)">' +
+        '<input id="dealer-chat-input" type="text" placeholder="Type a message..." style="flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:20px;background:var(--bg-secondary);color:var(--text-primary);font-size:14px;outline:none" onkeydown="if(event.key===\'Enter\')sendDealerChatMessage(\'' + escapeHtml(String(orderId)) + '\')">' +
+        '<button onclick="sendDealerChatMessage(\'' + escapeHtml(String(orderId)) + '\')" style="padding:10px 16px;border:none;border-radius:20px;background:var(--accent-primary);color:white;font-weight:600;cursor:pointer;font-size:14px;white-space:nowrap">Send</button>' +
+        '</div>' +
+        '</div>';
+      document.body.appendChild(overlay);
+
+      // Fetch order info for header
+      try {
+        const orders = await dbFetch('orders', { filter: { id: 'eq.' + orderId } });
+        const order = orders && orders.length ? orders[0] : null;
+        const titleEl = document.getElementById('dealer-chat-title');
+        if (titleEl && order) {
+          titleEl.textContent = 'Order ' + (order.order_number || '#' + String(orderId).slice(0, 8)) + ' — Chat';
+        }
+      } catch (e) { console.error('Failed to fetch order for chat header:', e); }
+
+      // Load and render messages
+      await _dealerLoadChatMessages(orderId);
+
+      // Focus input
+      const inp = document.getElementById('dealer-chat-input');
+      if (inp) inp.focus();
+
+      // Start polling every 5 seconds
+      _dealerChatPollInterval = setInterval(() => _dealerLoadChatMessages(orderId), 5000);
     }
 
-    function renderDealerOrderDetail(m) {
-      m.innerHTML = '<div class="page-header"><h1>Order Detail</h1></div>' +
-        '<div class="card" style="text-align:center;padding:60px">' +
-        '<div style="font-size:48px;margin-bottom:16px">[[icon:clipboard]]</div>' +
-        '<h3>Coming Soon</h3>' +
-        '<p style="color:var(--text-secondary)">Detailed order tracking with timeline, documents, and communication.</p></div>';
+    async function _dealerLoadChatMessages(orderId) {
+      const container = document.getElementById('dealer-chat-messages');
+      if (!container) { // Modal closed
+        if (_dealerChatPollInterval) { clearInterval(_dealerChatPollInterval); _dealerChatPollInterval = null; }
+        return;
+      }
+
+      try {
+        const messages = await dbFetch('dealer_order_messages', {
+          filter: { order_id: 'eq.' + orderId },
+          order: 'created_at.asc'
+        });
+
+        const esc = escapeHtml;
+        if (!messages || messages.length === 0) {
+          container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)">' +
+            '<div style="font-size:36px;margin-bottom:12px">💬</div>' +
+            '<div style="font-size:14px">No messages yet. Start the conversation!</div></div>';
+        } else {
+          let html = '';
+          messages.forEach(msg => {
+            const isDealer = msg.sender_type === 'dealer';
+            const bubbleBg = isDealer ? 'var(--accent-primary)' : 'var(--bg-secondary)';
+            const bubbleColor = isDealer ? 'white' : 'var(--text-primary)';
+            const align = isDealer ? 'flex-end' : 'flex-start';
+            const nameColor = isDealer ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)';
+            const timeColor = isDealer ? 'rgba(255,255,255,0.6)' : 'var(--text-muted)';
+
+            html += '<div style="display:flex;flex-direction:column;align-items:' + align + ';max-width:80%' + (isDealer ? ';align-self:flex-end' : ';align-self:flex-start') + '">' +
+              '<div style="font-size:11px;color:' + nameColor + ';margin-bottom:2px;padding:0 4px">' + esc(msg.sender_name || (isDealer ? 'You' : 'Dispatch')) + '</div>' +
+              '<div style="background:' + bubbleBg + ';color:' + bubbleColor + ';padding:10px 14px;border-radius:12px;font-size:14px;line-height:1.4;word-break:break-word">' + esc(msg.message || '') + '</div>' +
+              '<div style="font-size:10px;color:' + timeColor + ';margin-top:2px;padding:0 4px">' + _dealerFormatMsgTime(msg.created_at) + '</div>' +
+              '</div>';
+          });
+          container.innerHTML = html;
+        }
+
+        // Auto-scroll to bottom
+        container.scrollTop = container.scrollHeight;
+
+        // Mark unread dispatcher messages as read
+        if (messages && currentDealerProfile) {
+          const unread = messages.filter(msg => msg.sender_type === 'dispatcher' && !msg.is_read);
+          for (const msg of unread) {
+            try {
+              await dbUpdate('dealer_order_messages', msg.id, { is_read: true });
+            } catch (e) { console.error('Failed to mark message as read:', e); }
+          }
+          // Update nav badge after marking read
+          if (unread.length > 0) updateDealerMessageBadge();
+        }
+      } catch (e) {
+        console.error('Failed to load chat messages:', e);
+      }
+    }
+
+    async function sendDealerChatMessage(orderId) {
+      const input = document.getElementById('dealer-chat-input');
+      if (!input) return;
+      const text = input.value.trim();
+      if (!text) return;
+      if (!currentDealerProfile || !currentUser) {
+        showToast('Session error. Please refresh.', 'error');
+        return;
+      }
+
+      // Clear input immediately
+      input.value = '';
+
+      const senderName = ((currentUser.first_name || '') + ' ' + (currentUser.last_name || '')).trim() || 'Dealer';
+
+      // Optimistic UI — append bubble immediately
+      const container = document.getElementById('dealer-chat-messages');
+      if (container) {
+        // Remove empty state if present
+        const emptyState = container.querySelector('div[style*="text-align:center"]');
+        if (emptyState && container.children.length === 1) container.innerHTML = '';
+
+        const bubble = document.createElement('div');
+        bubble.style.cssText = 'display:flex;flex-direction:column;align-items:flex-end;max-width:80%;align-self:flex-end';
+        bubble.innerHTML =
+          '<div style="font-size:11px;color:rgba(255,255,255,0.7);margin-bottom:2px;padding:0 4px">' + escapeHtml(senderName) + '</div>' +
+          '<div style="background:var(--accent-primary);color:white;padding:10px 14px;border-radius:12px;font-size:14px;line-height:1.4;word-break:break-word">' + escapeHtml(text) + '</div>' +
+          '<div style="font-size:10px;color:rgba(255,255,255,0.6);margin-top:2px;padding:0 4px">Just now</div>';
+        container.appendChild(bubble);
+        container.scrollTop = container.scrollHeight;
+      }
+
+      // Persist to DB
+      try {
+        await dbInsert('dealer_order_messages', {
+          order_id: orderId,
+          dealer_id: currentDealerProfile.id,
+          sender_type: 'dealer',
+          sender_user_id: currentUser.id,
+          sender_name: senderName,
+          message: text,
+          is_read: false
+        });
+      } catch (e) {
+        console.error('Failed to send message:', e);
+        showToast('Failed to send message: ' + (e.message || 'Unknown error'), 'error');
+      }
+
+      // Refocus input
+      if (input) input.focus();
+    }
+
+    function closeDealerChat() {
+      if (_dealerChatPollInterval) { clearInterval(_dealerChatPollInterval); _dealerChatPollInterval = null; }
+      const modal = document.getElementById('dealer-chat-modal');
+      if (modal) modal.remove();
+    }
+
+    async function getDealerUnreadCount() {
+      if (!currentDealerProfile) return 0;
+      try {
+        const msgs = await dbFetch('dealer_order_messages', {
+          filter: { dealer_id: 'eq.' + currentDealerProfile.id, sender_type: 'eq.dispatcher', is_read: 'eq.false' }
+        });
+        return msgs ? msgs.length : 0;
+      } catch (e) {
+        console.error('Failed to get dealer unread count:', e);
+        return 0;
+      }
+    }
+
+    async function updateDealerMessageBadge() {
+      const count = await getDealerUnreadCount();
+      // Find the messages nav button and add/update badge
+      const navButtons = document.querySelectorAll('#nav .nav-item');
+      navButtons.forEach(btn => {
+        if (btn.textContent.includes('Messages')) {
+          // Remove existing badge
+          const existing = btn.querySelector('.dealer-msg-badge');
+          if (existing) existing.remove();
+          // Add badge if count > 0
+          if (count > 0) {
+            btn.style.position = 'relative';
+            const badge = document.createElement('span');
+            badge.className = 'dealer-msg-badge';
+            badge.style.cssText = 'position:absolute;top:4px;right:8px;background:#ef4444;color:white;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px';
+            badge.textContent = count > 99 ? '99+' : count;
+            btn.appendChild(badge);
+          }
+        }
+      });
+    }
+
+    async function renderDealerReports(m) {
+      if (!currentDealerProfile) {
+        m.innerHTML = '<div class="page-header"><h1>Reports & Analytics</h1></div>' +
+          '<div class="card" style="text-align:center;padding:60px"><h3>Dealer Profile Not Found</h3></div>';
+        return;
+      }
+
+      m.innerHTML = '<div class="page-header"><h1>Reports & Analytics</h1></div>' +
+        '<div style="text-align:center;padding:40px"><div class="spinner"></div><p style="color:var(--text-secondary);margin-top:12px">Loading reports...</p></div>';
+
+      try {
+        const esc = escapeHtml;
+        const allOrders = await loadDealerOrders(currentDealerProfile.id);
+
+        if (!allOrders || allOrders.length === 0) {
+          m.innerHTML = '<div class="page-header"><h1>Reports & Analytics</h1></div>' +
+            '<div class="card" style="text-align:center;padding:60px">' +
+            '<div style="font-size:48px;margin-bottom:16px">📊</div>' +
+            '<h3>No Data Yet</h3>' +
+            '<p style="color:var(--text-secondary)">Submit vehicles to start seeing analytics.</p>' +
+            '<button class="btn btn-primary" onclick="navigate(\'dealer_submit\')" style="margin-top:16px">Submit a Vehicle</button></div>';
+          return;
+        }
+
+        // Store for exports
+        window._dealerReportOrders = allOrders;
+
+        // Period filtering state
+        window._dealerReportPeriod = window._dealerReportPeriod || 'all';
+
+        const now = new Date();
+        const periodStart = {
+          mtd: new Date(now.getFullYear(), now.getMonth(), 1),
+          qtd: new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1),
+          ytd: new Date(now.getFullYear(), 0, 1),
+          all: null
+        };
+
+        const start = periodStart[window._dealerReportPeriod];
+        const orders = start ? allOrders.filter(o => o.created_at && new Date(o.created_at) >= start) : allOrders;
+
+        // Summary stats
+        const totalVehicles = orders.length;
+        const totalSpent = orders.reduce((s, o) => s + (parseFloat(o.revenue) || 0), 0);
+        const avgCost = totalVehicles > 0 ? totalSpent / totalVehicles : 0;
+        const delivered = orders.filter(o => o.delivery_status === 'delivered').length;
+        const onTimePct = totalVehicles > 0 ? Math.round((delivered / totalVehicles) * 100) : 0;
+
+        let html = '<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px"><h1>Reports & Analytics</h1>' +
+          '<div style="display:flex;gap:4px">';
+        ['mtd', 'qtd', 'ytd', 'all'].forEach(p => {
+          const label = p === 'all' ? 'All Time' : p.toUpperCase();
+          const active = window._dealerReportPeriod === p;
+          html += '<button class="btn ' + (active ? 'btn-primary' : 'btn-secondary') + '" style="padding:6px 14px;font-size:13px" onclick="window._dealerReportPeriod=\'' + p + '\';renderDealerReports(this.closest(\'[data-page]\') || document.getElementById(\'mainContent\'))">' + esc(label) + '</button>';
+        });
+        html += '</div></div>';
+
+        // Stat cards row
+        html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px">';
+        const stats = [
+          { label: 'Total Vehicles', value: totalVehicles, color: 'var(--accent-primary)' },
+          { label: 'Total Spent', value: formatMoney(totalSpent), color: '#8b5cf6' },
+          { label: 'Avg Cost / Vehicle', value: formatMoney(avgCost), color: '#f59e0b' },
+          { label: 'Delivered', value: onTimePct + '%', color: '#22c55e' }
+        ];
+        stats.forEach(s => {
+          html += '<div class="card" style="padding:20px;text-align:center">' +
+            '<div style="font-size:28px;font-weight:800;color:' + s.color + '">' + s.value + '</div>' +
+            '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + esc(s.label) + '</div></div>';
+        });
+        html += '</div>';
+
+        // Monthly Volume Chart (last 12 months)
+        html += '<div class="card" style="padding:24px;margin-bottom:16px">' +
+          '<h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700">Monthly Volume</h3>';
+
+        const monthBuckets = {};
+        for (let i = 11; i >= 0; i--) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+          monthBuckets[key] = { label: d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }), count: 0, spent: 0 };
+        }
+        allOrders.forEach(o => {
+          if (!o.created_at) return;
+          const d = new Date(o.created_at);
+          const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+          if (monthBuckets[key]) {
+            monthBuckets[key].count++;
+            monthBuckets[key].spent += parseFloat(o.revenue) || 0;
+          }
+        });
+
+        const maxCount = Math.max(...Object.values(monthBuckets).map(b => b.count), 1);
+        html += '<div style="display:flex;flex-direction:column;gap:6px">';
+        Object.values(monthBuckets).forEach(b => {
+          const pct = Math.round((b.count / maxCount) * 100);
+          html += '<div style="display:flex;align-items:center;gap:8px">' +
+            '<span style="width:70px;font-size:12px;color:var(--text-secondary);flex-shrink:0;text-align:right">' + esc(b.label) + '</span>' +
+            '<div style="flex:1;height:24px;background:var(--bg-tertiary);border-radius:4px;overflow:hidden">' +
+            '<div style="height:100%;width:' + pct + '%;background:var(--accent-primary);border-radius:4px;min-width:' + (b.count > 0 ? '2px' : '0') + ';transition:width 0.3s"></div></div>' +
+            '<span style="width:30px;font-size:12px;font-weight:600;color:var(--text-primary)">' + b.count + '</span>' +
+            '</div>';
+        });
+        html += '</div></div>';
+
+        // Cost Analysis Table (top routes)
+        const routeMap = {};
+        orders.forEach(o => {
+          const origin = (o.origin_city || o.pickup_city || 'Unknown').trim();
+          const dest = (o.destination_city || o.dropoff_city || 'Unknown').trim();
+          const route = origin + ' → ' + dest;
+          if (!routeMap[route]) routeMap[route] = { route, count: 0, total: 0 };
+          routeMap[route].count++;
+          routeMap[route].total += parseFloat(o.revenue) || 0;
+        });
+        const routes = Object.values(routeMap).sort((a, b) => b.count - a.count).slice(0, 15);
+
+        html += '<div class="card" style="padding:24px;margin-bottom:16px">' +
+          '<h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700">Cost Analysis by Route</h3>';
+        if (routes.length > 0) {
+          html += '<div class="table-wrapper"><table class="data-table" style="width:100%"><thead><tr>' +
+            '<th>Route</th><th>Orders</th><th>Total Cost</th><th>Avg Cost</th>' +
+            '</tr></thead><tbody>';
+          routes.forEach(r => {
+            html += '<tr><td>' + esc(r.route) + '</td>' +
+              '<td>' + r.count + '</td>' +
+              '<td style="font-weight:600">' + formatMoney(r.total) + '</td>' +
+              '<td>' + formatMoney(r.count > 0 ? r.total / r.count : 0) + '</td></tr>';
+          });
+          html += '</tbody></table></div>';
+        } else {
+          html += '<p style="color:var(--text-secondary)">No route data available for this period.</p>';
+        }
+        html += '</div>';
+
+        // Status Breakdown
+        const statusCounts = { pending: 0, picked_up: 0, in_transit: 0, delivered: 0, cancelled: 0 };
+        orders.forEach(o => {
+          const s = (o.delivery_status || 'pending').toLowerCase();
+          if (statusCounts.hasOwnProperty(s)) statusCounts[s]++;
+          else statusCounts.pending++;
+        });
+        const statusColors = { pending: '#6b7280', picked_up: '#3b82f6', in_transit: '#f59e0b', delivered: '#22c55e', cancelled: '#ef4444' };
+        const statusLabels = { pending: 'Pending', picked_up: 'Picked Up', in_transit: 'In Transit', delivered: 'Delivered', cancelled: 'Cancelled' };
+        const totalForStatus = orders.length || 1;
+
+        html += '<div class="card" style="padding:24px;margin-bottom:16px">' +
+          '<h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700">Status Breakdown</h3>' +
+          '<div style="display:flex;height:28px;border-radius:8px;overflow:hidden;margin-bottom:12px">';
+        Object.keys(statusCounts).forEach(s => {
+          const pct = (statusCounts[s] / totalForStatus) * 100;
+          if (pct > 0) {
+            html += '<div style="width:' + pct + '%;background:' + statusColors[s] + ';min-width:2px" title="' + esc(statusLabels[s]) + ': ' + statusCounts[s] + '"></div>';
+          }
+        });
+        html += '</div><div style="display:flex;flex-wrap:wrap;gap:16px">';
+        Object.keys(statusCounts).forEach(s => {
+          html += '<div style="display:flex;align-items:center;gap:6px">' +
+            '<span style="width:10px;height:10px;border-radius:50%;background:' + statusColors[s] + ';flex-shrink:0"></span>' +
+            '<span style="font-size:13px;color:var(--text-secondary)">' + esc(statusLabels[s]) + '</span>' +
+            '<span style="font-size:13px;font-weight:700">' + statusCounts[s] + '</span></div>';
+        });
+        html += '</div></div>';
+
+        // Export section
+        html += '<div class="card" style="padding:24px">' +
+          '<h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700">Export Data</h3>' +
+          '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
+          '<button class="btn btn-secondary" onclick="exportDealerAllOrdersCSV()">Export All Orders (CSV)</button>' +
+          '<button class="btn btn-secondary" onclick="exportDealerMonthlySummaryCSV()">Export Monthly Summary (CSV)</button>' +
+          '</div></div>';
+
+        m.innerHTML = html;
+      } catch (e) {
+        console.error('Failed to load dealer reports:', e);
+        m.innerHTML = '<div class="page-header"><h1>Reports & Analytics</h1></div>' +
+          '<div class="card" style="text-align:center;padding:60px">' +
+          '<h3>Failed to Load Reports</h3>' +
+          '<p style="color:var(--text-secondary)">' + escapeHtml(e.message || 'Unknown error') + '</p>' +
+          '<button class="btn btn-primary" onclick="renderDealerReports(document.getElementById(\'mainContent\'))" style="margin-top:16px">Retry</button></div>';
+      }
+    }
+
+    function generateDealerCSVExport(data, headers, filename) {
+      const csvRows = [];
+      csvRows.push(headers.map(h => '"' + h.label.replace(/"/g, '""') + '"').join(','));
+      data.forEach(row => {
+        csvRows.push(headers.map(h => {
+          let val = String(row[h.key] != null ? row[h.key] : '');
+          val = val.replace(/"/g, '""');
+          return '"' + val + '"';
+        }).join(','));
+      });
+      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Downloaded ' + filename, 'success');
+    }
+
+    function exportDealerAllOrdersCSV() {
+      const orders = window._dealerReportOrders || [];
+      if (orders.length === 0) { showToast('No orders to export', 'warning'); return; }
+      const headers = [
+        { key: 'order_number', label: 'Order #' },
+        { key: '_vehicle', label: 'Vehicle' },
+        { key: '_origin', label: 'Origin' },
+        { key: '_destination', label: 'Destination' },
+        { key: 'pickup_date', label: 'Pickup Date' },
+        { key: 'dropoff_date', label: 'Delivery Date' },
+        { key: 'revenue', label: 'Amount' },
+        { key: 'delivery_status', label: 'Status' },
+        { key: 'payment_status', label: 'Payment Status' },
+        { key: 'created_at', label: 'Created' }
+      ];
+      const data = orders.map(o => ({
+        order_number: o.order_number || String(o.id).slice(0, 8),
+        _vehicle: [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).join(' '),
+        _origin: o.origin_city || o.pickup_city || '',
+        _destination: o.destination_city || o.dropoff_city || '',
+        pickup_date: o.pickup_date || '',
+        dropoff_date: o.dropoff_date || '',
+        revenue: o.revenue || '0',
+        delivery_status: o.delivery_status || 'pending',
+        payment_status: o.payment_status || 'unpaid',
+        created_at: o.created_at ? formatDate(o.created_at) : ''
+      }));
+      generateDealerCSVExport(data, headers, 'Dealer_Orders_Export.csv');
+    }
+
+    function exportDealerMonthlySummaryCSV() {
+      const orders = window._dealerReportOrders || [];
+      if (orders.length === 0) { showToast('No orders to export', 'warning'); return; }
+      const buckets = {};
+      orders.forEach(o => {
+        if (!o.created_at) return;
+        const d = new Date(o.created_at);
+        const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        if (!buckets[key]) buckets[key] = { month: key, count: 0, total: 0 };
+        buckets[key].count++;
+        buckets[key].total += parseFloat(o.revenue) || 0;
+      });
+      const sorted = Object.values(buckets).sort((a, b) => a.month.localeCompare(b.month));
+      const headers = [
+        { key: 'month', label: 'Month' },
+        { key: 'count', label: 'Order Count' },
+        { key: 'total', label: 'Total Spent' },
+        { key: 'avg', label: 'Avg Cost' }
+      ];
+      const data = sorted.map(b => ({
+        month: b.month,
+        count: b.count,
+        total: b.total.toFixed(2),
+        avg: b.count > 0 ? (b.total / b.count).toFixed(2) : '0.00'
+      }));
+      generateDealerCSVExport(data, headers, 'Dealer_Monthly_Summary.csv');
+    }
+
+    async function renderDealerAccount(m) {
+      if (!currentDealerProfile) {
+        m.innerHTML = '<div class="page-header"><h1>Account Settings</h1></div>' +
+          '<div class="card" style="text-align:center;padding:60px"><h3>Dealer Profile Not Found</h3></div>';
+        return;
+      }
+
+      const esc = escapeHtml;
+      const dp = currentDealerProfile;
+      const inputStyle = 'width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:14px';
+
+      let html = '<div class="page-header"><h1>Account Settings</h1></div>';
+
+      // Profile Card
+      html += '<div class="card" style="padding:24px;margin-bottom:16px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">' +
+        '<h3 style="margin:0;font-size:16px;font-weight:700">Company Profile</h3>' +
+        '<button id="dealerProfileEditBtn" class="btn btn-secondary" style="padding:6px 14px;font-size:13px" onclick="toggleDealerProfileEdit()">Edit Profile</button>' +
+        '</div>' +
+        '<div id="dealerProfileView">' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px">' +
+        _dealerAccountField('Company Name', esc(dp.company_name || '—')) +
+        _dealerAccountField('Dealer Code', esc(dp.dealer_code || '—')) +
+        _dealerAccountField('Contact Name', esc(dp.contact_name || '—')) +
+        _dealerAccountField('Email', esc(currentUser.email || '—')) +
+        _dealerAccountField('Phone', esc(dp.contact_phone || '—')) +
+        _dealerAccountField('Address', esc(dp.company_address || '—')) +
+        _dealerAccountField('Payment Terms', esc(dp.payment_terms || '—')) +
+        '</div></div>' +
+        '<div id="dealerProfileEdit" style="display:none">' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px">' +
+        '<div><label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px">Company Name</label>' +
+        '<input disabled value="' + esc(dp.company_name || '') + '" style="' + inputStyle + ';opacity:0.6;cursor:not-allowed"></div>' +
+        '<div><label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px">Dealer Code</label>' +
+        '<input disabled value="' + esc(dp.dealer_code || '') + '" style="' + inputStyle + ';opacity:0.6;cursor:not-allowed"></div>' +
+        '<div><label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px">Contact Name</label>' +
+        '<input id="dealerEditContactName" value="' + esc(dp.contact_name || '') + '" style="' + inputStyle + '"></div>' +
+        '<div><label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px">Email</label>' +
+        '<input disabled value="' + esc(currentUser.email || '') + '" style="' + inputStyle + ';opacity:0.6;cursor:not-allowed"></div>' +
+        '<div><label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px">Phone</label>' +
+        '<input id="dealerEditContactPhone" value="' + esc(dp.contact_phone || '') + '" style="' + inputStyle + '"></div>' +
+        '<div style="grid-column:1/-1"><label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px">Address</label>' +
+        '<input id="dealerEditAddress" value="' + esc(dp.company_address || '') + '" style="' + inputStyle + '"></div>' +
+        '</div>' +
+        '<div style="display:flex;gap:8px;margin-top:16px">' +
+        '<button class="btn btn-primary" onclick="saveDealerProfile()">Save Changes</button>' +
+        '<button class="btn btn-secondary" onclick="toggleDealerProfileEdit()">Cancel</button>' +
+        '</div></div></div>';
+
+      // Change Password Card
+      html += '<div class="card" style="padding:24px;margin-bottom:16px">' +
+        '<h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700">Change Password</h3>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;max-width:540px">' +
+        '<div><label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px">New Password</label>' +
+        '<input id="dealerNewPassword" type="password" placeholder="Enter new password" style="' + inputStyle + '"></div>' +
+        '<div><label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px">Confirm Password</label>' +
+        '<input id="dealerConfirmPassword" type="password" placeholder="Confirm new password" style="' + inputStyle + '"></div>' +
+        '</div>' +
+        '<button class="btn btn-primary" onclick="changeDealerPassword()" style="margin-top:16px">Update Password</button>' +
+        '</div>';
+
+      // Account Info Card (read-only)
+      const memberSince = dp.created_at ? formatDate(dp.created_at) : '—';
+      const accountStatus = dp.is_active !== false ? 'Active' : 'Inactive';
+      const statusColor = dp.is_active !== false ? '#22c55e' : '#ef4444';
+
+      html += '<div class="card" style="padding:24px">' +
+        '<h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700">Account Information</h3>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">' +
+        _dealerAccountField('Dealer Code', esc(dp.dealer_code || '—')) +
+        _dealerAccountField('Payment Terms', esc(dp.payment_terms || '—')) +
+        '<div><div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px">Account Status</div>' +
+        '<span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:13px;font-weight:600;background:' + statusColor + '20;color:' + statusColor + '">' + esc(accountStatus) + '</span></div>' +
+        _dealerAccountField('Member Since', memberSince) +
+        '</div></div>';
+
+      m.innerHTML = html;
+    }
+
+    function _dealerAccountField(label, value) {
+      return '<div><div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px">' + escapeHtml(label) + '</div>' +
+        '<div style="font-size:14px;font-weight:500;color:var(--text-primary)">' + value + '</div></div>';
+    }
+
+    function toggleDealerProfileEdit() {
+      const viewEl = document.getElementById('dealerProfileView');
+      const editEl = document.getElementById('dealerProfileEdit');
+      const btn = document.getElementById('dealerProfileEditBtn');
+      if (!viewEl || !editEl) return;
+      const isEditing = editEl.style.display !== 'none';
+      viewEl.style.display = isEditing ? '' : 'none';
+      editEl.style.display = isEditing ? 'none' : '';
+      if (btn) btn.textContent = isEditing ? 'Edit Profile' : 'Cancel';
+    }
+
+    async function saveDealerProfile() {
+      const contactName = (document.getElementById('dealerEditContactName') || {}).value || '';
+      const contactPhone = (document.getElementById('dealerEditContactPhone') || {}).value || '';
+      const address = (document.getElementById('dealerEditAddress') || {}).value || '';
+
+      try {
+        await dbUpdate('dealers', currentDealerProfile.id, {
+          contact_name: contactName.trim(),
+          contact_phone: contactPhone.trim(),
+          company_address: address.trim()
+        });
+        currentDealerProfile.contact_name = contactName.trim();
+        currentDealerProfile.contact_phone = contactPhone.trim();
+        currentDealerProfile.company_address = address.trim();
+        showToast('Profile updated successfully', 'success');
+        // Re-render to show updated view
+        const container = document.getElementById('mainContent');
+        if (container) renderDealerAccount(container);
+      } catch (e) {
+        console.error('Failed to save dealer profile:', e);
+        showToast('Failed to save: ' + (e.message || 'Unknown error'), 'error');
+      }
+    }
+
+    async function changeDealerPassword() {
+      const newPw = (document.getElementById('dealerNewPassword') || {}).value || '';
+      const confirmPw = (document.getElementById('dealerConfirmPassword') || {}).value || '';
+
+      if (!newPw) { showToast('Please enter a new password', 'warning'); return; }
+      if (newPw.length < 6) { showToast('Password must be at least 6 characters', 'warning'); return; }
+      if (newPw !== confirmPw) { showToast('Passwords do not match', 'error'); return; }
+
+      try {
+        const { error } = await sb.auth.updateUser({ password: newPw });
+        if (error) throw error;
+        showToast('Password updated successfully', 'success');
+        if (document.getElementById('dealerNewPassword')) document.getElementById('dealerNewPassword').value = '';
+        if (document.getElementById('dealerConfirmPassword')) document.getElementById('dealerConfirmPassword').value = '';
+      } catch (e) {
+        console.error('Failed to change password:', e);
+        showToast('Failed to change password: ' + (e.message || 'Unknown error'), 'error');
+      }
+    }
+
+    async function renderDealerOrderDetail(m) {
+      const orderId = window._dealerViewOrderId;
+      if (!orderId) {
+        m.innerHTML = '<div class="card" style="text-align:center;padding:60px">' +
+          '<div style="font-size:48px;margin-bottom:16px">⚠️</div>' +
+          '<h3>Order Not Found</h3>' +
+          '<p style="color:var(--text-secondary)">No order selected.</p>' +
+          '<button class="btn btn-primary" onclick="navigate(\'dealer_orders\')" style="margin-top:16px">← Back to My Orders</button></div>';
+        return;
+      }
+
+      // Show loading state
+      m.innerHTML = '<div style="text-align:center;padding:60px"><div class="spinner"></div><p style="color:var(--text-secondary);margin-top:12px">Loading order details...</p></div>';
+
+      // Fetch order data
+      let order = null;
+      try {
+        const orders = await dbFetch('orders', { filter: { id: 'eq.' + orderId } });
+        order = orders && orders.length ? orders[0] : null;
+      } catch (e) { console.error('Failed to fetch order:', e); }
+
+      if (!order) {
+        m.innerHTML = '<div class="card" style="text-align:center;padding:60px">' +
+          '<h3>Order Not Found</h3>' +
+          '<button class="btn btn-primary" onclick="navigate(\'dealer_orders\')" style="margin-top:16px">← Back to My Orders</button></div>';
+        return;
+      }
+
+      // Fetch related data in parallel
+      let statusHistory = [], attachments = [], changeRequests = [], trip = null;
+      try {
+        const [shRes, attRes, crRes] = await Promise.all([
+          dbFetch('order_status_history', { filter: { order_id: 'eq.' + orderId }, order: 'created_at.asc' }).catch(() => []),
+          dbFetch('order_attachments', { filter: { order_id: 'eq.' + orderId } }).catch(() => []),
+          dbFetch('order_change_requests', { filter: { order_id: 'eq.' + orderId }, order: 'created_at.desc' }).catch(() => [])
+        ]);
+        statusHistory = shRes || [];
+        attachments = attRes || [];
+        changeRequests = crRes || [];
+      } catch (e) { console.error('Failed to fetch related data:', e); }
+
+      // Fetch trip/driver info if assigned
+      if (order.trip_id) {
+        try {
+          const trips = await dbFetch('trips', { filter: { id: 'eq.' + order.trip_id } });
+          trip = trips && trips.length ? trips[0] : null;
+        } catch (e) { console.error('Failed to fetch trip:', e); }
+      }
+
+      const esc = escapeHtml;
+      const statusColors = { pending: '#f59e0b', picked_up: '#3b82f6', in_transit: '#3b82f6', delivered: '#22c55e', cancelled: '#ef4444' };
+      const statusLabels = { pending: 'Pending', picked_up: 'Picked Up', in_transit: 'In Transit', delivered: 'Delivered', cancelled: 'Cancelled' };
+      const ds = order.delivery_status || 'pending';
+      const vehicleStr = [order.vehicle_year, order.vehicle_make, order.vehicle_model].filter(Boolean).map(v => esc(String(v))).join(' ') || 'Unknown Vehicle';
+
+      // Timeline stepper logic
+      const steps = [
+        { label: 'Submitted', done: true, date: order.created_at },
+        { label: 'Assigned', done: !!order.trip_id, date: null },
+        { label: 'Picked Up', done: ['picked_up','in_transit','delivered'].includes(ds), date: order.pickup_date },
+        { label: 'In Transit', done: ['in_transit','delivered'].includes(ds), date: null },
+        { label: 'Delivered', done: ds === 'delivered', date: order.dropoff_date }
+      ];
+      // Try to fill dates from status history
+      statusHistory.forEach(sh => {
+        const s = (sh.status || '').toLowerCase();
+        if (s === 'assigned' || s === 'dispatched') steps[1].date = steps[1].date || sh.created_at;
+        if (s === 'picked_up' || s === 'picked up') steps[2].date = steps[2].date || sh.created_at;
+        if (s === 'in_transit' || s === 'in transit') steps[3].date = steps[3].date || sh.created_at;
+        if (s === 'delivered') steps[4].date = steps[4].date || sh.created_at;
+      });
+
+      // Find current step index (last done step)
+      let currentStepIdx = -1;
+      for (let i = steps.length - 1; i >= 0; i--) {
+        if (steps[i].done) { currentStepIdx = i; break; }
+      }
+
+      // Build timeline stepper HTML
+      let timelineHtml = '<div style="display:flex;align-items:flex-start;justify-content:space-between;padding:24px 16px;overflow-x:auto">';
+      steps.forEach((step, idx) => {
+        const isDone = step.done;
+        const isCurrent = idx === currentStepIdx;
+        const circleColor = isDone ? '#22c55e' : '#4b5563';
+        const circleBorder = isCurrent ? '3px solid #3b82f6' : isDone ? '3px solid #22c55e' : '3px solid #4b5563';
+        const circleBg = isDone ? '#22c55e' : 'transparent';
+        const checkmark = isDone ? '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:block"><path d="M4 8l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '<span style="display:block;width:8px;height:8px;border-radius:50%;background:' + (isCurrent ? '#3b82f6' : '#4b5563') + '"></span>';
+        const pulse = isCurrent ? 'animation:pulse 2s infinite;' : '';
+        const dateStr = step.date ? '<div style="font-size:11px;color:var(--text-muted);margin-top:4px">' + formatDate(step.date) + '</div>' : '';
+
+        timelineHtml += '<div style="display:flex;flex-direction:column;align-items:center;flex:1;position:relative;min-width:80px">';
+        // Connector line (not for first)
+        if (idx > 0) {
+          const lineColor = isDone ? '#22c55e' : '#4b5563';
+          timelineHtml += '<div style="position:absolute;top:16px;right:50%;width:100%;height:3px;background:' + lineColor + ';z-index:0;transform:translateX(0)"></div>';
+        }
+        timelineHtml += '<div style="width:32px;height:32px;border-radius:50%;border:' + circleBorder + ';background:' + circleBg + ';display:flex;align-items:center;justify-content:center;z-index:1;position:relative;' + pulse + '">' + checkmark + '</div>';
+        timelineHtml += '<div style="font-size:12px;font-weight:600;margin-top:8px;color:' + (isDone ? 'var(--text-primary)' : 'var(--text-muted)') + ';text-align:center">' + step.label + '</div>';
+        timelineHtml += dateStr;
+        timelineHtml += '</div>';
+      });
+      timelineHtml += '</div>';
+
+      // Build photo grid
+      const imageAttachments = attachments.filter(a => a.file_type && a.file_type.startsWith('image'));
+      let photosHtml = '';
+      if (imageAttachments.length > 0) {
+        photosHtml = '<div class="card" style="padding:20px;margin-bottom:16px">' +
+          '<h3 style="font-size:16px;font-weight:700;margin-bottom:16px">📷 Inspection Photos</h3>' +
+          '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">';
+        imageAttachments.forEach(a => {
+          photosHtml += '<a href="' + esc(a.file_url || '') + '" target="_blank" rel="noopener" style="display:block;border-radius:8px;overflow:hidden;aspect-ratio:1;background:var(--bg-darker)">' +
+            '<img src="' + esc(a.file_url || '') + '" alt="Inspection photo" style="width:100%;height:100%;object-fit:cover" loading="lazy" onerror="this.parentElement.innerHTML=\'<div style=padding:20px;text-align:center;color:var(--text-muted)>Failed</div>\'">' +
+            '</a>';
+        });
+        photosHtml += '</div></div>';
+      }
+
+      // Driver & truck info
+      let driverHtml = '<div class="card" style="padding:20px;margin-bottom:16px">' +
+        '<h3 style="font-size:16px;font-weight:700;margin-bottom:12px">🚛 Driver & Truck</h3>';
+      if (trip) {
+        const driverName = trip.driver_name || 'Unknown Driver';
+        const truckNum = trip.truck_number || trip.truck_id || 'N/A';
+        driverHtml += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
+          '<div><div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Driver</div>' +
+          '<div style="font-weight:600">' + esc(driverName) + '</div></div>' +
+          '<div><div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Truck</div>' +
+          '<div style="font-weight:600">' + esc(String(truckNum)) + '</div></div></div>';
+      } else {
+        driverHtml += '<div style="text-align:center;padding:16px;color:var(--text-muted);background:var(--bg-darker);border-radius:8px">' +
+          '<div style="font-size:24px;margin-bottom:8px">🕐</div>' +
+          '<div>Not yet assigned to a driver</div></div>';
+      }
+      driverHtml += '</div>';
+
+      // Order modification section
+      let modificationHtml = '';
+      if (ds === 'pending') {
+        modificationHtml = '<div class="card" style="padding:20px;margin-bottom:16px">' +
+          '<h3 style="font-size:16px;font-weight:700;margin-bottom:12px">✏️ Order Actions</h3>' +
+          '<div style="display:flex;gap:12px;flex-wrap:wrap">' +
+          '<button class="btn btn-primary" onclick="editDealerOrderInline(\'' + esc(orderId) + '\')" style="flex:1;min-width:140px">Edit Order</button>' +
+          '<button class="btn" onclick="cancelDealerOrder(\'' + esc(orderId) + '\')" style="flex:1;min-width:140px;background:#ef4444;color:white;border:none">Cancel Order</button>' +
+          '</div>' +
+          '<div id="dealer-edit-form" style="display:none;margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">' +
+          '<h4 style="font-size:14px;font-weight:600;margin-bottom:12px">Edit Order Details</h4>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
+          '<div><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Year</label>' +
+          '<input id="dealer-edit-year" type="text" value="' + esc(String(order.vehicle_year || '')) + '" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary)"></div>' +
+          '<div><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Make</label>' +
+          '<input id="dealer-edit-make" type="text" value="' + esc(order.vehicle_make || '') + '" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary)"></div>' +
+          '<div><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Model</label>' +
+          '<input id="dealer-edit-model" type="text" value="' + esc(order.vehicle_model || '') + '" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary)"></div>' +
+          '<div><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">VIN</label>' +
+          '<input id="dealer-edit-vin" type="text" value="' + esc(order.vehicle_vin || '') + '" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary)"></div>' +
+          '<div><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Color</label>' +
+          '<input id="dealer-edit-color" type="text" value="' + esc(order.vehicle_color || '') + '" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary)"></div>' +
+          '</div>' +
+          '<div style="margin-top:12px"><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Origin</label>' +
+          '<input id="dealer-edit-origin" type="text" value="' + esc(order.origin || '') + '" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary)"></div>' +
+          '<div style="margin-top:12px"><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Destination</label>' +
+          '<input id="dealer-edit-destination" type="text" value="' + esc(order.destination || '') + '" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary)"></div>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">' +
+          '<div><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Pickup Date</label>' +
+          '<input id="dealer-edit-pickup-date" type="date" value="' + esc(order.pickup_date || '') + '" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary)"></div>' +
+          '<div><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Delivery Date</label>' +
+          '<input id="dealer-edit-dropoff-date" type="date" value="' + esc(order.dropoff_date || '') + '" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary)"></div>' +
+          '</div>' +
+          '<div style="display:flex;gap:12px;margin-top:16px">' +
+          '<button class="btn btn-primary" onclick="saveDealerOrderEdit(\'' + esc(orderId) + '\')">Save Changes</button>' +
+          '<button class="btn" onclick="document.getElementById(\'dealer-edit-form\').style.display=\'none\'" style="background:var(--bg-darker);color:var(--text-primary)">Cancel</button>' +
+          '</div>' +
+          '</div></div>';
+      } else if (ds === 'picked_up' || ds === 'in_transit') {
+        modificationHtml = '<div class="card" style="padding:20px;margin-bottom:16px">' +
+          '<h3 style="font-size:16px;font-weight:700;margin-bottom:12px">📝 Request Change</h3>' +
+          '<p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px">This order is in progress. You can request a modification that will be reviewed by dispatch.</p>' +
+          '<div id="dealer-change-request-form">' +
+          '<div style="margin-bottom:12px"><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">What do you want to change?</label>' +
+          '<select id="dealer-cr-field" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary)">' +
+          '<option value="delivery_location">Delivery Location</option>' +
+          '<option value="delivery_date">Delivery Date</option>' +
+          '<option value="other">Other</option></select></div>' +
+          '<div style="margin-bottom:12px"><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">New Value</label>' +
+          '<input id="dealer-cr-value" type="text" placeholder="Enter new value..." style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary)"></div>' +
+          '<div style="margin-bottom:12px"><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Reason for Change</label>' +
+          '<textarea id="dealer-cr-reason" rows="3" placeholder="Explain why this change is needed..." style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);resize:vertical"></textarea></div>' +
+          '<button class="btn btn-primary" onclick="submitDealerChangeRequest(\'' + esc(orderId) + '\')">Submit Request</button>' +
+          '</div></div>';
+      }
+
+      // Change request history
+      let crHistoryHtml = '';
+      if (changeRequests.length > 0) {
+        const crStatusColors = { pending: '#f59e0b', approved: '#22c55e', rejected: '#ef4444' };
+        crHistoryHtml = '<div class="card" style="padding:20px;margin-bottom:16px">' +
+          '<h3 style="font-size:16px;font-weight:700;margin-bottom:12px">📋 Change Request History</h3>' +
+          '<div style="overflow-x:auto"><table class="data-table" style="width:100%"><thead><tr>' +
+          '<th style="text-align:left;padding:10px 14px;font-size:12px;text-transform:uppercase;color:var(--text-muted)">Date</th>' +
+          '<th style="text-align:left;padding:10px 14px;font-size:12px;text-transform:uppercase;color:var(--text-muted)">Type</th>' +
+          '<th style="text-align:left;padding:10px 14px;font-size:12px;text-transform:uppercase;color:var(--text-muted)">Changes</th>' +
+          '<th style="text-align:left;padding:10px 14px;font-size:12px;text-transform:uppercase;color:var(--text-muted)">Status</th>' +
+          '<th style="text-align:left;padding:10px 14px;font-size:12px;text-transform:uppercase;color:var(--text-muted)">Review Notes</th>' +
+          '</tr></thead><tbody>';
+        changeRequests.forEach(cr => {
+          let changesStr = '';
+          try {
+            const ch = typeof cr.changes === 'string' ? JSON.parse(cr.changes) : cr.changes;
+            if (ch && ch.field) changesStr = esc(ch.field) + ' → ' + esc(ch.newValue || '');
+            else changesStr = esc(JSON.stringify(ch));
+          } catch (e) { changesStr = esc(String(cr.changes || '')); }
+          const crStatus = cr.status || 'pending';
+          crHistoryHtml += '<tr>' +
+            '<td style="padding:10px 14px;font-size:13px">' + formatDate(cr.created_at) + '</td>' +
+            '<td style="padding:10px 14px;font-size:13px">' + esc(cr.request_type || '-') + '</td>' +
+            '<td style="padding:10px 14px;font-size:13px">' + changesStr + '</td>' +
+            '<td style="padding:10px 14px"><span class="badge" style="background:' + (crStatusColors[crStatus] || '#6b7280') + '">' + esc(crStatus) + '</span></td>' +
+            '<td style="padding:10px 14px;font-size:13px;color:var(--text-secondary)">' + esc(cr.review_notes || '-') + '</td>' +
+            '</tr>';
+        });
+        crHistoryHtml += '</tbody></table></div></div>';
+      }
+
+      // Messages card
+      let orderMsgCount = 0;
+      try {
+        const orderMsgs = await dbFetch('dealer_order_messages', { filter: { order_id: 'eq.' + orderId } }).catch(() => []);
+        orderMsgCount = orderMsgs ? orderMsgs.length : 0;
+      } catch (e) { /* silent */ }
+
+      const messagesCardHtml = '<div class="card" style="padding:20px;margin-bottom:16px">' +
+        '<h3 style="font-size:16px;font-weight:700;margin-bottom:12px">💬 Messages</h3>' +
+        '<p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px">Communicate directly with dispatch about this order.</p>' +
+        '<button class="btn btn-primary" onclick="openDealerOrderChat(\'' + esc(String(orderId)) + '\')" style="width:100%">View Messages' + (orderMsgCount > 0 ? ' (' + orderMsgCount + ')' : '') + '</button>' +
+        '</div>';
+
+      // Status history timeline
+      let historyHtml = '';
+      if (statusHistory.length > 0) {
+        historyHtml = '<div class="card" style="padding:20px;margin-bottom:16px">' +
+          '<h3 style="font-size:16px;font-weight:700;margin-bottom:16px">📜 Status History</h3>' +
+          '<div style="position:relative;padding-left:24px">';
+        statusHistory.forEach((sh, idx) => {
+          const isLast = idx === statusHistory.length - 1;
+          historyHtml += '<div style="position:relative;padding-bottom:' + (isLast ? '0' : '20') + 'px">' +
+            '<div style="position:absolute;left:-24px;top:2px;width:12px;height:12px;border-radius:50%;background:' + (isLast ? '#22c55e' : 'var(--border)') + ';border:2px solid ' + (isLast ? '#22c55e' : 'var(--border)') + '"></div>' +
+            (isLast ? '' : '<div style="position:absolute;left:-19px;top:14px;bottom:0;width:2px;background:var(--border)"></div>') +
+            '<div style="font-size:13px;font-weight:600">' + esc(sh.status || '-') + '</div>' +
+            '<div style="font-size:12px;color:var(--text-muted)">' + formatDate(sh.created_at) + (sh.changed_by_name ? ' by ' + esc(sh.changed_by_name) : '') + '</div>' +
+            (sh.notes ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + esc(sh.notes) + '</div>' : '') +
+            '</div>';
+        });
+        historyHtml += '</div></div>';
+      }
+
+      // Compose the full page
+      m.innerHTML =
+        // Header
+        '<div style="margin-bottom:24px">' +
+        '<button class="btn" onclick="navigate(\'dealer_orders\')" style="background:var(--bg-darker);color:var(--text-primary);margin-bottom:16px;font-size:13px">← My Orders</button>' +
+        '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">' +
+        '<h1 style="font-size:24px;font-weight:700;margin:0">Order ' + esc(order.order_number || '#' + orderId.slice(0, 8)) + '</h1>' +
+        '<span class="badge" style="background:' + (statusColors[ds] || '#6b7280') + ';font-size:13px;padding:4px 12px">' + esc(statusLabels[ds] || ds) + '</span>' +
+        '</div>' +
+        '<div style="color:var(--text-secondary);margin-top:4px;font-size:14px">' + vehicleStr + '</div>' +
+        '</div>' +
+
+        // Timeline stepper
+        '<div class="card" style="padding:0;margin-bottom:16px;overflow:hidden">' +
+        '<style>@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,0.5)}50%{box-shadow:0 0 0 8px rgba(59,130,246,0)}}</style>' +
+        timelineHtml + '</div>' +
+
+        // Info grid
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">' +
+        '<div class="card" style="padding:20px">' +
+        '<h3 style="font-size:16px;font-weight:700;margin-bottom:12px">🚗 Vehicle Details</h3>' +
+        '<div style="display:grid;gap:8px">' +
+        '<div><span style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Year / Make / Model</span><div style="font-weight:600">' + vehicleStr + '</div></div>' +
+        '<div><span style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">VIN</span><div style="font-weight:600;font-family:monospace">' + esc(order.vehicle_vin || 'N/A') + '</div></div>' +
+        '<div><span style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Color</span><div style="font-weight:600">' + esc(order.vehicle_color || 'N/A') + '</div></div>' +
+        '</div></div>' +
+        '<div class="card" style="padding:20px">' +
+        '<h3 style="font-size:16px;font-weight:700;margin-bottom:12px">📍 Route</h3>' +
+        '<div style="display:grid;gap:8px">' +
+        '<div><span style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Origin</span><div style="font-weight:600">' + esc(order.origin || '-') + '</div></div>' +
+        '<div><span style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Destination</span><div style="font-weight:600">' + esc(order.destination || '-') + '</div></div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+        '<div><span style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Pickup Date</span><div style="font-weight:600">' + formatDate(order.pickup_date) + '</div></div>' +
+        '<div><span style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Delivery Date</span><div style="font-weight:600">' + formatDate(order.dropoff_date) + '</div></div>' +
+        '</div>' +
+        (order.pickup_eta || order.delivery_eta ?
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+          '<div><span style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Pickup ETA</span><div style="font-weight:600">' + (order.pickup_eta ? formatDate(order.pickup_eta) : '-') + '</div></div>' +
+          '<div><span style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Delivery ETA</span><div style="font-weight:600">' + (order.delivery_eta ? formatDate(order.delivery_eta) : '-') + '</div></div>' +
+          '</div>' : '') +
+        '</div></div></div>' +
+
+        // Driver & truck
+        driverHtml +
+
+        // Inspection photos
+        photosHtml +
+
+        // Modification section
+        modificationHtml +
+
+        // Change request history
+        crHistoryHtml +
+
+        // Messages
+        messagesCardHtml +
+
+        // Status history
+        historyHtml;
+    }
+
+    function editDealerOrderInline(orderId) {
+      const form = document.getElementById('dealer-edit-form');
+      if (form) {
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+      }
+    }
+
+    async function saveDealerOrderEdit(orderId) {
+      const year = document.getElementById('dealer-edit-year');
+      const make = document.getElementById('dealer-edit-make');
+      const model = document.getElementById('dealer-edit-model');
+      const vin = document.getElementById('dealer-edit-vin');
+      const color = document.getElementById('dealer-edit-color');
+      const origin = document.getElementById('dealer-edit-origin');
+      const destination = document.getElementById('dealer-edit-destination');
+      const pickupDate = document.getElementById('dealer-edit-pickup-date');
+      const dropoffDate = document.getElementById('dealer-edit-dropoff-date');
+
+      if (!year || !make || !model) return;
+
+      const updates = {
+        vehicle_year: year.value.trim() ? parseInt(year.value.trim()) : null,
+        vehicle_make: make.value.trim(),
+        vehicle_model: model.value.trim(),
+        vehicle_vin: vin ? vin.value.trim() : null,
+        vehicle_color: color ? color.value.trim() : null,
+        origin: origin ? origin.value.trim() : null,
+        destination: destination ? destination.value.trim() : null,
+        pickup_date: pickupDate ? pickupDate.value : null,
+        dropoff_date: dropoffDate ? dropoffDate.value : null
+      };
+
+      try {
+        await dbUpdate('orders', orderId, updates);
+        showToast('Order updated successfully', 'success');
+        // Re-render the page to reflect changes
+        renderDealerOrderDetail(document.getElementById('main-content'));
+      } catch (e) {
+        console.error('Failed to update order:', e);
+        showToast('Failed to update order: ' + e.message, 'error');
+      }
+    }
+
+    async function cancelDealerOrder(orderId) {
+      if (!confirm('Are you sure you want to cancel this order? This action cannot be undone.')) return;
+
+      try {
+        await dbUpdate('orders', orderId, { delivery_status: 'cancelled', status: 'CANCELLED' });
+        showToast('Order cancelled successfully', 'success');
+        navigate('dealer_orders');
+      } catch (e) {
+        console.error('Failed to cancel order:', e);
+        showToast('Failed to cancel order: ' + e.message, 'error');
+      }
+    }
+
+    async function submitDealerChangeRequest(orderId) {
+      const field = document.getElementById('dealer-cr-field');
+      const value = document.getElementById('dealer-cr-value');
+      const reason = document.getElementById('dealer-cr-reason');
+
+      if (!field || !value || !reason) return;
+
+      const fieldVal = field.value;
+      const newValue = value.value.trim();
+      const reasonVal = reason.value.trim();
+
+      if (!newValue) {
+        showToast('Please enter the new value', 'warning');
+        return;
+      }
+      if (!reasonVal) {
+        showToast('Please provide a reason for the change', 'warning');
+        return;
+      }
+
+      if (!currentDealerProfile || !currentUser) {
+        showToast('Session error. Please refresh the page.', 'error');
+        return;
+      }
+
+      try {
+        await dbInsert('order_change_requests', {
+          order_id: orderId,
+          dealer_id: currentDealerProfile.id,
+          requested_by: currentUser.id,
+          request_type: 'edit',
+          changes: JSON.stringify({ field: fieldVal, newValue: newValue }),
+          reason: reasonVal,
+          status: 'pending'
+        });
+        showToast('Change request submitted successfully', 'success');
+        // Re-render to show the new request in history
+        renderDealerOrderDetail(document.getElementById('main-content'));
+      } catch (e) {
+        console.error('Failed to submit change request:', e);
+        showToast('Failed to submit change request: ' + e.message, 'error');
+      }
     }
 
     // ============================================================
@@ -48206,6 +49505,11 @@ function jsonResponse(data, status = 200) {
 
       html += '</div>';
       document.getElementById('nav').innerHTML = html;
+
+      // Update message badge asynchronously
+      if (currentDealerProfile) {
+        updateDealerMessageBadge();
+      }
     }
 
     /**
@@ -48541,47 +49845,8 @@ function jsonResponse(data, status = 200) {
     }
 
     function viewDealerOrderDetail(orderId) {
-      // Simple modal to view order details
-      const order = appData.orders.find(o => o.id === orderId);
-      if (!order) return;
-
-      const statusColors = { pending: '#f59e0b', picked_up: '#3b82f6', in_transit: '#3b82f6', delivered: '#22c55e' };
-      const statusLabels = { pending: 'Pending', picked_up: 'Picked Up', in_transit: 'In Transit', delivered: 'Delivered' };
-
-      const modal = document.createElement('div');
-      modal.className = 'modal-overlay';
-      modal.onclick = e => { if (e.target === modal) modal.remove(); };
-      const esc = escapeHtml;
-      const vehicleStr = [order.vehicle_year, order.vehicle_make, order.vehicle_model].filter(Boolean).map(v => esc(String(v))).join(' ') || '-';
-      modal.innerHTML = '<div class="modal" style="max-width:500px">' +
-        '<div class="modal-header"><h3>Order Details</h3>' +
-        '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div>' +
-        '<div class="modal-body">' +
-        '<div style="text-align:center;margin-bottom:20px">' +
-        '<div style="font-size:24px;font-weight:700;color:var(--accent-primary)">' + esc(order.order_number || 'N/A') + '</div>' +
-        '<span class="badge" style="background:' + (statusColors[order.delivery_status] || '#6b7280') + ';margin-top:8px">' + esc(statusLabels[order.delivery_status] || 'Unknown') + '</span>' +
-        '</div>' +
-        '<div style="background:var(--bg-darker);padding:16px;border-radius:8px;margin-bottom:16px">' +
-        '<div style="font-weight:600;margin-bottom:8px">[[icon:car]] Vehicle</div>' +
-        '<div>' + vehicleStr + '</div>' +
-        '<div style="color:var(--text-muted);font-size:13px">VIN: ' + esc(order.vehicle_vin || 'N/A') + '</div>' +
-        '<div style="color:var(--text-muted);font-size:13px">Color: ' + esc(order.vehicle_color || 'N/A') + '</div>' +
-        '</div>' +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
-        '<div style="background:var(--bg-darker);padding:16px;border-radius:8px">' +
-        '<div style="font-weight:600;margin-bottom:8px">[[icon:map_pin]] Pickup</div>' +
-        '<div>' + esc(order.origin || '-') + '</div>' +
-        '<div style="color:var(--text-muted);font-size:13px">' + formatDate(order.pickup_date) + '</div></div>' +
-        '<div style="background:var(--bg-darker);padding:16px;border-radius:8px">' +
-        '<div style="font-weight:600;margin-bottom:8px">[[icon:flag]] Delivery</div>' +
-        '<div>' + esc(order.destination || '-') + '</div>' +
-        '<div style="color:var(--text-muted);font-size:13px">' + formatDate(order.dropoff_date) + '</div></div>' +
-        '</div>' +
-        (order.dispatcher_notes ? '<div style="margin-top:16px;background:var(--bg-darker);padding:16px;border-radius:8px"><div style="font-weight:600;margin-bottom:8px">[[icon:note]] Notes</div><div style="color:var(--text-secondary)">' + esc(order.dispatcher_notes) + '</div></div>' : '') +
-        '</div>' +
-        '<div class="modal-footer"><button class="btn btn-primary" onclick="this.closest(\'.modal-overlay\').remove()">Close</button></div>' +
-        '</div>';
-      document.body.appendChild(modal);
+      window._dealerViewOrderId = orderId;
+      navigate('dealer_order_detail');
     }
 
     /**
