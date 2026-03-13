@@ -38,30 +38,19 @@ Dispatchers can efficiently manage the full lifecycle of vehicle transport order
 - Web TMS UI redesign mockups — all major pages — v1.1
 - Unified design system matching iOS v3 (dark/light theme) — v1.1
 - Standalone HTML mockups with theme toggle (no production code changes) — v1.1
+- Stripe/Linear aesthetic: clean, flat, monochrome with minimal accent — v1.4
+- Page-by-page incremental restyle (CSS + JS render function changes) — v1.4
+- Light mode restyled across all pages — v1.4
+- Dispatch pages restyled (Dashboard, Orders, Trips, Load Board) — v1.4
+- All remaining pages restyled to match (People, Fleet, Finance, Operations, Admin) — v1.4
+- Status color coding preserved (green/amber/red badges) — v1.4
+- Shared chrome restyled (sidebar, topbar, modals, login) — v1.4
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-- [ ] Stripe/Linear aesthetic: clean, flat, monochrome with minimal accent
-- [ ] Page-by-page incremental restyle (CSS + JS render function changes allowed)
-- [ ] Light mode priority, dark mode follows
-- [ ] Dispatch pages restyled first (Dashboard, Orders, Trips, Load Board)
-- [ ] All remaining pages restyled to match
-- [ ] Status color coding preserved (green/amber/red badges)
-
-## Current Milestone: v1.4 — Web TMS Restyle (Stripe/Linear)
-
-**Goal:** Incrementally restyle every page of the Web TMS to a clean, flat, Stripe/Linear aesthetic — neutral/monochrome palette, generous whitespace, minimal shadows, professional typography. Light mode first.
-
-**Target features:**
-- Neutral/monochrome color palette with subtle accent color
-- Clean flat surfaces — no gradients, glow, glass, or heavy shadows
-- Professional typography and spacing
-- Dispatch pages first: Dashboard, Orders, Trips, Load Board
-- All remaining pages restyled to match
-- Both light and dark themes, light mode priority
-- Status color coding preserved throughout
+(None — next milestone not yet defined)
 
 ## Shipped Milestones
 
@@ -69,28 +58,29 @@ Dispatchers can efficiently manage the full lifecycle of vehicle transport order
 - **v1.1** — Web TMS UI Redesign Mockups (phases 6-10, 21 plans, 31 requirements, shipped 2026-02-10)
 - **v1.2** — Apply UI Redesign to Production (phases 11-15, abandoned — reverted, direction changed)
 - **v1.3** — CSS Polish (phases 16-18, abandoned — never started, direction changed to full restyle)
+- **v1.4** — Web TMS Restyle (phases 19-26, 28 plans, 35 requirements, shipped 2026-03-13)
 
 ## Current State
 
 - Web TMS: ~38,000-line `index.html` with inline JS + 6 external modules
 - iOS app: SwiftUI at `Horizon Star LLC Driver App/LuckyCabbage Driver App/`
-- Production CSS: `variables.css` (139 lines), `base.css` (301 lines), `print.css` (491 lines)
-- Production has gradients, glow shadows, glass effects, 47 animation keyframes, heavy shadows throughout
+- Production CSS: `variables.css` (162 lines), `base.css` (~1,700 lines), `print.css` (491 lines)
+- Web TMS uses Stripe/Linear aesthetic: slate palette, flat surfaces, dark slate buttons, 3-level shadows
+- Component library: stat-flat (214 usages), data-table (53), segmented-control (65), badge variants
+- Known tech debt: renderFinancialAnalysis (~1200 lines) not yet restyled, theme-driver-parity.css token override layer
 
 ### Out of Scope
 
 - SaaS multi-tenant transformation (documented but deferred)
 - Android driver app
 - Customer-facing portal (mockup only)
-- iOS app changes — Web TMS only for this milestone
-- New features or functionality — restyle only
+- Dark theme restyle (deferred — get light mode shipped first)
 - Applying v1.1 mockup designs directly (abandoned in v1.2)
 
 ## Context
 
 - Supabase project ref: `yrrczhlzulwvdqjwvhtu`
 - Supabase CLI is NOT installed — migrations must be applied via Dashboard SQL Editor
-- v1.2 work was reverted (commit `ae70551`) — production is at original styling
 - v1.1 mockups exist in `mockups/web-tms-redesign/` as reference material
 - Protected files (DO NOT modify): Config.swift, CacheManager.swift, LocalizationManager.swift
 
@@ -100,7 +90,6 @@ Dispatchers can efficiently manage the full lifecycle of vehicle transport order
 - **Backend**: Supabase (PostgreSQL + REST + Storage) — no server-side code except Edge Functions
 - **No build tools**: Web TMS has no bundler, linter, or test suite
 - **DB migrations**: Must be applied manually via Supabase Dashboard SQL Editor
-- **Restyle scope**: Visual changes only — no new features, no behavior changes
 - **Offline**: iOS app must work offline with CacheManager
 
 ## Key Decisions
@@ -114,9 +103,12 @@ Dispatchers can efficiently manage the full lifecycle of vehicle transport order
 | Mockups before code changes | Review and approve designs before touching production index.html | ✓ Good — v1.1 complete |
 | v1.2 revert | Mockup-matching approach was too heavy | ✓ Good — simpler direction |
 | v1.3 abandoned | CSS-only scope too limiting; never started | ✓ Good — full restyle better |
-| Stripe/Linear aesthetic | Neutral/monochrome, flat, professional | — Pending |
-| Incremental page-by-page | Restyle dispatch pages first, then expand | — Pending |
-| Light mode priority | Build light theme first, dark follows | — Pending |
+| Stripe/Linear aesthetic | Neutral/monochrome, flat, professional | ✓ Good — shipped v1.4 |
+| Incremental page-by-page | Restyle dispatch pages first, then expand | ✓ Good — natural progression |
+| Light mode priority | Build light theme first, dark follows | ✓ Good — clean foundation |
+| Token swap first | 60-70% global visual shift from variables.css alone | ✓ Good — accelerated page sweeps |
+| Shared chrome last | Sidebar/modals restyled after all pages to avoid Frankenapp | ✓ Good — consistent result |
+| Component class library | stat-flat, data-table, segmented-control in base.css | ✓ Good — 330+ usages across app |
 
 ---
-*Last updated: 2026-03-12 after v1.4 milestone started*
+*Last updated: 2026-03-13 after v1.4 milestone shipped*

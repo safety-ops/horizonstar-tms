@@ -1,5 +1,33 @@
 # Milestones
 
+## v1.4 — Web TMS Restyle (Shipped: 2026-03-13)
+
+**Delivered:** Full Stripe/Linear restyle of every page in the Web TMS — neutral slate palette, flat surfaces, dark slate buttons, minimal shadows, professional typography.
+
+**Phases completed:** 19-26 (28 plans total)
+
+**Key accomplishments:**
+
+- Established Stripe/Linear design token foundation in variables.css (slate palette, 3-level shadows, dark slate buttons)
+- Built reusable component library in base.css — stat-flat (214 usages), data-table (53), segmented-control (65), badge variants
+- Restyled all 4 dispatch pages (Dashboard, Orders, Trips, Load Board) with shared helper propagation
+- Restyled all 5 people/fleet + 6 finance + 7 operations pages to consistent flat aesthetic
+- Converted shared chrome — sidebar from dark to light, modals consolidated to flat 12px surfaces, login stripped of particle animations
+- Quality verified — 35/35 requirements satisfied, user visual verification passed
+
+**Stats:**
+
+- 73 files created/modified
+- +11,698/-3,123 lines changed
+- 8 phases, 28 plans
+- 2 days (2026-03-12 → 2026-03-13)
+
+**Git range:** `29422ab` → `0edc3cf`
+
+**Tech debt accepted:** renderFinancialAnalysis not restyled, theme-driver-parity.css token overrides, font-weight 700/800 in JS template literals. See `.planning/milestones/v1.4-MILESTONE-AUDIT.md`.
+
+---
+
 ## v1.3 — CSS Polish (Abandoned: 2026-03-12)
 
 **Status:** Abandoned — never started, direction changed to full incremental restyle
@@ -77,4 +105,4 @@
 **Last phase number:** 5
 
 ---
-*Updated: 2026-03-12*
+*Updated: 2026-03-13*
