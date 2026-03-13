@@ -4026,9 +4026,8 @@
       width: 7px;
       height: 7px;
       border-radius: 50%;
-      background: #22c55e;
+      background: var(--green);
       flex-shrink: 0;
-      animation: chatPulse 1.8s ease-in-out infinite;
     }
 
     .chat-status-separator {
@@ -4089,7 +4088,7 @@
     }
 
     .chat-state.error .chat-state-title {
-      color: #dc2626;
+      color: var(--red);
     }
 
     /* ---- Date dividers (Slack-style line with centered text) ---- */
@@ -4179,7 +4178,7 @@
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      background: #22c55e;
+      background: var(--green);
       border: 2px solid var(--bg-card);
     }
 
@@ -4333,16 +4332,16 @@
       display: inline;
       padding: 1px 4px;
       border-radius: 3px;
-      background: rgba(245, 197, 66, 0.18);
-      color: #92640d;
+      background: var(--amber-dim);
+      color: var(--amber);
       font-weight: 600;
       font-size: inherit;
       border: none;
     }
 
     .chat-mention-chip.is-own {
-      background: rgba(245, 197, 66, 0.18);
-      color: #92640d;
+      background: var(--amber-dim);
+      color: var(--amber);
     }
 
     /* ---- Attachments (no bubble parent dependency) ---- */
@@ -4423,7 +4422,7 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      background: rgba(99, 102, 241, 0.10);
+      background: var(--blue-dim);
       color: var(--primary);
       font-size: 11px;
       font-weight: 600;
@@ -4439,8 +4438,8 @@
     }
 
     .chat-composer-shell {
-      border-radius: 8px;
-      background: var(--bg-primary);
+      border-radius: 24px;
+      background: var(--bg-card);
       border: 1px solid var(--border);
       padding: 10px;
     }
@@ -4493,7 +4492,7 @@
       justify-content: center;
       flex-shrink: 0;
       object-fit: cover;
-      background: rgba(99, 102, 241, 0.10);
+      background: var(--blue-dim);
       color: var(--primary);
       font-size: 11px;
       font-weight: 600;
@@ -4669,23 +4668,23 @@
 
     /* Light mode mini-chat enhancements */
     .mini-chat-messages {
-      background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+      background: var(--bg-secondary);
     }
 
     .mini-chat-window {
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 10px 50px rgba(0,0,0,0.15);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-md);
     }
 
     .mini-chat-input-area input {
-      background: #ffffff;
-      border: 2px solid #e2e8f0;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
     }
 
     .mini-chat-input-area input:focus {
       border-color: var(--primary);
       outline: none;
-      box-shadow: 0 0 0 3px var(--primary-light);
+      box-shadow: none;
     }
 
     /* ============ RESPONSIVE ============ */
@@ -6199,7 +6198,7 @@
 
       .chat-composer-shell {
         padding: 8px;
-        border-radius: 6px;
+        border-radius: 20px;
       }
 
       .chat-send-btn {
@@ -45002,11 +45001,11 @@ function jsonResponse(data, status = 200) {
       // Show last 20 messages
       const recentMessages = chatMessages.slice(-20);
       
-      const otherMsgBg = '#ffffff';
-      const otherMsgColor = '#1e293b';
-      const otherMsgBorder = '1px solid #e2e8f0';
-      const otherMsgShadow = '0 2px 6px rgba(0,0,0,0.1)';
-      const textMuted = '#64748b';
+      const otherMsgBg = 'var(--bg-card)';
+      const otherMsgColor = 'var(--text-primary)';
+      const otherMsgBorder = '1px solid var(--border)';
+      const otherMsgShadow = 'none';
+      const textMuted = 'var(--text-muted)';
       
       container.innerHTML = recentMessages.map(msg => {
         const isOwnMessage = msg.user_id === currentUser.id;
@@ -45036,7 +45035,7 @@ function jsonResponse(data, status = 200) {
           '<div style="width:32px;height:32px;border-radius:50%;background:' + color + ';color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">' + initials + '</div>' +
           '<div style="max-width:70%">' +
           '<div style="font-size:11px;color:' + textMuted + ';margin-bottom:2px;' + (isOwnMessage ? 'text-align:right' : '') + '">' + msg.user_name + '</div>' +
-          '<div style="background:' + (isOwnMessage ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : otherMsgBg) + ';color:' + (isOwnMessage ? 'white' : otherMsgColor) + ';padding:8px 12px;border-radius:12px;font-size:13px;box-shadow:' + (isOwnMessage ? '0 2px 6px rgba(99, 102, 241, 0.3)' : otherMsgShadow) + ';border:' + (isOwnMessage ? 'none' : otherMsgBorder) + '">' +
+          '<div style="background:' + (isOwnMessage ? 'var(--bg-tertiary)' : otherMsgBg) + ';color:' + (isOwnMessage ? 'var(--text-primary)' : otherMsgColor) + ';padding:8px 12px;border-radius:12px;font-size:13px;box-shadow:' + (isOwnMessage ? 'none' : otherMsgShadow) + ';border:' + (isOwnMessage ? '1px solid var(--border)' : otherMsgBorder) + '">' +
           (msg.message ? formatMessageWithMentions(msg.message, isOwnMessage) : '') +
           attachmentsHtml +
           '<div style="font-size:10px;opacity:0.7;margin-top:4px;text-align:right">' + time + '</div>' +
