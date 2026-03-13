@@ -143,6 +143,12 @@ Key context for v1.4:
 - Executive dashboard: zero gradients, zero font-weight>600, zero hardcoded hex (Phase 25)
 - Duplicate TOPBAR ENHANCEMENTS CSS block deleted, single topbar CSS definition remains (Phase 26)
 - topbar-btn:hover no longer has translateY(-1px) transform (Phase 26)
+- Sidebar background from #0a1014 to var(--bg-secondary), all rgba(255,255,255,*) to semantic tokens (Phase 26)
+- Logo gradient clip text removed, flat var(--text-primary) + font-weight:600 (Phase 26)
+- Nav items use var(--text-secondary) default, var(--text-primary) hover, var(--bg-hover) hover bg (Phase 26)
+- Mobile header from green gradient to var(--bg-secondary) + border (Phase 26)
+- Hamburger from rgba(255,255,255) to var(--bg-hover)/var(--text-primary) (Phase 26)
+- Tooltip dark (#1e293b + white) preserved intentionally for contrast on light sidebar (Phase 26)
 
 ### Known Issues
 - 4,344 inline style= attributes in index.html (in JS render functions) bypass CSS variables -- every page sweep requires JS template edits
