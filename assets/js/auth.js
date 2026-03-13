@@ -162,19 +162,12 @@ let protectedAccessGranted = false;
  * Render the login page
  */
 function renderLogin() {
-  // Generate 30 particles for animated background
-  let particlesHtml = '<div class="login-particles">';
-  for (let i = 1; i <= 30; i++) {
-    particlesHtml += '<div class="login-particle"></div>';
-  }
-  particlesHtml += '</div>';
-
   // Navigation bar
   const navBar = `
     <nav class="login-nav">
       <div class="login-nav-logo">
         <div class="login-nav-logo-icon">🚛</div>
-        <span>Horizon<span style="color:#22c55e">Star</span></span>
+        <span>Horizon<span style="color:var(--primary)">Star</span></span>
       </div>
       <div class="login-nav-links"></div>
       <div class="login-nav-buttons">
@@ -233,13 +226,13 @@ function renderLogin() {
         <div class="form-group">
           <label>${typeof t === 'function' ? t('password') : 'Password'}</label>
           <input type="password" id="login-password" required placeholder="Your password">
-          <a href="#" onclick="showForgotPassword();return false;" style="font-size:12px;color:#22c55e;text-decoration:none;display:block;text-align:right;margin-top:6px">Forgot password?</a>
+          <a href="#" onclick="showForgotPassword();return false;" style="font-size:12px;color:var(--primary);text-decoration:none;display:block;text-align:right;margin-top:6px">Forgot password?</a>
         </div>
         <button type="submit" class="btn-submit" id="login-btn">${typeof t === 'function' ? t('sign_in') : 'Sign In'}</button>
       </form>
       <div style="text-align:center;margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
         <p style="color:var(--text-secondary);font-size:13px;margin:0">
-          🚗 Are you a dealer? <a href="#" onclick="showDealerLoginInfo();return false;" style="color:#22c55e;text-decoration:none;font-weight:500">Dealer Portal</a>
+          🚗 Are you a dealer? <a href="#" onclick="showDealerLoginInfo();return false;" style="color:var(--primary);text-decoration:none;font-weight:500">Dealer Portal</a>
         </p>
       </div>
     </div>
@@ -256,7 +249,6 @@ function renderLogin() {
 
   document.getElementById('app').innerHTML = `
     <div class="login-container">
-      ${particlesHtml}
       ${navBar}
       <div class="login-hero">
         ${heroContent}
@@ -433,7 +425,7 @@ function showForgotPassword() {
             <label>Email</label>
             <input type="email" id="forgot-email" placeholder="your@email.com">
           </div>
-          <div id="forgot-error" style="color:#ef4444;font-size:13px;margin-bottom:12px;display:none"></div>
+          <div id="forgot-error" style="color:var(--red);font-size:13px;margin-bottom:12px;display:none"></div>
         </div>
         <div id="forgot-step-2" style="display:none">
           <p style="color:var(--text-secondary);margin-bottom:20px;font-size:14px">
@@ -447,7 +439,7 @@ function showForgotPassword() {
             <label>Confirm Password</label>
             <input type="password" id="forgot-confirm-password" placeholder="Confirm">
           </div>
-          <div id="forgot-error-2" style="color:#ef4444;font-size:13px;margin-bottom:12px;display:none"></div>
+          <div id="forgot-error-2" style="color:var(--red);font-size:13px;margin-bottom:12px;display:none"></div>
         </div>
         <div id="forgot-success" style="display:none;text-align:center;padding:20px">
           <div style="font-size:48px;margin-bottom:16px">✅</div>
@@ -597,7 +589,7 @@ function showDealerLoginInfo() {
         </div>
         <p style="color:var(--text-muted);font-size:13px">
           If you have dealer credentials, use them to log in above.<br>
-          Need an account? Contact us at <strong style="color:#22c55e">info@horizonstarllc.com</strong>
+          Need an account? Contact us at <strong style="color:var(--primary)">info@horizonstarllc.com</strong>
         </p>
       </div>
       <div class="modal-footer">
