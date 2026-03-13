@@ -29842,10 +29842,10 @@
     }
 
     function getPaymentStatusInfo(order) {
-      if (order.payment_status === 'paid') return { text: 'Paid', color: '#22c55e', bg: '#dcfce7' };
-      if (order.daysOverdue > 60) return { text: 'Delinquent', color: '#dc2626', bg: '#fee2e2' };
-      if (order.daysOverdue > 0) return { text: 'Pending', color: '#eab308', bg: '#fef9c3' };
-      return { text: 'Pending', color: '#eab308', bg: '#fef9c3' };
+      if (order.payment_status === 'paid') return { text: 'Paid', color: 'var(--success)', bg: 'var(--success-light, var(--green-dim))' };
+      if (order.daysOverdue > 60) return { text: 'Delinquent', color: 'var(--danger)', bg: 'var(--danger-light, var(--red-dim))' };
+      if (order.daysOverdue > 0) return { text: 'Pending', color: 'var(--warning)', bg: 'var(--warning-light, var(--amber-dim))' };
+      return { text: 'Pending', color: 'var(--warning)', bg: 'var(--warning-light, var(--amber-dim))' };
     }
 
     function getTypeBadge(order) {
@@ -30301,29 +30301,24 @@
       }
 
       // Segmented filter control
-      const filterBtnStyle = (key) => {
-        const isActive = billingFilter === key;
-        return 'padding:8px 16px;font-size:13px;font-weight:500;border:none;cursor:pointer;transition:all 0.15s;white-space:nowrap;' +
-          (isActive ? 'background:var(--bg-secondary);color:var(--text-primary);box-shadow:var(--shadow-sm);border-radius:var(--radius-sm);' : 'background:transparent;color:var(--text-muted);border-radius:var(--radius-sm);');
-      };
       const dotIndicator = (color, count) => count > 0 ? '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:' + color + ';margin-right:6px"></span>' : '';
 
       html += '<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap">';
-      html += '<div style="display:inline-flex;background:var(--bg-tertiary);border-radius:var(--radius);padding:3px;gap:2px">';
-      html += '<button style="' + filterBtnStyle('all') + '" onclick="billingFilter=\'all\';renderBillingPage(document.getElementById(\'main-content\'))">All (' + (unpaidOrders.length + paidOrders.length) + ')</button>';
-      html += '<button style="' + filterBtnStyle('needs_invoice') + '" onclick="billingFilter=\'needs_invoice\';renderBillingPage(document.getElementById(\'main-content\'))">' + dotIndicator('var(--warning)', needsInvoiceOrders.length) + 'Needs Invoice (' + needsInvoiceOrders.length + ')</button>';
-      html += '<button style="' + filterBtnStyle('outstanding') + '" onclick="billingFilter=\'outstanding\';renderBillingPage(document.getElementById(\'main-content\'))">Outstanding (' + unpaidOrders.length + ')</button>';
-      html += '<button style="' + filterBtnStyle('paid') + '" onclick="billingFilter=\'paid\';renderBillingPage(document.getElementById(\'main-content\'))">Paid (' + paidOrders.length + ')</button>';
-      html += '<button style="' + filterBtnStyle('overdue') + '" onclick="billingFilter=\'overdue\';renderBillingPage(document.getElementById(\'main-content\'))">' + dotIndicator('var(--danger)', overdueOrders.length) + 'Overdue (' + overdueOrders.length + ')</button>';
+      html += '<div class="segmented-control">';
+      html += '<button class="segmented-control-btn' + (billingFilter === 'all' ? ' active' : '') + '" onclick="billingFilter=\'all\';renderBillingPage(document.getElementById(\'main-content\'))">All (' + (unpaidOrders.length + paidOrders.length) + ')</button>';
+      html += '<button class="segmented-control-btn' + (billingFilter === 'needs_invoice' ? ' active' : '') + '" onclick="billingFilter=\'needs_invoice\';renderBillingPage(document.getElementById(\'main-content\'))">' + dotIndicator('var(--warning)', needsInvoiceOrders.length) + 'Needs Invoice (' + needsInvoiceOrders.length + ')</button>';
+      html += '<button class="segmented-control-btn' + (billingFilter === 'outstanding' ? ' active' : '') + '" onclick="billingFilter=\'outstanding\';renderBillingPage(document.getElementById(\'main-content\'))">Outstanding (' + unpaidOrders.length + ')</button>';
+      html += '<button class="segmented-control-btn' + (billingFilter === 'paid' ? ' active' : '') + '" onclick="billingFilter=\'paid\';renderBillingPage(document.getElementById(\'main-content\'))">Paid (' + paidOrders.length + ')</button>';
+      html += '<button class="segmented-control-btn' + (billingFilter === 'overdue' ? ' active' : '') + '" onclick="billingFilter=\'overdue\';renderBillingPage(document.getElementById(\'main-content\'))">' + dotIndicator('var(--danger)', overdueOrders.length) + 'Overdue (' + overdueOrders.length + ')</button>';
       html += '</div>';
 
       // Search bar + Export
       html += '<div style="display:flex;gap:8px;align-items:center;flex:1;justify-content:flex-end">';
       html += '<div style="position:relative;max-width:300px;flex:1">';
-      html += '<input type="text" id="billing-search" placeholder="Search invoices..." ';
+      html += '<input type="text" class="input" id="billing-search" placeholder="Search invoices..." ';
       html += 'value="' + billingSearchTerm + '" ';
       html += 'oninput="billingSearchTerm=this.value;renderBillingPage(document.getElementById(\'main-content\'))" ';
-      html += 'style="width:100%;padding:8px 12px 8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card);color:var(--text-primary);font-size:13px">';
+      html += 'style="width:100%">';
       html += '</div>';
       html += '<button class="btn btn-sm btn-secondary" onclick="exportBillingInvoicesCSV()" style="white-space:nowrap">Export CSV</button>';
       html += '</div></div>';
@@ -30343,7 +30338,7 @@
       const totalFilteredAmount = filteredOrders.reduce((s, o) => s + (o.billAmount || 0), 0);
 
       // Invoice Table — with batch selection checkboxes
-      html += '<div class="card"><div class="table-wrapper"><table>';
+      html += '<div class="card card-flush"><div class="table-wrapper"><table class="data-table">';
       html += '<thead><tr>';
       html += '<th style="width:40px;text-align:center"><input type="checkbox" onchange="toggleSelectAllBillingOrders(this.checked)" ' + (billingSelectedOrders.length > 0 && billingSelectedOrders.length === filteredOrders.length ? 'checked' : '') + ' style="cursor:pointer"></th>';
       html += '<th style="width:130px">INVOICE</th>';
@@ -30371,7 +30366,7 @@
 
           let statusInfo;
           if (isPaid) {
-            statusInfo = { text: 'Paid', color: '#22c55e', bg: 'var(--success-light)' };
+            statusInfo = { text: 'Paid', color: 'var(--success)', bg: 'var(--success-light, var(--green-dim))' };
           } else if (needsInvoice) {
             statusInfo = { text: 'Needs Invoice', color: 'var(--warning)', bg: 'var(--warning-light)' };
           } else {
@@ -30402,17 +30397,17 @@
           // Merged STATUS + TYPE column + hold indicator
           html += '<td><span style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;background:' + statusInfo.bg + ';color:' + statusInfo.color + '">' + statusInfo.text + '</span>';
           if (o.billing_hold_reason) {
-            html += ' <span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;background:rgba(139,92,246,0.12);color:#8b5cf6" title="' + escapeHtml(o.billing_hold_reason) + '">HOLD</span>';
+            html += ' <span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;background:var(--purple-dim);color:var(--purple)" title="' + escapeHtml(o.billing_hold_reason) + '">HOLD</span>';
           }
           if (o.promise_to_pay_date) {
-            html += ' <span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;background:rgba(139,92,246,0.12);color:#8b5cf6">PROMISE</span>';
+            html += ' <span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;background:var(--purple-dim);color:var(--purple)">PROMISE</span>';
           }
           html += '<div style="font-size:11px;color:var(--text-muted);margin-top:4px">' + typeBadge.text + '</div></td>';
           html += '<td onclick="event.stopPropagation()" style="text-align:center">';
           if (needsInvoice) {
-            html += '<button class="btn btn-sm" onclick="openMarkInvoicedModal(' + o.id + ')" style="font-size:12px;padding:6px 14px;background:var(--warning);color:white;border:none;border-radius:var(--radius-sm);cursor:pointer;font-weight:500" title="Mark as Invoiced">Invoice</button>';
+            html += '<button class="btn btn-sm btn-secondary" onclick="openMarkInvoicedModal(' + o.id + ')" title="Mark as Invoiced">Invoice</button>';
           } else if (!isPaid) {
-            html += '<button class="btn btn-sm" onclick="markBillingOrderPaid(' + o.id + ')" style="font-size:12px;padding:6px 14px;background:var(--success);color:white;border:none;border-radius:var(--radius-sm);cursor:pointer;font-weight:500" title="Mark as Paid">Paid</button>';
+            html += '<button class="btn btn-sm btn-primary" onclick="markBillingOrderPaid(' + o.id + ')" title="Mark as Paid">Paid</button>';
           }
           html += '</td>';
           html += '</tr>';
@@ -30433,9 +30428,9 @@
         html += '<span style="font-weight:600;font-size:14px">' + billingSelectedOrders.length + ' selected</span>';
         html += '<span style="font-family:var(--font-mono);font-size:13px;color:var(--text-secondary)">' + formatMoney(selectedAmt) + '</span>';
         html += '<div style="width:1px;height:24px;background:var(--border)"></div>';
-        html += '<button class="btn btn-sm" onclick="batchMarkInvoiced()" style="background:var(--warning);color:white;border:none;font-weight:600;padding:8px 16px;border-radius:8px;cursor:pointer">Batch Invoice</button>';
-        html += '<button class="btn btn-sm" onclick="batchMarkPaid()" style="background:var(--success);color:white;border:none;font-weight:600;padding:8px 16px;border-radius:8px;cursor:pointer">Batch Mark Paid</button>';
-        html += '<button class="btn btn-sm btn-secondary" onclick="billingSelectedOrders=[];renderBillingPage(document.getElementById(\'main-content\'))" style="padding:8px 16px">Cancel</button>';
+        html += '<button class="btn btn-sm btn-secondary" onclick="batchMarkInvoiced()">Batch Invoice</button>';
+        html += '<button class="btn btn-sm btn-primary" onclick="batchMarkPaid()">Batch Mark Paid</button>';
+        html += '<button class="btn btn-sm btn-ghost" onclick="billingSelectedOrders=[];renderBillingPage(document.getElementById(\'main-content\'))">Cancel</button>';
         html += '</div>';
         html += '<style>@keyframes billingSlideUp{from{transform:translateX(-50%) translateY(20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}</style>';
       }
@@ -30481,7 +30476,7 @@
 
       const body = '<div style="padding:24px">' +
         '<div style="text-align:center;margin-bottom:20px">' +
-        '<div style="font-size:36px;font-weight:800;font-family:var(--font-mono);color:var(--text-primary)">' + needsInvoice.length + '</div>' +
+        '<div style="font-size:36px;font-weight:600;font-family:var(--font-mono);color:var(--text-primary)">' + needsInvoice.length + '</div>' +
         '<div style="color:var(--text-secondary);font-size:14px">orders will be invoiced</div>' +
         '<div style="font-size:18px;font-weight:600;font-family:var(--font-mono);color:var(--primary);margin-top:8px">' + formatMoney(totalAmt) + '</div>' +
         '</div>' +
@@ -30491,7 +30486,7 @@
         '<button class="btn btn-primary" id="batch-invoice-confirm-btn" onclick="executeBatchInvoice()">Generate Invoices</button>';
 
       const modalHtml = '<div class="modal-overlay" id="batch-invoice-modal" onclick="if(event.target===this)this.remove()">' +
-        '<div class="modal" style="max-width:440px"><div class="modal-header"><h3 style="margin:0;font-size:18px;font-weight:700">Batch Invoice</h3>' +
+        '<div class="modal" style="max-width:440px"><div class="modal-header"><h3 style="margin:0;font-size:18px;font-weight:600">Batch Invoice</h3>' +
         '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>' +
         '<div class="modal-body">' + body + '</div>' +
         '<div class="modal-footer" style="padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:12px;justify-content:flex-end">' + footer + '</div></div></div>';
@@ -30543,7 +30538,7 @@
       const today = new Date().toISOString().split('T')[0];
       const body = '<div style="padding:24px">' +
         '<div style="text-align:center;margin-bottom:20px">' +
-        '<div style="font-size:36px;font-weight:800;font-family:var(--font-mono);color:var(--success)">' + unpaid.length + '</div>' +
+        '<div style="font-size:36px;font-weight:600;font-family:var(--font-mono);color:var(--success)">' + unpaid.length + '</div>' +
         '<div style="color:var(--text-secondary);font-size:14px">orders will be marked paid</div>' +
         '<div style="font-size:18px;font-weight:600;font-family:var(--font-mono);color:var(--success);margin-top:8px">' + formatMoney(totalAmt) + '</div>' +
         '</div>' +
@@ -30551,10 +30546,10 @@
         '<input type="date" id="batch-payment-date" value="' + today + '" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-tertiary);color:var(--text-primary);font-size:14px"></div>' +
         '</div>';
       const footer = '<button class="btn btn-secondary" onclick="document.getElementById(\'batch-paid-modal\')?.remove()">Cancel</button>' +
-        '<button class="btn" id="batch-paid-confirm-btn" onclick="executeBatchMarkPaid()" style="background:var(--success);color:white;border:none;font-weight:600;padding:10px 20px;border-radius:8px;cursor:pointer">Confirm Payment</button>';
+        '<button class="btn btn-primary" id="batch-paid-confirm-btn" onclick="executeBatchMarkPaid()">Confirm Payment</button>';
 
       const modalHtml = '<div class="modal-overlay" id="batch-paid-modal" onclick="if(event.target===this)this.remove()">' +
-        '<div class="modal" style="max-width:440px"><div class="modal-header"><h3 style="margin:0;font-size:18px;font-weight:700">Batch Mark Paid</h3>' +
+        '<div class="modal" style="max-width:440px"><div class="modal-header"><h3 style="margin:0;font-size:18px;font-weight:600">Batch Mark Paid</h3>' +
         '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>' +
         '<div class="modal-body">' + body + '</div>' +
         '<div class="modal-footer" style="padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:12px;justify-content:flex-end">' + footer + '</div></div></div>';
@@ -30600,29 +30595,29 @@
       const events = getOrderBillingEvents(orderId);
 
       let statusInfo;
-      if (isPaid) statusInfo = { text: 'PAID', color: '#22c55e', bg: 'var(--success-light)' };
-      else if (needsInvoice) statusInfo = { text: 'NEEDS INVOICE', color: 'var(--warning)', bg: 'var(--warning-light)' };
-      else if (aging.daysOverdue > 60) statusInfo = { text: 'DELINQUENT', color: '#dc2626', bg: '#fee2e2' };
-      else if (aging.daysOverdue > 0) statusInfo = { text: 'OVERDUE', color: '#ef4444', bg: '#fee2e2' };
-      else statusInfo = { text: 'INVOICED', color: '#3b82f6', bg: 'var(--info-light)' };
+      if (isPaid) statusInfo = { text: 'PAID', color: 'var(--success)', bg: 'var(--success-light, var(--green-dim))' };
+      else if (needsInvoice) statusInfo = { text: 'NEEDS INVOICE', color: 'var(--warning)', bg: 'var(--warning-light, var(--amber-dim))' };
+      else if (aging.daysOverdue > 60) statusInfo = { text: 'DELINQUENT', color: 'var(--danger)', bg: 'var(--danger-light, var(--red-dim))' };
+      else if (aging.daysOverdue > 0) statusInfo = { text: 'OVERDUE', color: 'var(--danger)', bg: 'var(--danger-light, var(--red-dim))' };
+      else statusInfo = { text: 'INVOICED', color: 'var(--info)', bg: 'var(--info-light, var(--blue-dim))' };
 
       const m = document.createElement('div');
       m.className = 'modal-overlay';
       m.onclick = e => { if (e.target === m) m.remove(); };
 
       let html = '<div class="modal" style="max-width:700px;max-height:90vh">';
-      html += '<div class="modal-header"><h3 style="margin:0;font-family:var(--font-display);font-weight:700;font-size:18px">' + escapeHtml(invoiceNum) + '</h3>';
+      html += '<div class="modal-header"><h3 style="margin:0;font-family:var(--font-display);font-weight:600;font-size:18px">' + escapeHtml(invoiceNum) + '</h3>';
       html += '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div>';
       html += '<div class="modal-body" style="max-height:75vh;overflow-y:auto;padding:24px">';
 
       // Hero section
       html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;flex-wrap:wrap">';
-      html += '<div><div style="font-size:32px;font-weight:800;font-family:var(--font-mono);color:var(--text-primary)">' + formatMoney(aging.billAmount) + '</div>';
+      html += '<div><div style="font-size:32px;font-weight:600;font-family:var(--font-mono);color:var(--text-primary)">' + formatMoney(aging.billAmount) + '</div>';
       html += '<div style="font-size:13px;color:var(--text-muted);margin-top:4px">' + escapeHtml(order.broker_name || 'Unknown') + '</div></div>';
       html += '<div style="display:flex;gap:8px;align-items:center">';
       html += '<span style="padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;background:' + statusInfo.bg + ';color:' + statusInfo.color + '">' + statusInfo.text + '</span>';
       if (order.billing_hold_reason) {
-        html += '<span style="padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;background:rgba(139,92,246,0.12);color:#8b5cf6" title="' + escapeHtml(order.billing_hold_reason) + '">HOLD</span>';
+        html += '<span style="padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;background:var(--purple-dim);color:var(--purple)" title="' + escapeHtml(order.billing_hold_reason) + '">HOLD</span>';
       }
       html += '</div></div>';
 
@@ -30672,7 +30667,7 @@
       if (needsInvoice) {
         html += '<button class="btn btn-primary" onclick="this.closest(\'.modal-overlay\').remove();openMarkInvoicedModal(' + orderId + ')">Create Invoice</button>';
       } else if (!isPaid) {
-        html += '<button class="btn" onclick="this.closest(\'.modal-overlay\').remove();markBillingOrderPaid(' + orderId + ')" style="background:var(--success);color:white;border:none;font-weight:600;padding:10px 20px;border-radius:8px;cursor:pointer">Mark Paid</button>';
+        html += '<button class="btn btn-primary" onclick="this.closest(\'.modal-overlay\').remove();markBillingOrderPaid(' + orderId + ')">Mark Paid</button>';
         html += '<button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove();openLogFollowUpModal(' + orderId + ')">Log Follow-up</button>';
         html += '<button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove();openSetPromiseToPayModal(' + orderId + ')">Set Promise</button>';
         if (!order.billing_hold_reason) {
@@ -30701,38 +30696,32 @@
       // Summary cards
       html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px">';
       const summaryCards = [
-        { label: 'Needs Follow-up', value: followUpOrders.length, color: '#f97316', filter: 'follow_up' },
-        { label: 'Promise to Pay', value: promiseOrders.length, color: '#8b5cf6', filter: 'promise' },
-        { label: 'On Hold', value: holdOrders.length, color: 'var(--warning)', filter: 'hold' },
-        { label: 'No Contact', value: noContactOrders.length, color: 'var(--danger)', filter: 'no_contact' }
+        { label: 'Needs Follow-up', value: followUpOrders.length, accent: 'stat-card--amber', filter: 'follow_up' },
+        { label: 'Promise to Pay', value: promiseOrders.length, accent: 'stat-card--purple', filter: 'promise' },
+        { label: 'On Hold', value: holdOrders.length, accent: 'stat-card--amber', filter: 'hold' },
+        { label: 'No Contact', value: noContactOrders.length, accent: 'stat-card--red', filter: 'no_contact' }
       ];
       summaryCards.forEach(cd => {
         const isActive = collectionsFilter === cd.filter;
-        html += '<div onclick="collectionsFilter=\'' + cd.filter + '\';renderBillingPage(document.getElementById(\'main-content\'))" style="background:var(--bg-card);border-radius:var(--radius-sm);padding:16px;border:' + (isActive ? '2px solid ' + cd.color : '1px solid var(--border)') + ';cursor:pointer;transition:all 0.15s" onmouseover="this.style.transform=\'translateY(-1px)\';this.style.boxShadow=\'var(--shadow-md)\'" onmouseout="this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">';
-        html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px"><span style="width:8px;height:8px;border-radius:50%;background:' + cd.color + ';display:inline-block"></span>';
-        html += '<span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600">' + cd.label + '</span></div>';
-        html += '<div style="font-size:24px;font-weight:700;font-family:var(--font-mono)">' + cd.value + '</div></div>';
+        html += '<div class="stat-flat ' + cd.accent + '" onclick="collectionsFilter=\'' + cd.filter + '\';renderBillingPage(document.getElementById(\'main-content\'))" style="cursor:pointer;' + (isActive ? 'box-shadow:var(--shadow-sm);border-color:var(--text-muted)' : '') + '">';
+        html += '<div class="stat-flat-label">' + cd.label + '</div>';
+        html += '<div class="stat-flat-value" style="font-family:var(--font-mono)">' + cd.value + '</div></div>';
       });
       html += '</div>';
 
       // Filter pills
-      const cfBtnStyle = (key) => {
-        const isActive = collectionsFilter === key;
-        return 'padding:8px 16px;font-size:13px;font-weight:500;border:none;cursor:pointer;transition:all 0.15s;white-space:nowrap;' +
-          (isActive ? 'background:var(--bg-secondary);color:var(--text-primary);box-shadow:var(--shadow-sm);border-radius:var(--radius-sm);' : 'background:transparent;color:var(--text-muted);border-radius:var(--radius-sm);');
-      };
       html += '<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap">';
-      html += '<div style="display:inline-flex;background:var(--bg-tertiary);border-radius:var(--radius);padding:3px;gap:2px">';
-      html += '<button style="' + cfBtnStyle('all') + '" onclick="collectionsFilter=\'all\';renderBillingPage(document.getElementById(\'main-content\'))">All (' + unpaidOrders.length + ')</button>';
-      html += '<button style="' + cfBtnStyle('follow_up') + '" onclick="collectionsFilter=\'follow_up\';renderBillingPage(document.getElementById(\'main-content\'))">Needs Follow-up (' + followUpOrders.length + ')</button>';
-      html += '<button style="' + cfBtnStyle('promise') + '" onclick="collectionsFilter=\'promise\';renderBillingPage(document.getElementById(\'main-content\'))">Promise to Pay (' + promiseOrders.length + ')</button>';
-      html += '<button style="' + cfBtnStyle('hold') + '" onclick="collectionsFilter=\'hold\';renderBillingPage(document.getElementById(\'main-content\'))">On Hold (' + holdOrders.length + ')</button>';
-      html += '<button style="' + cfBtnStyle('no_contact') + '" onclick="collectionsFilter=\'no_contact\';renderBillingPage(document.getElementById(\'main-content\'))">No Contact (' + noContactOrders.length + ')</button>';
+      html += '<div class="segmented-control">';
+      html += '<button class="segmented-control-btn' + (collectionsFilter === 'all' ? ' active' : '') + '" onclick="collectionsFilter=\'all\';renderBillingPage(document.getElementById(\'main-content\'))">All (' + unpaidOrders.length + ')</button>';
+      html += '<button class="segmented-control-btn' + (collectionsFilter === 'follow_up' ? ' active' : '') + '" onclick="collectionsFilter=\'follow_up\';renderBillingPage(document.getElementById(\'main-content\'))">Needs Follow-up (' + followUpOrders.length + ')</button>';
+      html += '<button class="segmented-control-btn' + (collectionsFilter === 'promise' ? ' active' : '') + '" onclick="collectionsFilter=\'promise\';renderBillingPage(document.getElementById(\'main-content\'))">Promise to Pay (' + promiseOrders.length + ')</button>';
+      html += '<button class="segmented-control-btn' + (collectionsFilter === 'hold' ? ' active' : '') + '" onclick="collectionsFilter=\'hold\';renderBillingPage(document.getElementById(\'main-content\'))">On Hold (' + holdOrders.length + ')</button>';
+      html += '<button class="segmented-control-btn' + (collectionsFilter === 'no_contact' ? ' active' : '') + '" onclick="collectionsFilter=\'no_contact\';renderBillingPage(document.getElementById(\'main-content\'))">No Contact (' + noContactOrders.length + ')</button>';
       html += '</div>';
 
       // Search + Export
       html += '<div style="display:flex;gap:8px;align-items:center;flex:1;justify-content:flex-end">';
-      html += '<input type="text" id="collections-search" placeholder="Search..." value="' + collectionsSearchTerm + '" oninput="collectionsSearchTerm=this.value;renderBillingPage(document.getElementById(\'main-content\'))" style="padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card);color:var(--text-primary);font-size:13px;max-width:250px;width:100%">';
+      html += '<input type="text" class="input" id="collections-search" placeholder="Search..." value="' + collectionsSearchTerm + '" oninput="collectionsSearchTerm=this.value;renderBillingPage(document.getElementById(\'main-content\'))" style="max-width:250px;width:100%">';
       html += '<button class="btn btn-sm btn-secondary" onclick="exportCollectionsCSV()" style="white-space:nowrap">Export</button>';
       html += '</div></div>';
 
@@ -30774,7 +30763,7 @@
       });
 
       // Collections table
-      html += '<div class="card"><div class="table-wrapper"><table>';
+      html += '<div class="card card-flush"><div class="table-wrapper"><table class="data-table">';
       html += '<thead><tr>';
       html += '<th>INVOICE</th>';
       html += '<th>BROKER</th>';
@@ -30795,16 +30784,16 @@
         html += '</td></tr>';
       } else {
         filtered.forEach(o => {
-          const daysColor = o.daysOverdue > 60 ? '#dc2626' : o.daysOverdue > 30 ? '#ef4444' : o.daysOverdue > 0 ? '#f97316' : 'var(--success)';
+          const daysColor = o.daysOverdue > 60 ? 'var(--danger)' : o.daysOverdue > 30 ? 'var(--danger)' : o.daysOverdue > 0 ? 'var(--warning)' : 'var(--success)';
           const now = new Date();
           const nextFollowUp = o.next_follow_up_at ? new Date(o.next_follow_up_at) : null;
           const followUpPastDue = nextFollowUp && nextFollowUp <= now;
 
           let statusBadge;
-          if (o.billing_hold_reason) statusBadge = '<span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;background:rgba(234,179,8,0.12);color:#eab308">HOLD</span>';
-          else if (o.promise_to_pay_date) statusBadge = '<span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;background:rgba(139,92,246,0.12);color:#8b5cf6">PROMISE</span>';
-          else if (followUpPastDue || (!o.last_follow_up_at && o.daysOverdue > 7)) statusBadge = '<span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;background:rgba(249,115,22,0.12);color:#f97316">FOLLOW-UP</span>';
-          else statusBadge = '<span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;background:rgba(59,130,246,0.12);color:#3b82f6">ACTIVE</span>';
+          if (o.billing_hold_reason) statusBadge = '<span class="badge badge-amber">HOLD</span>';
+          else if (o.promise_to_pay_date) statusBadge = '<span class="badge badge-purple" style="background:var(--purple-dim);color:var(--purple)">PROMISE</span>';
+          else if (followUpPastDue || (!o.last_follow_up_at && o.daysOverdue > 7)) statusBadge = '<span class="badge badge-amber">FOLLOW-UP</span>';
+          else statusBadge = '<span class="badge badge-blue">ACTIVE</span>';
 
           html += '<tr style="cursor:pointer" onclick="openInvoiceDetailModal(' + o.id + ')">';
           html += '<td><strong>' + getInvoiceNumber(o) + '</strong></td>';
@@ -30824,11 +30813,11 @@
           html += '<td>' + statusBadge + '</td>';
           html += '<td onclick="event.stopPropagation()" style="white-space:nowrap">';
           html += '<div style="display:flex;gap:4px">';
-          html += '<button class="btn btn-sm btn-secondary" onclick="openLogFollowUpModal(' + o.id + ')" title="Log Follow-up" style="padding:5px 8px;font-size:11px">Follow-up</button>';
+          html += '<button class="btn btn-sm btn-ghost" onclick="openLogFollowUpModal(' + o.id + ')" title="Log Follow-up">Follow-up</button>';
           if (!o.billing_hold_reason) {
-            html += '<button class="btn btn-sm" onclick="markBillingOrderPaid(' + o.id + ')" title="Mark Paid" style="padding:5px 8px;font-size:11px;background:var(--success);color:white;border:none;border-radius:6px;cursor:pointer">Paid</button>';
+            html += '<button class="btn btn-sm btn-primary" onclick="markBillingOrderPaid(' + o.id + ')" title="Mark Paid">Paid</button>';
           } else {
-            html += '<button class="btn btn-sm btn-secondary" onclick="clearBillingHold(' + o.id + ')" title="Clear Hold" style="padding:5px 8px;font-size:11px">Unhold</button>';
+            html += '<button class="btn btn-sm btn-ghost" onclick="clearBillingHold(' + o.id + ')" title="Clear Hold">Unhold</button>';
           }
           html += '</div></td>';
           html += '</tr>';
@@ -30855,7 +30844,7 @@
         <div class="modal-overlay" id="follow-up-modal" onclick="if(event.target===this)this.remove()">
           <div class="modal" style="max-width:480px">
             <div class="modal-header">
-              <h3 style="margin:0;font-size:18px;font-weight:700">Log Follow-up</h3>
+              <h3 style="margin:0;font-size:18px;font-weight:600">Log Follow-up</h3>
               <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
             </div>
             <div class="modal-body" style="padding:24px">
@@ -30930,7 +30919,7 @@
         <div class="modal-overlay" id="promise-modal" onclick="if(event.target===this)this.remove()">
           <div class="modal" style="max-width:440px">
             <div class="modal-header">
-              <h3 style="margin:0;font-size:18px;font-weight:700">Record Promise to Pay</h3>
+              <h3 style="margin:0;font-size:18px;font-weight:600">Record Promise to Pay</h3>
               <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
             </div>
             <div class="modal-body" style="padding:24px">
@@ -30999,7 +30988,7 @@
         <div class="modal-overlay" id="hold-modal" onclick="if(event.target===this)this.remove()">
           <div class="modal" style="max-width:440px">
             <div class="modal-header">
-              <h3 style="margin:0;font-size:18px;font-weight:700">Set Billing Hold</h3>
+              <h3 style="margin:0;font-size:18px;font-weight:600">Set Billing Hold</h3>
               <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
             </div>
             <div class="modal-body" style="padding:24px">
@@ -31024,7 +31013,7 @@
             </div>
             <div class="modal-footer" style="padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:12px;justify-content:flex-end">
               <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
-              <button class="btn" onclick="submitSetBillingHold(${orderId})" style="background:var(--warning);color:white;border:none;font-weight:600;padding:10px 20px;border-radius:8px;cursor:pointer">Set Hold</button>
+              <button class="btn btn-primary" onclick="submitSetBillingHold(${orderId})">Set Hold</button>
             </div>
           </div>
         </div>
