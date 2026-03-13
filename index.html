@@ -3234,49 +3234,13 @@
     .toast.error { background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%); }
     
     /* ============ LOGIN PAGE - Clean Flat ============ */
-    /* Typography imports */
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap');
-
     .login-container {
       min-height: 100vh;
-      background: #030808;
+      background: var(--bg-primary);
       position: relative;
       overflow: hidden;
-      font-family: 'Outfit', sans-serif;
     }
 
-    /* Gradient overlay - deeper, more dramatic */
-    .login-container::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background:
-        radial-gradient(ellipse at 30% 30%, rgba(99, 102, 241, 0.06) 0%, transparent 60%);
-      pointer-events: none;
-    }
-
-    /* Technical grid overlay */
-    .login-container::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-      background-size: 50px 50px;
-      pointer-events: none;
-    }
-
-    /* Rain Particles Container */
-    .login-particles {
-      position: absolute;
-      inset: 0;
-      overflow: hidden;
-      pointer-events: none;
-    }
-
-    /* Particles removed */
-    
     /* Navigation Bar */
     .login-nav {
       display: flex;
@@ -3294,7 +3258,7 @@
       font-family: var(--font-display, var(--font-display-app, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", "Helvetica Neue", Arial, sans-serif));
       font-size: 22px;
       font-weight: 600;
-      color: white;
+      color: var(--text-primary);
     }
 
     .login-nav-logo-icon {
@@ -3316,7 +3280,7 @@
     }
     
     .login-nav-links a {
-      color: rgba(255,255,255,0.8);
+      color: var(--text-secondary);
       text-decoration: none;
       font-size: 14px;
       font-weight: 500;
@@ -3324,7 +3288,7 @@
     }
     
     .login-nav-links a:hover {
-      color: white;
+      color: var(--text-primary);
     }
     
     .login-nav-buttons {
@@ -3344,25 +3308,25 @@
     }
     
     .login-nav-btn.register {
-      background: #3b82f6;
+      background: var(--slate-900);
       color: white;
     }
-    
+
     .login-nav-btn.register:hover {
-      background: #2563eb;
+      background: var(--slate-800);
     }
-    
+
     .login-nav-btn.login {
-      background: white;
-      color: #1e293b;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
     }
-    
+
     .login-nav-btn.login:hover {
-      background: #f1f5f9;
+      background: var(--bg-tertiary);
     }
-    
+
     .login-nav-lang {
-      color: rgba(255,255,255,0.8);
+      color: var(--text-secondary);
       font-size: 14px;
       font-weight: 500;
       cursor: pointer;
@@ -3389,19 +3353,19 @@
     .login-hero h1 {
       font-size: 52px;
       font-weight: 600;
-      color: white;
+      color: var(--text-primary);
       line-height: 1.15;
       margin-bottom: 20px;
       letter-spacing: -1px;
     }
-    
+
     .login-hero h1 span {
-      color: #60a5fa;
+      color: var(--primary);
     }
-    
+
     .login-hero-subtitle {
       font-size: 18px;
-      color: rgba(255,255,255,0.75);
+      color: var(--text-secondary);
       margin-bottom: 40px;
       line-height: 1.6;
     }
@@ -3416,14 +3380,13 @@
     }
 
     .login-feature {
-      background: rgba(99, 102, 241, 0.08);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(99, 102, 241, 0.2);
-      border-radius: 14px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 16px 14px;
       width: calc(33.333% - 8px);
       min-width: 100px;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       cursor: pointer;
       text-align: center;
     }
@@ -3434,9 +3397,9 @@
     }
 
     .login-feature:hover {
-      background: rgba(99, 102, 241, 0.12);
-      border-color: rgba(99, 102, 241, 0.3);
-      box-shadow: var(--shadow-lg);
+      background: var(--bg-tertiary);
+      border-color: var(--border);
+      box-shadow: var(--shadow-sm);
     }
 
     .login-feature-icon {
@@ -3447,7 +3410,7 @@
     .login-feature-title {
       font-size: 12px;
       font-weight: 600;
-      color: white;
+      color: var(--text-primary);
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
@@ -3460,29 +3423,24 @@
       margin-top: 2px;
     }
     
-    /* Embedded Auth Form - Premium Dark Card */
+    /* Embedded Auth Form Card */
     .login-form-card {
       position: relative;
       z-index: 1;
       width: 420px;
       min-width: 400px;
-      background: #0a1014;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 24px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 48px;
-      box-shadow: var(--shadow-lg);
+      box-shadow: var(--shadow-md);
     }
 
     .login-form-card h2 {
-      font-family: var(--font-display, var(--font-display-app, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", "Helvetica Neue", Arial, sans-serif));
-      font-size: 2rem;
+      font-size: 24px;
       font-weight: 600;
-      color: #f0f4f8;
+      color: var(--text-primary);
       margin-bottom: 8px;
-      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
     }
 
     .login-form-card .subtitle {
@@ -3490,7 +3448,7 @@
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.2em;
-      color: #6b7280;
+      color: var(--text-secondary);
       margin-bottom: 32px;
     }
 
@@ -3503,7 +3461,7 @@
       font-family: var(--font-body, var(--font-body-app, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif));
       font-size: 12px;
       font-weight: 600;
-      color: #9ca3af;
+      color: var(--text-secondary);
       text-transform: uppercase;
       letter-spacing: 0.05em;
       margin-bottom: 8px;
@@ -3512,24 +3470,24 @@
     .login-form-card .form-group input {
       width: 100%;
       padding: 14px 16px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
       font-family: var(--font-body, var(--font-body-app, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif));
       font-size: 15px;
       transition: all 0.2s ease;
-      background: #1a2835;
-      color: #f0f4f8;
+      background: var(--bg-primary);
+      color: var(--text-primary);
     }
 
     .login-form-card .form-group input:focus {
       outline: none;
       border-color: var(--primary);
       box-shadow: 0 0 0 3px var(--primary-light);
-      background: #141f2a;
+      background: var(--bg-primary);
     }
 
     .login-form-card .form-group input::placeholder {
-      color: #6b7280;
+      color: var(--text-muted);
     }
 
     .login-form-card .form-row {
@@ -3541,10 +3499,10 @@
     .login-form-card .btn-submit {
       width: 100%;
       padding: 14px;
-      background: var(--primary);
+      background: var(--slate-900);
       color: white;
       border: none;
-      border-radius: 10px;
+      border-radius: 8px;
       font-family: var(--font-body, var(--font-body-app, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif));
       font-size: 15px;
       font-weight: 600;
@@ -3555,14 +3513,14 @@
     }
 
     .login-form-card .btn-submit:hover {
-      box-shadow: var(--shadow-lg);
+      background: var(--slate-800);
     }
 
     .login-form-card .form-footer {
       text-align: center;
       margin-top: 24px;
       font-size: 14px;
-      color: #6b7280;
+      color: var(--text-secondary);
     }
 
     .login-form-card .form-footer a {
@@ -3584,30 +3542,31 @@
     
     .login-form-card .lang-btn {
       padding: 8px 16px;
-      border: 1px solid #e2e8f0;
-      background: white;
+      border: 1px solid var(--border);
+      background: var(--bg-primary);
       border-radius: 8px;
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
+      color: var(--text-primary);
     }
-    
+
     .login-form-card .lang-btn:hover {
-      background: #f1f5f9;
+      background: var(--bg-tertiary);
     }
-    
+
     .login-form-card .lang-btn.active {
-      background: #3b82f6;
+      background: var(--slate-900);
       color: white;
-      border-color: #3b82f6;
+      border-color: var(--slate-900);
     }
     
-    .login-error { 
-      background: #fee2e2;
-      color: #dc2626;
+    .login-error {
+      background: var(--red-dim);
+      color: var(--red);
       padding: 12px 16px;
-      border-radius: 10px;
+      border-radius: 8px;
       margin-bottom: 20px;
       font-size: 13px;
       font-weight: 500;
@@ -3649,17 +3608,19 @@
       bottom: 0;
       left: 0;
       right: 0;
+      color: var(--text-muted);
+      font-size: 13px;
     }
     
     .login-footer-bar a {
-      color: rgba(255,255,255,0.6);
+      color: var(--text-secondary);
       font-size: 20px;
       text-decoration: none;
       transition: color 0.2s;
     }
     
     .login-footer-bar a:hover {
-      color: white;
+      color: var(--text-primary);
     }
 
     /* Mobile responsive */
@@ -3770,14 +3731,6 @@
       .login-nav-btn.register {
         display: none;
       }
-    }
-    
-    /* removed v1.4: pulse */
-      border-radius: var(--radius-sm);
-      margin-bottom: 20px;
-      font-size: 14px;
-      display: none;
-      border: 1px solid rgba(239, 68, 68, 0.2);
     }
     
     /* ============ LOADING ============ */
@@ -13384,17 +13337,12 @@
 
     function renderLogin() {
 
-      // Generate 30 particles for animated background
-      let particlesHtml = '<div class="login-particles">';
-      for (let i = 1; i <= 30; i++) {
-        particlesHtml += '<div class="login-particle"></div>';
-      }
-      particlesHtml += '</div>';
+      // Particles removed -- clean flat login
 
       // Navigation bar
       const navBar = `
         <nav class="login-nav">
-          <button class="login-nav-btn" onclick="renderDriverApplication()" style="background:transparent;border:2px solid #6366f1;color:#6366f1">APPLY TO DRIVE</button>
+          <button class="login-nav-btn" onclick="renderDriverApplication()" style="background:transparent;border:2px solid var(--slate-900);color:var(--text-primary)">APPLY TO DRIVE</button>
           <div class="login-nav-links"></div>
           <div class="login-nav-buttons">
             <button class="login-nav-btn login" onclick="renderLogin()">LOGIN</button>
@@ -13405,8 +13353,8 @@
       // Hero content (left side) with 5 features
       const heroContent = `
         <div class="login-hero-content">
-          <div style="font-size:42px;font-weight:700;margin-bottom:16px;color:white">[[icon:truck]] Horizon<span style="color:#6366f1">Star</span></div>
-          <p style="font-size: 14px; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">Transportation Management System</p>
+          <div style="font-size:42px;font-weight:600;margin-bottom:16px;color:var(--text-primary)">[[icon:truck]] Horizon<span style="color:var(--primary)">Star</span></div>
+          <p style="font-size: 14px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">Transportation Management System</p>
           <p class="login-hero-subtitle">Complete fleet operations platform — track, plan, optimize, and grow your transportation business</p>
 
           <div class="login-features">
@@ -13448,30 +13396,29 @@
             <div class="form-group">
               <label>${t('password')}</label>
               <input type="password" id="login-password" required placeholder="Your password">
-              <a href="#" onclick="showForgotPassword();return false;" style="font-size:12px;color:#6366f1;text-decoration:none;display:block;text-align:right;margin-top:6px">Forgot password?</a>
+              <a href="#" onclick="showForgotPassword();return false;" style="font-size:12px;color:var(--primary);text-decoration:none;display:block;text-align:right;margin-top:6px">Forgot password?</a>
             </div>
             <button type="submit" class="btn-submit" id="login-btn">${t('sign_in')}</button>
           </form>
-          <p style="margin-top:16px;text-align:center;color:rgba(255,255,255,0.6);font-size:13px">
-            Are you a dealer? <a href="#" onclick="showDealerLoginInfo();return false;" style="color:#6366f1;text-decoration:none;font-weight:500">Dealer Portal</a>
+          <p style="margin-top:16px;text-align:center;color:var(--text-secondary);font-size:13px">
+            Are you a dealer? <a href="#" onclick="showDealerLoginInfo();return false;" style="color:var(--primary);text-decoration:none;font-weight:500">Dealer Portal</a>
           </p>
         </div>
       `;
 
       // Footer bar
       const footerBar = `
-        <div class="login-footer-bar" style="color:rgba(255,255,255,0.5)">
-          <span>Powered by <strong style="color:#6366f1">Horizon Star LLC</strong></span>
-          <span style="color:rgba(255,255,255,0.3)">•</span>
-          <a href="#" onclick="showPrivacyPolicy();return false;" style="color:#6366f1;text-decoration:none">Privacy Policy</a>
-          <span style="color:rgba(255,255,255,0.3)">•</span>
-          <span>Built by <a href="#" style="color:#6366f1;text-decoration:none">Levani Grigolia</a></span>
+        <div class="login-footer-bar">
+          <span>Powered by <strong>Horizon Star LLC</strong></span>
+          <span>•</span>
+          <a href="#" onclick="showPrivacyPolicy();return false;" style="color:var(--primary);text-decoration:none">Privacy Policy</a>
+          <span>•</span>
+          <span>Built by <a href="#" style="color:var(--primary);text-decoration:none">Levani Grigolia</a></span>
         </div>
       `;
 
       document.getElementById('app').innerHTML = `
         <div class="login-container">
-          ${particlesHtml}
           ${navBar}
           <div class="login-hero">
             ${heroContent}
