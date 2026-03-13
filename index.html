@@ -24478,10 +24478,10 @@
       const avgFeePercent = totalBrokersRevenue > 0 ? (totalBrokersFees / totalBrokersRevenue * 100) : 0;
       
       const getScoreColor = (score) => {
-        if (score >= 80) return '#16a34a';
-        if (score >= 60) return '#2563eb';
-        if (score >= 40) return '#f59e0b';
-        return '#dc2626';
+        if (score >= 80) return 'var(--green)';
+        if (score >= 60) return 'var(--blue)';
+        if (score >= 40) return 'var(--amber)';
+        return 'var(--red)';
       };
       
       const getScoreLabel = (score) => {
@@ -24492,29 +24492,21 @@
       };
       
       const getActivityStatus = (days) => {
-        if (days === null) return { label: 'No orders', color: '#94a3b8', bg: '#f1f5f9' };
-        if (days <= 7) return { label: 'Active', color: '#16a34a', bg: '#dcfce7' };
-        if (days <= 30) return { label: 'Recent', color: '#2563eb', bg: '#dbeafe' };
-        if (days <= 90) return { label: 'Inactive', color: '#f59e0b', bg: '#fef3c7' };
-        return { label: 'Dormant', color: '#dc2626', bg: '#fee2e2' };
+        if (days === null) return { label: 'No orders', color: 'var(--text-muted)', bg: 'var(--bg-tertiary)' };
+        if (days <= 7) return { label: 'Active', color: 'var(--green)', bg: 'var(--dim-green)' };
+        if (days <= 30) return { label: 'Recent', color: 'var(--blue)', bg: 'var(--dim-blue)' };
+        if (days <= 90) return { label: 'Inactive', color: 'var(--amber)', bg: 'var(--dim-amber)' };
+        return { label: 'Dormant', color: 'var(--red)', bg: 'var(--dim-red)' };
       };
       
-      c.innerHTML = '<div class="header"><h2>[[icon:building]] Brokers</h2><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><select onchange="brokersPeriod.type=this.value;if(brokersPeriod.type===\'year\'&&!brokersPeriod.year){brokersPeriod.year=new Date().getFullYear();}renderBrokers(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)"><option value="year"' + (brokersPeriod.type === 'year' ? ' selected' : '') + '>Year</option><option value="all"' + (brokersPeriod.type === 'all' ? ' selected' : '') + '>All Time</option></select>' + (brokersPeriod.type === 'year' ? '<select onchange="brokersPeriod.year=parseInt(this.value);renderBrokers(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)">' + brokerYearOptions + '</select>' : '') + '<span style="font-size:12px;background:var(--dim-blue);color:var(--info);padding:6px 10px;border-radius:999px;font-weight:600;border:1px solid var(--info-border)">' + getPeriodLabel(brokersPeriod) + '</span>' + (undatedOrderCount > 0 && brokersPeriod.type !== 'all' ? '<span style="font-size:12px;background:var(--dim-amber);color:var(--warning);padding:6px 10px;border-radius:999px;font-weight:600;border:1px solid var(--warning-border)">Undated excluded: ' + undatedOrderCount + '</span>' : '') + '<button class="btn btn-primary" onclick="openBrokerModal()">+ New Broker</button></div></div>' +
+      c.innerHTML = '<div class="header"><h2 style="font-size:18px;font-weight:600">Brokers</h2><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><select class="select" onchange="brokersPeriod.type=this.value;if(brokersPeriod.type===\'year\'&&!brokersPeriod.year){brokersPeriod.year=new Date().getFullYear();}renderBrokers(document.getElementById(\'main-content\'))"><option value="year"' + (brokersPeriod.type === 'year' ? ' selected' : '') + '>Year</option><option value="all"' + (brokersPeriod.type === 'all' ? ' selected' : '') + '>All Time</option></select>' + (brokersPeriod.type === 'year' ? '<select class="select" onchange="brokersPeriod.year=parseInt(this.value);renderBrokers(document.getElementById(\'main-content\'))">' + brokerYearOptions + '</select>' : '') + '<span style="font-size:10px;background:var(--bg-tertiary);color:var(--text-secondary);padding:2px 6px;border-radius:4px">' + getPeriodLabel(brokersPeriod) + '</span>' + (undatedOrderCount > 0 && brokersPeriod.type !== 'all' ? '<span style="font-size:10px;background:var(--bg-tertiary);color:var(--text-secondary);padding:2px 6px;border-radius:4px">Undated excluded: ' + undatedOrderCount + '</span>' : '') + '<button class="btn btn-primary" onclick="openBrokerModal()">+ New Broker</button></div></div>' +
         
         // Summary Cards
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px">' +
-        '<div style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;padding:14px 16px;border-radius:12px;text-align:center">' +
-        '<div style="font-size:12px;opacity:0.9">Total Brokers</div>' +
-        '<div style="font-size:24px;font-weight:800">' + brokerStats.length + '</div></div>' +
-        '<div style="background:linear-gradient(135deg,#10b981,#059669);color:white;padding:14px 16px;border-radius:12px;text-align:center">' +
-        '<div style="font-size:12px;opacity:0.9">Total Revenue</div>' +
-        '<div style="font-size:20px;font-weight:800">' + formatMoney(totalBrokersRevenue) + '</div></div>' +
-        '<div style="background:linear-gradient(135deg,#f59e0b,#d97706);color:white;padding:14px 16px;border-radius:12px;text-align:center">' +
-        '<div style="font-size:12px;opacity:0.9">Avg Fee %</div>' +
-        '<div style="font-size:24px;font-weight:800">' + avgFeePercent.toFixed(1) + '%</div></div>' +
-        '<div style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:white;padding:14px 16px;border-radius:12px;text-align:center">' +
-        '<div style="font-size:12px;opacity:0.9">Est. Total Profit</div>' +
-        '<div style="font-size:20px;font-weight:800">' + formatMoney(totalBrokersProfit) + '</div></div>' +
+        '<div class="stat-flat"><div class="stat-flat-label">Total Brokers</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + brokerStats.length + '</div></div>' +
+        '<div class="stat-flat"><div class="stat-flat-label">Total Revenue</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + formatMoney(totalBrokersRevenue) + '</div></div>' +
+        '<div class="stat-flat"><div class="stat-flat-label">Avg Fee %</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + avgFeePercent.toFixed(1) + '%</div></div>' +
+        '<div class="stat-flat"><div class="stat-flat-label">Est. Total Profit</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + formatMoney(totalBrokersProfit) + '</div></div>' +
         '</div>' +
 
         // Broker List (card grid)
@@ -24529,8 +24521,8 @@
           return '<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px">' +
             // Row 1: Icon + Name + Activity status
             '<div style="display:flex;align-items:center;gap:10px">' +
-            '<div style="width:36px;height:36px;min-width:36px;border-radius:50%;background:var(--dim-blue);color:var(--info);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center">' + (rankBadge ? '<span style="font-size:18px">' + rankBadge + '</span>' : '[[icon:building]]') + '</div>' +
-            '<div style="flex:1;min-width:0"><h4 style="margin:0;font-size:14px;font-weight:700"><a href="#" onclick="event.preventDefault();viewBrokerDetails(' + b.id + ')" style="color:var(--text-primary);text-decoration:underline;text-underline-offset:3px">' + escapeHtml(b.name) + '</a></h4>' +
+            '<div style="width:36px;height:36px;min-width:36px;border-radius:50%;background:var(--dim-blue);color:var(--info);font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center">' + (rankBadge ? '<span style="font-size:18px">' + rankBadge + '</span>' : '[[icon:building]]') + '</div>' +
+            '<div style="flex:1;min-width:0"><h4 style="margin:0;font-size:14px;font-weight:600"><a href="#" onclick="event.preventDefault();viewBrokerDetails(' + b.id + ')" style="color:var(--text-primary);text-decoration:underline;text-underline-offset:3px">' + escapeHtml(b.name) + '</a></h4>' +
             '<p style="color:var(--text-muted);font-size:11px;margin:2px 0 0">' + b.orderCount + ' loads \u00b7 ' + b.feePercent.toFixed(1) + '% fee</p></div>' +
             '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:600;background:' + activity.bg + ';color:' + activity.color + '"><span style="width:5px;height:5px;border-radius:50%;background:' + activity.color + ';display:inline-block"></span>' + activity.label + '</span>' +
             '</div>' +
@@ -24538,8 +24530,8 @@
             '<div style="border-top:1px solid var(--border)"></div>' +
             // Row 2: Revenue metrics
             '<div style="display:flex;justify-content:space-between;align-items:baseline">' +
-            '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Revenue</div><div style="font-size:16px;font-weight:700;font-family:var(--font-mono)">' + formatMoney(b.totalRevenue) + '</div></div>' +
-            '<div style="text-align:right"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Est. Profit</div><div style="font-size:16px;font-weight:700;font-family:var(--font-mono);color:' + (b.estimatedProfit >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + formatMoney(b.estimatedProfit) + '</div></div>' +
+            '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Revenue</div><div style="font-size:16px;font-weight:600;font-family:var(--font-mono)">' + formatMoney(b.totalRevenue) + '</div></div>' +
+            '<div style="text-align:right"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Est. Profit</div><div style="font-size:16px;font-weight:600;font-family:var(--font-mono);color:' + (b.estimatedProfit >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + formatMoney(b.estimatedProfit) + '</div></div>' +
             '</div>' +
             // Row 3: Per-load metrics + reliability
             '<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">' +
@@ -24662,18 +24654,18 @@
         '</div></div>' +
 
         // Stats cards
-        '<div class="detail-stats" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px">' +
-          '<div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px"><div class="label">Total Orders</div><div class="value">' + brokerOrders.length + '</div></div>' +
-          '<div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Delivered</div><div class="value" style="color:#10b981">' + deliveredOrders.length + '</div></div>' +
-          '<div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Pending</div><div class="value" style="color:#f59e0b">' + pendingOrders.length + '</div></div>' +
-          '<div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Trips</div><div class="value">' + tripIds.length + '</div></div>' +
-          '<div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px"><div class="label">Total Revenue</div><div class="value" style="color:#059669">' + formatMoney(totalRevenue) + '</div></div>' +
-          '<div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px"><div class="label">Est. Profit</div><div class="value" style="color:' + (estimatedProfit >= 0 ? '#7c3aed' : 'var(--danger)') + '">' + formatMoney(estimatedProfit) + '</div></div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px">' +
+          '<div class="stat-flat"><div class="stat-flat-label">Total Orders</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + brokerOrders.length + '</div></div>' +
+          '<div class="stat-flat"><div class="stat-flat-label">Delivered</div><div class="stat-flat-value" style="font-family:var(--font-mono);color:var(--green)">' + deliveredOrders.length + '</div></div>' +
+          '<div class="stat-flat"><div class="stat-flat-label">Pending</div><div class="stat-flat-value" style="font-family:var(--font-mono);color:var(--amber)">' + pendingOrders.length + '</div></div>' +
+          '<div class="stat-flat"><div class="stat-flat-label">Trips</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + tripIds.length + '</div></div>' +
+          '<div class="stat-flat"><div class="stat-flat-label">Total Revenue</div><div class="stat-flat-value" style="font-family:var(--font-mono);color:var(--green)">' + formatMoney(totalRevenue) + '</div></div>' +
+          '<div class="stat-flat"><div class="stat-flat-label">Est. Profit</div><div class="stat-flat-value" style="font-family:var(--font-mono);color:' + (estimatedProfit >= 0 ? 'var(--text-primary)' : 'var(--danger)') + '">' + formatMoney(estimatedProfit) + '</div></div>' +
         '</div>' +
 
         // Broker info card
         '<div class="card" style="margin-bottom:20px;padding:20px">' +
-          '<h3 style="margin:0 0 12px;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted)">Broker Information</h3>' +
+          '<h3 style="margin:0 0 12px;font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted)">Broker Information</h3>' +
           '<div style="display:flex;gap:24px;flex-wrap:wrap">' +
             '<div><span style="color:var(--text-secondary)">Contact:</span> <strong>' + escapeHtml(b.contact_name || '-') + '</strong></div>' +
             '<div><span style="color:var(--text-secondary)">Phone:</span> <strong>' + escapeHtml(b.phone || '-') + '</strong></div>' +
@@ -24683,8 +24675,8 @@
           '</div>' +
           '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">' +
             '<span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;background:var(--dim-blue);color:var(--info);padding:4px 10px;border-radius:999px">' + formatMoney(avgRevenuePerLoad) + '/load avg</span>' +
-            '<span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;background:var(--dim-purple);color:#7c3aed;padding:4px 10px;border-radius:999px">' + feePercent.toFixed(1) + '% fee rate</span>' +
-            '<span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;background:var(--dim-amber);color:#92400e;padding:4px 10px;border-radius:999px">' + formatMoney(avgBrokerFee) + '/load fee</span>' +
+            '<span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;background:var(--dim-purple);color:var(--purple);padding:4px 10px;border-radius:999px">' + feePercent.toFixed(1) + '% fee rate</span>' +
+            '<span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;background:var(--dim-amber);color:var(--amber);padding:4px 10px;border-radius:999px">' + formatMoney(avgBrokerFee) + '/load fee</span>' +
           '</div>' +
         '</div>' +
 
@@ -24692,7 +24684,7 @@
         '<div class="card">' +
           '<div class="card-header"><h3>[[icon:package]] Associated Orders (' + brokerOrders.length + ')</h3></div>' +
           (brokerOrders.length === 0
-            ? '<div style="padding:40px;text-align:center;color:#64748b">No orders for this broker in the selected period</div>'
+            ? '<div style="padding:40px;text-align:center;color:var(--text-muted)">No orders for this broker in the selected period</div>'
             : '<div style="padding:12px;display:flex;flex-direction:column;gap:10px">' +
               brokerOrders.map(o => {
                 const trip = o.trip_id ? (appData.trips || []).find(t => String(t.id) === String(o.trip_id)) : null;
