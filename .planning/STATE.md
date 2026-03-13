@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-12)
 ## Current Position
 
 Phase: 25 of 26 (Operations/Admin Restyle)
-Plan: 2 of 5 in current phase
+Plan: 3 of 5 in current phase
 Status: In progress
-Last activity: 2026-03-13 -- Completed 25-02-PLAN.md (Tasks + Settings restyle)
+Last activity: 2026-03-13 -- Completed 25-03-PLAN.md (Compliance page restyle)
 
-Progress: [████████░░] 77%
+Progress: [████████░░] 79%
 
 ## Performance Metrics
 
@@ -119,6 +119,16 @@ Key context for v1.4:
 - Settings --dim-green/red/amber/blue corrected to --green-dim/--red-dim etc. (Phase 25)
 - Settings --surface-elevated replaced with --bg-tertiary (Phase 25)
 - Settings remove buttons use btn-danger class (Phase 25)
+- Compliance 7-tab bar uses segmented-control-scroll (Phase 25)
+- Compliance dashboard hero flattened to stat-flat grid (blue/amber/green), no blue background (Phase 25)
+- Compliance dashboard cards use section-header pattern, bg-secondary on list items (Phase 25)
+- Compliance tasks IFTA banner uses accent-border pattern (border-left:3px solid var(--blue)) (Phase 25)
+- All compliance tables (11 total) use data-table class (Phase 25)
+- Compliance file alerts use accent-border (border-left:3px solid var(--red)) + badge-red/badge-amber (Phase 25)
+- Tickets/violations/claims sub-nav uses segmented-control (Phase 25)
+- Claims financial summary uses stat-flat + stat-card--{color} (Phase 25)
+- Compliance add buttons (ticket/violation/claim) all btn-secondary, no per-category colors (Phase 25)
+- viewTruckCompliance custom folders use CSS variables, no #0891b2/#e5e7eb/#f0f9ff (Phase 25)
 
 ### Known Issues
 - 4,344 inline style= attributes in index.html (in JS render functions) bypass CSS variables -- every page sweep requires JS template edits
@@ -133,9 +143,9 @@ Key context for v1.4:
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 25-02-PLAN.md (Tasks + Settings restyle)
+Stopped at: Completed 25-03-PLAN.md (Compliance page restyle)
 Resume file: None
 
 ---
 
-**Next action**: Execute 25-03-PLAN.md
+**Next action**: Execute 25-04-PLAN.md
