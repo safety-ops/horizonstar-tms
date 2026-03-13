@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-12)
 ## Current Position
 
 Phase: 19 of 26 (Token Foundation & Component Classes)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-03-12 -- Completed 19-01-PLAN.md (Token Foundation)
+Last activity: 2026-03-12 -- Completed 19-02-PLAN.md (Component Classes)
 
-Progress: [█░░░░░░░░░] 4% (1/26 plans)
+Progress: [██░░░░░░░░] 8% (2/26 plans)
 
 ## Performance Metrics
 
@@ -46,6 +46,8 @@ Key context for v1.4:
 - Font weights capped at 600 (no 700/800) -- established in 19-01
 - 3-level shadow system (xs/sm/md), lg/xl collapsed to md -- established in 19-01
 - Slate surface scale (#f8fafc primary, #0f172a text) -- established in 19-01
+- Reusable component classes: .btn-primary/.btn-secondary/.btn-ghost/.btn-danger, .badge-*, .stat-flat, .input/.select/.textarea -- established in 19-02
+- .font-bold utility kept at 700 for backward compat; page sweeps migrate away -- decided in 19-02
 
 ### Known Issues
 - 4,344 inline style= attributes in index.html bypass CSS variables -- every page sweep requires JS template edits
@@ -62,9 +64,9 @@ Key context for v1.4:
 ## Session Continuity
 
 Last session: 2026-03-12
-Stopped at: Completed 19-01-PLAN.md (Token Foundation)
+Stopped at: Completed 19-02-PLAN.md (Component Classes)
 Resume file: None
 
 ---
 
-**Next action**: Execute 19-02-PLAN.md
+**Next action**: Execute 19-03-PLAN.md
