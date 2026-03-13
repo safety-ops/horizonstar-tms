@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-12)
 ## Current Position
 
 Phase: 25 of 26 (Operations/Admin Restyle)
-Plan: 3 of 5 in current phase
+Plan: 4 of 5 in current phase
 Status: In progress
-Last activity: 2026-03-13 -- Completed 25-03-PLAN.md (Compliance page restyle)
+Last activity: 2026-03-13 -- Completed 25-04-PLAN.md (Team Chat CSS restyle)
 
-Progress: [████████░░] 79%
+Progress: [████████░░] 81%
 
 ## Performance Metrics
 
@@ -129,6 +129,12 @@ Key context for v1.4:
 - Claims financial summary uses stat-flat + stat-card--{color} (Phase 25)
 - Compliance add buttons (ticket/violation/claim) all btn-secondary, no per-category colors (Phase 25)
 - viewTruckCompliance custom folders use CSS variables, no #0891b2/#e5e7eb/#f0f9ff (Phase 25)
+- Chat presence dots use var(--green)/var(--amber)/var(--text-muted), not hardcoded hex (Phase 25)
+- Chat mention chips use var(--amber-dim)/var(--amber), not rgba/hex (Phase 25)
+- Chat file icons use var(--blue-dim), not rgba(99,102,241) (Phase 25)
+- Chat composer shell: pill-style border-radius:24px, var(--bg-card) background (Phase 25)
+- Mini-chat bubbles flattened: own=var(--bg-tertiary), other=var(--bg-card), no gradients/glows (Phase 25)
+- Entity card presence dots in base.css use CSS variables (Phase 25)
 
 ### Known Issues
 - 4,344 inline style= attributes in index.html (in JS render functions) bypass CSS variables -- every page sweep requires JS template edits
@@ -143,9 +149,9 @@ Key context for v1.4:
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 25-03-PLAN.md (Compliance page restyle)
+Stopped at: Completed 25-04-PLAN.md (Team Chat CSS restyle)
 Resume file: None
 
 ---
 
-**Next action**: Execute 25-04-PLAN.md
+**Next action**: Execute 25-05-PLAN.md
