@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-12)
 
 **Core value:** Efficient end-to-end vehicle transport management
-**Current focus:** v1.4 -- Phase 21 in progress (Orders Page Restyle)
+**Current focus:** v1.4 -- Phase 21 complete (Orders Page Restyle)
 
 ## Current Position
 
 Phase: 21 of 26 (Orders Page Restyle)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-03-13 -- Completed 21-01-PLAN.md (Shared helpers restyle)
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-03-13 -- Completed 21-02-PLAN.md (Orders page chrome restyle)
 
-Progress: [████░░░░░░] 21%
+Progress: [████░░░░░░] 23%
 
 ## Performance Metrics
 
@@ -58,6 +58,9 @@ Key context for v1.4:
 - getBadge() CSS classes (badge-green/amber/blue/red/gray) added to base.css (Phase 21)
 - renderOrderPreviewCard uses CSS tokens, no accentColor border-left (Phase 21)
 - renderPaginationControls uses pagination-flat class, no card container (Phase 21)
+- Orders page: AI Import is btn-secondary (not purple), only New Order is btn-primary (Phase 21)
+- Orders table view uses .data-table class, card-flush wrapper (Phase 21)
+- Orders filter bar uses .input/.select component classes with consistent gap spacing (Phase 21)
 
 ### Known Issues
 - 4,344 inline style= attributes in index.html (in JS render functions) bypass CSS variables -- every page sweep requires JS template edits
@@ -73,9 +76,9 @@ Key context for v1.4:
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 21-01-PLAN.md (Shared helpers restyle)
+Stopped at: Completed 21-02-PLAN.md (Orders page chrome restyle) -- Phase 21 complete
 Resume file: None
 
 ---
 
-**Next action**: `/gsd:execute-phase 21-02`
+**Next action**: Begin Phase 22
