@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-03-12)
 
 **Core value:** Efficient end-to-end vehicle transport management
-**Current focus:** v1.4 -- Phase 21 (next page restyle)
+**Current focus:** v1.4 -- Phase 20 complete, ready for Phase 21 (Orders Page Restyle)
 
 ## Current Position
 
@@ -75,4 +75,4 @@ Resume file: None
 
 ---
 
-**Next action**: Research and plan Phase 21 (next page restyle)
+**Next action**: `/gsd:plan-phase 21`
