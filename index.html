@@ -5867,11 +5867,18 @@
       .modal-overlay {
         display: none !important;
       }
-      
+
       .main {
         margin: 0 !important;
         padding: 20px !important;
       }
+
+      /* Hide interactive controls (tabs, filters, action buttons) */
+      .segmented-control,
+      .segmented-control-scroll { display: none !important; }
+
+      /* Force color printing for data visualization (aging bars, badges, profitability cells) */
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
     }
     
     /* ============ MOBILE SWIPE ACTIONS ============ */
