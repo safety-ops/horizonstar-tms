@@ -1752,19 +1752,19 @@
       animation: fadeIn 0.2s ease;
     }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    /* removed v1.4: slideUp */
 
     .modal {
       background: var(--bg-secondary);
-      border-radius: 16px;
+      border-radius: var(--radius-lg);
       width: 100%;
       max-width: 560px;
       max-height: 90vh;
       overflow-y: auto;
       transition: var(--transition);
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-      animation: slideUp 0.3s ease;
+      box-shadow: var(--shadow-md);
       border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
     }
     .modal-header {
       padding: 16px 20px;
@@ -1798,8 +1798,8 @@
     }
     .modal-close:hover {
       background: rgba(239, 68, 68, 0.1);
-      border-color: #ef4444;
-      color: #ef4444;
+      border-color: var(--danger);
+      color: var(--danger);
     }
     .modal-body {
       padding: 20px;
@@ -1820,12 +1820,25 @@
       background: var(--bg-tertiary);
     }
 
-    /* Override inline purple modal headers */
+    /* Neutralize colored modal headers to flat aesthetic */
     .modal-header[style*="background:#8b5cf6"],
     .modal-header[style*="background:#a855f7"],
     .modal-header[style*="background: #8b5cf6"],
-    .modal-header[style*="background: #a855f7"] {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
+    .modal-header[style*="background: #a855f7"],
+    .modal-header[style*="background:var(--primary"],
+    .modal-header[style*="background: var(--primary"],
+    .modal-header[style*="background:var(--purple"],
+    .modal-header[style*="background: var(--purple"],
+    .modal-header[style*="background:var(--amber"],
+    .modal-header[style*="background: var(--amber"],
+    .modal-header[style*="background:var(--green"],
+    .modal-header[style*="background: var(--green"] {
+      background: var(--bg-secondary) !important;
+      color: var(--text-primary) !important;
+      border-bottom: 1px solid var(--border) !important;
+    }
+    .modal-header[style*="background"] .modal-close {
+      color: var(--text-muted) !important;
     }
 
     /* ============ ORDER DETAIL MODAL ============ */
@@ -5154,12 +5167,9 @@
         width: 100% !important;
         max-height: 92vh !important;
         margin: 0;
-        border-radius: 24px 24px 0 0;
-        animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 16px 16px 0 0;
         box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
       }
-      
-      /* removed v1.4: slideUp */
       
       .modal::before {
         content: '';
@@ -14881,15 +14891,15 @@
         '<button class="hamburger" id="hamburger" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar">' +
         '<span></span><span></span><span></span>' +
         '</button>' +
-        '<span class="mobile-logo" style="font-size:18px;font-weight:700;color:white">' + renderUIIcon('truck', { size: 16 }) + ' Horizon<span style="color:var(--primary)">Star</span></span>' +
-        '<div class="user-avatar" style="width:36px;height:36px;font-size:12px;font-weight:700;background:white;color:var(--primary);border-radius:10px" aria-label="User profile">' + userInitials + '</div>' +
+        '<span class="mobile-logo" style="font-size:18px;font-weight:600;color:var(--text-primary)">' + renderUIIcon('truck', { size: 16 }) + ' Horizon<span style="color:var(--primary)">Star</span></span>' +
+        '<div class="user-avatar" style="width:36px;height:36px;font-size:12px;font-weight:600;background:var(--bg-hover);color:var(--text-primary);border-radius:10px" aria-label="User profile">' + userInitials + '</div>' +
         '</div>';
       
       document.getElementById('app').innerHTML = mobileHeader + '<div class="app">' +
         '<div class="mobile-overlay" id="mobileOverlay" onclick="if(event.target===this)toggleMobileMenu()"></div>' +
         '<aside class="sidebar' + (isSidebarCollapsed ? ' collapsed' : '') + '" id="sidebar" role="navigation" aria-label="Main navigation" onclick="event.stopPropagation()" ontouchstart="event.stopPropagation()">' +
         '<button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar" aria-label="Collapse sidebar" aria-expanded="' + (!isSidebarCollapsed) + '">◀</button>' +
-        '<div class="logo"><span style="font-size:1.3rem;font-weight:700;color:var(--text);">HORIZON STAR</span></div>' +
+        '<div class="logo"><span style="font-size:1.3rem;font-weight:600;color:var(--text-primary);">HORIZON STAR</span></div>' +
         '<nav id="nav" role="menubar" aria-label="Application navigation"></nav>' +
         '</aside>' +
         '<main class="main' + (isSidebarCollapsed ? ' sidebar-collapsed' : '') + '" role="main" aria-label="Main content">' + topBar + '<div id="main-content"><div class="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div> ' + t('loading') + '</div></div></main>' +
