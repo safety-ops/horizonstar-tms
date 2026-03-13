@@ -31895,7 +31895,7 @@
         partial: { label: 'Partial', bg: 'var(--dim-amber)', color: 'var(--warning)' },
         paid: { label: 'Paid', bg: 'var(--dim-green)', color: 'var(--success)' }
       }[normalized] || { label: normalized, bg: 'var(--surface-elevated)', color: 'var(--text-secondary)' };
-      return '<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:' + config.bg + ';color:' + config.color + ';font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">' + config.label + '</span>';
+      return '<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:' + config.bg + ';color:' + config.color + ';font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">' + config.label + '</span>';
     }
 
     function getPayrollEstimateSnapshot(driverId, tripIds) {
@@ -32142,7 +32142,7 @@
         { key: 'year', label: 'Year' }
       ];
       const periodTabsHTML = periodTypes.map(pt =>
-        '<button class="btn btn-sm' + (payrollPeriod.type === pt.key ? ' btn-primary' : ' btn-secondary') + '" onclick="switchPayrollPeriodType(\'' + pt.key + '\')" style="font-size:12px;padding:6px 14px">' + pt.label + '</button>'
+        '<button class="segmented-control-btn' + (payrollPeriod.type === pt.key ? ' active' : '') + '" onclick="switchPayrollPeriodType(\'' + pt.key + '\')">' + pt.label + '</button>'
       ).join('');
 
       // Period navigation (prev/next arrows + label) for week/biweekly/month
@@ -32154,7 +32154,7 @@
           '<span style="font-weight:600;font-size:14px;min-width:180px;text-align:center;color:var(--text-primary)">' + escapeHtml(periodLabel) + '</span>' +
           '<button class="btn btn-secondary btn-sm" onclick="navigatePayrollPeriod(1)" style="padding:4px 10px;font-size:16px">&rarr;</button>' +
           '</div>'
-        : '<div style="display:flex;align-items:center;gap:8px"><select onchange="payrollPeriod.year=parseInt(this.value);payrollYear=payrollPeriod.year;renderPayroll(document.getElementById(\'main-content\'))" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px;background:var(--bg-primary);color:var(--text-primary)">' + yearOptions + '</select></div>';
+        : '<div style="display:flex;align-items:center;gap:8px"><select class="select" onchange="payrollPeriod.year=parseInt(this.value);payrollYear=payrollPeriod.year;renderPayroll(document.getElementById(\'main-content\'))">' + yearOptions + '</select></div>';
 
       // Filter pills
       const filterPills = [
@@ -32163,7 +32163,7 @@
         { key: 'owner_op', label: 'Owner-OP' }
       ];
       const filterPillsHTML = filterPills.map(fp =>
-        '<button class="btn btn-sm' + (payrollFilter === fp.key ? ' btn-primary' : ' btn-secondary') + '" onclick="payrollFilter=\'' + fp.key + '\';renderPayroll(document.getElementById(\'main-content\'))" style="font-size:11px;padding:4px 12px">' + fp.label + '</button>'
+        '<button class="segmented-control-btn' + (payrollFilter === fp.key ? ' active' : '') + '" onclick="payrollFilter=\'' + fp.key + '\';renderPayroll(document.getElementById(\'main-content\'))">' + fp.label + '</button>'
       ).join('');
 
       // Payroll history records (load gracefully)
@@ -32172,18 +32172,18 @@
       const currentPeriodRange = buildPayrollPeriodRange(payrollPeriod);
 
       // Tab toggle: Current vs History
-      const tabToggleHTML = '<div style="display:flex;gap:4px;background:var(--surface-elevated);padding:3px;border-radius:8px;border:1px solid var(--border)">' +
-        '<button class="btn btn-sm' + (payrollTab === 'current' ? ' btn-primary' : '') + '" onclick="payrollTab=\'current\';renderPayroll(document.getElementById(\'main-content\'))" style="font-size:12px;padding:6px 16px;border-radius:6px">Run Payroll</button>' +
-        '<button class="btn btn-sm' + (payrollTab === 'history' ? ' btn-primary' : '') + '" onclick="payrollTab=\'history\';renderPayroll(document.getElementById(\'main-content\'))" style="font-size:12px;padding:6px 16px;border-radius:6px">Paystub History' + (payrollRecords.length > 0 ? ' (' + payrollRecords.length + ')' : '') + '</button>' +
+      const tabToggleHTML = '<div class="segmented-control">' +
+        '<button class="segmented-control-btn' + (payrollTab === 'current' ? ' active' : '') + '" onclick="payrollTab=\'current\';renderPayroll(document.getElementById(\'main-content\'))">Run Payroll</button>' +
+        '<button class="segmented-control-btn' + (payrollTab === 'history' ? ' active' : '') + '" onclick="payrollTab=\'history\';renderPayroll(document.getElementById(\'main-content\'))">Paystub History' + (payrollRecords.length > 0 ? ' (' + payrollRecords.length + ')' : '') + '</button>' +
         '</div>';
 
       // Build stat cards
       const statCardsHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:20px">' +
-        '<div class="stat-card" style="border-left:4px solid var(--success)"><div class="stat-icon green">[[icon:money]]</div><div class="stat-content"><div class="label">Total Net Payroll</div><div class="value' + (totalNet >= 0 ? ' green' : ' red') + '">' + formatMoney(totalNet) + '</div></div></div>' +
-        '<div class="stat-card" style="border-left:4px solid var(--info)"><div class="stat-icon blue">[[icon:trend_up]]</div><div class="stat-content"><div class="label">Total Gross Earnings</div><div class="value">' + formatMoney(totalGross) + '</div></div></div>' +
-        '<div class="stat-card" style="border-left:4px solid var(--danger)"><div class="stat-icon red">[[icon:dollar]]</div><div class="stat-content"><div class="label">Total Cash Collected</div><div class="value red">' + formatMoney(totalCash) + '</div></div></div>' +
-        '<div class="stat-card" style="border-left:4px solid var(--warning)"><div class="stat-icon orange">[[icon:plus]]</div><div class="stat-content"><div class="label">Reimbursements</div><div class="value">' + formatMoney(totalReimb) + '</div></div></div>' +
-        '<div class="stat-card" style="border-left:4px solid #8b5cf6"><div class="stat-icon" style="background:rgba(139,92,246,0.12);color:#8b5cf6">[[icon:users]]</div><div class="stat-content"><div class="label">Active Drivers</div><div class="value">' + activeDriverCount + '</div><div style="font-size:11px;color:var(--text-muted)">' + allPayrollData.length + ' total</div></div></div>' +
+        '<div class="stat-flat stat-card--green"><div class="stat-flat-label">Total Net Payroll</div><div class="stat-flat-value" style="font-family:var(--font-mono);color:' + (totalNet >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + formatMoney(totalNet) + '</div></div>' +
+        '<div class="stat-flat stat-card--blue"><div class="stat-flat-label">Total Gross Earnings</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + formatMoney(totalGross) + '</div></div>' +
+        '<div class="stat-flat stat-card--red"><div class="stat-flat-label">Total Cash Collected</div><div class="stat-flat-value" style="font-family:var(--font-mono);color:var(--danger)">' + formatMoney(totalCash) + '</div></div>' +
+        '<div class="stat-flat stat-card--amber"><div class="stat-flat-label">Reimbursements</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + formatMoney(totalReimb) + '</div></div>' +
+        '<div class="stat-flat stat-card--purple"><div class="stat-flat-label">Active Drivers</div><div class="stat-flat-value">' + activeDriverCount + '</div><div class="stat-flat-delta" style="color:var(--text-muted)">' + allPayrollData.length + ' total</div></div>' +
         '</div>';
 
       const generatedThisPeriodRecords = payrollRecords.filter(r =>
@@ -32220,17 +32220,17 @@
       }
 
       const historySummaryHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px">' +
-        '<div class="card" style="padding:12px 14px"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Finalized This Period</div><div style="font-size:20px;font-weight:700;font-family:var(--font-mono);margin-top:4px">' + formatMoney(finalizedThisPeriodTotal) + '</div></div>' +
-        '<div class="card" style="padding:12px 14px"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Statements This Period</div><div style="font-size:20px;font-weight:700;margin-top:4px">' + generatedThisPeriodRecords.length + '</div></div>' +
-        '<div class="card" style="padding:12px 14px"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Unpaid</div><div style="font-size:20px;font-weight:700;color:' + (unpaidFinalizedCount > 0 ? 'var(--warning)' : 'var(--success)') + ';margin-top:4px">' + unpaidFinalizedCount + '</div></div>' +
-        '<div class="card" style="padding:12px 14px"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Completion</div><div style="font-size:20px;font-weight:700;margin-top:4px">' + statementCompletionPercent + '%</div></div>' +
+        '<div class="stat-flat"><div class="stat-flat-label">Finalized This Period</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + formatMoney(finalizedThisPeriodTotal) + '</div></div>' +
+        '<div class="stat-flat"><div class="stat-flat-label">Statements This Period</div><div class="stat-flat-value">' + generatedThisPeriodRecords.length + '</div></div>' +
+        '<div class="stat-flat"><div class="stat-flat-label">Unpaid</div><div class="stat-flat-value" style="color:' + (unpaidFinalizedCount > 0 ? 'var(--warning)' : 'var(--success)') + '">' + unpaidFinalizedCount + '</div></div>' +
+        '<div class="stat-flat"><div class="stat-flat-label">Completion</div><div class="stat-flat-value">' + statementCompletionPercent + '%</div></div>' +
         '</div>';
 
       // Build driver cards
       let driverRowsHTML = '';
       if (payrollData.length === 0) {
         driverRowsHTML = '<div style="text-align:center;padding:40px 24px;color:var(--text-muted)">' +
-          '<div style="font-size:18px;font-weight:700;color:var(--text-primary);margin-bottom:8px">No drivers match your filters</div>' +
+          '<div style="font-size:18px;font-weight:600;color:var(--text-primary);margin-bottom:8px">No drivers match your filters</div>' +
           '<div style="font-size:13px;max-width:520px;margin:0 auto;line-height:1.6">The current search or driver type filter is hiding all results. Clear the filters or switch back to All Drivers.</div>' +
         '</div>';
       } else {
@@ -32239,8 +32239,8 @@
           const initials = (d.first_name || '')[0] + (d.last_name || '')[0];
           const isOwnerOp = d.driver_type === 'OWNER_OP';
           const typeBadge = isOwnerOp
-            ? '<span style="background:#f59e0b;color:white;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600">Owner-OP</span>'
-            : '<span style="background:var(--info);color:white;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600">Company</span>';
+            ? '<span class="badge badge-amber">Owner-OP</span>'
+            : '<span class="badge badge-blue">Company</span>';
           const percentLabel = isOwnerOp ? (d.dispatch_fee_percent || 5) + '% dispatch fee' : (d.cut_percent || 32) + '% cut';
           const tripBadge = p.tripCount > 0
             ? '<span style="background:var(--dim-blue);color:var(--info);padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600">' + p.tripCount + ' trip' + (p.tripCount !== 1 ? 's' : '') + '</span>'
@@ -32268,7 +32268,7 @@
             '<div style="display:flex;align-items:center;gap:12px;flex:1;min-width:200px">' +
               '<div class="driver-avatar">' + initials + '</div>' +
               '<div style="flex:1;min-width:0">' +
-                '<h4 style="margin:0 0 4px 0;font-size:14px;font-weight:700">' + escapeHtml(d.first_name + ' ' + d.last_name) + ' ' + typeBadge + '</h4>' +
+                '<h4 style="margin:0 0 4px 0;font-size:14px;font-weight:600">' + escapeHtml(d.first_name + ' ' + d.last_name) + ' ' + typeBadge + '</h4>' +
                 '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><p style="color:var(--text-muted);font-size:12px;margin:0">' + percentLabel + '</p>' + tripBadge + '</div>' +
               '</div>' +
             '</div>' +
@@ -32278,9 +32278,9 @@
             '</div>' +
             '</div>' +
             '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px">' +
-              '<div style="padding:12px;border-radius:12px;background:var(--surface-elevated)"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Gross</div><div style="font-weight:700;font-size:18px">' + formatMoney(p.grossEarnings) + '</div></div>' +
-              '<div style="padding:12px;border-radius:12px;background:var(--surface-elevated)"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Cash</div><div style="font-weight:700;font-size:18px;color:var(--danger)">-' + formatMoney(p.cashCollected) + '</div></div>' +
-              '<div style="padding:12px;border-radius:12px;background:var(--surface-elevated)"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Net Pay</div><div style="font-weight:800;font-size:22px;color:' + netColor + '">' + formatMoney(p.netPay) + '</div></div>' +
+              '<div style="padding:12px;border-radius:var(--radius-sm);background:var(--bg-tertiary)"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Gross</div><div style="font-weight:600;font-size:18px;font-family:var(--font-mono)">' + formatMoney(p.grossEarnings) + '</div></div>' +
+              '<div style="padding:12px;border-radius:var(--radius-sm);background:var(--bg-tertiary)"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Cash</div><div style="font-weight:600;font-size:18px;font-family:var(--font-mono);color:var(--danger)">-' + formatMoney(p.cashCollected) + '</div></div>' +
+              '<div style="padding:12px;border-radius:var(--radius-sm);background:var(--bg-tertiary)"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Net Pay</div><div style="font-weight:600;font-size:22px;font-family:var(--font-mono);color:' + netColor + '">' + formatMoney(p.netPay) + '</div></div>' +
             '</div>' +
             '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
               '<button class="btn btn-secondary btn-sm" onclick="openPayrollPreviewModal(' + d.id + ')">Preview</button>' +
@@ -32330,7 +32330,7 @@
           .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
 
         if (filteredRecords.length === 0) {
-          historyHTML = '<div class="card"><div style="text-align:center;padding:40px 24px;color:var(--text-muted)"><div style="font-size:18px;font-weight:700;color:var(--text-primary);margin-bottom:8px">No paystub history found</div><div style="font-size:13px;max-width:520px;margin:0 auto;line-height:1.6">There are no generated paystubs or settlements for the current filters. Click Clear Filters or generate a statement from Run Payroll first.</div></div></div>';
+          historyHTML = '<div class="card"><div style="text-align:center;padding:40px 24px;color:var(--text-muted)"><div style="font-size:18px;font-weight:600;color:var(--text-primary);margin-bottom:8px">No paystub history found</div><div style="font-size:13px;max-width:520px;margin:0 auto;line-height:1.6">There are no generated paystubs or settlements for the current filters. Click Clear Filters or generate a statement from Run Payroll first.</div></div></div>';
         } else {
           const recordsByDriver = filteredRecords.reduce((map, record) => {
             const key = String(record.driver_id);
@@ -32353,13 +32353,13 @@
                 '<div><h3 style="margin:0 0 4px 0">' + escapeHtml(driver ? (driver.first_name + ' ' + driver.last_name) : ('Driver #' + driverId)) + '</h3>' +
                 '<div style="font-size:12px;color:var(--text-secondary)">Last finalized: ' + formatDate(lastRecord?.pay_date || lastRecord?.created_at) + ' • ' + records.length + ' statement' + (records.length !== 1 ? 's' : '') + '</div></div>' +
                 '<div style="display:flex;gap:12px;flex-wrap:wrap">' +
-                  '<div style="text-align:right"><div style="font-size:11px;color:var(--text-muted)">Trips In Period</div><div style="font-weight:700">' + currentTrips.length + '</div></div>' +
-                  '<div style="text-align:right"><div style="font-size:11px;color:var(--text-muted)">YTD Finalized</div><div style="font-weight:700">' + formatMoney(ytdNet) + '</div></div>' +
-                  '<div style="text-align:right"><div style="font-size:11px;color:var(--text-muted)">Last Net</div><div style="font-weight:700;color:' + (toMoneyNumber((lastRecord?.totals && lastRecord.totals.netPay) || lastRecord?.net_pay) >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + formatMoney((lastRecord?.totals && lastRecord.totals.netPay) || lastRecord?.net_pay || 0) + '</div></div>' +
+                  '<div style="text-align:right"><div style="font-size:11px;color:var(--text-muted)">Trips In Period</div><div style="font-weight:600">' + currentTrips.length + '</div></div>' +
+                  '<div style="text-align:right"><div style="font-size:11px;color:var(--text-muted)">YTD Finalized</div><div style="font-weight:600;font-family:var(--font-mono)">' + formatMoney(ytdNet) + '</div></div>' +
+                  '<div style="text-align:right"><div style="font-size:11px;color:var(--text-muted)">Last Net</div><div style="font-weight:600;font-family:var(--font-mono);color:' + (toMoneyNumber((lastRecord?.totals && lastRecord.totals.netPay) || lastRecord?.net_pay) >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + formatMoney((lastRecord?.totals && lastRecord.totals.netPay) || lastRecord?.net_pay || 0) + '</div></div>' +
                 '</div>' +
               '</div>' +
               '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="btn btn-secondary btn-sm" onclick="openDriverPayrollLedger(' + driverId + ')">Open History</button><button class="btn btn-primary btn-sm" onclick="openPaystubModal(' + driverId + ')">' + (driver?.driver_type === 'OWNER_OP' ? 'New Settlement' : 'New Paystub') + '</button></div>' +
-              '<div class="table-wrapper"><table><thead><tr><th>Record</th><th>Date</th><th>Type</th><th>Period</th><th>Gross</th><th>Cash</th><th>Net</th><th>Paid</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead><tbody>' +
+              '<div class="table-wrapper"><table class="data-table"><thead><tr><th>Record</th><th>Date</th><th>Type</th><th>Period</th><th>Gross</th><th>Cash</th><th>Net</th><th>Paid</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead><tbody>' +
                 records.map(r => {
                   const status = String(r.status || 'finalized').toLowerCase();
                   const rNetPay = toMoneyNumber((r.totals && r.totals.netPay) || r.net_pay);
@@ -32379,7 +32379,7 @@
                     '<td style="font-size:12px">' + formatDate(r.period_start) + ' - ' + formatDate(r.period_end) + '</td>' +
                     '<td class="money">' + formatMoney((r.totals && r.totals.grossEarnings) || r.gross_earnings || 0) + '</td>' +
                     '<td class="money" style="color:var(--danger)">-' + formatMoney((r.totals && r.totals.cashCollected) || r.cash_collected || 0) + '</td>' +
-                    '<td class="money" style="font-weight:700;color:' + (rNetPay >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + formatMoney(rNetPay) + '</td>' +
+                    '<td class="money" style="font-weight:600;color:' + (rNetPay >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + formatMoney(rNetPay) + '</td>' +
                     '<td class="money" style="color:var(--success)">' + formatMoney(rAmountPaid) + '</td>' +
                     '<td class="money" style="color:' + (rBalance > 0 ? 'var(--danger)' : 'var(--success)') + '">' + formatMoney(rBalance) + '</td>' +
                     '<td>' + statusBadge + '</td>' +
@@ -32395,7 +32395,7 @@
       // Assemble the page
       c.innerHTML =
         // Header
-        '<div class="header"><h2>[[icon:money]] Driver Payroll</h2>' +
+        '<div class="header"><h2 style="font-size:18px;font-weight:600">Driver Payroll</h2>' +
         '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">' +
         tabToggleHTML +
         '<button class="btn btn-primary btn-sm" onclick="openBatchPayrollModal()" style="white-space:nowrap">[[icon:users]] Batch Generate</button>' +
@@ -32410,22 +32410,22 @@
 
         // Period type tabs
         '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">' +
-        '<div style="display:flex;gap:4px">' + periodTabsHTML + '</div>' +
+        '<div class="segmented-control">' + periodTabsHTML + '</div>' +
         periodNavHTML +
         '</div>' +
 
         // Search + Filter pills
         '<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap' + (payrollTab === 'history' ? ';position:sticky;top:0;z-index:5;background:var(--bg-primary);padding:12px 0' : '') + '">' +
         '<div style="flex:1;min-width:200px;max-width:300px;position:relative">' +
-        '<input type="text" placeholder="' + (payrollTab === 'history' ? 'Search driver or record #' : 'Search drivers...') + '" value="' + escapeHtml(payrollSearch) + '" oninput="payrollSearchDebounced(this.value)" style="width:100%;padding:8px 12px 8px 34px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg-primary);color:var(--text-primary)">' +
+        '<input type="text" class="input" placeholder="' + (payrollTab === 'history' ? 'Search driver or record #' : 'Search drivers...') + '" value="' + escapeHtml(payrollSearch) + '" oninput="payrollSearchDebounced(this.value)" style="width:100%;padding-left:34px">' +
         '<span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px">[[icon:search]]</span>' +
         '</div>' +
-        '<div style="display:flex;gap:4px">' + filterPillsHTML + '</div>' +
+        '<div class="segmented-control">' + filterPillsHTML + '</div>' +
         (payrollTab === 'history'
           ? '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-            '<select onchange="payrollHistoryTypeFilter=this.value;renderPayroll(document.getElementById(\'main-content\'))" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);color:var(--text-primary);font-size:13px"><option value="all"' + (payrollHistoryTypeFilter === 'all' ? ' selected' : '') + '>All Types</option><option value="paystub"' + (payrollHistoryTypeFilter === 'paystub' ? ' selected' : '') + '>Paystubs</option><option value="settlement"' + (payrollHistoryTypeFilter === 'settlement' ? ' selected' : '') + '>Settlements</option></select>' +
-            '<select onchange="payrollHistoryStatusFilter=this.value;renderPayroll(document.getElementById(\'main-content\'))" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);color:var(--text-primary);font-size:13px"><option value="all"' + (payrollHistoryStatusFilter === 'all' ? ' selected' : '') + '>All Statuses</option><option value="finalized"' + (payrollHistoryStatusFilter === 'finalized' ? ' selected' : '') + '>Finalized</option><option value="emailed"' + (payrollHistoryStatusFilter === 'emailed' ? ' selected' : '') + '>Emailed</option><option value="partial"' + (payrollHistoryStatusFilter === 'partial' ? ' selected' : '') + '>Partial</option><option value="paid"' + (payrollHistoryStatusFilter === 'paid' ? ' selected' : '') + '>Paid</option></select>' +
-            '<select onchange="payrollLedgerDateFilter=this.value;renderPayroll(document.getElementById(\'main-content\'))" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);color:var(--text-primary);font-size:13px"><option value="all"' + (payrollLedgerDateFilter === 'all' ? ' selected' : '') + '>All Dates</option><option value="30d"' + (payrollLedgerDateFilter === '30d' ? ' selected' : '') + '>Last 30 Days</option><option value="90d"' + (payrollLedgerDateFilter === '90d' ? ' selected' : '') + '>Last 90 Days</option><option value="ytd"' + (payrollLedgerDateFilter === 'ytd' ? ' selected' : '') + '>Year to Date</option></select>' +
+            '<select class="select" onchange="payrollHistoryTypeFilter=this.value;renderPayroll(document.getElementById(\'main-content\'))"><option value="all"' + (payrollHistoryTypeFilter === 'all' ? ' selected' : '') + '>All Types</option><option value="paystub"' + (payrollHistoryTypeFilter === 'paystub' ? ' selected' : '') + '>Paystubs</option><option value="settlement"' + (payrollHistoryTypeFilter === 'settlement' ? ' selected' : '') + '>Settlements</option></select>' +
+            '<select class="select" onchange="payrollHistoryStatusFilter=this.value;renderPayroll(document.getElementById(\'main-content\'))"><option value="all"' + (payrollHistoryStatusFilter === 'all' ? ' selected' : '') + '>All Statuses</option><option value="finalized"' + (payrollHistoryStatusFilter === 'finalized' ? ' selected' : '') + '>Finalized</option><option value="emailed"' + (payrollHistoryStatusFilter === 'emailed' ? ' selected' : '') + '>Emailed</option><option value="partial"' + (payrollHistoryStatusFilter === 'partial' ? ' selected' : '') + '>Partial</option><option value="paid"' + (payrollHistoryStatusFilter === 'paid' ? ' selected' : '') + '>Paid</option></select>' +
+            '<select class="select" onchange="payrollLedgerDateFilter=this.value;renderPayroll(document.getElementById(\'main-content\'))"><option value="all"' + (payrollLedgerDateFilter === 'all' ? ' selected' : '') + '>All Dates</option><option value="30d"' + (payrollLedgerDateFilter === '30d' ? ' selected' : '') + '>Last 30 Days</option><option value="90d"' + (payrollLedgerDateFilter === '90d' ? ' selected' : '') + '>Last 90 Days</option><option value="ytd"' + (payrollLedgerDateFilter === 'ytd' ? ' selected' : '') + '>Year to Date</option></select>' +
             '<label style="display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg-primary);color:var(--text-primary)"><input type="checkbox" ' + (payrollLedgerUnpaidOnly ? 'checked ' : '') + 'onchange="payrollLedgerUnpaidOnly=this.checked;renderPayroll(document.getElementById(\'main-content\'))">Unpaid Only</label>' +
             '<button class="btn btn-secondary btn-sm" onclick="resetPayrollHistoryFilters()">Clear Filters</button>' +
           '</div>' : '') +
@@ -32513,15 +32513,15 @@
         return '<div class="card" style="padding:14px;margin-bottom:10px">' +
           '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px">' +
             '<div><strong>' + escapeHtml(getPayrollRecordDisplayNumber(r)) + '</strong><span style="font-size:12px;color:var(--text-muted);margin-left:8px">' + (r.type === 'settlement' ? 'Settlement' : 'Paystub') + '</span></div>' +
-            (amountPaid > 0 ? '<span style="background:var(--dim-amber);color:var(--warning);padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700">PARTIAL</span>' : '') +
+            (amountPaid > 0 ? '<span class="badge badge-amber">PARTIAL</span>' : '') +
           '</div>' +
           '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">' +
-            '<div style="padding:8px;border-radius:8px;background:var(--surface-elevated)"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase">Net Pay</div><div style="font-weight:700">' + formatMoney(netPay) + '</div></div>' +
-            '<div style="padding:8px;border-radius:8px;background:var(--surface-elevated)"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase">Paid So Far</div><div style="font-weight:700;color:var(--success)">' + formatMoney(amountPaid) + '</div></div>' +
-            '<div style="padding:8px;border-radius:8px;background:var(--surface-elevated)"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase">Remaining</div><div style="font-weight:700;color:' + (remaining > 0 ? 'var(--danger)' : 'var(--success)') + '">' + formatMoney(remaining) + '</div></div>' +
+            '<div style="padding:8px;border-radius:var(--radius-sm);background:var(--bg-tertiary)"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase">Net Pay</div><div style="font-weight:600;font-family:var(--font-mono)">' + formatMoney(netPay) + '</div></div>' +
+            '<div style="padding:8px;border-radius:var(--radius-sm);background:var(--bg-tertiary)"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase">Paid So Far</div><div style="font-weight:600;font-family:var(--font-mono);color:var(--success)">' + formatMoney(amountPaid) + '</div></div>' +
+            '<div style="padding:8px;border-radius:var(--radius-sm);background:var(--bg-tertiary)"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase">Remaining</div><div style="font-weight:600;font-family:var(--font-mono);color:' + (remaining > 0 ? 'var(--danger)' : 'var(--success)') + '">' + formatMoney(remaining) + '</div></div>' +
           '</div>' +
           '<div style="display:flex;gap:8px;align-items:center">' +
-            '<div style="flex:1"><input type="number" id="payment-input-' + r.id + '" value="' + remaining.toFixed(2) + '" min="0.01" max="' + remaining.toFixed(2) + '" step="0.01" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--bg-primary);color:var(--text-primary)" placeholder="Payment amount"></div>' +
+            '<div style="flex:1"><input type="number" class="input" id="payment-input-' + r.id + '" value="' + remaining.toFixed(2) + '" min="0.01" max="' + remaining.toFixed(2) + '" step="0.01" style="width:100%;font-family:var(--font-mono)" placeholder="Payment amount"></div>' +
             '<button class="btn btn-primary btn-sm" onclick="recordPartialPayment(' + r.id + ')" style="white-space:nowrap;padding:8px 16px">Record Payment</button>' +
           '</div>' +
         '</div>';
@@ -32536,7 +32536,7 @@
         '<div class="modal-body">' +
         '<div style="margin-bottom:14px;padding:10px 14px;border-radius:8px;background:var(--surface-elevated)">' +
           '<div style="font-size:12px;color:var(--text-muted)">Driver</div>' +
-          '<div style="font-weight:700">' + escapeHtml(driver.first_name + ' ' + driver.last_name) + '</div>' +
+          '<div style="font-weight:600">' + escapeHtml(driver.first_name + ' ' + driver.last_name) + '</div>' +
           '<div style="font-size:12px;color:var(--text-secondary)">' + escapeHtml(getPayrollPeriodLabel(payrollPeriod)) + '</div>' +
         '</div>' +
         recordRows +
