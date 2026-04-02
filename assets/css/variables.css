@@ -1,18 +1,18 @@
 /* ============================================================
    HORIZON STAR TMS - CSS Variables & Theming
-   Design System v3 — Stripe/Linear aesthetic, Slate surfaces
+   Design System v4 — Enterprise TMS, dense & professional
    ============================================================ */
 
 :root {
-  /* Brand Colors */
-  --primary: #16a34a;
-  --primary-hover: #15803d;
-  --primary-light: rgba(22,163,74,0.08);
-  --primary-dark: #15803d;
+  /* Brand Colors — Enterprise Blue */
+  --primary: #1d4ed8;
+  --primary-hover: #1e40af;
+  --primary-light: rgba(29,78,216,0.08);
+  --primary-dark: #1e40af;
   --secondary: #64748b;
   --purple: #a855f7;
 
-  /* Semantic Colors */
+  /* Semantic Colors (unchanged — used for status indicators) */
   --green: #16a34a;
   --green-dim: rgba(22,163,74,0.08);
   --blue: #2563eb;
@@ -33,10 +33,10 @@
   --info: #2563eb;
   --info-light: rgba(37,99,235,0.08);
 
-  /* Backgrounds — Slate scale */
-  --bg-primary: #f8fafc;
+  /* Backgrounds — Cooler slate for enterprise density */
+  --bg-primary: #f1f5f9;
   --bg-secondary: #ffffff;
-  --bg-tertiary: #f1f5f9;
+  --bg-tertiary: #e2e8f0;
   --bg-card: #ffffff;
   --bg-card-hover: #f8fafc;
   --bg-hover: #f1f5f9;
@@ -50,20 +50,20 @@
   --text-secondary: #64748b;
   --text-muted: #94a3b8;
 
-  /* Borders — Solid hex */
+  /* Borders — Solid, visible */
   --border: #e2e8f0;
   --border-light: #f1f5f9;
-  --border-strong: #cbd5e1;
-  --border-active: #2563eb;
+  --border-strong: #94a3b8;
+  --border-active: #1d4ed8;
 
-  /* Shadows — 3 levels, near-invisible */
+  /* Shadows — Flatter, border-driven */
   --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
   --shadow-sm: 0 1px 3px rgba(16,24,40,0.06), 0 1px 2px rgba(16,24,40,0.03);
   --shadow-md: 0 4px 8px -2px rgba(16,24,40,0.08), 0 2px 4px -2px rgba(16,24,40,0.04);
   --shadow: var(--shadow-xs);
   --shadow-lg: var(--shadow-md);
   --shadow-xl: var(--shadow-md);
-  --shadow-card: var(--shadow-xs);
+  --shadow-card: none;
   --shadow-card-hover: var(--shadow-sm);
   --shadow-float: var(--shadow-md);
   --shadow-inset: none;
@@ -71,10 +71,10 @@
   --shadow-glow-blue: none;
   --shadow-inner-glow: none;
 
-  /* Gradients — Flat solid values */
-  --accent-gradient: #16a34a;
-  --gradient-primary: #16a34a;
-  --gradient-primary-hover: #15803d;
+  /* Gradients — Enterprise blue */
+  --accent-gradient: #1d4ed8;
+  --gradient-primary: #1d4ed8;
+  --gradient-primary-hover: #1e40af;
   --gradient-secondary: #2563eb;
   --gradient-warning: #d97706;
   --gradient-danger: #dc2626;
@@ -87,18 +87,18 @@
   --glass-border: var(--border);
   --glass-blur: none;
 
-  /* Border Radius — Tighter */
-  --radius-sm: 6px;
-  --radius: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 12px;
+  /* Border Radius — Crisper, enterprise */
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 8px;
 
-  /* Layout (unchanged) */
+  /* Layout */
   --sidebar-width: 240px;
   --sidebar-collapsed-width: 72px;
   --header-height: 64px;
 
-  /* Spacing (unchanged) */
+  /* Spacing */
   --space-0-5: 2px;
   --space-1: 4px;
   --space-1-5: 6px;
@@ -113,7 +113,7 @@
   --space-8: 32px;
   --space-10: 40px;
 
-  /* Typography (sizes unchanged) */
+  /* Typography */
   --text-xs: 11px;
   --text-sm: 13px;
   --text-base: 14px;
@@ -125,11 +125,11 @@
   --weight-normal: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
-  --weight-bold: 600;
-  --weight-heavy: 600;
+  --weight-bold: 700;
+  --weight-heavy: 700;
 
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 
   --leading-tight: 1.2;
   --leading-normal: 1.5;
@@ -137,7 +137,7 @@
 
   --tracking-wide: 0.05em;
 
-  /* Animation — Simplified */
+  /* Animation */
   --transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, color 150ms ease;
   --ease-spring: ease;
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
@@ -148,15 +148,73 @@
   --duration-normal: 200ms;
   --duration-slow: 250ms;
 
-  /* Buttons */
-  --btn-primary-bg: #0f172a;
+  /* Buttons — Enterprise blue primary */
+  --btn-primary-bg: #1d4ed8;
   --btn-primary-color: #ffffff;
-  --btn-primary-hover: #1e293b;
+  --btn-primary-hover: #1e40af;
 
   /* Focus */
-  --focus-ring: 0 0 0 3px rgba(37,99,235,0.1);
-  --focus-border: #2563eb;
+  --focus-ring: 0 0 0 3px rgba(29,78,216,0.15);
+  --focus-border: #1d4ed8;
 
   /* Icon defaults */
   --icon-default: var(--text-secondary);
+}
+
+/* ============================================================
+   DARK MODE
+   ============================================================ */
+.dark-theme {
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-light: rgba(59,130,246,0.12);
+  --primary-dark: #1d4ed8;
+
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --bg-card: #1e293b;
+  --bg-card-hover: #334155;
+  --bg-hover: #334155;
+  --bg-darker: #0f172a;
+  --bg-elevated: #334155;
+  --bg-float: #475569;
+  --bg-app: var(--bg-primary);
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --border: #334155;
+  --border-light: #1e293b;
+  --border-strong: #475569;
+  --border-active: #3b82f6;
+
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 8px rgba(0,0,0,0.4);
+  --shadow-card: none;
+
+  --btn-primary-bg: #2563eb;
+  --btn-primary-hover: #1d4ed8;
+
+  --focus-ring: 0 0 0 3px rgba(59,130,246,0.2);
+  --focus-border: #3b82f6;
+
+  --green-dim: rgba(22,163,74,0.15);
+  --blue-dim: rgba(37,99,235,0.15);
+  --amber-dim: rgba(217,119,6,0.15);
+  --red-dim: rgba(220,38,38,0.15);
+  --purple-dim: rgba(168,85,247,0.15);
+
+  --success-light: rgba(34, 197, 94, 0.15);
+  --warning-light: rgba(245, 158, 11, 0.15);
+  --danger-light: rgba(239, 68, 68, 0.15);
+  --info-light: rgba(59, 130, 246, 0.15);
+
+  --gradient-sidebar: #0f172a;
+  --gradient-card: var(--bg-card);
+  --accent-gradient: #3b82f6;
+  --gradient-primary: #3b82f6;
+  --gradient-primary-hover: #2563eb;
 }
