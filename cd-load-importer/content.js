@@ -672,136 +672,29 @@
                   ">
                 </div>
 
-                <!-- Multi-vehicle summary (if applicable) -->
-                ${loadData.vehicles && loadData.vehicles.length > 1 ? `
-                <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 8px; padding: 10px 12px; margin-bottom: 4px;">
-                  <div style="font-size: 12px; font-weight: 600; color: #22c55e; margin-bottom: 6px;">${loadData.vehicles.length} Vehicles in this load</div>
-                  ${loadData.vehicles.map((v, i) => `<div style="font-size: 12px; color: #94a3b8; padding: 2px 0;">${i + 1}. ${[v.year, v.make, v.model].filter(Boolean).join(' ') || 'Vehicle'}${v.vin ? ' &middot; ' + v.vin : ''}${v.body_type ? ' &middot; ' + v.body_type : ''}</div>`).join('')}
-                  <div style="font-size: 11px; color: #64748b; margin-top: 6px;">All vehicles will be saved to one order.</div>
-                </div>
-                ` : ''}
-
-                <!-- Vehicle Row (primary/first vehicle) -->
-                <div style="display: grid; grid-template-columns: 80px 1fr 1fr; gap: 8px;">
-                  <div>
-                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Year</label>
-                    <input type="number" id="tms-vehicle-year" value="${escapeAttr(loadData.vehicle_year)}" style="
-                      width: 100%;
-                      padding: 8px 12px;
-                      background: #0f172a;
-                      border: 1px solid #334155;
-                      border-radius: 6px;
-                      color: #e2e8f0;
-                      font-size: 14px;
-                      box-sizing: border-box;
-                    ">
-                  </div>
-                  <div>
-                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Make</label>
-                    <input type="text" id="tms-vehicle-make" value="${escapeAttr(loadData.vehicle_make)}" style="
-                      width: 100%;
-                      padding: 8px 12px;
-                      background: #0f172a;
-                      border: 1px solid #334155;
-                      border-radius: 6px;
-                      color: #e2e8f0;
-                      font-size: 14px;
-                      box-sizing: border-box;
-                    ">
-                  </div>
-                  <div>
-                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Model</label>
-                    <input type="text" id="tms-vehicle-model" value="${escapeAttr(loadData.vehicle_model)}" style="
-                      width: 100%;
-                      padding: 8px 12px;
-                      background: #0f172a;
-                      border: 1px solid #334155;
-                      border-radius: 6px;
-                      color: #e2e8f0;
-                      font-size: 14px;
-                      box-sizing: border-box;
-                    ">
-                  </div>
-                </div>
-
-                <!-- VIN Row -->
-                <div>
-                  <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">VIN</label>
-                  <input type="text" id="tms-vehicle-vin" value="${escapeAttr(loadData.vehicle_vin)}" maxlength="17" placeholder="17-character VIN" style="
-                    width: 100%;
-                    padding: 8px 12px;
-                    background: #0f172a;
-                    border: 1px solid #334155;
-                    border-radius: 6px;
-                    color: #e2e8f0;
-                    font-size: 14px;
-                    font-family: monospace;
-                    text-transform: uppercase;
-                    box-sizing: border-box;
-                  ">
-                </div>
-
-                <!-- Color / Body Type Row -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                  <div>
-                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Color</label>
-                    <input type="text" id="tms-vehicle-color" value="${escapeAttr(loadData.vehicle_color)}" style="
-                      width: 100%;
-                      padding: 8px 12px;
-                      background: #0f172a;
-                      border: 1px solid #334155;
-                      border-radius: 6px;
-                      color: #e2e8f0;
-                      font-size: 14px;
-                      box-sizing: border-box;
-                    ">
-                  </div>
-                  <div>
-                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Body Type</label>
-                    <select id="tms-body-type" style="
-                      width: 100%;
-                      padding: 8px 12px;
-                      background: #0f172a;
-                      border: 1px solid #334155;
-                      border-radius: 6px;
-                      color: #e2e8f0;
-                      font-size: 14px;
-                      box-sizing: border-box;
-                    ">
-                      <option value="">Select...</option>
-                      ${['Sedan', 'Coupe', 'SUV', 'Truck', 'Pickup', 'Van', 'Minivan', 'Convertible', 'Wagon', 'Hatchback', 'Crossover'].map(t => `<option value="${t}" ${loadData.vehicle_body_type === t ? 'selected' : ''}>${t}</option>`).join('')}
-                    </select>
-                  </div>
-                </div>
-
-                <!-- Lot # / Buyer # Row -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                  <div>
-                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Lot #</label>
-                    <input type="text" id="tms-lot-number" value="${escapeAttr(loadData.vehicle_lot_number)}" placeholder="Lot number" style="
-                      width: 100%;
-                      padding: 8px 12px;
-                      background: #0f172a;
-                      border: 1px solid #334155;
-                      border-radius: 6px;
-                      color: #e2e8f0;
-                      font-size: 14px;
-                      box-sizing: border-box;
-                    ">
-                  </div>
-                  <div>
-                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Buyer #</label>
-                    <input type="text" id="tms-buyer-number" value="${escapeAttr(loadData.vehicle_buyer_number)}" placeholder="Buyer reference" style="
-                      width: 100%;
-                      padding: 8px 12px;
-                      background: #0f172a;
-                      border: 1px solid #334155;
-                      border-radius: 6px;
-                      color: #e2e8f0;
-                      font-size: 14px;
-                      box-sizing: border-box;
-                    ">
-                  </div>
+                <!-- Vehicle Cards (one per vehicle) -->
+                <div id="tms-vehicles-container">
+                ${(() => {
+                  const vehicles = loadData.vehicles && loadData.vehicles.length > 0 ? loadData.vehicles : [{ year: loadData.vehicle_year, make: loadData.vehicle_make, model: loadData.vehicle_model, vin: loadData.vehicle_vin, color: loadData.vehicle_color, body_type: loadData.vehicle_body_type, lot_number: loadData.vehicle_lot_number, buyer_number: loadData.vehicle_buyer_number }];
+                  const inputStyle = 'width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:14px;box-sizing:border-box;';
+                  const labelStyle = 'display:block;font-size:12px;color:#94a3b8;margin-bottom:4px;';
+                  const bodyTypes = ['Sedan','Coupe','SUV','Truck','Pickup','Van','Minivan','Convertible','Wagon','Hatchback','Crossover'];
+                  return vehicles.map((v, i) => `
+                    <div class="tms-vehicle-card" data-vehicle-index="${i}" style="border:1px solid ${vehicles.length > 1 ? '#334155' : 'transparent'};border-radius:8px;padding:${vehicles.length > 1 ? '10px' : '0'};margin-bottom:${vehicles.length > 1 ? '8px' : '0'};${vehicles.length > 1 ? 'background:rgba(255,255,255,0.02);' : ''}">
+                      ${vehicles.length > 1 ? `<div style="font-size:11px;font-weight:600;color:#22c55e;margin-bottom:8px;text-transform:uppercase;">Vehicle ${i + 1} of ${vehicles.length}</div>` : ''}
+                      <div style="display:grid;grid-template-columns:80px 1fr 1fr;gap:8px;margin-bottom:8px;">
+                        <div><label style="${labelStyle}">Year</label><input type="number" class="tms-v-year" value="${escapeAttr(v.year || '')}" style="${inputStyle}"></div>
+                        <div><label style="${labelStyle}">Make</label><input type="text" class="tms-v-make" value="${escapeAttr(v.make || '')}" style="${inputStyle}"></div>
+                        <div><label style="${labelStyle}">Model</label><input type="text" class="tms-v-model" value="${escapeAttr(v.model || '')}" style="${inputStyle}"></div>
+                      </div>
+                      <div style="margin-bottom:8px;"><label style="${labelStyle}">VIN</label><input type="text" class="tms-v-vin" value="${escapeAttr(v.vin || '')}" maxlength="17" placeholder="17-character VIN" style="${inputStyle}font-family:monospace;text-transform:uppercase;"></div>
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                        <div><label style="${labelStyle}">Color</label><input type="text" class="tms-v-color" value="${escapeAttr(v.color || '')}" style="${inputStyle}"></div>
+                        <div><label style="${labelStyle}">Body Type</label><select class="tms-v-body" style="${inputStyle}"><option value="">Select...</option>${bodyTypes.map(t => `<option value="${t}" ${(v.body_type || '') === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+                      </div>
+                    </div>
+                  `).join('');
+                })()}
                 </div>
 
                 <!-- Pickup / Delivery Address Section -->
@@ -1357,15 +1250,30 @@
       // Gather form data
       const formData = {
         order_number: document.getElementById('tms-order-number').value.trim(),
-        vehicle_year: parseInt(document.getElementById('tms-vehicle-year').value) || null,
-        vehicle_make: document.getElementById('tms-vehicle-make').value.trim(),
-        vehicle_model: document.getElementById('tms-vehicle-model').value.trim(),
-        vehicle_vin: document.getElementById('tms-vehicle-vin')?.value.trim().toUpperCase() || null,
-        vehicle_color: document.getElementById('tms-vehicle-color')?.value.trim() || null,
-        vehicle_body_type: document.getElementById('tms-body-type')?.value || null,
-        vehicle_lot_number: document.getElementById('tms-lot-number')?.value.trim() || null,
-        vehicle_buyer_number: document.getElementById('tms-buyer-number')?.value.trim() || null,
-        vehicles: loadData.vehicles || [],
+        ...(() => {
+          // Read all vehicle cards
+          const cards = document.querySelectorAll('.tms-vehicle-card');
+          const vehicles = Array.from(cards).map(card => ({
+            year: parseInt(card.querySelector('.tms-v-year')?.value) || null,
+            make: card.querySelector('.tms-v-make')?.value.trim() || null,
+            model: card.querySelector('.tms-v-model')?.value.trim() || null,
+            vin: card.querySelector('.tms-v-vin')?.value.trim().toUpperCase() || null,
+            color: card.querySelector('.tms-v-color')?.value.trim() || null,
+            body_type: card.querySelector('.tms-v-body')?.value || null
+          }));
+          const first = vehicles[0] || {};
+          return {
+            vehicle_year: first.year,
+            vehicle_make: first.make,
+            vehicle_model: first.model,
+            vehicle_vin: first.vin,
+            vehicle_color: first.color,
+            vehicle_body_type: first.body_type,
+            vehicle_lot_number: null,
+            vehicle_buyer_number: null,
+            vehicles: vehicles
+          };
+        })(),
         origin: (() => {
           const c = document.getElementById('tms-pickup-city')?.value.trim();
           const s = document.getElementById('tms-pickup-state')?.value.trim().toUpperCase();
