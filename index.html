@@ -18163,11 +18163,12 @@
   "broker_state": "2-letter state or null",
   "broker_zip": "zip code or null",
   "broker_terms": "QUICK_PAY or NET5 or NET10 or NET15 or NET21 or NET30 or NET45 or NET60 or CUSTOM or null",
-  "vehicle_year": "number or null",
-  "vehicle_make": "string or null",
-  "vehicle_model": "string or null",
-  "vehicle_vin": "string or null",
-  "vehicle_color": "string or null",
+  "vehicle_year": "number or null (first vehicle — for backward compatibility)",
+  "vehicle_make": "string or null (first vehicle)",
+  "vehicle_model": "string or null (first vehicle)",
+  "vehicle_vin": "string or null (first vehicle)",
+  "vehicle_color": "string or null (first vehicle)",
+  "vehicles": [{"year": "number", "make": "string", "model": "string", "vin": "string or null", "color": "string or null", "body_type": "string or null"}],
   "origin_city_state": "string like 'New York, NY' or null",
   "pickup_street": "street line or null",
   "pickup_city": "string or null",
@@ -18414,6 +18415,7 @@
       const base = [
         'Extract shipment data for order import.',
         hint,
+        'IMPORTANT: If the document lists MULTIPLE vehicles, include ALL of them in the "vehicles" array. Also set the first vehicle\'s data in the vehicle_year/vehicle_make/vehicle_model/vehicle_vin/vehicle_color fields for backward compatibility.',
         'Return ONLY one valid JSON object with these exact fields (use null for missing values):',
         IMPORT_EXTRACTION_SCHEMA
       ].join('\n\n');
@@ -29672,13 +29674,22 @@
           vehicle_model: templatedExtracted.vehicle_model || '',
           vehicle_vin: templatedExtracted.vehicle_vin || null,
           vehicle_color: templatedExtracted.vehicle_color || null,
-          vehicles: [{
-            year: templatedExtracted.vehicle_year ? parseInt(templatedExtracted.vehicle_year) : null,
-            make: templatedExtracted.vehicle_make || '',
-            model: templatedExtracted.vehicle_model || '',
-            vin: templatedExtracted.vehicle_vin || null,
-            color: templatedExtracted.vehicle_color || null
-          }],
+          vehicles: (Array.isArray(templatedExtracted.vehicles) && templatedExtracted.vehicles.length > 0)
+            ? templatedExtracted.vehicles.map(v => ({
+                year: v.year ? parseInt(v.year) : null,
+                make: v.make || '',
+                model: v.model || '',
+                vin: v.vin || null,
+                color: v.color || null,
+                body_type: v.body_type || null
+              }))
+            : [{
+                year: templatedExtracted.vehicle_year ? parseInt(templatedExtracted.vehicle_year) : null,
+                make: templatedExtracted.vehicle_make || '',
+                model: templatedExtracted.vehicle_model || '',
+                vin: templatedExtracted.vehicle_vin || null,
+                color: templatedExtracted.vehicle_color || null
+              }],
           ...pickupPayload,
           pickup_phone: templatedExtracted.pickup_phone || null,
           pickup_date: normalizeDateForImport(templatedExtracted.pickup_date) || null,
