@@ -19055,6 +19055,14 @@
         vehicle_body_type: normalizeBodyType(document.getElementById('importBodyType')?.value || ''),
         vehicle_lot_number: document.getElementById('importLotNumber')?.value || null,
         vehicle_buyer_number: document.getElementById('importBuyerNumber')?.value || null,
+        vehicles: [{
+          year: parseInt(document.getElementById('importYear').value, 10) || null,
+          make: document.getElementById('importMake').value || '',
+          model: document.getElementById('importModel').value || '',
+          body_type: normalizeBodyType(document.getElementById('importBodyType')?.value || ''),
+          lot_number: document.getElementById('importLotNumber')?.value || null,
+          buyer_number: document.getElementById('importBuyerNumber')?.value || null
+        }],
         ...pickupAddressPayload,
         ...deliveryAddressPayload,
         pickup_phone: document.getElementById('importPickupPhone').value || null,
@@ -21438,55 +21446,56 @@
         const vehicleCount = vehicleList.length;
         const orderGroupId = orderNum; // Group all vehicles under same order number
 
-        for (let i = 0; i < vehicleCount; i++) {
-          const v = vehicleList[i];
-          const vehicleOrderNum = vehicleCount > 1 ? orderNum + '-' + (i + 1) : orderNum;
+        // Build vehicles array from all entries
+        const vehiclesArray = vehicleList.map(v => ({
+          year: v.year || null, make: v.make || '', model: v.model || '',
+          body_type: vehicleBodyType || null, lot_number: vehicleLotNumber || null, buyer_number: vehicleBuyerNumber || null
+        }));
+        const firstV = vehicleList[0] || {};
+        const data = {
+          trip_id: tripId,
+          order_number: orderNum,
+          broker_id: brokerId,
+          broker_name: brokerName,
+          vehicle_year: firstV.year || null,
+          vehicle_make: firstV.make || '',
+          vehicle_model: firstV.model || '',
+          vehicle_body_type: vehicleBodyType || null,
+          vehicle_lot_number: vehicleLotNumber || null,
+          vehicle_buyer_number: vehicleBuyerNumber || null,
+          vehicles: vehiclesArray,
+          pickup_date: pickupDate,
+          dropoff_date: dropoffDate,
+          pickup_phone: pickupPhone,
+          delivery_phone: deliveryPhone,
+          ...pickupAddressPayload,
+          ...deliveryAddressPayload,
+          revenue: totalRevenue,
+          broker_fee: brokerFee,
+          local_fee: localFee,
+          payment_type: paymentType,
+          cod_amount: codAmount,
+          bill_amount: billAmount,
+          payment_terms: paymentTerms,
+          due_date: dueDate,
+          custom_terms_days: customTermsDays,
+          status: status,
+          dispatcher_id: dispatcherId,
+          vehicle_direction: direction,
+          dispatcher_notes: dispatcherNotes,
+          notes: driverNotes
+        };
 
-          const data = {
-            trip_id: tripId,
-            order_number: vehicleOrderNum,
-            order_group_id: orderGroupId,
-            broker_id: brokerId,
-            broker_name: brokerName,
-            vehicle_year: v.year,
-            vehicle_make: v.make,
-            vehicle_model: v.model,
-            vehicle_body_type: vehicleBodyType || null,
-            vehicle_lot_number: vehicleLotNumber || null,
-            vehicle_buyer_number: vehicleBuyerNumber || null,
-            pickup_date: pickupDate,
-            dropoff_date: dropoffDate,
-            pickup_phone: pickupPhone,
-            delivery_phone: deliveryPhone,
-            ...pickupAddressPayload,
-            ...deliveryAddressPayload,
-            revenue: i === 0 ? totalRevenue : 0, // Only first vehicle gets total order revenue
-            broker_fee: i === 0 ? brokerFee : 0, // Only first vehicle gets broker fee
-            local_fee: i === 0 ? localFee : 0, // Only first vehicle gets local fee
-            payment_type: paymentType,
-            cod_amount: i === 0 ? codAmount : null,
-            bill_amount: i === 0 ? billAmount : null,
-            payment_terms: paymentTerms,
-            due_date: dueDate,
-            custom_terms_days: customTermsDays,
-            status: status,
-            dispatcher_id: dispatcherId,
-            vehicle_direction: direction,
-            dispatcher_notes: dispatcherNotes,
-            notes: driverNotes
-          };
-
-          const newOrder = await dbInsert('orders', data);
-          await logActivity('VEHICLE_ADDED', {
-            order_id: newOrder.id,
-            trip_id: tripId,
-            vehicle: v.year + ' ' + v.make + ' ' + v.model,
-            origin: origin,
-            destination: destination,
-            revenue: i === 0 ? totalRevenue : 0,
-            broker: brokerName
-          });
-        }
+        const newOrder = await dbInsert('orders', data);
+        await logActivity('VEHICLE_ADDED', {
+          order_id: newOrder.id,
+          trip_id: tripId,
+          vehicle: vehicleList.map(v => [v.year, v.make, v.model].filter(Boolean).join(' ')).join(', '),
+          origin: origin,
+          destination: destination,
+          revenue: totalRevenue,
+          broker: brokerName
+        });
 
         document.querySelector('.modal-overlay').remove();
         showToast(vehicleCount + ' vehicle' + (vehicleCount > 1 ? 's' : '') + ' added! Order total: $' + totalRevenue);
@@ -21659,6 +21668,14 @@
         vehicle_body_type: normalizeBodyType(document.getElementById('editVehBodyType')?.value || ''),
         vehicle_lot_number: document.getElementById('editVehLotNumber')?.value || null,
         vehicle_buyer_number: document.getElementById('editVehBuyerNumber')?.value || null,
+        vehicles: [{
+          year: parseInt(document.getElementById('editVehYear').value) || null,
+          make: document.getElementById('editVehMake').value || '',
+          model: document.getElementById('editVehModel').value || '',
+          body_type: normalizeBodyType(document.getElementById('editVehBodyType')?.value || ''),
+          lot_number: document.getElementById('editVehLotNumber')?.value || null,
+          buyer_number: document.getElementById('editVehBuyerNumber')?.value || null
+        }],
         pickup_phone: document.getElementById('editPickupPhone')?.value || null,
         delivery_phone: document.getElementById('editDeliveryPhone')?.value || null,
         ...pickupAddressPayload,
@@ -29655,6 +29672,13 @@
           vehicle_model: templatedExtracted.vehicle_model || '',
           vehicle_vin: templatedExtracted.vehicle_vin || null,
           vehicle_color: templatedExtracted.vehicle_color || null,
+          vehicles: [{
+            year: templatedExtracted.vehicle_year ? parseInt(templatedExtracted.vehicle_year) : null,
+            make: templatedExtracted.vehicle_make || '',
+            model: templatedExtracted.vehicle_model || '',
+            vin: templatedExtracted.vehicle_vin || null,
+            color: templatedExtracted.vehicle_color || null
+          }],
           ...pickupPayload,
           pickup_phone: templatedExtracted.pickup_phone || null,
           pickup_date: normalizeDateForImport(templatedExtracted.pickup_date) || null,
@@ -48589,6 +48613,13 @@ function jsonResponse(data, status = 200) {
         vehicle_model: orderData.vehicle_model,
         vehicle_vin: orderData.vehicle_vin,
         vehicle_color: orderData.vehicle_color,
+        vehicles: [{
+          year: orderData.vehicle_year || null,
+          make: orderData.vehicle_make || '',
+          model: orderData.vehicle_model || '',
+          vin: orderData.vehicle_vin || null,
+          color: orderData.vehicle_color || null
+        }],
         origin: orderData.pickup_location,
         destination: orderData.delivery_location,
         pickup_date: orderData.pickup_date,
