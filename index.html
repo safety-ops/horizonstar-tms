@@ -18109,36 +18109,26 @@
       };
 
       try {
+        // Build vehicles JSONB array from all vehicles
+        const vehiclesArray = vehiclesToSave.map(v => ({
+          year: parseInt(v.year, 10) || null,
+          make: v.make || '',
+          model: v.model || ''
+        }));
+        const firstVehicle = vehiclesToSave[0] || {};
+        const vehicleFields = {
+          vehicle_year: parseInt(firstVehicle.year, 10) || null,
+          vehicle_make: firstVehicle.make || '',
+          vehicle_model: firstVehicle.model || '',
+          vehicles: vehiclesArray
+        };
+
         if (id) {
-          const data = {
-            ...baseData,
-            vehicle_year: parseInt(vehiclesToSave[0].year, 10),
-            vehicle_make: vehiclesToSave[0].make,
-            vehicle_model: vehiclesToSave[0].model
-          };
-          await dbUpdate('orders', id, data);
+          await dbUpdate('orders', id, { ...baseData, ...vehicleFields });
           showToast('Vehicle updated!');
         } else {
-          const orderGroupId = baseData.order_number;
-          for (let i = 0; i < vehiclesToSave.length; i++) {
-            const v = vehiclesToSave[i];
-            const data = {
-              ...baseData,
-              vehicle_year: parseInt(v.year, 10),
-              vehicle_make: v.make,
-              vehicle_model: v.model,
-              order_number: vehiclesToSave.length > 1 ? baseData.order_number + '-' + (i + 1) : baseData.order_number,
-              order_group_id: orderGroupId,
-              revenue: i === 0 ? baseData.revenue : 0,
-              broker_fee: i === 0 ? baseData.broker_fee : 0,
-              local_fee: i === 0 ? baseData.local_fee : 0,
-              cod_amount: i === 0 ? baseData.cod_amount : null,
-              bill_amount: i === 0 ? baseData.bill_amount : null
-            };
-            await dbInsert('orders', data);
-          }
-          const totalRev = baseData.revenue || 0;
-          showToast(vehiclesToSave.length > 1 ? vehiclesToSave.length + ' vehicles added! Order total: $' + totalRev : 'Vehicle saved!');
+          await dbInsert('orders', { ...baseData, ...vehicleFields });
+          showToast(vehiclesToSave.length > 1 ? vehiclesToSave.length + ' vehicles saved in one order!' : 'Vehicle saved!');
         }
 
         lbVehicleList = [];
@@ -22131,6 +22121,12 @@
 
     function openOrderModal(id = null) {
       const o = id ? appData.orders.find(x => x.id === id) : null;
+      // Reset multi-vehicle state; populate from existing order if editing
+      _orderModalVehicles = [];
+      if (o && o.vehicles && Array.isArray(o.vehicles) && o.vehicles.length > 1) {
+        // Load additional vehicles (skip first — it's in the form fields)
+        _orderModalVehicles = o.vehicles.slice(1);
+      }
       const existingBroker = o?.broker_id ? (appData.brokers || []).find(b => String(b.id) === String(o.broker_id)) : null;
       let orderModalDispatcher = appData.dispatchers.find(d => d.user_id === currentUser.id);
       if (!orderModalDispatcher) {
@@ -22165,11 +22161,14 @@
         '<div class="form-row" style="gap:12px;margin-top:8px"><div class="form-group" style="margin-bottom:0;flex:1"><label>State</label><input id="orderBrokerState" value="' + (existingBroker?.state || '') + '" maxlength="2" placeholder="OK"></div><div class="form-group" style="margin-bottom:0;flex:1"><label>ZIP</label><input id="orderBrokerZip" value="' + (existingBroker?.zip || '') + '" placeholder="74107"></div></div>' +
         '</div>' +
         '<div style="background:var(--surface-card);padding:12px;border-radius:8px;margin-bottom:12px">' +
-        '<label style="font-weight:600;display:block;margin-bottom:8px">[[icon:car]] Vehicle</label>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><label style="font-weight:600">[[icon:car]] Vehicle</label><button type="button" class="btn btn-secondary btn-sm" onclick="addOrderModalVehicle()" style="font-size:11px;padding:4px 10px">+ Add Vehicle</button></div>' +
+        '<div id="orderVehicleListDisplay"></div>' +
+        '<div id="orderVehicleForm">' +
         '<div class="form-row"><div class="form-group"><label>Year</label><input type="number" id="vehYear" value="' + (o?.vehicle_year || new Date().getFullYear()) + '"></div><div class="form-group"><label>Make</label><input id="vehMake" value="' + (o?.vehicle_make || '') + '"></div></div>' +
         '<div class="form-row"><div class="form-group"><label>Model</label><input id="vehModel" value="' + (o?.vehicle_model || '') + '"></div><div class="form-group"><label>Body Type</label><select id="vehBodyType">' + getVehicleBodyTypeOptionsHtml(o?.vehicle_body_type || '') + '</select></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>VIN</label><input id="vehVin" value="' + (o?.vehicle_vin || '') + '" maxlength="17" style="font-family:var(--font-mono);text-transform:uppercase" placeholder="17-char VIN"></div><div class="form-group"><label>Color</label><input id="vehColor" value="' + (o?.vehicle_color || '') + '"></div></div>' +
         '<div class="form-row"><div class="form-group"><label>Lot #</label><input id="vehLotNumber" value="' + (o?.vehicle_lot_number || '') + '"></div><div class="form-group"><label>Buyer #</label><input id="vehBuyerNumber" value="' + (o?.vehicle_buyer_number || '') + '"></div></div>' +
-        '<div class="form-row"><div class="form-group"><label>Color</label><input id="vehColor" value="' + (o?.vehicle_color || '') + '"></div></div>' +
+        '</div>' +
         '</div>' +
         '<div style="background:var(--dim-blue);padding:12px;border-radius:8px;margin-bottom:12px">' +
         '<label style="font-weight:600;display:block;margin-bottom:8px">[[icon:map_pin]] PICKUP</label>' +
@@ -22207,6 +22206,7 @@
       setupAddressAutocomplete('pickupFullAddress');
       setupAddressAutocomplete('deliveryFullAddress');
       hydrateSplitControls('order', o);
+      updateOrderVehicleListDisplay();
     }
 
     // ─── Order Creation Wizard ─────────────────────────────────────────────────
@@ -22598,8 +22598,14 @@
             vehicle_model:          d.vehicle_model         || '',
             vehicle_color:          d.vehicle_color         || null,
             vehicle_body_type:      d.vehicle_body_type     || '',
+            vehicle_vin:            d.vehicle_vin           || null,
             vehicle_lot_number:     d.vehicle_lot_number    || null,
             vehicle_buyer_number:   d.vehicle_buyer_number  || null,
+            vehicles: [{
+              year: d.vehicle_year || null, make: d.vehicle_make || '', model: d.vehicle_model || '',
+              vin: d.vehicle_vin || null, color: d.vehicle_color || null, body_type: d.vehicle_body_type || null,
+              lot_number: d.vehicle_lot_number || null, buyer_number: d.vehicle_buyer_number || null
+            }],
             pickup_contact_name:    d.pickup_contact_name    || null,
             pickup_contact_phone:   d.pickup_contact_phone   || null,
             delivery_contact_name:  d.delivery_contact_name  || null,
@@ -22684,6 +22690,74 @@
     })();
     // ─── End Order Creation Wizard ─────────────────────────────────────────────
 
+    // Multi-vehicle state for order modal
+    let _orderModalVehicles = [];
+
+    function addOrderModalVehicle() {
+      const year = parseInt(document.getElementById('vehYear')?.value, 10) || null;
+      const make = document.getElementById('vehMake')?.value.trim() || '';
+      const model = document.getElementById('vehModel')?.value.trim() || '';
+      if (!make && !model) { showToast('Enter vehicle make/model first', 'warning'); return; }
+      _orderModalVehicles.push({
+        year, make, model,
+        vin: document.getElementById('vehVin')?.value.trim().toUpperCase() || null,
+        color: document.getElementById('vehColor')?.value.trim() || null,
+        body_type: document.getElementById('vehBodyType')?.value || null,
+        lot_number: document.getElementById('vehLotNumber')?.value.trim() || null,
+        buyer_number: document.getElementById('vehBuyerNumber')?.value.trim() || null
+      });
+      // Clear form for next vehicle
+      document.getElementById('vehYear').value = new Date().getFullYear();
+      document.getElementById('vehMake').value = '';
+      document.getElementById('vehModel').value = '';
+      if (document.getElementById('vehVin')) document.getElementById('vehVin').value = '';
+      document.getElementById('vehColor').value = '';
+      document.getElementById('vehBodyType').value = '';
+      if (document.getElementById('vehLotNumber')) document.getElementById('vehLotNumber').value = '';
+      if (document.getElementById('vehBuyerNumber')) document.getElementById('vehBuyerNumber').value = '';
+      updateOrderVehicleListDisplay();
+      showToast('Vehicle added (' + _orderModalVehicles.length + ' total)', 'success');
+    }
+
+    function removeOrderModalVehicle(index) {
+      _orderModalVehicles.splice(index, 1);
+      updateOrderVehicleListDisplay();
+    }
+
+    function updateOrderVehicleListDisplay() {
+      const el = document.getElementById('orderVehicleListDisplay');
+      if (!el) return;
+      if (_orderModalVehicles.length === 0) { el.innerHTML = ''; return; }
+      el.innerHTML = '<div style="margin-bottom:8px">' +
+        _orderModalVehicles.map((v, i) =>
+          '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--bg-tertiary);border-radius:6px;margin-bottom:4px;font-size:13px">' +
+            '<span>' + (i + 1) + '. <strong>' + escapeHtml([v.year, v.make, v.model].filter(Boolean).join(' ')) + '</strong>' + (v.body_type ? ' <span style="color:var(--text-muted)">' + escapeHtml(v.body_type) + '</span>' : '') + (v.vin ? ' <span style="color:var(--text-muted);font-family:var(--font-mono);font-size:11px">' + escapeHtml(v.vin) + '</span>' : '') + '</span>' +
+            '<button type="button" onclick="removeOrderModalVehicle(' + i + ')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;padding:2px 6px">x</button>' +
+          '</div>'
+        ).join('') +
+        '<div style="font-size:11px;color:var(--text-muted);margin-top:4px">' + _orderModalVehicles.length + ' vehicle' + (_orderModalVehicles.length !== 1 ? 's' : '') + ' added. Fill in the form below for the next one, or save.</div>' +
+      '</div>';
+    }
+
+    function collectOrderModalVehicles() {
+      // Combine saved vehicles + whatever is currently in the form
+      const vehicles = [..._orderModalVehicles];
+      const formYear = parseInt(document.getElementById('vehYear')?.value, 10) || null;
+      const formMake = document.getElementById('vehMake')?.value.trim() || '';
+      const formModel = document.getElementById('vehModel')?.value.trim() || '';
+      if (formMake || formModel) {
+        vehicles.push({
+          year: formYear, make: formMake, model: formModel,
+          vin: document.getElementById('vehVin')?.value.trim().toUpperCase() || null,
+          color: document.getElementById('vehColor')?.value.trim() || null,
+          body_type: document.getElementById('vehBodyType')?.value || null,
+          lot_number: document.getElementById('vehLotNumber')?.value.trim() || null,
+          buyer_number: document.getElementById('vehBuyerNumber')?.value.trim() || null
+        });
+      }
+      return vehicles;
+    }
+
     async function saveOrder(id) {
       const tripId = parseInt(document.getElementById('orderTrip').value, 10) || null;
       if (tripId && !appData.trips.find(t => t.id === tripId)) {
@@ -22740,19 +22814,23 @@
         splitCashType: splitState.cashType,
         splitCashAmount: splitState.cashAmount
       });
+      const allVehicles = collectOrderModalVehicles();
+      const firstVehicle = allVehicles[0] || {};
       const data = {
         order_number: orderNumber,
         trip_id: tripId,
         driver_id: parseInt(document.getElementById('orderDriver').value, 10) || null,
         broker_id: brokerId,
         broker_name: brokerName || null,
-        vehicle_year: parseInt(document.getElementById('vehYear').value, 10) || null,
-        vehicle_make: document.getElementById('vehMake').value || '',
-        vehicle_model: document.getElementById('vehModel').value || '',
-        vehicle_color: document.getElementById('vehColor').value || null,
-        vehicle_body_type: normalizeBodyType(document.getElementById('vehBodyType')?.value || ''),
-        vehicle_lot_number: document.getElementById('vehLotNumber')?.value || null,
-        vehicle_buyer_number: document.getElementById('vehBuyerNumber')?.value || null,
+        vehicle_year: firstVehicle.year || null,
+        vehicle_make: firstVehicle.make || '',
+        vehicle_model: firstVehicle.model || '',
+        vehicle_vin: firstVehicle.vin || null,
+        vehicle_color: firstVehicle.color || null,
+        vehicle_body_type: normalizeBodyType(firstVehicle.body_type || ''),
+        vehicle_lot_number: firstVehicle.lot_number || null,
+        vehicle_buyer_number: firstVehicle.buyer_number || null,
+        vehicles: allVehicles.length > 0 ? allVehicles : [],
         ...pickupAddressPayload,
         ...deliveryAddressPayload,
         pickup_phone: document.getElementById('pickupPhone')?.value || null,
