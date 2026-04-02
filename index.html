@@ -10303,7 +10303,7 @@
       const vehicles = getOrderVehicles(order);
       const first = getVehicleLabel(vehicles[0] || {});
       if (vehicles.length <= 1) return first;
-      return first + ' <span style="background:var(--dim-blue);color:var(--info);padding:1px 6px;border-radius:10px;font-size:10px;font-weight:600;margin-left:4px">+' + (vehicles.length - 1) + '</span>';
+      return first + ' (+' + (vehicles.length - 1) + ' more)';
     }
     function getOrderAddressForMaps(order, type = 'pickup') {
       if (!order) return '';
