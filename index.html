@@ -19185,13 +19185,10 @@
             driver_id: selectedTrip?.driver_id || null,
             vehicle_direction: direction,
             load_category: null,
-            load_subcategory: null,
-            // Preserve local driver assignment — local fee stays with local driver
-            local_driver_id: orderData?.local_driver_id || null,
-            local_fee: parseFloat(orderData?.local_fee || 0),
-            local_delivery_status: orderData?.local_delivery_status || null,
-            local_delivery_type: orderData?.local_delivery_type || null,
-            local_assigned_date: orderData?.local_assigned_date || null
+            load_subcategory: null
+            // Local driver fields (local_driver_id, local_fee, local_delivery_status,
+            // local_delivery_type, local_assigned_date) are NOT sent — Supabase
+            // preserves existing DB values when fields are omitted from the update.
           });
 
           // Notify driver about new vehicle assignment
