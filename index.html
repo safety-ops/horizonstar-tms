@@ -12728,15 +12728,15 @@
       const tabs = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="btn btn-primary" style="padding:6px 12px;font-size:12px" onclick="finTab='command';renderConsolidatedFinancials(document.getElementById('main-content'))">Command Center</button>
-            <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='pnl';renderConsolidatedFinancials(document.getElementById('main-content'))">P&amp;L</button>
-            <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='costs';renderConsolidatedFinancials(document.getElementById('main-content'))">Costs</button>
-            <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='profitability';renderConsolidatedFinancials(document.getElementById('main-content'))">Profitability</button>
-            <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='forecast';renderConsolidatedFinancials(document.getElementById('main-content'))">Forecast</button>
+            <button class="btn btn-primary" style="padding:6px 12px;font-size:12px" onclick="finTab='command';renderConsolidatedFinancials(reRenderCurrentPage())">Command Center</button>
+            <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='pnl';renderConsolidatedFinancials(reRenderCurrentPage())">P&amp;L</button>
+            <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='costs';renderConsolidatedFinancials(reRenderCurrentPage())">Costs</button>
+            <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='profitability';renderConsolidatedFinancials(reRenderCurrentPage())">Profitability</button>
+            <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='forecast';renderConsolidatedFinancials(reRenderCurrentPage())">Forecast</button>
           </div>
           <div style="display:flex;align-items:center;gap:8px;background:var(--surface-elevated);padding:8px 12px;border-radius:6px;border:1px solid var(--border)">
             <label style="font-weight:600;color:var(--text-secondary);font-size:13px">Year:</label>
-            <select onchange="financialsYear=parseInt(this.value);renderConsolidatedFinancials(document.getElementById('main-content'))" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-weight:600">
+            <select onchange="financialsYear=parseInt(this.value);renderConsolidatedFinancials(reRenderCurrentPage())" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-weight:600">
               ${yearOptions}
             </select>
           </div>
@@ -16849,6 +16849,22 @@
       }
     }
 
+    // Helper: get the correct sub-container for in-page re-renders (preserves section tabs)
+    function reRenderCurrentPage() {
+      var mc = document.getElementById('main-content');
+      var tabsEl = mc.querySelector('.section-tabs');
+      if (tabsEl) {
+        var tabsWrapper = tabsEl.closest('.page-enter') || tabsEl.parentElement;
+        var pageDiv = tabsWrapper.nextElementSibling;
+        if (!pageDiv) {
+          pageDiv = document.createElement('div');
+          mc.appendChild(pageDiv);
+        }
+        return pageDiv;
+      }
+      return mc;
+    }
+
     function renderPage(options = {}) {
       // Clear detail view when rendering a page unless caller explicitly preserves it.
       if (!options.preserveDetailView) {
@@ -17021,17 +17037,17 @@
 
     function changeDashboardPeriod(period) {
       dashboardPeriod = period;
-      renderDashboard(document.getElementById('main-content'));
+      renderDashboard(reRenderCurrentPage());
     }
 
     function changeDashboardYear(year) {
       dashboardYear = parseInt(year);
-      renderDashboard(document.getElementById('main-content'));
+      renderDashboard(reRenderCurrentPage());
     }
 
     function changeDashboardMonth(month) {
       dashboardMonth = parseInt(month);
-      renderDashboard(document.getElementById('main-content'));
+      renderDashboard(reRenderCurrentPage());
     }
 
     function getDashboardPeriodContext() {
@@ -17690,7 +17706,7 @@
         });
         showToast(complete ? 'Task completed! [[icon:check]]' : 'Task reopened');
         await loadAllData(true);
-        renderDashboard(document.getElementById('main-content'));
+        renderDashboard(reRenderCurrentPage());
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
@@ -18095,7 +18111,7 @@
         lbVehicleList = [];
         document.querySelector('.modal-overlay').remove();
         await loadAllData(true);
-        renderLoadBoard(document.getElementById('main-content'));
+        renderLoadBoard(reRenderCurrentPage());
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -18105,7 +18121,7 @@
         await dbDelete('orders', id);
         showToast('Deleted');
         await loadAllData(true);
-        renderLoadBoard(document.getElementById('main-content'));
+        renderLoadBoard(reRenderCurrentPage());
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
@@ -19048,7 +19064,7 @@
         // Switch to the imported category
         selectedLoadCategory = category;
         selectedLoadSub = subcategory;
-        renderLoadBoard(document.getElementById('main-content'));
+        renderLoadBoard(reRenderCurrentPage());
       } catch (e) {
         showToast('Failed to import: ' + e.message, 'error');
       }
@@ -19151,7 +19167,7 @@
           document.querySelector('.modal-overlay').remove();
           showToast('Vehicle assigned to local driver!');
           await loadAllData(true);
-          renderLoadBoard(document.getElementById('main-content'));
+          renderLoadBoard(reRenderCurrentPage());
         } catch (e) { showToast(e.message, 'error'); }
       } else {
         // Assign to Trip (original behavior)
@@ -19196,7 +19212,7 @@
           document.querySelector('.modal-overlay').remove();
           showToast('Vehicle assigned to trip!');
           await loadAllData(true);
-          renderLoadBoard(document.getElementById('main-content'));
+          renderLoadBoard(reRenderCurrentPage());
         } catch (e) { showToast(e.message, 'error'); }
       }
       
@@ -19512,7 +19528,7 @@
           await logActivity('TRIP_CREATED', { trip_id: newTrip.id, trip_number: data.trip_number, truck_id: truckId, data: data });
           showToast('Saved!');
         } 
-        document.querySelector('.modal-overlay').remove(); await loadAllData(true); renderTrips(document.getElementById('main-content')); 
+        document.querySelector('.modal-overlay').remove(); await loadAllData(true); renderTrips(reRenderCurrentPage()); 
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -19531,7 +19547,7 @@
       try {
         await dbDelete('trips', id);
         await logActivity('TRIP_DELETED', { trip_id: id, trip_number: trip?.trip_number });
-        showToast('Deleted'); await loadAllData(true); renderTrips(document.getElementById('main-content'));
+        showToast('Deleted'); await loadAllData(true); renderTrips(reRenderCurrentPage());
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
@@ -19976,7 +19992,7 @@
       if (!t) {
         // Trip was deleted or not found - go back to list
         currentDetailView = null;
-        renderTrips(document.getElementById('main-content'));
+        renderTrips(reRenderCurrentPage());
         return;
       }
       const d = appData.drivers.find(x => x.id === t.driver_id);
@@ -20647,7 +20663,7 @@
         await loadAllData(true);
         // If called from list, refresh list; otherwise show trip detail
         if (fromList || !document.querySelector('.header h2')?.textContent?.includes('TRIP')) {
-          renderTrips(document.getElementById('main-content'));
+          renderTrips(reRenderCurrentPage());
         } else {
           viewTrip(tripId);
         }
@@ -21739,19 +21755,19 @@
     const debouncedOrderSearch = debounce((value) => {
       ordersFilter.search = value;
       pagination.orders.page = 1;
-      renderOrders(document.getElementById('main-content'));
+      renderOrders(reRenderCurrentPage());
       const si = document.getElementById('orderSearch');
       if (si) { si.focus(); si.setSelectionRange(si.value.length, si.value.length); }
     }, 300);
     
     const debouncedTripSearch = debounce((value) => {
       tripsSearch = value;
-      renderTrips(document.getElementById('main-content'));
+      renderTrips(reRenderCurrentPage());
     }, 300);
     
     const debouncedMaintenanceSearch = debounce((value) => {
       maintenanceSearch = value;
-      renderMaintenance(document.getElementById('main-content'));
+      renderMaintenance(reRenderCurrentPage());
     }, 300);
     
     let tripsSearch = '';
@@ -22080,7 +22096,7 @@
       selectedOrders = [];
       showToast('Deleted ' + deleted + ' orders');
       await loadAllData(true);
-      renderOrders(document.getElementById('main-content'));
+      renderOrders(reRenderCurrentPage());
     }
 
     function openOrderModal(id = null) {
@@ -22588,7 +22604,7 @@
           _wiz = null;
           showToast('Order created!', 'success');
           await loadAllData(true);
-          renderOrders(document.getElementById('main-content'));
+          renderOrders(reRenderCurrentPage());
         } catch (e) {
           showToast('Failed to create order: ' + e.message, 'error');
           createBtn.disabled    = false;
@@ -22754,7 +22770,7 @@
         document.querySelector('.modal-overlay').remove();
         showToast('Saved!');
         await loadAllData(true);
-        renderOrders(document.getElementById('main-content'));
+        renderOrders(reRenderCurrentPage());
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -22764,7 +22780,7 @@
       try {
         await dbDelete('orders', id);
         await logActivity('ORDER_DELETED', { order_id: id, order_number: order?.order_number });
-        showToast('Deleted'); await loadAllData(true); renderOrders(document.getElementById('main-content'));
+        showToast('Deleted'); await loadAllData(true); renderOrders(reRenderCurrentPage());
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
@@ -22857,7 +22873,7 @@
       if (!d) {
         // Driver was deleted or not found - go back to list
         currentDetailView = null;
-        renderDrivers(document.getElementById('main-content'));
+        renderDrivers(reRenderCurrentPage());
         return;
       }
       const trips = appData.trips.filter(t => t.driver_id === driverId);
@@ -23481,7 +23497,7 @@
           showToast(saveMessage);
         }
         await loadAllData(true);
-        renderDrivers(document.getElementById('main-content'));
+        renderDrivers(reRenderCurrentPage());
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -23499,7 +23515,7 @@
         await logActivity('DRIVER_DELETED', { driver_id: id, driver_name: d.first_name + ' ' + d.last_name });
         showToast('Driver deleted');
         await loadAllData(true);
-        renderDrivers(document.getElementById('main-content'));
+        renderDrivers(reRenderCurrentPage());
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -23708,7 +23724,7 @@
           const newTruck = await dbInsert('trucks', data);
           await logActivity('TRUCK_CREATED', { truck_id: newTruck.id, truck_number: data.truck_number, data: data });
         } 
-        document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(true); renderTrucks(document.getElementById('main-content')); 
+        document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(true); renderTrucks(reRenderCurrentPage()); 
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -23724,7 +23740,7 @@
       try {
         await dbDelete('trucks', id);
         await logActivity('TRUCK_DELETED', { truck_id: id, truck_number: truck?.truck_number });
-        showToast('Deleted'); await loadAllData(true); renderTrucks(document.getElementById('main-content'));
+        showToast('Deleted'); await loadAllData(true); renderTrucks(reRenderCurrentPage());
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
@@ -24130,7 +24146,7 @@
         document.querySelector('.modal-overlay').remove();
         if (!(enableAppAccess && saveMessage.includes('sync failed'))) showToast(saveMessage);
         await loadAllData(true);
-        renderLocalDrivers(document.getElementById('main-content'));
+        renderLocalDrivers(reRenderCurrentPage());
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -24142,7 +24158,7 @@
         await logActivity('LOCAL_DRIVER_DELETED', { local_driver_id: id, driver_name: driver?.name });
         showToast('Deleted');
         await loadAllData(true);
-        renderLocalDrivers(document.getElementById('main-content'));
+        renderLocalDrivers(reRenderCurrentPage());
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -24177,7 +24193,7 @@
         showToast('Status changed to: ' + statusLabels[newStatus]);
         
         // Re-render the page
-        renderLocalDrivers(document.getElementById('main-content'));
+        renderLocalDrivers(reRenderCurrentPage());
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -24216,7 +24232,7 @@
         
         document.querySelector('.modal-overlay').remove();
         showToast(noteText ? 'Note saved!' : 'Note cleared');
-        renderLocalDrivers(document.getElementById('main-content'));
+        renderLocalDrivers(reRenderCurrentPage());
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -24232,7 +24248,7 @@
         
         document.querySelector('.modal-overlay').remove();
         showToast('Note cleared');
-        renderLocalDrivers(document.getElementById('main-content'));
+        renderLocalDrivers(reRenderCurrentPage());
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -24242,7 +24258,7 @@
         await dbUpdate('orders', orderId, { not_for_local_delivery: true });
         showToast('Marked as not for local delivery');
         await loadAllData(true);
-        renderLocalDrivers(document.getElementById('main-content'));
+        renderLocalDrivers(reRenderCurrentPage());
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -24280,7 +24296,7 @@
         document.querySelector('.modal-overlay').remove();
         showToast('Local driver assigned!');
         await loadAllData(true);
-        renderLocalDrivers(document.getElementById('main-content'));
+        renderLocalDrivers(reRenderCurrentPage());
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -24292,7 +24308,7 @@
       if (!ld) {
         // Local driver was deleted or not found - go back to list
         currentDetailView = null;
-        renderLocalDrivers(document.getElementById('main-content'));
+        renderLocalDrivers(reRenderCurrentPage());
         return;
       }
 
@@ -24662,7 +24678,7 @@
         document.querySelector('.modal-overlay').remove();
         showToast('Broker saved!');
         await loadAllData(true);
-        renderBrokers(document.getElementById('main-content'));
+        renderBrokers(reRenderCurrentPage());
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -24674,7 +24690,7 @@
         await logActivity('BROKER_DELETED', { broker_id: id, broker_name: broker?.name });
         showToast('Broker deleted');
         await loadAllData(true);
-        renderBrokers(document.getElementById('main-content'));
+        renderBrokers(reRenderCurrentPage());
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -24684,7 +24700,7 @@
       const b = (appData.brokers || []).find(x => x.id === brokerId);
       if (!b) {
         currentDetailView = null;
-        renderBrokers(document.getElementById('main-content'));
+        renderBrokers(reRenderCurrentPage());
         return;
       }
 
@@ -24845,7 +24861,7 @@
           const newDisp = await dbInsert('dispatchers', data); 
           await logActivity('DISPATCHER_CREATED', { dispatcher_id: newDisp.id, dispatcher_name: data.name, dispatcher_code: data.code });
         } 
-        document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(true); renderDispatchers(document.getElementById('main-content')); 
+        document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(true); renderDispatchers(reRenderCurrentPage()); 
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -24855,7 +24871,7 @@
       try {
         await dbDelete('dispatchers', id);
         await logActivity('DISPATCHER_DELETED', { dispatcher_id: id, dispatcher_name: disp?.name });
-        showToast('Deleted'); await loadAllData(true); renderDispatchers(document.getElementById('main-content'));
+        showToast('Deleted'); await loadAllData(true); renderDispatchers(reRenderCurrentPage());
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
@@ -25138,7 +25154,7 @@
       fuelFilterProduct = '';
       fuelFilterDriver = '';
       selectedFuelTruck = null;
-      renderFuelTracking(document.getElementById('main-content'));
+      renderFuelTracking(reRenderCurrentPage());
     }
     
     function renderFuelTracking(c) {
@@ -25806,7 +25822,7 @@
       
       showToast('Deleted ' + deleted + ' transactions');
       await loadAllData(true);
-      renderFuelTracking(document.getElementById('main-content'));
+      renderFuelTracking(reRenderCurrentPage());
     }
 
     function openFuelUploadModal() {
@@ -26315,7 +26331,7 @@
       showToast('Saved ' + saved + ' transactions' + (skipped > 0 ? ' (' + skipped + ' duplicates skipped)' : ''));
       parsedFuelData = [];
       await loadAllData(true);
-      renderFuelTracking(document.getElementById('main-content'));
+      renderFuelTracking(reRenderCurrentPage());
     }
 
     // ============ IFTA REPORT SECTION ============
@@ -26560,7 +26576,7 @@
       }
       iftaMileageData = [];
       showToast('Mileage data cleared');
-      renderIFTA(document.getElementById('main-content'));
+      renderIFTA(reRenderCurrentPage());
     }
 
     async function parseIFTACsv() {
@@ -26598,7 +26614,7 @@
           iftaMileageData = data;
           document.querySelector('.modal-overlay').remove();
           showToast('Loaded ' + data.length + ' jurisdictions');
-          renderIFTA(document.getElementById('main-content'));
+          renderIFTA(reRenderCurrentPage());
         } else {
           const preview = document.getElementById('iftaParsePreview');
           preview.style.display = 'block';
@@ -26678,7 +26694,7 @@
         fleetMileagePeriod = { start: null, end: null };
         showToast('Fleet mileage data cleared');
         document.querySelector('.modal-overlay')?.remove();
-        renderFuelTracking(document.getElementById('main-content'));
+        renderFuelTracking(reRenderCurrentPage());
       } catch (err) {
         console.error('Error clearing fleet mileage:', err);
         showToast('Error clearing data', 'error');
@@ -26797,7 +26813,7 @@
         const totalMiles = data.reduce((s, t) => s + t.distance, 0);
         document.querySelector('.modal-overlay')?.remove();
         showToast('Saved ' + data.length + ' trucks, ' + totalMiles.toLocaleString(undefined, {maximumFractionDigits: 0}) + ' total miles');
-        renderFuelTracking(document.getElementById('main-content'));
+        renderFuelTracking(reRenderCurrentPage());
 
       } catch (err) {
         console.error('Error saving fleet mileage:', err);
@@ -26999,7 +27015,7 @@
         document.querySelector('.modal-overlay').remove();
         showToast(id ? 'Task updated!' : 'Task created!');
         await loadAllData(true);
-        renderTasks(document.getElementById('main-content'));
+        renderTasks(reRenderCurrentPage());
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
     
@@ -27013,7 +27029,7 @@
         await logActivity(complete ? 'TASK_COMPLETED' : 'TASK_REOPENED', { task_id: id, task_title: task?.title });
         showToast(complete ? 'Task completed! [[icon:check]]' : 'Task reopened');
         await loadAllData(true);
-        renderTasks(document.getElementById('main-content'));
+        renderTasks(reRenderCurrentPage());
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
     
@@ -27025,7 +27041,7 @@
         await logActivity('TASK_DELETED', { task_id: id, task_title: task?.title });
         showToast('Task deleted');
         await loadAllData(true);
-        renderTasks(document.getElementById('main-content'));
+        renderTasks(reRenderCurrentPage());
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
@@ -27322,7 +27338,7 @@
         document.querySelector('.modal-overlay').remove();
         showToast('Saved!');
         await loadAllData(true);
-        renderCompliance(document.getElementById('main-content'));
+        renderCompliance(reRenderCurrentPage());
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
     
@@ -27331,7 +27347,7 @@
         await dbInsert('compliance_tasks', { task_name: name, frequency: frequency, description: description, is_completed: false });
         showToast('Task added!');
         await loadAllData(true);
-        renderCompliance(document.getElementById('main-content'));
+        renderCompliance(reRenderCurrentPage());
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
     
@@ -27358,7 +27374,7 @@
         await dbUpdate('compliance_tasks', id, { last_completed: today, next_due_date: nextDue, is_completed: false });
         showToast('Marked complete!');
         await loadAllData(true);
-        renderCompliance(document.getElementById('main-content'));
+        renderCompliance(reRenderCurrentPage());
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
     
@@ -27368,7 +27384,7 @@
         await dbDelete('compliance_tasks', id);
         showToast('Deleted');
         await loadAllData(true);
-        renderCompliance(document.getElementById('main-content'));
+        renderCompliance(reRenderCurrentPage());
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
     
@@ -27556,7 +27572,7 @@
         await dbDelete('company_files', fileId);
         showToast('File deleted');
         await loadAllData(true);
-        renderCompliance(document.getElementById('main-content'));
+        renderCompliance(reRenderCurrentPage());
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
@@ -27596,7 +27612,7 @@
           document.querySelector('.modal-overlay').remove();
           showToast('File uploaded!');
           await loadAllData(true);
-          renderCompliance(document.getElementById('main-content'));
+          renderCompliance(reRenderCurrentPage());
         } catch (err) { showToast('Error: ' + err.message, 'error'); }
       };
       reader.readAsDataURL(file);
@@ -27657,7 +27673,7 @@
           document.querySelector('.modal-overlay').remove();
           showToast('File uploaded!');
           await loadAllData(true);
-          renderCompliance(document.getElementById('main-content'));
+          renderCompliance(reRenderCurrentPage());
         } catch (err) { showToast('Error: ' + err.message, 'error'); }
       };
       reader.readAsDataURL(file);
@@ -27844,7 +27860,7 @@
         document.querySelector('.modal-overlay').remove();
         showToast('Accident saved!');
         await loadAllData(true);
-        renderCompliance(document.getElementById('main-content'));
+        renderCompliance(reRenderCurrentPage());
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
     
@@ -27854,7 +27870,7 @@
         await dbDelete('accidents', id);
         showToast('Deleted');
         await loadAllData(true);
-        renderCompliance(document.getElementById('main-content'));
+        renderCompliance(reRenderCurrentPage());
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
@@ -27909,7 +27925,7 @@
       if (!t) {
         // Truck was deleted or not found - go back to list
         currentDetailView = null;
-        renderTrucks(document.getElementById('main-content'));
+        renderTrucks(reRenderCurrentPage());
         return;
       }
       const truckFiles = (appData.truck_files || []).filter(f => f.truck_id === truckId);
@@ -28388,7 +28404,7 @@
         await loadAllData(true);
         // Stay on current page - if on maintenance page, refresh it; otherwise go to truck compliance
         if (currentPage === 'maintenance') {
-          renderMaintenance(document.getElementById('main-content'));
+          renderMaintenance(reRenderCurrentPage());
         } else if (truckId && typeof viewTruckCompliance === 'function') {
           viewTruckCompliance(truckId);
         }
@@ -28424,7 +28440,7 @@
         if (truckId && typeof viewTruckCompliance === 'function') {
           viewTruckCompliance(truckId);
         } else if (currentPage === 'maintenance') {
-          renderMaintenance(document.getElementById('main-content'));
+          renderMaintenance(reRenderCurrentPage());
         }
       } catch (e) {
         showToast('Delete failed: ' + e.message, 'error');
@@ -28865,7 +28881,7 @@
         document.querySelector('.modal-overlay').remove();
         showToast('Ticket saved!');
         await loadAllData(true);
-        renderDriverCompliance(document.getElementById('main-content'));
+        renderDriverCompliance(reRenderCurrentPage());
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
     
@@ -28875,7 +28891,7 @@
         await dbDelete('tickets', id);
         showToast('Ticket deleted');
         await loadAllData(true);
-        renderDriverCompliance(document.getElementById('main-content'));
+        renderDriverCompliance(reRenderCurrentPage());
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
     
@@ -28954,7 +28970,7 @@
         document.querySelector('.modal-overlay').remove();
         showToast('Violation saved!');
         await loadAllData(true);
-        renderDriverCompliance(document.getElementById('main-content'));
+        renderDriverCompliance(reRenderCurrentPage());
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
     
@@ -28964,7 +28980,7 @@
         await dbDelete('violations', id);
         showToast('Violation deleted');
         await loadAllData(true);
-        renderDriverCompliance(document.getElementById('main-content'));
+        renderDriverCompliance(reRenderCurrentPage());
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
     
@@ -29218,7 +29234,7 @@
           showToast('Claim created successfully');
         }
         closeModal('claim-modal');
-        renderClaims(document.getElementById('main-content'));
+        renderClaims(reRenderCurrentPage());
       } catch (e) {
         showToast('Error saving claim: ' + e.message, 'error');
       }
@@ -29280,7 +29296,7 @@
           appData.claims.splice(idx, 1);
         }
         showToast('Claim deleted');
-        renderClaims(document.getElementById('main-content'));
+        renderClaims(reRenderCurrentPage());
       } catch (e) {
         showToast('Delete failed: ' + e.message, 'error');
       }
@@ -29938,7 +29954,7 @@
         order.payment_date = now;
         await logBillingEvent(orderId, order.broker_id, 'payment_marked', 'ui', 'Marked as paid', { amount: getOrderInvoiceAmount(order) });
         showToast('Invoice marked as paid');
-        renderBillingPage(document.getElementById('main-content'));
+        renderBillingPage(reRenderCurrentPage());
       } catch (e) {
         showToast('Failed to update: ' + e.message, 'error');
       }
@@ -29958,7 +29974,7 @@
         if (invoiceNumber) order.invoice_number = invoiceNumber;
         await logBillingEvent(orderId, order.broker_id, 'invoice_marked', 'ui', 'Invoice created' + (invoiceNumber ? ': ' + invoiceNumber : ''), { invoice_number: invoiceNumber });
         showToast('Order marked as invoiced');
-        renderBillingPage(document.getElementById('main-content'));
+        renderBillingPage(reRenderCurrentPage());
       } catch (e) {
         showToast('Failed to update: ' + e.message, 'error');
       }
@@ -30148,14 +30164,14 @@
       const followUpNeeded = getOrdersNeedingFollowUp().length;
 
       const cards = [
-        { label: 'Total Invoiced ' + renderDeltaBadge(billingInvoicedDelta), value: formatMoney(m.totalInvoiced), sub: (unpaidOrders.length + paidOrders.length) + ' invoices', accent: 'stat-card--purple', click: "billingFilter='all';billingTab='invoices';renderBillingPage(document.getElementById('main-content'))" },
-        { label: 'Total Paid', value: formatMoney(m.collected), sub: paidOrders.length + ' paid', accent: 'stat-card--green', click: "billingFilter='paid';billingTab='invoices';renderBillingPage(document.getElementById('main-content'))" },
-        { label: 'Outstanding ' + renderDeltaBadge(billingOutstandingDelta, 'cost'), value: formatMoney(m.totalReceivables), sub: unpaidOrders.length + ' pending', accent: 'stat-card--blue', click: "billingFilter='outstanding';billingTab='invoices';renderBillingPage(document.getElementById('main-content'))" },
-        { label: 'Overdue ' + renderDeltaBadge(billingOverdueDelta, 'cost'), value: formatMoney(m.overdueAmount), sub: 'Needs attention', accent: 'stat-card--red', click: "billingFilter='overdue';billingTab='invoices';renderBillingPage(document.getElementById('main-content'))" },
+        { label: 'Total Invoiced ' + renderDeltaBadge(billingInvoicedDelta), value: formatMoney(m.totalInvoiced), sub: (unpaidOrders.length + paidOrders.length) + ' invoices', accent: 'stat-card--purple', click: "billingFilter='all';billingTab='invoices';renderBillingPage(reRenderCurrentPage())" },
+        { label: 'Total Paid', value: formatMoney(m.collected), sub: paidOrders.length + ' paid', accent: 'stat-card--green', click: "billingFilter='paid';billingTab='invoices';renderBillingPage(reRenderCurrentPage())" },
+        { label: 'Outstanding ' + renderDeltaBadge(billingOutstandingDelta, 'cost'), value: formatMoney(m.totalReceivables), sub: unpaidOrders.length + ' pending', accent: 'stat-card--blue', click: "billingFilter='outstanding';billingTab='invoices';renderBillingPage(reRenderCurrentPage())" },
+        { label: 'Overdue ' + renderDeltaBadge(billingOverdueDelta, 'cost'), value: formatMoney(m.overdueAmount), sub: 'Needs attention', accent: 'stat-card--red', click: "billingFilter='overdue';billingTab='invoices';renderBillingPage(reRenderCurrentPage())" },
         { label: 'Avg Days to Pay', value: m.avgDaysToPay !== null ? m.avgDaysToPay + '<span style="font-size:14px;font-weight:400"> days</span>' : '-', sub: 'Collection time', accent: 'stat-card--amber', click: null },
         { label: 'Collection Rate ' + renderDeltaBadge(billingCollectionDelta), value: m.collectionRate + '%', sub: 'Of total billed', accent: m.collectionRate >= 70 ? 'stat-card--green' : m.collectionRate >= 50 ? 'stat-card--amber' : 'stat-card--red', click: null },
-        { label: 'Needs Follow-up', value: String(followUpNeeded), sub: 'Past due or no contact', accent: 'stat-card--amber', click: "collectionsFilter='follow_up';billingTab='collections';renderBillingPage(document.getElementById('main-content'))" },
-        { label: 'On Hold', value: String(holdCount), sub: 'Billing holds active', accent: 'stat-card--purple', click: "collectionsFilter='hold';billingTab='collections';renderBillingPage(document.getElementById('main-content'))" }
+        { label: 'Needs Follow-up', value: String(followUpNeeded), sub: 'Past due or no contact', accent: 'stat-card--amber', click: "collectionsFilter='follow_up';billingTab='collections';renderBillingPage(reRenderCurrentPage())" },
+        { label: 'On Hold', value: String(holdCount), sub: 'Billing holds active', accent: 'stat-card--purple', click: "collectionsFilter='hold';billingTab='collections';renderBillingPage(reRenderCurrentPage())" }
       ];
 
       cards.forEach(cd => {
@@ -30541,14 +30557,14 @@
       } else {
         billingSelectedOrders = [];
       }
-      renderBillingPage(document.getElementById('main-content'));
+      renderBillingPage(reRenderCurrentPage());
     }
 
     function toggleBillingOrderSelection(orderId) {
       const idx = billingSelectedOrders.indexOf(orderId);
       if (idx >= 0) billingSelectedOrders.splice(idx, 1);
       else billingSelectedOrders.push(orderId);
-      renderBillingPage(document.getElementById('main-content'));
+      renderBillingPage(reRenderCurrentPage());
     }
 
     async function batchMarkInvoiced() {
@@ -30609,7 +30625,7 @@
       document.getElementById('batch-invoice-modal')?.remove();
       billingSelectedOrders = [];
       showToast(successCount + ' orders invoiced successfully', 'success');
-      renderBillingPage(document.getElementById('main-content'));
+      renderBillingPage(reRenderCurrentPage());
     }
 
     async function batchMarkPaid() {
@@ -30671,7 +30687,7 @@
       document.getElementById('batch-paid-modal')?.remove();
       billingSelectedOrders = [];
       showToast(successCount + ' orders marked as paid', 'success');
-      renderBillingPage(document.getElementById('main-content'));
+      renderBillingPage(reRenderCurrentPage());
     }
 
     // Invoice Detail Modal
@@ -30991,7 +31007,7 @@
 
         document.getElementById('follow-up-modal')?.remove();
         showToast('Follow-up logged', 'success');
-        renderBillingPage(document.getElementById('main-content'));
+        renderBillingPage(reRenderCurrentPage());
       } catch(e) {
         showToast('Failed: ' + e.message, 'error');
       }
@@ -31065,7 +31081,7 @@
 
         document.getElementById('promise-modal')?.remove();
         showToast('Promise to pay recorded', 'success');
-        renderBillingPage(document.getElementById('main-content'));
+        renderBillingPage(reRenderCurrentPage());
       } catch(e) {
         showToast('Failed: ' + e.message, 'error');
       }
@@ -31130,7 +31146,7 @@
 
         document.getElementById('hold-modal')?.remove();
         showToast('Billing hold set', 'success');
-        renderBillingPage(document.getElementById('main-content'));
+        renderBillingPage(reRenderCurrentPage());
       } catch(e) {
         showToast('Failed: ' + e.message, 'error');
       }
@@ -31148,7 +31164,7 @@
         await logBillingEvent(orderId, order.broker_id, 'hold_updated', 'ui', 'Hold cleared (was: ' + oldReason + ')', { hold_cleared: true, previous_reason: oldReason });
 
         showToast('Billing hold cleared', 'success');
-        renderBillingPage(document.getElementById('main-content'));
+        renderBillingPage(reRenderCurrentPage());
       } catch(e) {
         showToast('Failed: ' + e.message, 'error');
       }
@@ -31446,12 +31462,12 @@
     function selectPayrollDriver(driverId) {
       payrollDetailDriverId = driverId;
       payrollDetailTab = 'period';
-      renderPayroll(document.getElementById('main-content'));
+      renderPayroll(reRenderCurrentPage());
     }
 
     function setPayrollDetailTab(tab) {
       payrollDetailTab = tab;
-      renderPayroll(document.getElementById('main-content'));
+      renderPayroll(reRenderCurrentPage());
     }
 
     function getCurrentPayrollWeek() {
@@ -32160,7 +32176,7 @@
       payrollHistoryStatusFilter = 'all';
       payrollLedgerDateFilter = 'all';
       payrollLedgerUnpaidOnly = false;
-      renderPayroll(document.getElementById('main-content'));
+      renderPayroll(reRenderCurrentPage());
     }
 
     // === Payroll Master-Detail Rendering ===
@@ -32264,7 +32280,7 @@
         }
         await refreshPayrollRecordsStrict();
         showToast('Statement sent to ' + driverEmail + '!', 'success');
-        renderPayroll(document.getElementById('main-content'));
+        renderPayroll(reRenderCurrentPage());
       } catch (e) {
         console.error('Generate & Send failed:', e);
         showToast('Failed: ' + (e?.message || 'Unknown error'), 'error');
@@ -32510,7 +32526,7 @@
       } else {
         showToast('No duplicate records found.', 'info');
       }
-      renderPayroll(document.getElementById('main-content'));
+      renderPayroll(reRenderCurrentPage());
     }
 
     function renderPayroll(c) {
@@ -32739,7 +32755,7 @@
         payrollPeriod = { type: 'year', year };
       }
       payrollYear = payrollPeriod.year;
-      renderPayroll(document.getElementById('main-content'));
+      renderPayroll(reRenderCurrentPage());
     }
 
     function navigatePayrollPeriod(direction) {
@@ -32754,7 +32770,7 @@
         if (payrollPeriod.month > 12) { payrollPeriod.year++; payrollPeriod.month = 1; }
       }
       payrollYear = payrollPeriod.year;
-      renderPayroll(document.getElementById('main-content'));
+      renderPayroll(reRenderCurrentPage());
     }
 
     // Debounced search for payroll
@@ -32763,7 +32779,7 @@
       clearTimeout(_payrollSearchTimer);
       _payrollSearchTimer = setTimeout(() => {
         payrollSearch = value;
-        renderPayroll(document.getElementById('main-content'));
+        renderPayroll(reRenderCurrentPage());
       }, 250);
     }
 
@@ -32851,7 +32867,7 @@
         }
         showToast('Payment of ' + formatMoney(cappedPayment) + ' recorded' + (isFullyPaid ? ' — fully paid!' : ''), 'success');
         document.querySelector('.modal-overlay')?.remove();
-        renderPayroll(document.getElementById('main-content'));
+        renderPayroll(reRenderCurrentPage());
       } catch (e) {
         console.error('Failed to record payment:', e);
         showToast('Failed to record payment: ' + (e?.message || 'Unknown error'), 'error');
@@ -32881,7 +32897,7 @@
       }
       showToast(count + ' record' + (count !== 1 ? 's' : '') + ' marked as paid.', 'success');
       document.querySelector('.modal-overlay')?.remove();
-      renderPayroll(document.getElementById('main-content'));
+      renderPayroll(reRenderCurrentPage());
     }
 
     function buildPayrollRecordPrintHTML(record, driver) {
@@ -33121,7 +33137,7 @@
         console.error('Failed to reload payroll records after batch generation:', e);
         showToast('Batch payroll finished, but Paystub History could not be refreshed. Re-login and refresh the page.', 'warning');
       }
-      renderPayroll(document.getElementById('main-content'));
+      renderPayroll(reRenderCurrentPage());
     }
 
     // Save a payroll record to database
@@ -33754,7 +33770,7 @@
       document.querySelector('.modal-overlay')?.remove();
 
       // Refresh payroll view to show the new record in the ledger
-      renderPayroll(document.getElementById('main-content'));
+      renderPayroll(reRenderCurrentPage());
     }
 
     // Generate Settlement PDF for Owner-Operators
@@ -35083,7 +35099,7 @@
       }
 
       // Refresh payroll view to show the new record in the ledger
-      renderPayroll(document.getElementById('main-content'));
+      renderPayroll(reRenderCurrentPage());
     }
 
     // ============ VIEW OR FETCH STORED BOL ============
@@ -37409,15 +37425,15 @@
       const tabs = `
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
           <div class="segmented-control-scroll" style="flex:1;min-width:0">
-            <button class="segmented-control-btn ${finTab === 'command' ? 'active' : ''}" onclick="finTab='command';renderConsolidatedFinancials(document.getElementById('main-content'))">Command Center</button>
-            <button class="segmented-control-btn ${finTab === 'pnl' ? 'active' : ''}" onclick="finTab='pnl';renderConsolidatedFinancials(document.getElementById('main-content'))">P&amp;L</button>
-            <button class="segmented-control-btn ${finTab === 'costs' ? 'active' : ''}" onclick="finTab='costs';renderConsolidatedFinancials(document.getElementById('main-content'))">Costs</button>
-            <button class="segmented-control-btn ${finTab === 'profitability' ? 'active' : ''}" onclick="finTab='profitability';renderConsolidatedFinancials(document.getElementById('main-content'))">Profitability</button>
-            <button class="segmented-control-btn ${finTab === 'forecast' ? 'active' : ''}" onclick="finTab='forecast';renderConsolidatedFinancials(document.getElementById('main-content'))">Forecast</button>
+            <button class="segmented-control-btn ${finTab === 'command' ? 'active' : ''}" onclick="finTab='command';renderConsolidatedFinancials(reRenderCurrentPage())">Command Center</button>
+            <button class="segmented-control-btn ${finTab === 'pnl' ? 'active' : ''}" onclick="finTab='pnl';renderConsolidatedFinancials(reRenderCurrentPage())">P&amp;L</button>
+            <button class="segmented-control-btn ${finTab === 'costs' ? 'active' : ''}" onclick="finTab='costs';renderConsolidatedFinancials(reRenderCurrentPage())">Costs</button>
+            <button class="segmented-control-btn ${finTab === 'profitability' ? 'active' : ''}" onclick="finTab='profitability';renderConsolidatedFinancials(reRenderCurrentPage())">Profitability</button>
+            <button class="segmented-control-btn ${finTab === 'forecast' ? 'active' : ''}" onclick="finTab='forecast';renderConsolidatedFinancials(reRenderCurrentPage())">Forecast</button>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
             <label style="font-weight:500;color:var(--text-secondary);font-size:13px">Year:</label>
-            <select class="select" onchange="financialsYear=parseInt(this.value);renderConsolidatedFinancials(document.getElementById('main-content'))">
+            <select class="select" onchange="financialsYear=parseInt(this.value);renderConsolidatedFinancials(reRenderCurrentPage())">
               ${yearOptions}
             </select>
           </div>
@@ -37682,12 +37698,12 @@
       // Margin < 10%
       var margin = snapshot.profitability.profitMargin;
       if (margin < 10 && snapshot.operations.totalRevenue > 0) {
-        alerts.push({ severity: 'red', title: 'Low Profit Margin', msg: 'Margin is ' + margin.toFixed(1) + '% (target: >10%). Review pricing or reduce costs.', link: "finTab='pnl';renderConsolidatedFinancials(document.getElementById('main-content'))" });
+        alerts.push({ severity: 'red', title: 'Low Profit Margin', msg: 'Margin is ' + margin.toFixed(1) + '% (target: >10%). Review pricing or reduce costs.', link: "finTab='pnl';renderConsolidatedFinancials(reRenderCurrentPage())" });
       }
 
       // Break-even not met
       if (snapshot.profitability.netProfit < 0) {
-        alerts.push({ severity: 'red', title: 'Below Break-Even', msg: 'Operating at a ' + formatMoney(Math.abs(snapshot.profitability.netProfit)) + ' loss. Need ' + formatMoney(breakEven.breakEvenPPC) + '/car to break even.', link: "finTab='costs';renderConsolidatedFinancials(document.getElementById('main-content'))" });
+        alerts.push({ severity: 'red', title: 'Below Break-Even', msg: 'Operating at a ' + formatMoney(Math.abs(snapshot.profitability.netProfit)) + ' loss. Need ' + formatMoney(breakEven.breakEvenPPC) + '/car to break even.', link: "finTab='costs';renderConsolidatedFinancials(reRenderCurrentPage())" });
       }
 
       // AR > 60 days
@@ -37699,7 +37715,7 @@
 
       // Forecast trending down
       if (forecast && forecast.trend < 0) {
-        alerts.push({ severity: 'amber', title: 'Revenue Trending Down', msg: 'Linear trend shows declining revenue. Monthly decline: ' + formatMoney(Math.abs(forecast.trend)) + '.', link: "finTab='forecast';renderConsolidatedFinancials(document.getElementById('main-content'))" });
+        alerts.push({ severity: 'amber', title: 'Revenue Trending Down', msg: 'Linear trend shows declining revenue. Monthly decline: ' + formatMoney(Math.abs(forecast.trend)) + '.', link: "finTab='forecast';renderConsolidatedFinancials(reRenderCurrentPage())" });
       }
 
       // Low health score
@@ -38402,23 +38418,23 @@
         <!-- Date Range & Filters -->
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:20px">
           <label style="font-weight:500;color:var(--text-secondary);font-size:13px">From:</label>
-          <input class="input" type="date" value="${tripProfitFilter.startDate}" onchange="tripProfitFilter.startDate=this.value;renderTripProfitability(document.getElementById('main-content'))">
+          <input class="input" type="date" value="${tripProfitFilter.startDate}" onchange="tripProfitFilter.startDate=this.value;renderTripProfitability(reRenderCurrentPage())">
           <label style="font-weight:500;color:var(--text-secondary);font-size:13px">To:</label>
-          <input class="input" type="date" value="${tripProfitFilter.endDate}" onchange="tripProfitFilter.endDate=this.value;renderTripProfitability(document.getElementById('main-content'))">
-          <select class="select" onchange="tripProfitFilter.driver=this.value;renderTripProfitability(document.getElementById('main-content'))">
+          <input class="input" type="date" value="${tripProfitFilter.endDate}" onchange="tripProfitFilter.endDate=this.value;renderTripProfitability(reRenderCurrentPage())">
+          <select class="select" onchange="tripProfitFilter.driver=this.value;renderTripProfitability(reRenderCurrentPage())">
             <option value="all"${tripProfitFilter.driver === 'all' ? ' selected' : ''}>All Drivers</option>
             ${driverOptions}
           </select>
-          <select class="select" onchange="tripProfitFilter.truck=this.value;renderTripProfitability(document.getElementById('main-content'))">
+          <select class="select" onchange="tripProfitFilter.truck=this.value;renderTripProfitability(reRenderCurrentPage())">
             <option value="all"${tripProfitFilter.truck === 'all' ? ' selected' : ''}>All Trucks</option>
             ${truckOptions}
           </select>
-          <select class="select" onchange="tripProfitFilter.profitability=this.value;renderTripProfitability(document.getElementById('main-content'))">
+          <select class="select" onchange="tripProfitFilter.profitability=this.value;renderTripProfitability(reRenderCurrentPage())">
             <option value="all"${tripProfitFilter.profitability === 'all' ? ' selected' : ''}>All Trips</option>
             <option value="profitable"${tripProfitFilter.profitability === 'profitable' ? ' selected' : ''}>Profitable Only</option>
             <option value="unprofitable"${tripProfitFilter.profitability === 'unprofitable' ? ' selected' : ''}>Unprofitable Only</option>
           </select>
-          <button class="btn btn-ghost" onclick="tripProfitFilter={startDate:new Date().getFullYear()+'-01-01',endDate:new Date().getFullYear()+'-12-31',driver:'all',truck:'all',profitability:'all',search:''};selectedTripsForCompare=[];renderTripProfitability(document.getElementById('main-content'))">Clear</button>
+          <button class="btn btn-ghost" onclick="tripProfitFilter={startDate:new Date().getFullYear()+'-01-01',endDate:new Date().getFullYear()+'-12-31',driver:'all',truck:'all',profitability:'all',search:''};selectedTripsForCompare=[];renderTripProfitability(reRenderCurrentPage())">Clear</button>
         </div>
 
         <!-- Summary Stats -->
@@ -38514,7 +38530,7 @@
         tripProfitSort.column = column;
         tripProfitSort.direction = 'desc';
       }
-      renderTripProfitability(document.getElementById('main-content'));
+      renderTripProfitability(reRenderCurrentPage());
     }
 
     function toggleTripCompare(tripId) {
@@ -38524,7 +38540,7 @@
       } else if (selectedTripsForCompare.length < 3) {
         selectedTripsForCompare.push(tripId);
       }
-      renderTripProfitability(document.getElementById('main-content'));
+      renderTripProfitability(reRenderCurrentPage());
     }
 
     function showTripComparison() {
@@ -38878,7 +38894,7 @@
           const newCost = await dbInsert('fixed_costs', data); 
           await logActivity('FIXED_COST_CREATED', { cost_id: newCost.id, category: data.category, name: data.name, amount: data.amount });
         } 
-        document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(true); renderFixedCosts(document.getElementById('main-content')); 
+        document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(true); renderFixedCosts(reRenderCurrentPage()); 
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -38887,7 +38903,7 @@
       const cost = (appData.fixed_costs || []).find(fc => fc.id === id);
       await dbDelete('fixed_costs', id); 
       await logActivity('FIXED_COST_DELETED', { cost_id: id, category: cost?.category, name: cost?.name, amount: cost?.amount });
-      showToast('Deleted'); await loadAllData(true); renderFixedCosts(document.getElementById('main-content')); 
+      showToast('Deleted'); await loadAllData(true); renderFixedCosts(reRenderCurrentPage()); 
     }
 
     // ============ VARIABLE COSTS ============
@@ -38978,9 +38994,9 @@
         '</tbody></table></div></div>';
     }
     
-    function setVarCostFilter(f) { varCostFilter = f; renderVariableCosts(document.getElementById('main-content')); }
-    function setVarCostMonth(m) { varCostMonth = parseInt(m); renderVariableCosts(document.getElementById('main-content')); }
-    function setVarCostYear(y) { varCostYear = parseInt(y); renderVariableCosts(document.getElementById('main-content')); }
+    function setVarCostFilter(f) { varCostFilter = f; renderVariableCosts(reRenderCurrentPage()); }
+    function setVarCostMonth(m) { varCostMonth = parseInt(m); renderVariableCosts(reRenderCurrentPage()); }
+    function setVarCostYear(y) { varCostYear = parseInt(y); renderVariableCosts(reRenderCurrentPage()); }
     
     function openVariableCostModal(id = null) {
       const vc = id ? (appData.variable_costs || []).find(x => x.id === id) : null;
@@ -39023,7 +39039,7 @@
         document.querySelector('.modal-overlay').remove();
         showToast('Variable cost saved!');
         await loadAllData(true);
-        renderVariableCosts(document.getElementById('main-content'));
+        renderVariableCosts(reRenderCurrentPage());
       } catch (e) { showToast(e.message, 'error'); }
     }
     
@@ -39035,7 +39051,7 @@
         await logActivity('VARIABLE_COST_DELETED', { cost_id: id, category: cost?.category, amount: cost?.amount });
         showToast('Deleted');
         await loadAllData(true);
-        renderVariableCosts(document.getElementById('main-content'));
+        renderVariableCosts(reRenderCurrentPage());
       } catch (e) { showToast(e.message, 'error'); }
     }
     
@@ -39432,11 +39448,11 @@
       // Tabs for consolidated view (redirects to new tab structure)
       const finTabs = `
         <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;">
-          <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='command';renderConsolidatedFinancials(document.getElementById('main-content'))">Command Center</button>
-          <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='pnl';renderConsolidatedFinancials(document.getElementById('main-content'))">P&amp;L</button>
-          <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='costs';renderConsolidatedFinancials(document.getElementById('main-content'))">Costs</button>
-          <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='profitability';renderConsolidatedFinancials(document.getElementById('main-content'))">Profitability</button>
-          <button class="btn btn-primary" style="padding:6px 12px;font-size:12px" onclick="finTab='forecast';renderConsolidatedFinancials(document.getElementById('main-content'))">Forecast</button>
+          <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='command';renderConsolidatedFinancials(reRenderCurrentPage())">Command Center</button>
+          <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='pnl';renderConsolidatedFinancials(reRenderCurrentPage())">P&amp;L</button>
+          <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='costs';renderConsolidatedFinancials(reRenderCurrentPage())">Costs</button>
+          <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="finTab='profitability';renderConsolidatedFinancials(reRenderCurrentPage())">Profitability</button>
+          <button class="btn btn-primary" style="padding:6px 12px;font-size:12px" onclick="finTab='forecast';renderConsolidatedFinancials(reRenderCurrentPage())">Forecast</button>
         </div>
       `;
       
@@ -41943,7 +41959,7 @@ function jsonResponse(data, status = 200) {
       } else {
         showToast('Samsara settings saved locally');
       }
-      renderSettings(document.getElementById('main-content'));
+      renderSettings(reRenderCurrentPage());
     }
     
     async function clearSamsaraKey() {
@@ -41952,7 +41968,7 @@ function jsonResponse(data, status = 200) {
       setSamsaraProxyUrl('');
       await saveSamsaraSettingsToDb();
       showToast('Samsara settings removed');
-      renderSettings(document.getElementById('main-content'));
+      renderSettings(reRenderCurrentPage());
     }
     
     async function samsaraFetch(path) {
@@ -46183,7 +46199,7 @@ function jsonResponse(data, status = 200) {
       setApiKey(key);
       const saved = await saveAnthropicSettingsToDb();
       showToast(saved ? 'API Key saved for all users!' : 'API Key saved locally');
-      renderSettings(document.getElementById('main-content'));
+      renderSettings(reRenderCurrentPage());
     }
 
     async function clearApiKey() {
@@ -46191,7 +46207,7 @@ function jsonResponse(data, status = 200) {
       setApiKey('');
       await saveAnthropicSettingsToDb();
       showToast('API Key removed');
-      renderSettings(document.getElementById('main-content'));
+      renderSettings(reRenderCurrentPage());
     }
 
     async function testApiKey() {
@@ -46276,7 +46292,7 @@ function jsonResponse(data, status = 200) {
           const newUser = await dbInsert('users', Object.assign({}, data, { auth_id: authId })); 
           await logActivity('USER_CREATED', { target_user_id: newUser.id, user_email: data.email, role: data.role });
         }
-        document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(true); renderUsers(document.getElementById('main-content')); 
+        document.querySelector('.modal-overlay').remove(); showToast('Saved!'); await loadAllData(true); renderUsers(reRenderCurrentPage()); 
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -46286,7 +46302,7 @@ function jsonResponse(data, status = 200) {
       try {
         await dbDelete('users', id);
         await logActivity('USER_DELETED', { target_user_id: id, user_email: user?.email });
-        showToast('Deleted'); await loadAllData(true); renderUsers(document.getElementById('main-content'));
+        showToast('Deleted'); await loadAllData(true); renderUsers(reRenderCurrentPage());
       } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
@@ -47287,8 +47303,8 @@ function jsonResponse(data, status = 200) {
         <div class="header">
           <h2>[[icon:bot]] AI Financial Advisor</h2>
           <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-            <select onchange="aiPeriod.type=this.value;if(aiPeriod.type==='year'&&!aiPeriod.year){aiPeriod.year=new Date().getFullYear();}renderAIAdvisor(document.getElementById('main-content'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary)"><option value="year" ${aiPeriod.type === 'year' ? 'selected' : ''}>Year</option><option value="all" ${aiPeriod.type === 'all' ? 'selected' : ''}>All Time</option></select>
-            ${aiPeriod.type === 'year' ? `<select onchange="aiPeriod.year=parseInt(this.value);renderAIAdvisor(document.getElementById('main-content'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary)">${aiYearOptions}</select>` : ''}
+            <select onchange="aiPeriod.type=this.value;if(aiPeriod.type==='year'&&!aiPeriod.year){aiPeriod.year=new Date().getFullYear();}renderAIAdvisor(reRenderCurrentPage())" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary)"><option value="year" ${aiPeriod.type === 'year' ? 'selected' : ''}>Year</option><option value="all" ${aiPeriod.type === 'all' ? 'selected' : ''}>All Time</option></select>
+            ${aiPeriod.type === 'year' ? `<select onchange="aiPeriod.year=parseInt(this.value);renderAIAdvisor(reRenderCurrentPage())" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary)">${aiYearOptions}</select>` : ''}
             <span style="font-size:12px;background:var(--dim-blue);color:var(--info);padding:6px 10px;border-radius:4px;font-weight:600;border:1px solid var(--info-border)">${fs.periodLabel}</span>
             ${undatedTripCount > 0 && aiPeriod.type !== 'all' ? `<span style="font-size:12px;background:var(--dim-amber);color:var(--warning);padding:6px 10px;border-radius:4px;font-weight:600;border:1px solid var(--warning-border)">Undated trips excluded: ${undatedTripCount}</span>` : ''}
             <span style="font-size:13px;color:var(--text-muted)">Powered by Claude AI</span>
@@ -47385,7 +47401,7 @@ function jsonResponse(data, status = 200) {
     
     function switchAITab(tab) {
       aiAdvisorTab = tab;
-      renderAIAdvisor(document.getElementById('main-content'));
+      renderAIAdvisor(reRenderCurrentPage());
     }
 
     // Chat Tab
@@ -47901,7 +47917,7 @@ function jsonResponse(data, status = 200) {
     function askAIAdvisor(question) {
       document.getElementById('aiAdvisorInput').value = question;
       aiAdvisorTab = 'chat';
-      renderAIAdvisor(document.getElementById('main-content'));
+      renderAIAdvisor(reRenderCurrentPage());
       setTimeout(sendAIAdvisorMessage, 100);
     }
 
@@ -47919,7 +47935,7 @@ function jsonResponse(data, status = 200) {
       aiAdvisorHistory.push({ role: 'user', content: question });
       input.value = '';
       aiAdvisorLoading = true;
-      renderAIAdvisor(document.getElementById('main-content'));
+      renderAIAdvisor(reRenderCurrentPage());
       
       try {
         const financialContext = getDetailedFinancialContext();
@@ -47963,12 +47979,12 @@ function jsonResponse(data, status = 200) {
       }
       
       aiAdvisorLoading = false;
-      renderAIAdvisor(document.getElementById('main-content'));
+      renderAIAdvisor(reRenderCurrentPage());
     }
 
     function clearAIAdvisorHistory() {
       aiAdvisorHistory = [];
-      renderAIAdvisor(document.getElementById('main-content'));
+      renderAIAdvisor(reRenderCurrentPage());
     }
 
     // ============================================
@@ -48031,7 +48047,7 @@ function jsonResponse(data, status = 200) {
 
     function filterApplications(filter) {
       applicationsFilter = filter;
-      renderApplications(document.getElementById('main-content'));
+      renderApplications(reRenderCurrentPage());
     }
 
     function renderApplicationsList() {
@@ -48693,7 +48709,7 @@ function jsonResponse(data, status = 200) {
 
     function filterDealerApplications(filter) {
       dealerApplicationsFilter = filter;
-      renderDealerApplications(document.getElementById('main-content'));
+      renderDealerApplications(reRenderCurrentPage());
     }
 
     function renderDealerApplicationsList() {
@@ -50633,7 +50649,7 @@ function jsonResponse(data, status = 200) {
         await dbUpdate('orders', orderId, updates);
         showToast('Order updated successfully', 'success');
         // Re-render the page to reflect changes
-        renderDealerOrderDetail(document.getElementById('main-content'));
+        renderDealerOrderDetail(reRenderCurrentPage());
       } catch (e) {
         console.error('Failed to update order:', e);
         showToast('Failed to update order: ' + e.message, 'error');
@@ -50703,7 +50719,7 @@ function jsonResponse(data, status = 200) {
         });
         showToast('Change request submitted successfully', 'success');
         // Re-render to show the new request in history
-        renderDealerOrderDetail(document.getElementById('main-content'));
+        renderDealerOrderDetail(reRenderCurrentPage());
       } catch (e) {
         console.error('Failed to submit change request:', e);
         showToast('Failed to submit change request: ' + e.message, 'error');
@@ -51154,7 +51170,7 @@ function jsonResponse(data, status = 200) {
 
     function filterDealerOrders(status) {
       window.dealerOrdersFilter = status;
-      renderDealerOrders(document.getElementById('main-content'));
+      renderDealerOrders(reRenderCurrentPage());
     }
 
     function viewDealerOrderDetail(orderId) {
@@ -51446,7 +51462,7 @@ function jsonResponse(data, status = 200) {
 
         document.querySelector('.modal-overlay')?.remove();
         await loadAllData(true);
-        renderDealersAdmin(document.getElementById('main-content'));
+        renderDealersAdmin(reRenderCurrentPage());
 
       } catch (err) {
         showToast('Error: ' + err.message, 'error');
@@ -51481,7 +51497,7 @@ function jsonResponse(data, status = 200) {
         await logActivity('DEALER_DELETED', { company_name: dealer.company_name, dealer_code: dealer.dealer_code });
         showToast('Dealer deleted', 'success');
         await loadAllData(true);
-        renderDealersAdmin(document.getElementById('main-content'));
+        renderDealersAdmin(reRenderCurrentPage());
       } catch (err) {
         showToast('Error: ' + err.message, 'error');
       }
