@@ -381,54 +381,59 @@
       log('Defaulting Payment Terms to NET30 for BILL/SPLIT type');
     }
 
-    // VEHICLE
-    const vehicleMatch = cardText.match(/Vehicle\s*Year\/Make\/Model\s*\n\s*(\d{4})\s+([A-Za-z]+)\s+(.+?)(?:\n|$)/i);
-    if (vehicleMatch) {
-      data.vehicle_year = parseInt(vehicleMatch[1]);
-      data.vehicle_make = vehicleMatch[2].trim();
-      data.vehicle_model = vehicleMatch[3].trim().substring(0, 50);
-      log('Found Vehicle:', data.vehicle_year, data.vehicle_make, data.vehicle_model);
-    } else {
-      const altVehicleMatch = cardText.match(/(\d{4})\s+([A-Za-z]+)\s+(\d+\s*Series|[A-Za-z0-9]+[A-Za-z0-9\s]*?)(?:\n|VIN|Sedan|Coupe|SUV|$)/i);
-      if (altVehicleMatch) {
-        const year = parseInt(altVehicleMatch[1]);
-        if (year >= 1900 && year <= new Date().getFullYear() + 2) {
-          data.vehicle_year = year;
-          data.vehicle_make = altVehicleMatch[2].trim();
-          data.vehicle_model = altVehicleMatch[3].trim().substring(0, 50);
+    // VEHICLES — find ALL vehicle blocks (CD can have multiple on one load)
+    const allVehicles = [];
+    // Split card text into vehicle blocks using "Vehicle Year/Make/Model" as delimiter
+    const vehicleBlocks = cardText.split(/Vehicle\s*Year\/Make\/Model/i).slice(1);
+    if (vehicleBlocks.length > 0) {
+      vehicleBlocks.forEach(block => {
+        const v = {};
+        const ymm = block.match(/^\s*\n?\s*(\d{4})\s+([A-Za-z]+)\s+(.+?)(?:\n|$)/);
+        if (ymm) {
+          v.year = parseInt(ymm[1]);
+          v.make = ymm[2].trim();
+          v.model = ymm[3].trim().substring(0, 50);
         }
+        const vin = block.match(/VIN\s*\n?\s*([A-HJ-NPR-Z0-9]{17})/i);
+        if (vin) v.vin = vin[1].toUpperCase();
+        else {
+          const vinFb = block.match(/VIN\s*\n?\s*([A-HJ-NPR-Z0-9][\s-]?){17,22}/i);
+          if (vinFb) { const c = vinFb[0].replace(/VIN\s*/i, '').replace(/[\s-]/g, '').toUpperCase(); if (c.length === 17) v.vin = c; }
+        }
+        const color = block.match(/Color\s*\n?\s*([A-Za-z]+(?:\s+[A-Za-z]+)?)/i);
+        if (color) v.color = color[1].trim();
+        const body = block.match(/(?:Vehicle\s*Type|Body\s*Style|Type)\s*\n?\s*(Sedan|Coupe|SUV|Truck|Pickup|Van|Minivan|Convertible|Wagon|Hatchback|Crossover)/i);
+        if (body) v.body_type = body[1].trim();
+        if (v.year || v.make) allVehicles.push(v);
+      });
+    }
+    // Fallback: try generic year+make+model pattern if no "Vehicle Year/Make/Model" header found
+    if (allVehicles.length === 0) {
+      const altMatch = cardText.match(/(\d{4})\s+([A-Za-z]+)\s+(\d+\s*Series|[A-Za-z0-9]+[A-Za-z0-9\s]*?)(?:\n|VIN|Sedan|Coupe|SUV|$)/i);
+      if (altMatch && parseInt(altMatch[1]) >= 1900 && parseInt(altMatch[1]) <= new Date().getFullYear() + 2) {
+        allVehicles.push({ year: parseInt(altMatch[1]), make: altMatch[2].trim(), model: altMatch[3].trim().substring(0, 50) });
       }
     }
 
-    // VIN - 17 character alphanumeric (no I, O, Q in VINs)
-    const vinMatch = cardText.match(/VIN\s*\n?\s*([A-HJ-NPR-Z0-9]{17})/i);
-    if (vinMatch) {
-      data.vehicle_vin = vinMatch[1].toUpperCase();
-      log('Found VIN:', data.vehicle_vin);
+    // Set first vehicle in legacy fields + build vehicles array
+    if (allVehicles.length > 0) {
+      const first = allVehicles[0];
+      data.vehicle_year = first.year || null;
+      data.vehicle_make = first.make || '';
+      data.vehicle_model = first.model || '';
+      data.vehicle_vin = first.vin || '';
+      data.vehicle_color = first.color || '';
+      data.vehicle_body_type = first.body_type || '';
+      data.vehicles = allVehicles;
+      log('Found ' + allVehicles.length + ' vehicle(s):', allVehicles);
     } else {
-      // Fallback: match VIN-like pattern with spaces/dashes, strip them
-      const vinFallback = cardText.match(/VIN\s*\n?\s*([A-HJ-NPR-Z0-9][\s-]?){17,22}/i);
-      if (vinFallback) {
-        const cleaned = vinFallback[0].replace(/VIN\s*/i, '').replace(/[\s-]/g, '').toUpperCase();
-        if (cleaned.length === 17 && /^[A-HJ-NPR-Z0-9]{17}$/.test(cleaned)) {
-          data.vehicle_vin = cleaned;
-          log('Found VIN (cleaned):', data.vehicle_vin);
-        }
-      }
-    }
-
-    // Vehicle Color
-    const colorMatch = cardText.match(/Color\s*\n?\s*([A-Za-z]+(?:\s+[A-Za-z]+)?)/i);
-    if (colorMatch) {
-      data.vehicle_color = colorMatch[1].trim();
-      log('Found Color:', data.vehicle_color);
-    }
-
-    // Vehicle Body Type
-    const bodyTypeMatch = cardText.match(/(?:Vehicle\s*Type|Body\s*Style|Type)\s*\n?\s*(Sedan|Coupe|SUV|Truck|Pickup|Van|Minivan|Convertible|Wagon|Hatchback|Crossover)/i);
-    if (bodyTypeMatch) {
-      data.vehicle_body_type = bodyTypeMatch[1].trim();
-      log('Found Body Type:', data.vehicle_body_type);
+      // Last resort: try VIN and color from full card text
+      const vinMatch = cardText.match(/VIN\s*\n?\s*([A-HJ-NPR-Z0-9]{17})/i);
+      if (vinMatch) data.vehicle_vin = vinMatch[1].toUpperCase();
+      const colorMatch = cardText.match(/Color\s*\n?\s*([A-Za-z]+(?:\s+[A-Za-z]+)?)/i);
+      if (colorMatch) data.vehicle_color = colorMatch[1].trim();
+      const bodyMatch = cardText.match(/(?:Vehicle\s*Type|Body\s*Style|Type)\s*\n?\s*(Sedan|Coupe|SUV|Truck|Pickup|Van|Minivan|Convertible|Wagon|Hatchback|Crossover)/i);
+      if (bodyMatch) data.vehicle_body_type = bodyMatch[1].trim();
     }
 
     // BUYER REFERENCE NUMBER (from origin info section)
