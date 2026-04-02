@@ -18765,10 +18765,17 @@
         '<div style="color:#6b7280;font-size:13px">Review the extracted information, select the correct category, and adjust any fields if needed.</div></div>' +
         '<div id="importTemplateAssessment" style="display:none"></div>' +
         
-        // Category Selection
+        // Destination: Category OR Trip
         '<div style="background:var(--dim-amber);padding:16px;border-radius:8px;margin-bottom:16px">' +
-        '<div class="form-row"><div class="form-group" style="margin-bottom:0"><label style="font-weight:600">[[icon:folder]] Category *</label><select id="importCategory" onchange="toggleImportSubcategory()" style="border:2px solid #f59e0b;font-weight:600">' + loadBoardCategories.map(cat => '<option value="' + cat.id + '">' + cat.name + '</option>').join('') + '</select></div>' +
+        '<div class="form-group" style="margin-bottom:10px"><label style="font-weight:600">[[icon:target]] Destination</label>' +
+        '<div style="display:flex;gap:8px;margin-top:4px">' +
+        '<label style="display:inline-flex;align-items:center;gap:4px;font-size:13px;cursor:pointer"><input type="radio" name="importDestType" value="category" checked onchange="document.getElementById(\'importCategorySection\').style.display=\'block\';document.getElementById(\'importTripSection\').style.display=\'none\'"> Future Cars (Load Board)</label>' +
+        '<label style="display:inline-flex;align-items:center;gap:4px;font-size:13px;cursor:pointer"><input type="radio" name="importDestType" value="trip" onchange="document.getElementById(\'importCategorySection\').style.display=\'none\';document.getElementById(\'importTripSection\').style.display=\'block\'"> Assign to Trip</label>' +
+        '</div></div>' +
+        '<div id="importCategorySection"><div class="form-row"><div class="form-group" style="margin-bottom:0"><label style="font-weight:600">[[icon:folder]] Category *</label><select id="importCategory" onchange="toggleImportSubcategory()" style="border:2px solid #f59e0b;font-weight:600">' + loadBoardCategories.map(cat => '<option value="' + cat.id + '">' + cat.name + '</option>').join('') + '</select></div>' +
         '<div class="form-group" style="margin-bottom:0" id="importSubGroup"><label style="font-weight:600">Sub-Category</label><select id="importSubCategory"></select></div></div></div>' +
+        '<div id="importTripSection" style="display:none"><div class="form-group" style="margin-bottom:0"><label style="font-weight:600">[[icon:truck]] Select Trip</label><select id="importTripSelect" style="border:2px solid #f59e0b;font-weight:600"><option value="">Select trip...</option>' + (appData.trips || []).filter(t => !['COMPLETED', 'CANCELLED'].includes(String(t.status || '').toUpperCase())).map(t => '<option value="' + t.id + '">' + escapeHtml(t.trip_number) + ' (' + (t.status || 'PLANNED') + ')</option>').join('') + '</select></div></div>' +
+        '</div>' +
         
         // Extracted Info Preview
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
@@ -18837,7 +18844,7 @@
         '<button class="btn btn-secondary" style="margin-top:12px" onclick="document.getElementById(\'importStep1\').style.display=\'block\';document.getElementById(\'importStep2\').style.display=\'none\'">← Back to Edit Text</button>' +
         '</div>' +
         
-        '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn" style="background:#8b5cf6;color:white" id="importSaveBtn" onclick="saveImportedLoad()" disabled>Import to Future Cars</button></div></div>';
+        '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn" style="background:#8b5cf6;color:white" id="importSaveBtn" onclick="saveImportedLoad()" disabled>Import Load</button></div></div>';
       document.body.appendChild(m);
       setupBrokerAutocomplete('importBrokerInput');
       setupLocationAutocomplete('importPickupCity');
@@ -18974,8 +18981,13 @@
     }
 
     async function saveImportedLoad() {
+      const destType = document.querySelector('input[name="importDestType"]:checked')?.value || 'category';
       const category = document.getElementById('importCategory').value;
       const subcategory = document.getElementById('importSubCategory')?.value || null;
+      if (destType === 'trip' && !document.getElementById('importTripSelect')?.value) {
+        showToast('Please select a trip to assign to.', 'error');
+        return;
+      }
       const formatProfile = normalizeImportFormatId(document.getElementById('importFormatProfile')?.value || 'central_dispatch');
       
       // Find dispatcher for current user
@@ -19080,10 +19092,10 @@
         local_fee: parseFloat(document.getElementById('importLocalFee').value) || 0,
         dispatcher_notes: document.getElementById('importNotes').value || null,
         notes: document.getElementById('importDriverNotes')?.value || null,
-        load_category: category,
-        load_subcategory: subcategory,
+        load_category: destType === 'category' ? category : null,
+        load_subcategory: destType === 'category' ? subcategory : null,
         status: 'PENDING',
-        trip_id: null,
+        trip_id: destType === 'trip' ? (parseInt(document.getElementById('importTripSelect')?.value, 10) || null) : null,
         dispatcher_id: userDispatcher?.id || null
       };
       
