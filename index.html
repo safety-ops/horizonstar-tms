@@ -29612,128 +29612,16 @@
         const detectedTemplate = resolveBrokerImportTemplate(extracted, formatProfile, createLoadFileData.name || '');
         const templatedExtracted = applyBrokerTemplateDefaults(extracted, detectedTemplate);
         const createLoadAssessment = buildBrokerTemplateAssessment(templatedExtracted, detectedTemplate);
-        if (createLoadAssessment.missingCritical.length > 0) {
-          const currentOverlay = document.getElementById('createLoadBtn')?.closest('.modal-overlay');
-          if (currentOverlay) currentOverlay.remove();
-          openImportLoadWithHandoff({
-            formatProfile,
-            rateText: 'Document import review for: ' + (createLoadFileData.name || 'uploaded file'),
-            extracted: templatedExtracted,
-            assessment: createLoadAssessment
-          });
-          return;
-        }
-        if (createLoadAssessment.confidence < IMPORT_CONFIDENCE_WARN_THRESHOLD) {
-          const currentOverlay = document.getElementById('createLoadBtn')?.closest('.modal-overlay');
-          if (currentOverlay) currentOverlay.remove();
-          openImportLoadWithHandoff({
-            formatProfile,
-            rateText: 'Document import review for: ' + (createLoadFileData.name || 'uploaded file'),
-            extracted: templatedExtracted,
-            assessment: createLoadAssessment
-          });
-          return;
-        }
 
-        // Generate unique order number - check for duplicates
-        let orderNumber = templatedExtracted.order_number || 'ORD-' + Date.now().toString().slice(-6);
-        const existingOrder = appData.orders.find(o => o.order_number === orderNumber);
-        if (existingOrder) {
-          // Order number already exists - append timestamp to make unique
-          orderNumber = orderNumber + '-' + Date.now().toString().slice(-4);
-        }
-
-        const revenueValue = parseImportNumber(templatedExtracted.revenue) || 0;
-        const paymentTypeForImport = String(templatedExtracted.payment_type || 'BILL').toUpperCase();
-        const splitPayload = applySplitToPayload({
-          paymentType: paymentTypeForImport,
-          revenue: revenueValue,
-          splitCashType: normalizeSplitCashType(templatedExtracted.split_cash_type || paymentTypeForImport, 'COD'),
-          splitCashAmount: parseImportNumber(templatedExtracted.cod_amount) || 0
+        // Always open review form — no auto-import
+        const currentOverlay = document.getElementById('createLoadBtn')?.closest('.modal-overlay');
+        if (currentOverlay) currentOverlay.remove();
+        openImportLoadWithHandoff({
+          formatProfile,
+          rateText: 'Document import review for: ' + (createLoadFileData.name || 'uploaded file'),
+          extracted: templatedExtracted,
+          assessment: createLoadAssessment
         });
-        if (paymentTypeForImport === 'SPLIT') {
-          const splitValidation = validateSplitAmounts(revenueValue, parseImportNumber(templatedExtracted.cod_amount) || 0);
-          if (!splitValidation.valid) {
-            throw new Error(splitValidation.message);
-          }
-        }
-        const pickupParsed = parseCityState(templatedExtracted.origin_city_state || templatedExtracted.origin || '');
-        const deliveryParsed = parseCityState(templatedExtracted.destination_city_state || templatedExtracted.destination || '');
-        const pickupPayload = buildOrderAddressPayload('pickup', {
-          street: templatedExtracted.pickup_street || templatedExtracted.pickup_full_address || '',
-          city: templatedExtracted.pickup_city || pickupParsed.city || '',
-          state: templatedExtracted.pickup_state || pickupParsed.state || '',
-          zip: templatedExtracted.pickup_zip || ''
-        });
-        const deliveryPayload = buildOrderAddressPayload('delivery', {
-          street: templatedExtracted.delivery_street || templatedExtracted.delivery_full_address || '',
-          city: templatedExtracted.delivery_city || deliveryParsed.city || '',
-          state: templatedExtracted.delivery_state || deliveryParsed.state || '',
-          zip: templatedExtracted.delivery_zip || ''
-        });
-        const brokerName = String(templatedExtracted.broker_name || '').trim();
-        const broker = brokerName
-          ? (appData.brokers || []).find(b => String(b.name || '').toLowerCase() === brokerName.toLowerCase())
-          : null;
-        const extractedTerms = String(templatedExtracted.broker_terms || '').toUpperCase();
-
-        // Build order data with only known safe columns
-        const orderData = {
-          order_number: orderNumber,
-          broker_id: broker?.id || null,
-          broker_name: brokerName || null,
-          vehicle_year: templatedExtracted.vehicle_year ? parseInt(templatedExtracted.vehicle_year) : new Date().getFullYear(),
-          vehicle_make: templatedExtracted.vehicle_make || '',
-          vehicle_model: templatedExtracted.vehicle_model || '',
-          vehicle_vin: templatedExtracted.vehicle_vin || null,
-          vehicle_color: templatedExtracted.vehicle_color || null,
-          vehicles: (Array.isArray(templatedExtracted.vehicles) && templatedExtracted.vehicles.length > 0)
-            ? templatedExtracted.vehicles.map(v => ({
-                year: v.year ? parseInt(v.year) : null,
-                make: v.make || '',
-                model: v.model || '',
-                vin: v.vin || null,
-                color: v.color || null,
-                body_type: v.body_type || null
-              }))
-            : [{
-                year: templatedExtracted.vehicle_year ? parseInt(templatedExtracted.vehicle_year) : null,
-                make: templatedExtracted.vehicle_make || '',
-                model: templatedExtracted.vehicle_model || '',
-                vin: templatedExtracted.vehicle_vin || null,
-                color: templatedExtracted.vehicle_color || null
-              }],
-          ...pickupPayload,
-          pickup_phone: templatedExtracted.pickup_phone || null,
-          pickup_date: normalizeDateForImport(templatedExtracted.pickup_date) || null,
-          ...deliveryPayload,
-          delivery_phone: templatedExtracted.delivery_phone || null,
-          dropoff_date: normalizeDateForImport(templatedExtracted.delivery_date || templatedExtracted.dropoff_date) || null,
-          revenue: revenueValue,
-          payment_type: splitPayload.payment_type,
-          cod_amount: splitPayload.cod_amount,
-          bill_amount: splitPayload.bill_amount,
-          payment_terms: PAYMENT_TERMS_OPTIONS.includes(extractedTerms) ? extractedTerms : null,
-          broker_fee: parseImportNumber(templatedExtracted.broker_fee) || 0,
-          dispatcher_notes: templatedExtracted.notes || null,
-          notes: templatedExtracted.notes || null,
-          status: 'PENDING',
-          trip_id: null,
-          payment_status: 'pending'
-        };
-
-        const newOrder = await dbInsert('orders', orderData);
-        await logActivity('LOAD_CREATED_FROM_DOCUMENT', {
-          order_id: newOrder.id,
-          order_number: orderData.order_number,
-          source_file: createLoadFileData.name
-        });
-
-        document.querySelector('.modal-overlay').remove();
-
-        await loadAllData(true);
-        showToast('Order created from document!');
-        openOrderDetailPage(newOrder.id);
 
       } catch (e) {
         console.error('Create load error:', e);
