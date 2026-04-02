@@ -68,7 +68,7 @@ Swift/SwiftUI app at `Horizon Star LLC Driver App/LuckyCabbage Driver App/`. Key
 
 **Typography**: `Font.titleLarge` (28 heavy), `.titleMedium` (20 heavy), `.appBody` (14 regular), `.appCaption` (11 semibold), `.appMono` (14 semibold mono). Currency: `Double.currencyFormatted`, `.currencyFormattedNoDecimals`.
 
-**Model conventions**: All models are `Codable, Identifiable`. V3 fields use `var` with `= nil` defaults for backward compat. Separate "Create" structs (e.g., `ExpenseCreate`) for POST operations. Date fields are ISO 8601 strings.
+**Model conventions**: All models are `Codable, Identifiable`. V3 fields use `var` with `= nil` defaults for backward compat. Separteate "Create" structs (e.g., `ExpenseCreate`) for POST operations. Date fields are ISO 8601 strings.
 
 **SupabaseService**: Singleton (`SupabaseService.shared`) with `@Published` reactive properties. Logging via `os.log` subsystem `"com.LuckyCabbage-Driver-App"`.
 
@@ -84,6 +84,10 @@ Swift/SwiftUI app at `Horizon Star LLC Driver App/LuckyCabbage Driver App/`. Key
 ## Chrome Extension (cd-load-importer)
 
 Manifest V3 extension that scrapes load data from Central Dispatch and imports it into the TMS via Supabase. See `CLAUDE_CODE_SOP_LOAD_IMPORTER.md` for the full implementation spec.
+
+## Workflow Rules
+
+- **ALWAYS debug and test every task after completing it.** Do not consider any task done until you have verified it works. For UI changes, check affected pages in the browser. For logic changes, trace the code path and confirm correctness. Never ship untested code.
 
 ## Important Notes
 

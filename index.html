@@ -17773,16 +17773,16 @@
         '<div class="segmented-control" style="margin-bottom:var(--space-4);flex-wrap:wrap">' +
         loadBoardCategories.map(cat => {
           const isActive = cat.id === selectedLoadCategory;
-          return '<button class="segmented-control-btn' + (isActive ? ' active' : '') + '" onclick="selectedLoadCategory=\'' + cat.id + '\';selectedLoadSub=null;renderLoadBoard(document.getElementById(\'main-content\'))">' + cat.name + ' (' + categoryCounts[cat.id] + ')</button>';
+          return '<button class="segmented-control-btn' + (isActive ? ' active' : '') + '" onclick="selectedLoadCategory=\'' + cat.id + '\';selectedLoadSub=null;renderLoadBoard(reRenderCurrentPage())">' + cat.name + ' (' + categoryCounts[cat.id] + ')</button>';
         }).join('') +
         '</div>' +
 
         // Subcategory tabs (if any)
         (currentCat.subs.length > 0 ? '<div class="segmented-control" style="margin-bottom:var(--space-4);margin-left:var(--space-5)">' +
-        '<button class="segmented-control-btn' + (!selectedLoadSub ? ' active' : '') + '" onclick="selectedLoadSub=null;renderLoadBoard(document.getElementById(\'main-content\'))">All</button>' +
+        '<button class="segmented-control-btn' + (!selectedLoadSub ? ' active' : '') + '" onclick="selectedLoadSub=null;renderLoadBoard(reRenderCurrentPage())">All</button>' +
         currentCat.subs.map(sub => {
           const isActive = sub.id === selectedLoadSub;
-          return '<button class="segmented-control-btn' + (isActive ? ' active' : '') + '" onclick="selectedLoadSub=\'' + sub.id + '\';renderLoadBoard(document.getElementById(\'main-content\'))">' + sub.name + ' (' + categoryCounts[sub.id] + ')</button>';
+          return '<button class="segmented-control-btn' + (isActive ? ' active' : '') + '" onclick="selectedLoadSub=\'' + sub.id + '\';renderLoadBoard(reRenderCurrentPage())">' + sub.name + ' (' + categoryCounts[sub.id] + ')</button>';
         }).join('') +
         '</div>' : '') +
 
@@ -19286,7 +19286,7 @@
       // Build truck tabs
       const truckTabs = trucksWithTrips.map(t => {
         const isActive = t.id === selectedTruckTab;
-        return '<button class="segmented-control-btn' + (isActive ? ' active' : '') + '" onclick="selectedTruckTab=' + t.id + ';renderTrips(document.getElementById(\'main-content\'))">[[icon:truck]] ' + t.truck_number + '</button>';
+        return '<button class="segmented-control-btn' + (isActive ? ' active' : '') + '" onclick="selectedTruckTab=' + t.id + ';renderTrips(reRenderCurrentPage())">[[icon:truck]] ' + t.truck_number + '</button>';
       }).join('');
       
       // Build trip rows (desktop table) and mobile cards in a single pass
@@ -19339,9 +19339,9 @@
 
       // Status filter tabs
       const statusTabs = '<div class="segmented-control" style="margin-bottom:var(--space-4)">' +
-        '<button class="segmented-control-btn' + (tripStatusFilter === 'active' ? ' active' : '') + '" onclick="tripStatusFilter=\'active\';renderTrips(document.getElementById(\'main-content\'))">Active (' + activeCount + ')</button>' +
-        '<button class="segmented-control-btn' + (tripStatusFilter === 'completed' ? ' active' : '') + '" onclick="tripStatusFilter=\'completed\';renderTrips(document.getElementById(\'main-content\'))">Completed (' + completedCount + ')</button>' +
-        '<button class="segmented-control-btn' + (tripStatusFilter === 'all' ? ' active' : '') + '" onclick="tripStatusFilter=\'all\';renderTrips(document.getElementById(\'main-content\'))">All (' + allCount + ')</button>' +
+        '<button class="segmented-control-btn' + (tripStatusFilter === 'active' ? ' active' : '') + '" onclick="tripStatusFilter=\'active\';renderTrips(reRenderCurrentPage())">Active (' + activeCount + ')</button>' +
+        '<button class="segmented-control-btn' + (tripStatusFilter === 'completed' ? ' active' : '') + '" onclick="tripStatusFilter=\'completed\';renderTrips(reRenderCurrentPage())">Completed (' + completedCount + ')</button>' +
+        '<button class="segmented-control-btn' + (tripStatusFilter === 'all' ? ' active' : '') + '" onclick="tripStatusFilter=\'all\';renderTrips(reRenderCurrentPage())">All (' + allCount + ')</button>' +
         '</div>';
 
       // Density toggle
@@ -19370,7 +19370,7 @@
       // Column checkboxes for dropdown
       const colCheckboxes = allTripCols.map(col =>
         '<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:13px;white-space:nowrap;color:var(--text-primary)">' +
-        '<input type="checkbox" ' + (visibleTripCols.includes(col) ? 'checked' : '') + ' onchange="(function(){var cols=[];document.querySelectorAll(\'#trips-col-menu input[type=checkbox]\').forEach(function(c){if(c.checked)cols.push(c.dataset.col)});localStorage.setItem(\'tripsColumns\',JSON.stringify(cols));renderTrips(document.getElementById(\'main-content\'))})()" data-col="' + col + '" style="width:14px;height:14px">' +
+        '<input type="checkbox" ' + (visibleTripCols.includes(col) ? 'checked' : '') + ' onchange="(function(){var cols=[];document.querySelectorAll(\'#trips-col-menu input[type=checkbox]\').forEach(function(c){if(c.checked)cols.push(c.dataset.col)});localStorage.setItem(\'tripsColumns\',JSON.stringify(cols));renderTrips(reRenderCurrentPage())})()" data-col="' + col + '" style="width:14px;height:14px">' +
         colLabels[col] +
         '</label>'
       ).join('');
@@ -19384,11 +19384,11 @@
         hiddenColCSS +
         '</style>' +
         '<div class="header"><h2 style="font-size:18px;font-weight:600">Trips by Truck</h2><div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap">' +
-        '<div style="display:flex;align-items:center;gap:var(--space-2)"><label style="font-weight:500;color:var(--text-secondary);font-size:13px">Year:</label><select class="select" onchange="tripsYear=parseInt(this.value);renderTrips(document.getElementById(\'main-content\'))">' + tripsYearOptions + '</select></div>' +
+        '<div style="display:flex;align-items:center;gap:var(--space-2)"><label style="font-weight:500;color:var(--text-secondary);font-size:13px">Year:</label><select class="select" onchange="tripsYear=parseInt(this.value);renderTrips(reRenderCurrentPage())">' + tripsYearOptions + '</select></div>' +
         '<div class="segmented-control" title="Row density">' +
-        '<button class="segmented-control-btn' + (tripsDensity==='compact' ? ' active' : '') + '" onclick="localStorage.setItem(\'tripsDensity\',\'compact\');renderTrips(document.getElementById(\'main-content\'))" title="Compact">Compact</button>' +
-        '<button class="segmented-control-btn' + (tripsDensity==='default' ? ' active' : '') + '" onclick="localStorage.setItem(\'tripsDensity\',\'default\');renderTrips(document.getElementById(\'main-content\'))" title="Default">Default</button>' +
-        '<button class="segmented-control-btn' + (tripsDensity==='comfortable' ? ' active' : '') + '" onclick="localStorage.setItem(\'tripsDensity\',\'comfortable\');renderTrips(document.getElementById(\'main-content\'))" title="Comfortable">Comfy</button>' +
+        '<button class="segmented-control-btn' + (tripsDensity==='compact' ? ' active' : '') + '" onclick="localStorage.setItem(\'tripsDensity\',\'compact\');renderTrips(reRenderCurrentPage())" title="Compact">Compact</button>' +
+        '<button class="segmented-control-btn' + (tripsDensity==='default' ? ' active' : '') + '" onclick="localStorage.setItem(\'tripsDensity\',\'default\');renderTrips(reRenderCurrentPage())" title="Default">Default</button>' +
+        '<button class="segmented-control-btn' + (tripsDensity==='comfortable' ? ' active' : '') + '" onclick="localStorage.setItem(\'tripsDensity\',\'comfortable\');renderTrips(reRenderCurrentPage())" title="Comfortable">Comfy</button>' +
         '</div>' +
         '<div style="position:relative">' +
         '<button class="btn btn-secondary" onclick="(function(btn){var m=document.getElementById(\'trips-col-menu\');m.classList.toggle(\'open\');if(m.classList.contains(\'open\')){var close=function(e){if(!btn.contains(e.target)&&!m.contains(e.target)){m.classList.remove(\'open\');document.removeEventListener(\'click\',close)}};setTimeout(function(){document.addEventListener(\'click\',close)},10)}})(this)" title="Column visibility">&#9881; Columns</button>' +
@@ -20165,8 +20165,8 @@
       ` : '';
       const cashCollectionSection = renderTripCashCollectionSection(t, orders);
       
-      const c = document.getElementById('main-content');
-      c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><button class="btn btn-secondary" onclick="renderTrips(document.getElementById(\'main-content\'))">← Back</button><h2>' + t.trip_number + '</h2><span class="badge ' + getBadge(t.status) + '">' + t.status + '</span>' + (t.status === 'COMPLETED' ? '<span style="color:#10b981;font-weight:600">[[icon:check]] Trip Completed</span>' : (t.status === 'AT_TERMINAL' ? '<button class="btn btn-primary" style="background:#10b981" onclick="markTripCompleted(' + id + ')">[[icon:check]] Mark Completed</button>' : '<button class="btn btn-primary" style="background:#f59e0b" onclick="markTripAtTerminal(' + id + ')">[[icon:building]] Mark At Terminal</button><button class="btn btn-primary" style="background:#10b981" onclick="markTripCompleted(' + id + ')">[[icon:check]] Mark Completed</button>')) + '</div><div style="display:flex;gap:12px;flex-wrap:wrap"><button class="btn btn-primary" onclick="openAddVehicle(' + id + ')">+ Add Vehicle</button><button class="btn btn-secondary" onclick="openAddExpense(' + id + ')">+ Expense</button><button class="btn btn-secondary" onclick="openTripMap(' + id + ')">[[icon:map]] Trip Map</button>' + tripStatementButtonHtml + '</div></div>' +
+      const c = reRenderCurrentPage();
+      c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><button class="btn btn-secondary" onclick="renderTrips(reRenderCurrentPage())">← Back</button><h2>' + t.trip_number + '</h2><span class="badge ' + getBadge(t.status) + '">' + t.status + '</span>' + (t.status === 'COMPLETED' ? '<span style="color:#10b981;font-weight:600">[[icon:check]] Trip Completed</span>' : (t.status === 'AT_TERMINAL' ? '<button class="btn btn-primary" style="background:#10b981" onclick="markTripCompleted(' + id + ')">[[icon:check]] Mark Completed</button>' : '<button class="btn btn-primary" style="background:#f59e0b" onclick="markTripAtTerminal(' + id + ')">[[icon:building]] Mark At Terminal</button><button class="btn btn-primary" style="background:#10b981" onclick="markTripCompleted(' + id + ')">[[icon:check]] Mark Completed</button>')) + '</div><div style="display:flex;gap:12px;flex-wrap:wrap"><button class="btn btn-primary" onclick="openAddVehicle(' + id + ')">+ Add Vehicle</button><button class="btn btn-secondary" onclick="openAddExpense(' + id + ')">+ Expense</button><button class="btn btn-secondary" onclick="openTripMap(' + id + ')">[[icon:map]] Trip Map</button>' + tripStatementButtonHtml + '</div></div>' +
         
         '<div class="detail-stats" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px"><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Date</div><div class="value" style="font-size:16px">' + formatDate(t.trip_date) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:150px;padding:12px 16px;background:#f3e8ff;cursor:pointer" onclick="openTripModal(' + id + ')"><div class="label">[[icon:calendar]] Pay Period [[icon:edit]]</div><div class="value" style="font-size:12px;color:#7c3aed">' + payPeriodText + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:120px;padding:12px 16px;cursor:pointer" onclick="openAssignDriver(' + id + ')"><div class="label">Driver [[icon:edit]]</div><div class="value" style="font-size:14px">' + (d ? d.first_name + ' ' + d.last_name : 'Not Assigned') + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:80px;padding:12px 16px;cursor:pointer" onclick="openAssignTruck(' + id + ')"><div class="label">Truck [[icon:edit]]</div><div class="value" style="font-size:16px">' + (tr ? '#' + tr.truck_number : '-') + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:70px;padding:12px 16px"><div class="label">Cars</div><div class="value" style="font-size:16px">' + orders.length + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Broker Fees</div><div class="value" style="font-size:14px;color:#ef4444">' + formatMoney(f.brokerFee) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Local Fees</div><div class="value" style="font-size:14px;color:#ef4444">' + formatMoney(f.localFees) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Revenue</div><div class="value" style="font-size:14px">' + formatMoney(f.loadRevenue) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;background:#dbeafe"><div class="label">Clean Revenue</div><div class="value" style="font-size:14px;color:#1d4ed8">' + formatMoney(cleanRevenue) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px;background:#fef3c7;border:2px solid #f59e0b"><div class="label">Driver Cut (' + (t.driver_cut_percent || 32) + '%)</div><div class="value" style="font-size:14px;color:#b45309">' + formatMoney(f.driverCut) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px;background:' + (f.netProfit >= 0 ? '#d1fae5' : '#fee2e2') + '"><div class="label">Net Profit</div><div class="value" style="font-size:14px">' + formatMoney(f.netProfit) + '</div></div></div>' +
         
@@ -21858,20 +21858,20 @@
       // View mode toggle (cards vs table)
       const ordersViewMode = localStorage.getItem('ordersViewMode') || 'cards';
       const viewToggleHtml = '<div style="display:inline-flex;gap:0;border:1px solid var(--border-primary);border-radius:var(--radius-md);overflow:hidden" title="View mode">' +
-        '<button onclick="localStorage.setItem(\'ordersViewMode\',\'cards\');renderOrders(document.getElementById(\'main-content\'))" style="padding:var(--space-1-5) var(--space-3);font-size:13px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:' + (ordersViewMode==='cards' ? 'var(--btn-primary-bg)' : 'transparent') + ';color:' + (ordersViewMode==='cards' ? 'white' : 'var(--text-secondary)') + '" title="Card view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>' +
-        '<button onclick="localStorage.setItem(\'ordersViewMode\',\'table\');renderOrders(document.getElementById(\'main-content\'))" style="padding:var(--space-1-5) var(--space-3);font-size:13px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:' + (ordersViewMode==='table' ? 'var(--btn-primary-bg)' : 'transparent') + ';color:' + (ordersViewMode==='table' ? 'white' : 'var(--text-secondary)') + '" title="Table view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>' +
+        '<button onclick="localStorage.setItem(\'ordersViewMode\',\'cards\');renderOrders(reRenderCurrentPage())" style="padding:var(--space-1-5) var(--space-3);font-size:13px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:' + (ordersViewMode==='cards' ? 'var(--btn-primary-bg)' : 'transparent') + ';color:' + (ordersViewMode==='cards' ? 'white' : 'var(--text-secondary)') + '" title="Card view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>' +
+        '<button onclick="localStorage.setItem(\'ordersViewMode\',\'table\');renderOrders(reRenderCurrentPage())" style="padding:var(--space-1-5) var(--space-3);font-size:13px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:' + (ordersViewMode==='table' ? 'var(--btn-primary-bg)' : 'transparent') + ';color:' + (ordersViewMode==='table' ? 'white' : 'var(--text-secondary)') + '" title="Table view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>' +
         '</div>';
 
-      c.innerHTML = '<div class="header responsive-page-header"><h2 style="font-size:18px;font-weight:600">Vehicles / Orders</h2><div class="responsive-page-actions"><div class="responsive-filter-group" style="display:flex;align-items:center;gap:var(--space-2)"><label style="font-weight:500;color:var(--text-secondary);font-size:13px">Year:</label><select class="select" onchange="ordersYear=parseInt(this.value);pagination.orders.page=1;renderOrders(document.getElementById(\'main-content\'))">' + ordersYearOptions + '</select></div><div class="responsive-chip-row"><span style="font-size:10px;background:var(--bg-tertiary);color:var(--text-secondary);padding:2px 6px;border-radius:4px">Year ' + ordersYear + '</span>' + (undatedOrderCount > 0 ? '<span style="font-size:10px;background:var(--bg-tertiary);color:var(--text-secondary);padding:2px 6px;border-radius:4px">Undated excluded: ' + undatedOrderCount + '</span>' : '') + '</div>' + viewToggleHtml + '<button class="btn btn-secondary" onclick="exportOrders()">[[icon:download]] Export</button><button class="btn btn-secondary" onclick="openCreateNewLoad()">[[icon:file]] AI Import</button><button class="btn btn-primary" onclick="openOrderWizard()">+ New Order</button><button class="btn btn-danger" id="bulkDeleteBtn" style="display:none" onclick="bulkDeleteOrders()">[[icon:trash]] Delete Selected (<span id="selectedCount">0</span>)</button></div></div>' +
+      c.innerHTML = '<div class="header responsive-page-header"><h2 style="font-size:18px;font-weight:600">Vehicles / Orders</h2><div class="responsive-page-actions"><div class="responsive-filter-group" style="display:flex;align-items:center;gap:var(--space-2)"><label style="font-weight:500;color:var(--text-secondary);font-size:13px">Year:</label><select class="select" onchange="ordersYear=parseInt(this.value);pagination.orders.page=1;renderOrders(reRenderCurrentPage())">' + ordersYearOptions + '</select></div><div class="responsive-chip-row"><span style="font-size:10px;background:var(--bg-tertiary);color:var(--text-secondary);padding:2px 6px;border-radius:4px">Year ' + ordersYear + '</span>' + (undatedOrderCount > 0 ? '<span style="font-size:10px;background:var(--bg-tertiary);color:var(--text-secondary);padding:2px 6px;border-radius:4px">Undated excluded: ' + undatedOrderCount + '</span>' : '') + '</div>' + viewToggleHtml + '<button class="btn btn-secondary" onclick="exportOrders()">[[icon:download]] Export</button><button class="btn btn-secondary" onclick="openCreateNewLoad()">[[icon:file]] AI Import</button><button class="btn btn-primary" onclick="openOrderWizard()">+ New Order</button><button class="btn btn-danger" id="bulkDeleteBtn" style="display:none" onclick="bulkDeleteOrders()">[[icon:trash]] Delete Selected (<span id="selectedCount">0</span>)</button></div></div>' +
 
         // Search and Filters
         '<div style="display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:center;padding:var(--space-3) 0">' +
         '<div style="flex:1;min-width:200px"><input class="input" type="text" id="orderSearch" placeholder="Search by Order ID, Broker, or Vehicle..." value="' + ordersFilter.search + '" oninput="debouncedOrderSearch(this.value)" style="width:100%"></div>' +
-        '<div style="display:flex;align-items:center;gap:var(--space-2)"><label style="font-weight:500;color:var(--text-secondary);font-size:13px">Status:</label><select class="select" onchange="ordersFilter.status=this.value;pagination.orders.page=1;renderOrders(document.getElementById(\'main-content\'))"><option value="all"' + (ordersFilter.status === 'all' ? ' selected' : '') + '>All</option><option value="unassigned"' + (ordersFilter.status === 'unassigned' ? ' selected' : '') + '>Unassigned</option><option value="assigned"' + (ordersFilter.status === 'assigned' ? ' selected' : '') + '>Assigned</option><option value="PENDING"' + (ordersFilter.status === 'PENDING' ? ' selected' : '') + '>New</option><option value="IN_TRANSIT"' + (ordersFilter.status === 'IN_TRANSIT' ? ' selected' : '') + '>Picked Up</option><option value="DELIVERED"' + (ordersFilter.status === 'DELIVERED' ? ' selected' : '') + '>Delivered</option></select></div>' +
-        '<div style="display:flex;align-items:center;gap:var(--space-2)"><label style="font-weight:500;color:var(--text-secondary);font-size:13px">Dispatcher:</label><select class="select" onchange="ordersFilter.dispatcher=this.value;pagination.orders.page=1;renderOrders(document.getElementById(\'main-content\'))"><option value="all"' + (ordersFilter.dispatcher === 'all' ? ' selected' : '') + '>All</option>' + dispatcherOptions + '</select></div>' +
-        '<div style="display:flex;align-items:center;gap:var(--space-2)"><label style="font-weight:500;color:var(--text-secondary);font-size:13px">Driver:</label><select class="select" onchange="ordersFilter.driver=this.value;pagination.orders.page=1;renderOrders(document.getElementById(\'main-content\'))"><option value="all"' + (ordersFilter.driver === 'all' ? ' selected' : '') + '>All</option>' + driverOptions + '</select></div>' +
-        '<div style="display:flex;align-items:center;gap:var(--space-2)"><label style="font-weight:500;color:var(--text-secondary);font-size:13px">Broker:</label><select class="select" onchange="ordersFilter.broker=this.value;pagination.orders.page=1;renderOrders(document.getElementById(\'main-content\'))"><option value="all"' + (ordersFilter.broker === 'all' ? ' selected' : '') + '>All Brokers</option>' + brokerOptions + '</select></div>' +
-        '<button class="btn btn-ghost btn-sm" onclick="ordersFilter={search:\'\',status:\'all\',broker:\'all\',dispatcher:\'all\',driver:\'all\'};pagination.orders.page=1;renderOrders(document.getElementById(\'main-content\'))">Clear</button>' +
+        '<div style="display:flex;align-items:center;gap:var(--space-2)"><label style="font-weight:500;color:var(--text-secondary);font-size:13px">Status:</label><select class="select" onchange="ordersFilter.status=this.value;pagination.orders.page=1;renderOrders(reRenderCurrentPage())"><option value="all"' + (ordersFilter.status === 'all' ? ' selected' : '') + '>All</option><option value="unassigned"' + (ordersFilter.status === 'unassigned' ? ' selected' : '') + '>Unassigned</option><option value="assigned"' + (ordersFilter.status === 'assigned' ? ' selected' : '') + '>Assigned</option><option value="PENDING"' + (ordersFilter.status === 'PENDING' ? ' selected' : '') + '>New</option><option value="IN_TRANSIT"' + (ordersFilter.status === 'IN_TRANSIT' ? ' selected' : '') + '>Picked Up</option><option value="DELIVERED"' + (ordersFilter.status === 'DELIVERED' ? ' selected' : '') + '>Delivered</option></select></div>' +
+        '<div style="display:flex;align-items:center;gap:var(--space-2)"><label style="font-weight:500;color:var(--text-secondary);font-size:13px">Dispatcher:</label><select class="select" onchange="ordersFilter.dispatcher=this.value;pagination.orders.page=1;renderOrders(reRenderCurrentPage())"><option value="all"' + (ordersFilter.dispatcher === 'all' ? ' selected' : '') + '>All</option>' + dispatcherOptions + '</select></div>' +
+        '<div style="display:flex;align-items:center;gap:var(--space-2)"><label style="font-weight:500;color:var(--text-secondary);font-size:13px">Driver:</label><select class="select" onchange="ordersFilter.driver=this.value;pagination.orders.page=1;renderOrders(reRenderCurrentPage())"><option value="all"' + (ordersFilter.driver === 'all' ? ' selected' : '') + '>All</option>' + driverOptions + '</select></div>' +
+        '<div style="display:flex;align-items:center;gap:var(--space-2)"><label style="font-weight:500;color:var(--text-secondary);font-size:13px">Broker:</label><select class="select" onchange="ordersFilter.broker=this.value;pagination.orders.page=1;renderOrders(reRenderCurrentPage())"><option value="all"' + (ordersFilter.broker === 'all' ? ' selected' : '') + '>All Brokers</option>' + brokerOptions + '</select></div>' +
+        '<button class="btn btn-ghost btn-sm" onclick="ordersFilter={search:\'\',status:\'all\',broker:\'all\',dispatcher:\'all\',driver:\'all\'};pagination.orders.page=1;renderOrders(reRenderCurrentPage())">Clear</button>' +
         '<span style="color:var(--text-secondary);font-size:13px">Showing ' + showStart + '-' + showEnd + ' of ' + filteredOrders.length + '</span>' +
         '</div>' +
         
@@ -22915,8 +22915,8 @@
         return '<span class="badge badge-green">Valid until ' + formatDate(file.expiration_date) + '</span>';
       };
       
-      const c = document.getElementById('main-content');
-      c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px"><button class="btn btn-secondary" onclick="renderDrivers(document.getElementById(\'main-content\'))">← Back</button><div class="driver-avatar" style="width:50px;height:50px;font-size:20px">' + d.first_name[0] + d.last_name[0] + '</div><div><h2 style="margin:0;font-size:18px;font-weight:600">' + d.first_name + ' ' + d.last_name + '</h2><p style="margin:0;color:var(--text-secondary)">' + d.phone + (d.email ? ' | ' + d.email : '') + '</p></div><span class="badge ' + getBadge(d.status) + '">' + d.status + '</span></div><button class="btn btn-primary" onclick="openDriverModal(' + driverId + ')">Edit Driver</button></div>' +
+      const c = reRenderCurrentPage();
+      c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px"><button class="btn btn-secondary" onclick="renderDrivers(reRenderCurrentPage())">← Back</button><div class="driver-avatar" style="width:50px;height:50px;font-size:20px">' + d.first_name[0] + d.last_name[0] + '</div><div><h2 style="margin:0;font-size:18px;font-weight:600">' + d.first_name + ' ' + d.last_name + '</h2><p style="margin:0;color:var(--text-secondary)">' + d.phone + (d.email ? ' | ' + d.email : '') + '</p></div><span class="badge ' + getBadge(d.status) + '">' + d.status + '</span></div><button class="btn btn-primary" onclick="openDriverModal(' + driverId + ')">Edit Driver</button></div>' +
         
         // Stats
         '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px"><div class="stat-flat" style="flex:0 0 auto;min-width:100px"><div class="stat-flat-label">Driver Cut</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + d.cut_percent + '%</div></div><div class="stat-flat" style="flex:0 0 auto;min-width:100px"><div class="stat-flat-label">Total Trips</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + trips.length + '</div></div><div class="stat-flat" style="flex:0 0 auto;min-width:120px"><div class="stat-flat-label">Total Earnings</div><div class="stat-flat-value" style="font-family:var(--font-mono);color:var(--green)">' + formatMoney(earn) + '</div></div><div class="stat-flat" style="flex:0 0 auto;min-width:120px"><div class="stat-flat-label">Qualification Files</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + qualFiles.length + '/10</div></div><div class="stat-flat" style="flex:0 0 auto;min-width:100px"><div class="stat-flat-label">Personal Files</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + persFiles.length + '/3</div></div><div class="stat-flat" style="flex:0 0 auto;min-width:110px"><div class="stat-flat-label">Custom Folders</div><div class="stat-flat-value" style="font-family:var(--font-mono);color:var(--blue)">' + customFolders.length + '</div></div></div>' +
@@ -23850,7 +23850,7 @@
         </article>`
       }));
 
-      c.innerHTML = '<div class="header responsive-page-header"><h2 style="font-size:18px;font-weight:600">Local Drivers</h2><div class="responsive-page-actions"><div class="responsive-filter-group"><label style="font-weight:600;color:var(--text-secondary);font-size:13px">Year:</label><select class="select" onchange="localDriversYear=parseInt(this.value);renderLocalDrivers(document.getElementById(\'main-content\'))">' + localDriversYearOptions + '</select></div><div class="responsive-chip-row"><span style="font-size:12px;background:var(--dim-blue);color:var(--info);padding:6px 10px;border-radius:4px;font-weight:600;border:1px solid var(--info-border)">Year ' + localDriversYear + '</span>' + (undatedOrderCount > 0 ? '<span style="font-size:12px;background:var(--dim-amber);color:var(--warning);padding:6px 10px;border-radius:4px;font-weight:600;border:1px solid var(--warning-border)">Undated excluded: ' + undatedOrderCount + '</span>' : '') + '</div><button class="btn btn-primary" onclick="openLocalDriverModal()">+ Add Local Driver</button></div></div>' +
+      c.innerHTML = '<div class="header responsive-page-header"><h2 style="font-size:18px;font-weight:600">Local Drivers</h2><div class="responsive-page-actions"><div class="responsive-filter-group"><label style="font-weight:600;color:var(--text-secondary);font-size:13px">Year:</label><select class="select" onchange="localDriversYear=parseInt(this.value);renderLocalDrivers(reRenderCurrentPage())">' + localDriversYearOptions + '</select></div><div class="responsive-chip-row"><span style="font-size:12px;background:var(--dim-blue);color:var(--info);padding:6px 10px;border-radius:4px;font-weight:600;border:1px solid var(--info-border)">Year ' + localDriversYear + '</span>' + (undatedOrderCount > 0 ? '<span style="font-size:12px;background:var(--dim-amber);color:var(--warning);padding:6px 10px;border-radius:4px;font-weight:600;border:1px solid var(--warning-border)">Undated excluded: ' + undatedOrderCount + '</span>' : '') + '</div><button class="btn btn-primary" onclick="openLocalDriverModal()">+ Add Local Driver</button></div></div>' +
 
         '<div class="responsive-stat-strip" style="margin-bottom:20px">' +
         '<div class="stat-flat"><div class="stat-flat-label">Local Drivers</div><div class="stat-flat-value" style="font-family:var(--font-mono)">' + (appData.local_drivers || []).length + '</div></div>' +
@@ -24322,8 +24322,8 @@
       const toTerminalOrders = driverOrders.filter(o => o.local_delivery_type === 'TO_TERMINAL');
       const fromTerminalOrders = driverOrders.filter(o => o.local_delivery_type === 'FROM_TERMINAL');
       
-      const c = document.getElementById('main-content');
-      c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px"><button class="btn btn-secondary" onclick="renderLocalDrivers(document.getElementById(\'main-content\'))">← Back</button><h2 style="font-size:18px;font-weight:600">' + escapeHtml(ld.name) + '</h2></div></div>' +
+      const c = reRenderCurrentPage();
+      c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px"><button class="btn btn-secondary" onclick="renderLocalDrivers(reRenderCurrentPage())">← Back</button><h2 style="font-size:18px;font-weight:600">' + escapeHtml(ld.name) + '</h2></div></div>' +
 
         // Stats
         '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px">' +
@@ -24586,7 +24586,7 @@
         return { label: 'Dormant', color: 'var(--red)', bg: 'var(--dim-red)' };
       };
       
-      c.innerHTML = '<div class="header"><h2 style="font-size:18px;font-weight:600">Brokers</h2><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><select class="select" onchange="brokersPeriod.type=this.value;if(brokersPeriod.type===\'year\'&&!brokersPeriod.year){brokersPeriod.year=new Date().getFullYear();}renderBrokers(document.getElementById(\'main-content\'))"><option value="year"' + (brokersPeriod.type === 'year' ? ' selected' : '') + '>Year</option><option value="all"' + (brokersPeriod.type === 'all' ? ' selected' : '') + '>All Time</option></select>' + (brokersPeriod.type === 'year' ? '<select class="select" onchange="brokersPeriod.year=parseInt(this.value);renderBrokers(document.getElementById(\'main-content\'))">' + brokerYearOptions + '</select>' : '') + '<span style="font-size:10px;background:var(--bg-tertiary);color:var(--text-secondary);padding:2px 6px;border-radius:4px">' + getPeriodLabel(brokersPeriod) + '</span>' + (undatedOrderCount > 0 && brokersPeriod.type !== 'all' ? '<span style="font-size:10px;background:var(--bg-tertiary);color:var(--text-secondary);padding:2px 6px;border-radius:4px">Undated excluded: ' + undatedOrderCount + '</span>' : '') + '<button class="btn btn-primary" onclick="openBrokerModal()">+ New Broker</button></div></div>' +
+      c.innerHTML = '<div class="header"><h2 style="font-size:18px;font-weight:600">Brokers</h2><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><select class="select" onchange="brokersPeriod.type=this.value;if(brokersPeriod.type===\'year\'&&!brokersPeriod.year){brokersPeriod.year=new Date().getFullYear();}renderBrokers(reRenderCurrentPage())"><option value="year"' + (brokersPeriod.type === 'year' ? ' selected' : '') + '>Year</option><option value="all"' + (brokersPeriod.type === 'all' ? ' selected' : '') + '>All Time</option></select>' + (brokersPeriod.type === 'year' ? '<select class="select" onchange="brokersPeriod.year=parseInt(this.value);renderBrokers(reRenderCurrentPage())">' + brokerYearOptions + '</select>' : '') + '<span style="font-size:10px;background:var(--bg-tertiary);color:var(--text-secondary);padding:2px 6px;border-radius:4px">' + getPeriodLabel(brokersPeriod) + '</span>' + (undatedOrderCount > 0 && brokersPeriod.type !== 'all' ? '<span style="font-size:10px;background:var(--bg-tertiary);color:var(--text-secondary);padding:2px 6px;border-radius:4px">Undated excluded: ' + undatedOrderCount + '</span>' : '') + '<button class="btn btn-primary" onclick="openBrokerModal()">+ New Broker</button></div></div>' +
         
         // Summary Cards
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px">' +
@@ -24730,11 +24730,11 @@
       const periodLabel = brokersPeriod.type === 'all' ? 'All Time' : brokersPeriod.year;
       const addressParts = [b.address, b.city, b.state, b.zip].filter(Boolean).join(', ');
 
-      const c = document.getElementById('main-content');
+      const c = reRenderCurrentPage();
       c.innerHTML =
         // Header
         '<div class="header"><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">' +
-          '<button class="btn btn-secondary" onclick="currentDetailView=null;renderBrokers(document.getElementById(\'main-content\'))">← Back</button>' +
+          '<button class="btn btn-secondary" onclick="currentDetailView=null;renderBrokers(reRenderCurrentPage())">← Back</button>' +
           '<h2 style="margin:0">[[icon:building]] ' + escapeHtml(b.name) + '</h2>' +
           '<span class="badge badge-blue" style="font-size:12px;padding:4px 10px">' + escapeHtml(String(periodLabel)) + '</span>' +
           '<button class="btn btn-secondary" style="margin-left:auto" onclick="openBrokerModal(' + b.id + ')">[[icon:edit]] Edit Broker</button>' +
@@ -24831,8 +24831,8 @@
       });
 
       c.innerHTML =
-        '<div class="header responsive-page-header"><h2 style="font-size:18px;font-weight:600">Dispatchers</h2><div class="responsive-page-actions"><div class="responsive-filter-group"><select class="select" onchange="dispatchersPeriod.type=this.value;if(dispatchersPeriod.type===\'year\'&&!dispatchersPeriod.year){dispatchersPeriod.year=new Date().getFullYear();}renderDispatchers(document.getElementById(\'main-content\'))"><option value="year"' + (dispatchersPeriod.type === 'year' ? ' selected' : '') + '>Year</option><option value="all"' + (dispatchersPeriod.type === 'all' ? ' selected' : '') + '>All Time</option></select>' +
-        (dispatchersPeriod.type === 'year' ? '<select class="select" onchange="dispatchersPeriod.year=parseInt(this.value);renderDispatchers(document.getElementById(\'main-content\'))">' + dispatcherYearOptions + '</select>' : '') +
+        '<div class="header responsive-page-header"><h2 style="font-size:18px;font-weight:600">Dispatchers</h2><div class="responsive-page-actions"><div class="responsive-filter-group"><select class="select" onchange="dispatchersPeriod.type=this.value;if(dispatchersPeriod.type===\'year\'&&!dispatchersPeriod.year){dispatchersPeriod.year=new Date().getFullYear();}renderDispatchers(reRenderCurrentPage())"><option value="year"' + (dispatchersPeriod.type === 'year' ? ' selected' : '') + '>Year</option><option value="all"' + (dispatchersPeriod.type === 'all' ? ' selected' : '') + '>All Time</option></select>' +
+        (dispatchersPeriod.type === 'year' ? '<select class="select" onchange="dispatchersPeriod.year=parseInt(this.value);renderDispatchers(reRenderCurrentPage())">' + dispatcherYearOptions + '</select>' : '') +
         '</div><div class="responsive-chip-row"><span style="font-size:10px;background:var(--bg-tertiary);color:var(--text-secondary);padding:2px 6px;border-radius:4px">' + getPeriodLabel(resolvedPeriod) + '</span>' +
         (undatedOrderCount > 0 && dispatchersPeriod.type !== 'all' ? '<span style="font-size:10px;background:var(--bg-tertiary);color:var(--text-secondary);padding:2px 6px;border-radius:4px">Undated excluded: ' + undatedOrderCount + '</span>' : '') +
         '</div><button class="btn btn-primary" onclick="openDispModal()">+ New Dispatcher</button></div></div>' +
@@ -25018,9 +25018,9 @@
       
       c.innerHTML = '<div class="header responsive-page-header"><h2 style="font-size:18px;font-weight:600">Dispatcher Performance Ranking</h2></div>' +
         '<div class="responsive-filter-bar">' +
-        '<div class="responsive-filter-group"><div class="form-group" style="margin:0"><label style="margin-bottom:4px">Period</label><select class="select" id="dispRankPeriod" onchange="dispRankPeriod=this.value;renderDispatcherRanking(document.getElementById(\'main-content\'))"><option value="all"' + (dispRankPeriod === 'all' ? ' selected' : '') + '>All Time</option><option value="month"' + (dispRankPeriod === 'month' ? ' selected' : '') + '>Monthly</option><option value="q1"' + (dispRankPeriod === 'q1' ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="q2"' + (dispRankPeriod === 'q2' ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="q3"' + (dispRankPeriod === 'q3' ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="q4"' + (dispRankPeriod === 'q4' ? ' selected' : '') + '>Q4 (Oct-Dec)</option><option value="year"' + (dispRankPeriod === 'year' ? ' selected' : '') + '>Full Year</option></select></div>' +
-        (dispRankPeriod === 'month' ? '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Month</label><select class="select" id="dispRankMonth" onchange="dispRankMonth=parseInt(this.value);renderDispatcherRanking(document.getElementById(\'main-content\'))">' + months.slice(1).map((m, i) => '<option value="' + (i + 1) + '"' + (dispRankMonth === i + 1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select></div>' : '') +
-        (dispRankPeriod !== 'all' ? '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select class="select" id="dispRankYear" onchange="dispRankYear=parseInt(this.value);renderDispatcherRanking(document.getElementById(\'main-content\'))">' + dispRankYearOptions + '</select></div>' : '') +
+        '<div class="responsive-filter-group"><div class="form-group" style="margin:0"><label style="margin-bottom:4px">Period</label><select class="select" id="dispRankPeriod" onchange="dispRankPeriod=this.value;renderDispatcherRanking(reRenderCurrentPage())"><option value="all"' + (dispRankPeriod === 'all' ? ' selected' : '') + '>All Time</option><option value="month"' + (dispRankPeriod === 'month' ? ' selected' : '') + '>Monthly</option><option value="q1"' + (dispRankPeriod === 'q1' ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="q2"' + (dispRankPeriod === 'q2' ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="q3"' + (dispRankPeriod === 'q3' ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="q4"' + (dispRankPeriod === 'q4' ? ' selected' : '') + '>Q4 (Oct-Dec)</option><option value="year"' + (dispRankPeriod === 'year' ? ' selected' : '') + '>Full Year</option></select></div>' +
+        (dispRankPeriod === 'month' ? '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Month</label><select class="select" id="dispRankMonth" onchange="dispRankMonth=parseInt(this.value);renderDispatcherRanking(reRenderCurrentPage())">' + months.slice(1).map((m, i) => '<option value="' + (i + 1) + '"' + (dispRankMonth === i + 1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select></div>' : '') +
+        (dispRankPeriod !== 'all' ? '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select class="select" id="dispRankYear" onchange="dispRankYear=parseInt(this.value);renderDispatcherRanking(reRenderCurrentPage())">' + dispRankYearOptions + '</select></div>' : '') +
         '</div><div class="responsive-chip-row"><span style="font-size:10px;background:var(--bg-tertiary);color:var(--text-secondary);padding:2px 6px;border-radius:4px">' + getDispRankPeriodLabel() + '</span></div></div>' +
 
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px">' +
@@ -25340,7 +25340,7 @@
       
       let headerContent = '<div class="header"><h2 style="font-size:18px;font-weight:600">Fuel Tracking' + filterLabel + '</h2><div style="display:flex;gap:12px">';
       if (selectedFuelTruck) {
-        headerContent += '<button class="btn btn-secondary" onclick="selectedFuelTruck=null;renderFuelTracking(document.getElementById(\'main-content\'))">← Back to All Trucks</button>';
+        headerContent += '<button class="btn btn-secondary" onclick="selectedFuelTruck=null;renderFuelTracking(reRenderCurrentPage())">← Back to All Trucks</button>';
       }
       headerContent += '<button class="btn btn-primary" onclick="openFuelUploadModal()">[[icon:upload]] Fuel Report</button>';
       headerContent += '<button class="btn btn-secondary" onclick="openFleetMileageModal()">[[icon:truck]] Samsara Mileage</button>';
@@ -25354,21 +25354,21 @@
         // Period selector and Filters
         '<div class="card" style="padding:16px;margin-bottom:24px">' +
         '<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:16px">' +
-        '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Period</label><select id="fuelPeriod" onchange="fuelPeriod=this.value;renderFuelTracking(document.getElementById(\'main-content\'))"><option value="month"' + (fuelPeriod === 'month' ? ' selected' : '') + '>Monthly</option><option value="q1"' + (fuelPeriod === 'q1' ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="q2"' + (fuelPeriod === 'q2' ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="q3"' + (fuelPeriod === 'q3' ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="q4"' + (fuelPeriod === 'q4' ? ' selected' : '') + '>Q4 (Oct-Dec)</option><option value="year"' + (fuelPeriod === 'year' ? ' selected' : '') + '>Full Year</option></select></div>' +
-        (fuelPeriod === 'month' ? '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Month</label><select id="fuelMonth" onchange="fuelMonth=parseInt(this.value);renderFuelTracking(document.getElementById(\'main-content\'))">' + months.slice(1).map((m, i) => '<option value="' + (i+1) + '"' + (fuelMonth === i+1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select></div>' : '') +
-        '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select id="fuelYear" onchange="fuelYear=parseInt(this.value);renderFuelTracking(document.getElementById(\'main-content\'))">' + fuelYearOptions + '</select></div>' +
+        '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Period</label><select id="fuelPeriod" onchange="fuelPeriod=this.value;renderFuelTracking(reRenderCurrentPage())"><option value="month"' + (fuelPeriod === 'month' ? ' selected' : '') + '>Monthly</option><option value="q1"' + (fuelPeriod === 'q1' ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="q2"' + (fuelPeriod === 'q2' ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="q3"' + (fuelPeriod === 'q3' ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="q4"' + (fuelPeriod === 'q4' ? ' selected' : '') + '>Q4 (Oct-Dec)</option><option value="year"' + (fuelPeriod === 'year' ? ' selected' : '') + '>Full Year</option></select></div>' +
+        (fuelPeriod === 'month' ? '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Month</label><select id="fuelMonth" onchange="fuelMonth=parseInt(this.value);renderFuelTracking(reRenderCurrentPage())">' + months.slice(1).map((m, i) => '<option value="' + (i+1) + '"' + (fuelMonth === i+1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select></div>' : '') +
+        '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select id="fuelYear" onchange="fuelYear=parseInt(this.value);renderFuelTracking(reRenderCurrentPage())">' + fuelYearOptions + '</select></div>' +
         '<div style="margin-left:auto;font-size:16px;font-weight:600;color:var(--text-secondary)">[[icon:calendar]] ' + getFuelPeriodLabel() + '</div></div>' +
         
         // Filter row
         '<div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;padding-top:16px;border-top:1px solid var(--border)">' +
         '<div style="font-weight:600;color:var(--text-secondary);display:flex;align-items:center;gap:6px"><span>[[icon:search]]</span> Filters:</div>' +
-        '<div class="form-group" style="margin:0;min-width:120px"><label style="margin-bottom:4px;font-size:12px">Truck</label><select class="select" onchange="fuelFilterTruck=this.value;selectedFuelTruck=null;renderFuelTracking(document.getElementById(\'main-content\'))"><option value="">All Trucks</option>' +
+        '<div class="form-group" style="margin:0;min-width:120px"><label style="margin-bottom:4px;font-size:12px">Truck</label><select class="select" onchange="fuelFilterTruck=this.value;selectedFuelTruck=null;renderFuelTracking(reRenderCurrentPage())"><option value="">All Trucks</option>' +
         uniqueTrucks.map(tn => '<option value="' + tn + '"' + (fuelFilterTruck == tn ? ' selected' : '') + '>#' + tn + '</option>').join('') + '</select></div>' +
-        '<div class="form-group" style="margin:0;min-width:100px"><label style="margin-bottom:4px;font-size:12px">State</label><select class="select" onchange="fuelFilterState=this.value;renderFuelTracking(document.getElementById(\'main-content\'))"><option value="">All States</option>' +
+        '<div class="form-group" style="margin:0;min-width:100px"><label style="margin-bottom:4px;font-size:12px">State</label><select class="select" onchange="fuelFilterState=this.value;renderFuelTracking(reRenderCurrentPage())"><option value="">All States</option>' +
         uniqueStates.map(st => '<option value="' + st + '"' + (fuelFilterState === st ? ' selected' : '') + '>' + st + '</option>').join('') + '</select></div>' +
-        '<div class="form-group" style="margin:0;min-width:100px"><label style="margin-bottom:4px;font-size:12px">Product</label><select class="select" onchange="fuelFilterProduct=this.value;renderFuelTracking(document.getElementById(\'main-content\'))"><option value="">All Products</option>' +
+        '<div class="form-group" style="margin:0;min-width:100px"><label style="margin-bottom:4px;font-size:12px">Product</label><select class="select" onchange="fuelFilterProduct=this.value;renderFuelTracking(reRenderCurrentPage())"><option value="">All Products</option>' +
         uniqueProducts.map(p => '<option value="' + p + '"' + (fuelFilterProduct === p ? ' selected' : '') + '>' + p + '</option>').join('') + '</select></div>' +
-        '<div class="form-group" style="margin:0;min-width:140px"><label style="margin-bottom:4px;font-size:12px">Driver</label><select class="select" onchange="fuelFilterDriver=this.value;renderFuelTracking(document.getElementById(\'main-content\'))"><option value="">All Drivers</option>' +
+        '<div class="form-group" style="margin:0;min-width:140px"><label style="margin-bottom:4px;font-size:12px">Driver</label><select class="select" onchange="fuelFilterDriver=this.value;renderFuelTracking(reRenderCurrentPage())"><option value="">All Drivers</option>' +
         uniqueDrivers.map(d => '<option value="' + d + '"' + (fuelFilterDriver === d ? ' selected' : '') + '>' + d + '</option>').join('') + '</select></div>' +
         (hasActiveFilters ? '<button class="btn btn-secondary" style="padding:6px 12px;font-size:13px" onclick="clearFuelFilters()">[[icon:x]] Clear Filters</button>' : '') +
         '<div style="margin-left:auto;font-size:13px;color:var(--text-muted)">' + filteredTxns.length + ' of ' + periodTxns.length + ' transactions</div>' +
@@ -25376,10 +25376,10 @@
         
         // Analytics Tabs
         '<div class="segmented-control" style="margin-bottom:20px">' +
-        '<button class="segmented-control-btn' + (fuelAnalyticsTab === 'overview' ? ' active' : '') + '" onclick="fuelAnalyticsTab=\'overview\';renderFuelTracking(document.getElementById(\'main-content\'))">Overview</button>' +
-        '<button class="segmented-control-btn' + (fuelAnalyticsTab === 'analytics' ? ' active' : '') + '" onclick="fuelAnalyticsTab=\'analytics\';renderFuelTracking(document.getElementById(\'main-content\'))">Analytics</button>' +
-        '<button class="segmented-control-btn' + (fuelAnalyticsTab === 'efficiency' ? ' active' : '') + '" onclick="fuelAnalyticsTab=\'efficiency\';renderFuelTracking(document.getElementById(\'main-content\'))">Efficiency</button>' +
-        '<button class="segmented-control-btn' + (fuelAnalyticsTab === 'prices' ? ' active' : '') + '" onclick="fuelAnalyticsTab=\'prices\';renderFuelTracking(document.getElementById(\'main-content\'))">Price Analysis</button>' +
+        '<button class="segmented-control-btn' + (fuelAnalyticsTab === 'overview' ? ' active' : '') + '" onclick="fuelAnalyticsTab=\'overview\';renderFuelTracking(reRenderCurrentPage())">Overview</button>' +
+        '<button class="segmented-control-btn' + (fuelAnalyticsTab === 'analytics' ? ' active' : '') + '" onclick="fuelAnalyticsTab=\'analytics\';renderFuelTracking(reRenderCurrentPage())">Analytics</button>' +
+        '<button class="segmented-control-btn' + (fuelAnalyticsTab === 'efficiency' ? ' active' : '') + '" onclick="fuelAnalyticsTab=\'efficiency\';renderFuelTracking(reRenderCurrentPage())">Efficiency</button>' +
+        '<button class="segmented-control-btn' + (fuelAnalyticsTab === 'prices' ? ' active' : '') + '" onclick="fuelAnalyticsTab=\'prices\';renderFuelTracking(reRenderCurrentPage())">Price Analysis</button>' +
         '</div>' +
         
         // Tab Content
@@ -25424,7 +25424,7 @@
         '<div class="card card-flush"><div class="card-header"><h3>[[icon:truck]] By Truck (click for details)</h3></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Truck</th><th>Diesel</th><th>MPG</th><th>$/Mile</th><th>Cost</th></tr></thead><tbody>' +
         (Object.keys(truckStats).length === 0 ? '<tr><td colspan="5" style="text-align:center;padding:20px">No fuel data</td></tr>' :
         Object.keys(truckStats).sort((a, b) => truckStats[b].cost - truckStats[a].cost).map(tn =>
-          '<tr style="cursor:pointer" onclick="selectedFuelTruck=\'' + tn + '\';renderFuelTracking(document.getElementById(\'main-content\'))">' +
+          '<tr style="cursor:pointer" onclick="selectedFuelTruck=\'' + tn + '\';renderFuelTracking(reRenderCurrentPage())">' +
           '<td><strong style="color:var(--blue)">#' + tn + '</strong></td>' +
           '<td>' + truckStats[tn].diesel.toFixed(0) + ' gal</td>' +
           '<td style="color:' + (truckStats[tn].mpg >= 6 ? 'var(--green)' : truckStats[tn].mpg >= 5 ? 'var(--amber)' : 'var(--red)') + ';font-weight:600">' + truckStats[tn].mpg.toFixed(2) + '</td>' +
@@ -26502,10 +26502,10 @@
         
         // Quarter selector
         '<div class="card" style="padding:16px;margin-bottom:24px"><div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">' +
-        '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Quarter</label><select class="select" id="iftaQuarter" onchange="iftaQuarter=parseInt(this.value);renderIFTA(document.getElementById(\'main-content\'))"><option value="1"' + (iftaQuarter === 1 ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="2"' + (iftaQuarter === 2 ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="3"' + (iftaQuarter === 3 ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="4"' + (iftaQuarter === 4 ? ' selected' : '') + '>Q4 (Oct-Dec)</option></select></div>' +
-        '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select class="select" id="iftaYear" onchange="iftaYear=parseInt(this.value);renderIFTA(document.getElementById(\'main-content\'))">' + iftaYearOptions + '</select></div>' +
-        '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Fleet MPG</label><div style="display:flex;gap:8px;align-items:center"><input class="input" type="number" step="0.1" value="' + fleetMPG + '" style="width:80px" onchange="fleetMPG=parseFloat(this.value)||6;renderIFTA(document.getElementById(\'main-content\'))">' +
-        (hasCalcData ? '<button class="btn btn-secondary" style="padding:6px 10px;font-size:12px" onclick="fleetMPG=' + calculatedMPG.toFixed(2) + ';renderIFTA(document.getElementById(\'main-content\'))" title="Use calculated MPG from your ' + milesSource + ' miles and fuel data">Use ' + calculatedMPG.toFixed(2) + '</button>' : '') +
+        '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Quarter</label><select class="select" id="iftaQuarter" onchange="iftaQuarter=parseInt(this.value);renderIFTA(reRenderCurrentPage())"><option value="1"' + (iftaQuarter === 1 ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="2"' + (iftaQuarter === 2 ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="3"' + (iftaQuarter === 3 ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="4"' + (iftaQuarter === 4 ? ' selected' : '') + '>Q4 (Oct-Dec)</option></select></div>' +
+        '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Year</label><select class="select" id="iftaYear" onchange="iftaYear=parseInt(this.value);renderIFTA(reRenderCurrentPage())">' + iftaYearOptions + '</select></div>' +
+        '<div class="form-group" style="margin:0"><label style="margin-bottom:4px">Fleet MPG</label><div style="display:flex;gap:8px;align-items:center"><input class="input" type="number" step="0.1" value="' + fleetMPG + '" style="width:80px" onchange="fleetMPG=parseFloat(this.value)||6;renderIFTA(reRenderCurrentPage())">' +
+        (hasCalcData ? '<button class="btn btn-secondary" style="padding:6px 10px;font-size:12px" onclick="fleetMPG=' + calculatedMPG.toFixed(2) + ';renderIFTA(reRenderCurrentPage())" title="Use calculated MPG from your ' + milesSource + ' miles and fuel data">Use ' + calculatedMPG.toFixed(2) + '</button>' : '') +
         '</div></div>' +
         '<div style="margin-left:auto;font-size:16px;font-weight:600;color:var(--text-secondary)">[[icon:calendar]] ' + qRange.label + ' ' + iftaYear + '</div></div>' +
 
@@ -26932,11 +26932,11 @@
 
         // Filter tabs - segmented control
         '<div class="segmented-control" style="margin-bottom:16px">' +
-        '<button class="segmented-control-btn' + (taskFilter === 'all' ? ' active' : '') + '" onclick="taskFilter=\'all\';renderTasks(document.getElementById(\'main-content\'))">All Pending</button>' +
-        '<button class="segmented-control-btn' + (taskFilter === 'today' ? ' active' : '') + '" onclick="taskFilter=\'today\';renderTasks(document.getElementById(\'main-content\'))">Today</button>' +
-        '<button class="segmented-control-btn' + (taskFilter === 'upcoming' ? ' active' : '') + '" onclick="taskFilter=\'upcoming\';renderTasks(document.getElementById(\'main-content\'))">Upcoming</button>' +
-        '<button class="segmented-control-btn' + (taskFilter === 'overdue' ? ' active' : '') + '" onclick="taskFilter=\'overdue\';renderTasks(document.getElementById(\'main-content\'))">Overdue</button>' +
-        '<button class="segmented-control-btn' + (taskFilter === 'completed' ? ' active' : '') + '" onclick="taskFilter=\'completed\';renderTasks(document.getElementById(\'main-content\'))">Completed</button>' +
+        '<button class="segmented-control-btn' + (taskFilter === 'all' ? ' active' : '') + '" onclick="taskFilter=\'all\';renderTasks(reRenderCurrentPage())">All Pending</button>' +
+        '<button class="segmented-control-btn' + (taskFilter === 'today' ? ' active' : '') + '" onclick="taskFilter=\'today\';renderTasks(reRenderCurrentPage())">Today</button>' +
+        '<button class="segmented-control-btn' + (taskFilter === 'upcoming' ? ' active' : '') + '" onclick="taskFilter=\'upcoming\';renderTasks(reRenderCurrentPage())">Upcoming</button>' +
+        '<button class="segmented-control-btn' + (taskFilter === 'overdue' ? ' active' : '') + '" onclick="taskFilter=\'overdue\';renderTasks(reRenderCurrentPage())">Overdue</button>' +
+        '<button class="segmented-control-btn' + (taskFilter === 'completed' ? ' active' : '') + '" onclick="taskFilter=\'completed\';renderTasks(reRenderCurrentPage())">Completed</button>' +
         '</div>' +
 
         // Tasks list
@@ -27067,7 +27067,7 @@
       ];
 
       const tabsHtml = '<div class="segmented-control-scroll" style="margin-bottom:20px">' +
-        tabs.map(t => '<button class="segmented-control-btn' + (complianceMainTab === t.id ? ' active' : '') + '" onclick="complianceMainTab=\'' + t.id + '\';renderCompliance(document.getElementById(\'main-content\'))">' + t.label + '</button>').join('') +
+        tabs.map(t => '<button class="segmented-control-btn' + (complianceMainTab === t.id ? ' active' : '') + '" onclick="complianceMainTab=\'' + t.id + '\';renderCompliance(reRenderCurrentPage())">' + t.label + '</button>').join('') +
         '</div>';
 
       c.innerHTML = '<div class="header"><h2 style="font-size:18px;font-weight:600">[[icon:clipboard]] Compliance Center</h2></div>' + tabsHtml + '<div id="complianceContent"></div>';
@@ -27744,9 +27744,9 @@
       
       c.innerHTML = '<div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center">' +
         '<div class="segmented-control">' +
-        '<button class="segmented-control-btn' + (dcTab === 'tickets' ? ' active' : '') + '" onclick="dcTab=\'tickets\';renderCompliance(document.getElementById(\'main-content\'))">[[icon:ticket]] Tickets (' + tickets.length + ')</button>' +
-        '<button class="segmented-control-btn' + (dcTab === 'violations' ? ' active' : '') + '" onclick="dcTab=\'violations\';renderCompliance(document.getElementById(\'main-content\'))">[[icon:alert]] Violations (' + violations.length + ')</button>' +
-        '<button class="segmented-control-btn' + (dcTab === 'claims' ? ' active' : '') + '" onclick="dcTab=\'claims\';renderCompliance(document.getElementById(\'main-content\'))">[[icon:spark]] Claims (' + claims.length + ')</button>' +
+        '<button class="segmented-control-btn' + (dcTab === 'tickets' ? ' active' : '') + '" onclick="dcTab=\'tickets\';renderCompliance(reRenderCurrentPage())">[[icon:ticket]] Tickets (' + tickets.length + ')</button>' +
+        '<button class="segmented-control-btn' + (dcTab === 'violations' ? ' active' : '') + '" onclick="dcTab=\'violations\';renderCompliance(reRenderCurrentPage())">[[icon:alert]] Violations (' + violations.length + ')</button>' +
+        '<button class="segmented-control-btn' + (dcTab === 'claims' ? ' active' : '') + '" onclick="dcTab=\'claims\';renderCompliance(reRenderCurrentPage())">[[icon:spark]] Claims (' + claims.length + ')</button>' +
         '</div>' +
         '<div style="margin-left:auto;display:flex;gap:8px">' +
         '<button class="btn btn-secondary btn-sm" onclick="openTicketModal()">+ Ticket</button>' +
@@ -27957,14 +27957,14 @@
         if (daysUntil <= 7) return '<span class="badge badge-amber">Expires in ' + daysUntil + 'd</span>';
         return '<span class="badge badge-green">Valid until ' + formatDate(file.expiration_date) + '</span>';
       };
-      
-      const c = document.getElementById('main-content');
-      
+
+      const c = reRenderCurrentPage();
+
       // Get maintenance records for this truck
       const maintenanceRecords = (appData.maintenance_records || []).filter(m => m.truck_id === truckId);
       const totalMaintenanceCost = maintenanceRecords.reduce((s, m) => s + parseFloat(m.total_cost || m.cost || 0), 0);
       
-      c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px"><button class="btn btn-secondary" onclick="renderCompliance(document.getElementById(\'main-content\'))">← Back</button><h2>[[icon:truck]] Truck #' + t.truck_number + ' Compliance Files</h2><span class="badge ' + getBadge(t.status) + '">' + t.status + '</span></div></div>' +
+      c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px"><button class="btn btn-secondary" onclick="renderCompliance(reRenderCurrentPage())">← Back</button><h2>[[icon:truck]] Truck #' + t.truck_number + ' Compliance Files</h2><span class="badge ' + getBadge(t.status) + '">' + t.status + '</span></div></div>' +
         
         // Stats
         '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px"><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Truck Type</div><div class="value" style="font-size:14px">' + t.truck_type + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:90px;padding:12px 16px"><div class="label">Capacity</div><div class="value">' + t.capacity + ' cars</div></div><div class="stat-card" style="flex:0 0 auto;min-width:100px;padding:12px 16px"><div class="label">Documents</div><div class="value">' + complianceFiles.length + '/' + truckFileTypes.length + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:130px;padding:12px 16px"><div class="label">Maintenance Records</div><div class="value">' + maintenanceRecords.length + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:140px;padding:12px 16px;background:var(--red-dim)"><div class="label">Total Maintenance Cost</div><div class="value" style="color:var(--danger)">' + formatMoney(totalMaintenanceCost) + '</div></div><div class="stat-card" style="flex:0 0 auto;min-width:110px;padding:12px 16px;background:var(--blue-dim)"><div class="label">Custom Folders</div><div class="value" style="color:var(--info)">' + customFolders.length + '</div></div></div>' +
@@ -28502,9 +28502,9 @@
         
         // Tabs
         '<div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">' +
-        '<button class="btn ' + (dcTab === 'tickets' ? 'btn-primary' : 'btn-secondary') + '" onclick="dcTab=\'tickets\';renderDriverCompliance(document.getElementById(\'main-content\'))">[[icon:ticket]] Tickets (' + tickets.length + ')</button>' +
-        '<button class="btn ' + (dcTab === 'violations' ? 'btn-primary' : 'btn-secondary') + '" style="' + (dcTab === 'violations' ? 'background:var(--purple);border-color:var(--purple)' : '') + '" onclick="dcTab=\'violations\';renderDriverCompliance(document.getElementById(\'main-content\'))">[[icon:alert]] Violations (' + violations.length + ')</button>' +
-        '<button class="btn ' + (dcTab === 'claims' ? 'btn-primary' : 'btn-secondary') + '" style="' + (dcTab === 'claims' ? 'background:var(--amber);border-color:var(--amber)' : '') + '" onclick="dcTab=\'claims\';renderDriverCompliance(document.getElementById(\'main-content\'))">[[icon:spark]] Claims (' + claims.length + ')</button>' +
+        '<button class="btn ' + (dcTab === 'tickets' ? 'btn-primary' : 'btn-secondary') + '" onclick="dcTab=\'tickets\';renderDriverCompliance(reRenderCurrentPage())">[[icon:ticket]] Tickets (' + tickets.length + ')</button>' +
+        '<button class="btn ' + (dcTab === 'violations' ? 'btn-primary' : 'btn-secondary') + '" style="' + (dcTab === 'violations' ? 'background:var(--purple);border-color:var(--purple)' : '') + '" onclick="dcTab=\'violations\';renderDriverCompliance(reRenderCurrentPage())">[[icon:alert]] Violations (' + violations.length + ')</button>' +
+        '<button class="btn ' + (dcTab === 'claims' ? 'btn-primary' : 'btn-secondary') + '" style="' + (dcTab === 'claims' ? 'background:var(--amber);border-color:var(--amber)' : '') + '" onclick="dcTab=\'claims\';renderDriverCompliance(reRenderCurrentPage())">[[icon:spark]] Claims (' + claims.length + ')</button>' +
         '</div>' +
         
         '<div id="dcTabContent"></div>';
@@ -28522,7 +28522,7 @@
       if (dcFilterDriver) filtered = filtered.filter(t => t.driver_id == dcFilterDriver);
       
       c.innerHTML = '<div class="card" style="padding:16px;margin-bottom:20px"><div style="display:flex;gap:16px;align-items:end;flex-wrap:wrap">' +
-        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Status</label><select class="select" onchange="dcFilterStatus=this.value;renderDriverCompliance(document.getElementById(\'main-content\'))">' +
+        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Status</label><select class="select" onchange="dcFilterStatus=this.value;renderDriverCompliance(reRenderCurrentPage())">' +
         '<option value="">All Statuses</option>' +
         '<option value="OPEN"' + (dcFilterStatus === 'OPEN' ? ' selected' : '') + '>Open</option>' +
         '<option value="IN_PROGRESS"' + (dcFilterStatus === 'IN_PROGRESS' ? ' selected' : '') + '>In Progress</option>' +
@@ -28532,11 +28532,11 @@
         '<option value="RESOLVED"' + (dcFilterStatus === 'RESOLVED' ? ' selected' : '') + '>Resolved</option>' +
         '<option value="DISMISSED"' + (dcFilterStatus === 'DISMISSED' ? ' selected' : '') + '>Dismissed</option>' +
         '</select></div>' +
-        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Driver</label><select class="select" onchange="dcFilterDriver=this.value;renderDriverCompliance(document.getElementById(\'main-content\'))">' +
+        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Driver</label><select class="select" onchange="dcFilterDriver=this.value;renderDriverCompliance(reRenderCurrentPage())">' +
         '<option value="">All Drivers</option>' +
         appData.drivers.map(d => '<option value="' + d.id + '"' + (dcFilterDriver == d.id ? ' selected' : '') + '>' + d.first_name + ' ' + d.last_name + '</option>').join('') +
         '</select></div>' +
-        ((dcFilterStatus || dcFilterDriver) ? '<button class="btn btn-secondary" onclick="dcFilterStatus=\'\';dcFilterDriver=\'\';renderDriverCompliance(document.getElementById(\'main-content\'))">[[icon:x]] Clear</button>' : '') +
+        ((dcFilterStatus || dcFilterDriver) ? '<button class="btn btn-secondary" onclick="dcFilterStatus=\'\';dcFilterDriver=\'\';renderDriverCompliance(reRenderCurrentPage())">[[icon:x]] Clear</button>' : '') +
         '<div style="margin-left:auto;font-size:13px;color:var(--text-muted)">' + filtered.length + ' of ' + tickets.length + ' tickets</div>' +
         '</div></div>' +
 
@@ -28574,7 +28574,7 @@
       if (dcFilterDriver) filtered = filtered.filter(v => v.driver_id == dcFilterDriver);
 
       c.innerHTML = '<div class="card" style="padding:16px;margin-bottom:20px"><div style="display:flex;gap:16px;align-items:end;flex-wrap:wrap">' +
-        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Status</label><select class="select" onchange="dcFilterStatus=this.value;renderDriverCompliance(document.getElementById(\'main-content\'))">' +
+        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Status</label><select class="select" onchange="dcFilterStatus=this.value;renderDriverCompliance(reRenderCurrentPage())">' +
         '<option value="">All Statuses</option>' +
         '<option value="OPEN"' + (dcFilterStatus === 'OPEN' ? ' selected' : '') + '>Open</option>' +
         '<option value="IN_PROGRESS"' + (dcFilterStatus === 'IN_PROGRESS' ? ' selected' : '') + '>In Progress</option>' +
@@ -28582,11 +28582,11 @@
         '<option value="RESOLVED"' + (dcFilterStatus === 'RESOLVED' ? ' selected' : '') + '>Resolved</option>' +
         '<option value="DISMISSED"' + (dcFilterStatus === 'DISMISSED' ? ' selected' : '') + '>Dismissed</option>' +
         '</select></div>' +
-        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Driver</label><select class="select" onchange="dcFilterDriver=this.value;renderDriverCompliance(document.getElementById(\'main-content\'))">' +
+        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Driver</label><select class="select" onchange="dcFilterDriver=this.value;renderDriverCompliance(reRenderCurrentPage())">' +
         '<option value="">All Drivers</option>' +
         appData.drivers.map(d => '<option value="' + d.id + '"' + (dcFilterDriver == d.id ? ' selected' : '') + '>' + d.first_name + ' ' + d.last_name + '</option>').join('') +
         '</select></div>' +
-        ((dcFilterStatus || dcFilterDriver) ? '<button class="btn btn-secondary" onclick="dcFilterStatus=\'\';dcFilterDriver=\'\';renderDriverCompliance(document.getElementById(\'main-content\'))">[[icon:x]] Clear</button>' : '') +
+        ((dcFilterStatus || dcFilterDriver) ? '<button class="btn btn-secondary" onclick="dcFilterStatus=\'\';dcFilterDriver=\'\';renderDriverCompliance(reRenderCurrentPage())">[[icon:x]] Clear</button>' : '') +
         '<div style="margin-left:auto;font-size:13px;color:var(--text-muted)">' + filtered.length + ' of ' + violations.length + ' violations</div>' +
         '</div></div>' +
 
@@ -28624,7 +28624,7 @@
       if (dcFilterDriver) filtered = filtered.filter(cl => cl.driver_id == dcFilterDriver);
 
       c.innerHTML = '<div class="card" style="padding:16px;margin-bottom:20px"><div style="display:flex;gap:16px;align-items:end;flex-wrap:wrap">' +
-        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Status</label><select class="select" onchange="dcFilterStatus=this.value;renderDriverCompliance(document.getElementById(\'main-content\'))">' +
+        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Status</label><select class="select" onchange="dcFilterStatus=this.value;renderDriverCompliance(reRenderCurrentPage())">' +
         '<option value="">All Statuses</option>' +
         '<option value="OPEN"' + (dcFilterStatus === 'OPEN' ? ' selected' : '') + '>Open</option>' +
         '<option value="UNDER_REVIEW"' + (dcFilterStatus === 'UNDER_REVIEW' ? ' selected' : '') + '>Under Review</option>' +
@@ -28632,11 +28632,11 @@
         '<option value="DENIED"' + (dcFilterStatus === 'DENIED' ? ' selected' : '') + '>Denied</option>' +
         '<option value="SETTLED"' + (dcFilterStatus === 'SETTLED' ? ' selected' : '') + '>Settled</option>' +
         '</select></div>' +
-        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Driver</label><select class="select" onchange="dcFilterDriver=this.value;renderDriverCompliance(document.getElementById(\'main-content\'))">' +
+        '<div class="form-group" style="margin:0;min-width:150px"><label style="margin-bottom:4px">Driver</label><select class="select" onchange="dcFilterDriver=this.value;renderDriverCompliance(reRenderCurrentPage())">' +
         '<option value="">All Drivers</option>' +
         appData.drivers.map(d => '<option value="' + d.id + '"' + (dcFilterDriver == d.id ? ' selected' : '') + '>' + d.first_name + ' ' + d.last_name + '</option>').join('') +
         '</select></div>' +
-        ((dcFilterStatus || dcFilterDriver) ? '<button class="btn btn-secondary" onclick="dcFilterStatus=\'\';dcFilterDriver=\'\';renderDriverCompliance(document.getElementById(\'main-content\'))">[[icon:x]] Clear</button>' : '') +
+        ((dcFilterStatus || dcFilterDriver) ? '<button class="btn btn-secondary" onclick="dcFilterStatus=\'\';dcFilterDriver=\'\';renderDriverCompliance(reRenderCurrentPage())">[[icon:x]] Clear</button>' : '') +
         '<div style="margin-left:auto;font-size:13px;color:var(--text-muted)">' + filtered.length + ' of ' + claims.length + ' claims</div>' +
         '</div></div>' +
 
@@ -30072,7 +30072,7 @@
       html += '<div class="responsive-page-header" style="margin-bottom:24px">';
       html += '<div><h2 style="margin:0;font-size:18px;font-weight:600;font-family:var(--font-display)">Receivables</h2>';
       html += '<p style="margin:4px 0 0;color:var(--text-muted);font-size:13px">Manage invoices, track payments, monitor aging by broker</p>';
-      html += '<div class="responsive-page-actions" style="margin-top:10px"><select onchange="billingPeriod.type=this.value;if(billingPeriod.type===\'year\'&&!billingPeriod.year){billingPeriod.year=new Date().getFullYear();}renderBillingPage(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)"><option value="year"' + (billingPeriod.type === 'year' ? ' selected' : '') + '>Year</option><option value="all"' + (billingPeriod.type === 'all' ? ' selected' : '') + '>All Time</option></select>' + (billingPeriod.type === 'year' ? '<select onchange="billingPeriod.year=parseInt(this.value);renderBillingPage(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)">' + billingYearOptions + '</select>' : '') + '<span style="font-size:12px;background:var(--dim-blue);color:var(--info);padding:6px 10px;border-radius:4px;font-weight:600;border:1px solid var(--info-border)">' + getPeriodLabel(billingPeriod) + '</span>' + (undatedOrderCount > 0 && billingPeriod.type !== 'all' ? '<span style="font-size:12px;background:var(--dim-amber);color:var(--warning);padding:6px 10px;border-radius:4px;font-weight:600;border:1px solid var(--warning-border)">Undated excluded: ' + undatedOrderCount + '</span>' : '') + '</div></div>';
+      html += '<div class="responsive-page-actions" style="margin-top:10px"><select onchange="billingPeriod.type=this.value;if(billingPeriod.type===\'year\'&&!billingPeriod.year){billingPeriod.year=new Date().getFullYear();}renderBillingPage(reRenderCurrentPage())" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)"><option value="year"' + (billingPeriod.type === 'year' ? ' selected' : '') + '>Year</option><option value="all"' + (billingPeriod.type === 'all' ? ' selected' : '') + '>All Time</option></select>' + (billingPeriod.type === 'year' ? '<select onchange="billingPeriod.year=parseInt(this.value);renderBillingPage(reRenderCurrentPage())" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)">' + billingYearOptions + '</select>' : '') + '<span style="font-size:12px;background:var(--dim-blue);color:var(--info);padding:6px 10px;border-radius:4px;font-weight:600;border:1px solid var(--info-border)">' + getPeriodLabel(billingPeriod) + '</span>' + (undatedOrderCount > 0 && billingPeriod.type !== 'all' ? '<span style="font-size:12px;background:var(--dim-amber);color:var(--warning);padding:6px 10px;border-radius:4px;font-weight:600;border:1px solid var(--warning-border)">Undated excluded: ' + undatedOrderCount + '</span>' : '') + '</div></div>';
       html += '<div class="responsive-page-actions" style="justify-content:flex-end">';
       html += '<button class="btn btn-secondary" onclick="exportBillingReport()" style="display:flex;align-items:center;gap:8px">Export CSV</button>';
       html += '</div></div>';
@@ -30081,10 +30081,10 @@
       const followUpCount = getOrdersNeedingFollowUp(resolvedPeriod).length;
       html += '<div style="margin-bottom:24px">';
       html += '<div class="segmented-control">';
-      html += '<button class="segmented-control-btn' + (billingTab === 'overview' ? ' active' : '') + '" onclick="billingTab=\'overview\';renderBillingPage(document.getElementById(\'main-content\'))">Overview</button>';
-      html += '<button class="segmented-control-btn' + (billingTab === 'brokers' ? ' active' : '') + '" onclick="billingTab=\'brokers\';renderBillingPage(document.getElementById(\'main-content\'))">Brokers (' + brokerStats.length + ')</button>';
-      html += '<button class="segmented-control-btn' + (billingTab === 'invoices' ? ' active' : '') + '" onclick="billingTab=\'invoices\';renderBillingPage(document.getElementById(\'main-content\'))">Invoices (' + unpaidOrders.length + ')</button>';
-      html += '<button class="segmented-control-btn' + (billingTab === 'collections' ? ' active' : '') + '" onclick="billingTab=\'collections\';renderBillingPage(document.getElementById(\'main-content\'))">Collections' + (followUpCount > 0 ? ' <span style="display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:var(--danger);color:white;font-size:11px;font-weight:600;margin-left:4px">' + followUpCount + '</span>' : '') + '</button>';
+      html += '<button class="segmented-control-btn' + (billingTab === 'overview' ? ' active' : '') + '" onclick="billingTab=\'overview\';renderBillingPage(reRenderCurrentPage())">Overview</button>';
+      html += '<button class="segmented-control-btn' + (billingTab === 'brokers' ? ' active' : '') + '" onclick="billingTab=\'brokers\';renderBillingPage(reRenderCurrentPage())">Brokers (' + brokerStats.length + ')</button>';
+      html += '<button class="segmented-control-btn' + (billingTab === 'invoices' ? ' active' : '') + '" onclick="billingTab=\'invoices\';renderBillingPage(reRenderCurrentPage())">Invoices (' + unpaidOrders.length + ')</button>';
+      html += '<button class="segmented-control-btn' + (billingTab === 'collections' ? ' active' : '') + '" onclick="billingTab=\'collections\';renderBillingPage(reRenderCurrentPage())">Collections' + (followUpCount > 0 ? ' <span style="display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:var(--danger);color:white;font-size:11px;font-weight:600;margin-left:4px">' + followUpCount + '</span>' : '') + '</button>';
       html += '</div></div>';
 
       // Render based on active tab
@@ -30142,7 +30142,7 @@
       const needsInvoiceOrders = getOrdersNeedingInvoice();
       if (needsInvoiceOrders.length > 0) {
         const needsInvoiceTotal = needsInvoiceOrders.reduce((sum, o) => sum + o.billAmount, 0);
-        html += '<div onclick="billingFilter=\'needs_invoice\';billingTab=\'invoices\';renderBillingPage(document.getElementById(\'main-content\'))" style="background:var(--warning-light);border-left:4px solid var(--warning);border-radius:var(--radius-sm);padding:16px 20px;margin-bottom:20px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.transform=\'translateY(-1px)\';this.style.boxShadow=\'var(--shadow-md)\'" onmouseout="this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">';
+        html += '<div onclick="billingFilter=\'needs_invoice\';billingTab=\'invoices\';renderBillingPage(reRenderCurrentPage())" style="background:var(--warning-light);border-left:4px solid var(--warning);border-radius:var(--radius-sm);padding:16px 20px;margin-bottom:20px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.transform=\'translateY(-1px)\';this.style.boxShadow=\'var(--shadow-md)\'" onmouseout="this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">';
         html += '<div style="display:flex;align-items:center;justify-content:space-between">';
         html += '<div style="display:flex;align-items:center;gap:12px">';
         html += '<div style="width:8px;height:8px;background:var(--warning);border-radius:50%"></div>';
@@ -30244,13 +30244,13 @@
         const pct90 = totalAR > 0 ? Math.round((m.days90PlusAmt / totalAR) * 100) : 0;
         html += '<div style="display:flex;align-items:center;gap:10px;margin-top:14px;padding:10px 14px;background:rgba(153,27,27,0.10);border:1px solid rgba(153,27,27,0.25);border-radius:var(--radius-sm)">';
         html += '<div style="font-size:13px;color:var(--text-primary);flex:1"><strong style="color:var(--red)">' + formatMoney(m.days90PlusAmt) + '</strong> (' + pct90 + '% of AR) is 90+ days overdue &mdash; immediate collections action recommended.</div>';
-        html += '<button onclick="collectionsFilter=\'no_contact\';billingTab=\'collections\';renderBillingPage(document.getElementById(\'main-content\'))" style="white-space:nowrap;background:#991b1b;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer">View Collections</button>';
+        html += '<button onclick="collectionsFilter=\'no_contact\';billingTab=\'collections\';renderBillingPage(reRenderCurrentPage())" style="white-space:nowrap;background:#991b1b;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer">View Collections</button>';
         html += '</div>';
       } else if (m.days61_90Amt > 0) {
         const pct61 = totalAR > 0 ? Math.round((m.days61_90Amt / totalAR) * 100) : 0;
         html += '<div style="display:flex;align-items:center;gap:10px;margin-top:14px;padding:10px 14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.20);border-radius:var(--radius-sm)">';
         html += '<div style="font-size:13px;color:var(--text-primary);flex:1"><strong style="color:var(--red)">' + formatMoney(m.days61_90Amt) + '</strong> (' + pct61 + '% of AR) is 61-90 days overdue &mdash; follow up before it ages further.</div>';
-        html += '<button onclick="billingFilter=\'overdue\';billingTab=\'invoices\';renderBillingPage(document.getElementById(\'main-content\'))" style="white-space:nowrap;background:var(--red);color:white;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer">View Overdue</button>';
+        html += '<button onclick="billingFilter=\'overdue\';billingTab=\'invoices\';renderBillingPage(reRenderCurrentPage())" style="white-space:nowrap;background:var(--red);color:white;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer">View Overdue</button>';
         html += '</div>';
       }
 
@@ -30260,7 +30260,7 @@
       html += '<div class="card card-flush" style="margin-bottom:24px">';
       html += '<div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">';
       html += '<h3 style="margin:0;font-size:14px;font-weight:600;font-family:var(--font-display)">Top Brokers by Outstanding</h3>';
-      html += '<button class="btn btn-sm btn-secondary" onclick="billingTab=\'brokers\';renderBillingPage(document.getElementById(\'main-content\'))">View All</button>';
+      html += '<button class="btn btn-sm btn-secondary" onclick="billingTab=\'brokers\';renderBillingPage(reRenderCurrentPage())">View All</button>';
       html += '</div>';
       html += '<div class="table-wrapper"><table class="data-table">';
       html += '<thead><tr><th>Broker</th><th style="text-align:right">Outstanding</th><th style="text-align:right">Total Invoiced</th><th style="text-align:right">Paid</th><th style="text-align:right">Overdue</th><th style="width:120px">Aging</th><th style="width:80px">Actions</th></tr></thead><tbody>';
@@ -30317,7 +30317,7 @@
       html += '<div style="margin-bottom:16px">';
       html += '<input type="text" id="broker-billing-search" class="input" placeholder="Search brokers..." ';
       html += 'value="' + brokerBillingSearchTerm + '" ';
-      html += 'oninput="brokerBillingSearchTerm=this.value;renderBillingPage(document.getElementById(\'main-content\'))" ';
+      html += 'oninput="brokerBillingSearchTerm=this.value;renderBillingPage(reRenderCurrentPage())" ';
       html += 'style="width:300px">';
       html += '</div>';
 
@@ -30412,11 +30412,11 @@
 
       html += '<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap">';
       html += '<div class="segmented-control">';
-      html += '<button class="segmented-control-btn' + (billingFilter === 'all' ? ' active' : '') + '" onclick="billingFilter=\'all\';renderBillingPage(document.getElementById(\'main-content\'))">All (' + (unpaidOrders.length + paidOrders.length) + ')</button>';
-      html += '<button class="segmented-control-btn' + (billingFilter === 'needs_invoice' ? ' active' : '') + '" onclick="billingFilter=\'needs_invoice\';renderBillingPage(document.getElementById(\'main-content\'))">' + dotIndicator('var(--warning)', needsInvoiceOrders.length) + 'Needs Invoice (' + needsInvoiceOrders.length + ')</button>';
-      html += '<button class="segmented-control-btn' + (billingFilter === 'outstanding' ? ' active' : '') + '" onclick="billingFilter=\'outstanding\';renderBillingPage(document.getElementById(\'main-content\'))">Outstanding (' + unpaidOrders.length + ')</button>';
-      html += '<button class="segmented-control-btn' + (billingFilter === 'paid' ? ' active' : '') + '" onclick="billingFilter=\'paid\';renderBillingPage(document.getElementById(\'main-content\'))">Paid (' + paidOrders.length + ')</button>';
-      html += '<button class="segmented-control-btn' + (billingFilter === 'overdue' ? ' active' : '') + '" onclick="billingFilter=\'overdue\';renderBillingPage(document.getElementById(\'main-content\'))">' + dotIndicator('var(--danger)', overdueOrders.length) + 'Overdue (' + overdueOrders.length + ')</button>';
+      html += '<button class="segmented-control-btn' + (billingFilter === 'all' ? ' active' : '') + '" onclick="billingFilter=\'all\';renderBillingPage(reRenderCurrentPage())">All (' + (unpaidOrders.length + paidOrders.length) + ')</button>';
+      html += '<button class="segmented-control-btn' + (billingFilter === 'needs_invoice' ? ' active' : '') + '" onclick="billingFilter=\'needs_invoice\';renderBillingPage(reRenderCurrentPage())">' + dotIndicator('var(--warning)', needsInvoiceOrders.length) + 'Needs Invoice (' + needsInvoiceOrders.length + ')</button>';
+      html += '<button class="segmented-control-btn' + (billingFilter === 'outstanding' ? ' active' : '') + '" onclick="billingFilter=\'outstanding\';renderBillingPage(reRenderCurrentPage())">Outstanding (' + unpaidOrders.length + ')</button>';
+      html += '<button class="segmented-control-btn' + (billingFilter === 'paid' ? ' active' : '') + '" onclick="billingFilter=\'paid\';renderBillingPage(reRenderCurrentPage())">Paid (' + paidOrders.length + ')</button>';
+      html += '<button class="segmented-control-btn' + (billingFilter === 'overdue' ? ' active' : '') + '" onclick="billingFilter=\'overdue\';renderBillingPage(reRenderCurrentPage())">' + dotIndicator('var(--danger)', overdueOrders.length) + 'Overdue (' + overdueOrders.length + ')</button>';
       html += '</div>';
 
       // Search bar + Export
@@ -30424,7 +30424,7 @@
       html += '<div style="position:relative;max-width:300px;flex:1">';
       html += '<input type="text" class="input" id="billing-search" placeholder="Search invoices..." ';
       html += 'value="' + billingSearchTerm + '" ';
-      html += 'oninput="billingSearchTerm=this.value;renderBillingPage(document.getElementById(\'main-content\'))" ';
+      html += 'oninput="billingSearchTerm=this.value;renderBillingPage(reRenderCurrentPage())" ';
       html += 'style="width:100%">';
       html += '</div>';
       html += '<button class="btn btn-sm btn-secondary" onclick="exportBillingInvoicesCSV()" style="white-space:nowrap">Export CSV</button>';
@@ -30537,7 +30537,7 @@
         html += '<div style="width:1px;height:24px;background:var(--border)"></div>';
         html += '<button class="btn btn-sm btn-secondary" onclick="batchMarkInvoiced()">Batch Invoice</button>';
         html += '<button class="btn btn-sm btn-primary" onclick="batchMarkPaid()">Batch Mark Paid</button>';
-        html += '<button class="btn btn-sm btn-ghost" onclick="billingSelectedOrders=[];renderBillingPage(document.getElementById(\'main-content\'))">Cancel</button>';
+        html += '<button class="btn btn-sm btn-ghost" onclick="billingSelectedOrders=[];renderBillingPage(reRenderCurrentPage())">Cancel</button>';
         html += '</div>';
         html += '<style>@keyframes billingSlideUp{from{transform:translateX(-50%) translateY(20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}</style>';
       }
@@ -30810,7 +30810,7 @@
       ];
       summaryCards.forEach(cd => {
         const isActive = collectionsFilter === cd.filter;
-        html += '<div class="stat-flat ' + cd.accent + '" onclick="collectionsFilter=\'' + cd.filter + '\';renderBillingPage(document.getElementById(\'main-content\'))" style="cursor:pointer;' + (isActive ? 'box-shadow:var(--shadow-sm);border-color:var(--text-muted)' : '') + '">';
+        html += '<div class="stat-flat ' + cd.accent + '" onclick="collectionsFilter=\'' + cd.filter + '\';renderBillingPage(reRenderCurrentPage())" style="cursor:pointer;' + (isActive ? 'box-shadow:var(--shadow-sm);border-color:var(--text-muted)' : '') + '">';
         html += '<div class="stat-flat-label">' + cd.label + '</div>';
         html += '<div class="stat-flat-value" style="font-family:var(--font-mono)">' + cd.value + '</div></div>';
       });
@@ -30819,16 +30819,16 @@
       // Filter pills
       html += '<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap">';
       html += '<div class="segmented-control">';
-      html += '<button class="segmented-control-btn' + (collectionsFilter === 'all' ? ' active' : '') + '" onclick="collectionsFilter=\'all\';renderBillingPage(document.getElementById(\'main-content\'))">All (' + unpaidOrders.length + ')</button>';
-      html += '<button class="segmented-control-btn' + (collectionsFilter === 'follow_up' ? ' active' : '') + '" onclick="collectionsFilter=\'follow_up\';renderBillingPage(document.getElementById(\'main-content\'))">Needs Follow-up (' + followUpOrders.length + ')</button>';
-      html += '<button class="segmented-control-btn' + (collectionsFilter === 'promise' ? ' active' : '') + '" onclick="collectionsFilter=\'promise\';renderBillingPage(document.getElementById(\'main-content\'))">Promise to Pay (' + promiseOrders.length + ')</button>';
-      html += '<button class="segmented-control-btn' + (collectionsFilter === 'hold' ? ' active' : '') + '" onclick="collectionsFilter=\'hold\';renderBillingPage(document.getElementById(\'main-content\'))">On Hold (' + holdOrders.length + ')</button>';
-      html += '<button class="segmented-control-btn' + (collectionsFilter === 'no_contact' ? ' active' : '') + '" onclick="collectionsFilter=\'no_contact\';renderBillingPage(document.getElementById(\'main-content\'))">No Contact (' + noContactOrders.length + ')</button>';
+      html += '<button class="segmented-control-btn' + (collectionsFilter === 'all' ? ' active' : '') + '" onclick="collectionsFilter=\'all\';renderBillingPage(reRenderCurrentPage())">All (' + unpaidOrders.length + ')</button>';
+      html += '<button class="segmented-control-btn' + (collectionsFilter === 'follow_up' ? ' active' : '') + '" onclick="collectionsFilter=\'follow_up\';renderBillingPage(reRenderCurrentPage())">Needs Follow-up (' + followUpOrders.length + ')</button>';
+      html += '<button class="segmented-control-btn' + (collectionsFilter === 'promise' ? ' active' : '') + '" onclick="collectionsFilter=\'promise\';renderBillingPage(reRenderCurrentPage())">Promise to Pay (' + promiseOrders.length + ')</button>';
+      html += '<button class="segmented-control-btn' + (collectionsFilter === 'hold' ? ' active' : '') + '" onclick="collectionsFilter=\'hold\';renderBillingPage(reRenderCurrentPage())">On Hold (' + holdOrders.length + ')</button>';
+      html += '<button class="segmented-control-btn' + (collectionsFilter === 'no_contact' ? ' active' : '') + '" onclick="collectionsFilter=\'no_contact\';renderBillingPage(reRenderCurrentPage())">No Contact (' + noContactOrders.length + ')</button>';
       html += '</div>';
 
       // Search + Export
       html += '<div style="display:flex;gap:8px;align-items:center;flex:1;justify-content:flex-end">';
-      html += '<input type="text" class="input" id="collections-search" placeholder="Search..." value="' + collectionsSearchTerm + '" oninput="collectionsSearchTerm=this.value;renderBillingPage(document.getElementById(\'main-content\'))" style="max-width:250px;width:100%">';
+      html += '<input type="text" class="input" id="collections-search" placeholder="Search..." value="' + collectionsSearchTerm + '" oninput="collectionsSearchTerm=this.value;renderBillingPage(reRenderCurrentPage())" style="max-width:250px;width:100%">';
       html += '<button class="btn btn-sm btn-secondary" onclick="exportCollectionsCSV()" style="white-space:nowrap">Export</button>';
       html += '</div></div>';
 
@@ -32302,7 +32302,7 @@
 
       let html = '<div style="border:1px solid var(--border);border-radius:8px;margin-bottom:6px;overflow:hidden">';
       // Row header (clickable)
-      html += '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;background:' + (isExpanded ? 'var(--bg-secondary)' : 'var(--bg-primary)') + '" onclick="payrollExpandedRecord=' + (isExpanded ? 'null' : r.id) + ';renderPayroll(document.getElementById(\'main-content\'))">';
+      html += '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;background:' + (isExpanded ? 'var(--bg-secondary)' : 'var(--bg-primary)') + '" onclick="payrollExpandedRecord=' + (isExpanded ? 'null' : r.id) + ';renderPayroll(reRenderCurrentPage())">';
       html += '<span style="color:var(--text-muted);font-size:11px;width:16px">' + chevron + '</span>';
       html += '<span style="font-weight:600;font-size:13px;min-width:50px">#' + escapeHtml(getPayrollRecordDisplayNumber(r)) + '</span>';
       html += '<span style="font-size:12px;color:var(--text-secondary);min-width:70px">' + formatDate(r.pay_date || r.created_at) + '</span>';
@@ -32366,7 +32366,7 @@
 
       // === HEADER ===
       html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">' +
-        '<button class="btn btn-secondary btn-sm" onclick="payrollDetailDriverId=null;renderPayroll(document.getElementById(\'main-content\'))" style="display:inline-flex;align-items:center;gap:4px">&larr; Back</button>' +
+        '<button class="btn btn-secondary btn-sm" onclick="payrollDetailDriverId=null;renderPayroll(reRenderCurrentPage())" style="display:inline-flex;align-items:center;gap:4px">&larr; Back</button>' +
         '<div class="driver-avatar" style="width:40px;height:40px;font-size:14px">' + initials + '</div>' +
         '<div style="flex:1;min-width:0">' +
           '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0;font-size:16px;font-weight:600">' + escapeHtml(driver.first_name + ' ' + driver.last_name) + '</h3> ' + typeBadge + ' <span style="font-size:12px;color:var(--text-muted)">' + percentLabel + '</span></div>' +
@@ -32405,7 +32405,7 @@
 
       // Collapsible deductions
       html += '<div style="margin-bottom:14px">';
-      html += '<button class="btn btn-secondary btn-sm" onclick="payrollShowDeductions=!payrollShowDeductions;renderPayroll(document.getElementById(\'main-content\'))" style="font-size:12px;display:inline-flex;align-items:center;gap:4px">' + (payrollShowDeductions ? '&#9660;' : '&#9654;') + ' Add Deductions (optional)</button>';
+      html += '<button class="btn btn-secondary btn-sm" onclick="payrollShowDeductions=!payrollShowDeductions;renderPayroll(reRenderCurrentPage())" style="font-size:12px;display:inline-flex;align-items:center;gap:4px">' + (payrollShowDeductions ? '&#9660;' : '&#9654;') + ' Add Deductions (optional)</button>';
       if (payrollShowDeductions) {
         const savedDed = driver.default_deductions && typeof driver.default_deductions === 'object' ? driver.default_deductions : {};
         html += '<div style="margin-top:10px;padding:12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px">';
@@ -32610,7 +32610,7 @@
           '<span style="font-weight:600;font-size:14px;min-width:180px;text-align:center;color:var(--text-primary)">' + escapeHtml(periodLabel) + '</span>' +
           '<button class="btn btn-secondary btn-sm" onclick="navigatePayrollPeriod(1)" style="padding:4px 10px;font-size:16px">&rarr;</button>' +
           '</div>'
-        : '<div style="display:flex;align-items:center;gap:8px"><select class="select" onchange="payrollPeriod.year=parseInt(this.value);payrollYear=payrollPeriod.year;renderPayroll(document.getElementById(\'main-content\'))">' + yearOptions + '</select></div>';
+        : '<div style="display:flex;align-items:center;gap:8px"><select class="select" onchange="payrollPeriod.year=parseInt(this.value);payrollYear=payrollPeriod.year;renderPayroll(reRenderCurrentPage())">' + yearOptions + '</select></div>';
 
       // Filter pills
       const filterPills = [
@@ -32619,7 +32619,7 @@
         { key: 'owner_op', label: 'Owner-OP' }
       ];
       const filterPillsHTML = filterPills.map(fp =>
-        '<button class="segmented-control-btn' + (payrollFilter === fp.key ? ' active' : '') + '" onclick="payrollFilter=\'' + fp.key + '\';renderPayroll(document.getElementById(\'main-content\'))">' + fp.label + '</button>'
+        '<button class="segmented-control-btn' + (payrollFilter === fp.key ? ' active' : '') + '" onclick="payrollFilter=\'' + fp.key + '\';renderPayroll(reRenderCurrentPage())">' + fp.label + '</button>'
       ).join('');
 
       const currentPeriodRange = buildPayrollPeriodRange(payrollPeriod);
@@ -32695,7 +32695,7 @@
         { key: 'name', label: 'Name' },
         { key: 'status', label: 'Status' }
       ];
-      const sortDropdownHTML = '<select class="select" style="font-size:12px" onchange="payrollSort=this.value;renderPayroll(document.getElementById(\'main-content\'))">' +
+      const sortDropdownHTML = '<select class="select" style="font-size:12px" onchange="payrollSort=this.value;renderPayroll(reRenderCurrentPage())">' +
         sortOptions.map(o => '<option value="' + o.key + '"' + (payrollSort === o.key ? ' selected' : '') + '>Sort: ' + o.label + '</option>').join('') +
         '</select>';
 
@@ -37852,7 +37852,7 @@
       // Entity type selector
       var dropdownHtml = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">';
       dropdownHtml += '<label style="font-weight:500;color:var(--text-secondary);font-size:13px">View by:</label>';
-      dropdownHtml += '<select class="select" onchange="profitDrillEntity=this.value;renderConsolidatedFinancials(document.getElementById(\'main-content\'))">';
+      dropdownHtml += '<select class="select" onchange="profitDrillEntity=this.value;renderConsolidatedFinancials(reRenderCurrentPage())">';
       ['trip', 'driver', 'truck', 'broker', 'lane'].forEach(function(e) {
         dropdownHtml += '<option value="' + e + '"' + (entityType === e ? ' selected' : '') + '>' + e.charAt(0).toUpperCase() + e.slice(1) + '</option>';
       });
@@ -39456,7 +39456,7 @@
         </div>
       `;
       
-      c.innerHTML = finTabs + '<div class="header"><h2>[[icon:trend_up]] Financial Analysis</h2><div style="display:flex;gap:8px"><button class="btn btn-secondary" onclick="loadAllData(true).then(()=>renderFinancialAnalysis(document.getElementById(\'main-content\')))">[[icon:refresh]] Refresh</button><button class="btn btn-secondary" onclick="window.print()">[[icon:print]] Print</button></div></div>' +
+      c.innerHTML = finTabs + '<div class="header"><h2>[[icon:trend_up]] Financial Analysis</h2><div style="display:flex;gap:8px"><button class="btn btn-secondary" onclick="loadAllData(true).then(()=>renderFinancialAnalysis(reRenderCurrentPage()))">[[icon:refresh]] Refresh</button><button class="btn btn-secondary" onclick="window.print()">[[icon:print]] Print</button></div></div>' +
         
         // ============ TRIP SEARCH SECTION (UNCHANGED) ============
         '<div style="background:#7c3aed;color:white;padding:10px 16px;border-radius:8px 8px 0 0;font-weight:600;font-size:14px">[[icon:search]] TRIP SEARCH & ANALYSIS</div>' +
@@ -39774,13 +39774,13 @@
         '<span style="font-weight:600;color:#334155">Select Period:</span>' +
         '</div>' +
         '<div style="display:flex;gap:8px;background:white;padding:4px;border-radius:8px;border:1px solid var(--border)">' +
-        '<button onclick="finPeriodType=\'month\';renderFinancialAnalysis(document.getElementById(\'main-content\'))" style="padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-weight:500;transition:all 0.2s;' + (finPeriodType === 'month' ? 'background:#3b82f6;color:white' : 'background:transparent;color:#64748b') + '">Monthly</button>' +
-        '<button onclick="finPeriodType=\'quarter\';renderFinancialAnalysis(document.getElementById(\'main-content\'))" style="padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-weight:500;transition:all 0.2s;' + (finPeriodType === 'quarter' ? 'background:#3b82f6;color:white' : 'background:transparent;color:#64748b') + '">Quarterly</button>' +
-        '<button onclick="finPeriodType=\'year\';renderFinancialAnalysis(document.getElementById(\'main-content\'))" style="padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-weight:500;transition:all 0.2s;' + (finPeriodType === 'year' ? 'background:#3b82f6;color:white' : 'background:transparent;color:#64748b') + '">Yearly</button>' +
+        '<button onclick="finPeriodType=\'month\';renderFinancialAnalysis(reRenderCurrentPage())" style="padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-weight:500;transition:all 0.2s;' + (finPeriodType === 'month' ? 'background:#3b82f6;color:white' : 'background:transparent;color:#64748b') + '">Monthly</button>' +
+        '<button onclick="finPeriodType=\'quarter\';renderFinancialAnalysis(reRenderCurrentPage())" style="padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-weight:500;transition:all 0.2s;' + (finPeriodType === 'quarter' ? 'background:#3b82f6;color:white' : 'background:transparent;color:#64748b') + '">Quarterly</button>' +
+        '<button onclick="finPeriodType=\'year\';renderFinancialAnalysis(reRenderCurrentPage())" style="padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-weight:500;transition:all 0.2s;' + (finPeriodType === 'year' ? 'background:#3b82f6;color:white' : 'background:transparent;color:#64748b') + '">Yearly</button>' +
         '</div>' +
-        '<select id="finYear" onchange="finYear=parseInt(this.value);renderFinancialAnalysis(document.getElementById(\'main-content\'))" style="padding:10px 16px;border:1px solid var(--border);border-radius:8px;background:white;font-weight:500">' + finYearOptions + '</select>' +
-        (finPeriodType === 'month' ? '<select id="finMonth" onchange="finMonth=parseInt(this.value);renderFinancialAnalysis(document.getElementById(\'main-content\'))" style="padding:10px 16px;border:1px solid var(--border);border-radius:8px;background:white;font-weight:500">' + months.slice(1).map((m, i) => '<option value="' + (i+1) + '"' + (finMonth === i+1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select>' : '') +
-        (finPeriodType === 'quarter' ? '<select id="finQuarter" onchange="finQuarter=parseInt(this.value);renderFinancialAnalysis(document.getElementById(\'main-content\'))" style="padding:10px 16px;border:1px solid var(--border);border-radius:8px;background:white;font-weight:500"><option value="1"' + (finQuarter === 1 ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="2"' + (finQuarter === 2 ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="3"' + (finQuarter === 3 ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="4"' + (finQuarter === 4 ? ' selected' : '') + '>Q4 (Oct-Dec)</option></select>' : '') +
+        '<select id="finYear" onchange="finYear=parseInt(this.value);renderFinancialAnalysis(reRenderCurrentPage())" style="padding:10px 16px;border:1px solid var(--border);border-radius:8px;background:white;font-weight:500">' + finYearOptions + '</select>' +
+        (finPeriodType === 'month' ? '<select id="finMonth" onchange="finMonth=parseInt(this.value);renderFinancialAnalysis(reRenderCurrentPage())" style="padding:10px 16px;border:1px solid var(--border);border-radius:8px;background:white;font-weight:500">' + months.slice(1).map((m, i) => '<option value="' + (i+1) + '"' + (finMonth === i+1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select>' : '') +
+        (finPeriodType === 'quarter' ? '<select id="finQuarter" onchange="finQuarter=parseInt(this.value);renderFinancialAnalysis(reRenderCurrentPage())" style="padding:10px 16px;border:1px solid var(--border);border-radius:8px;background:white;font-weight:500"><option value="1"' + (finQuarter === 1 ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="2"' + (finQuarter === 2 ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="3"' + (finQuarter === 3 ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="4"' + (finQuarter === 4 ? ' selected' : '') + '>Q4 (Oct-Dec)</option></select>' : '') +
         '<div style="margin-left:auto;background:#1e293b;color:white;padding:10px 20px;border-radius:8px;font-weight:700">' + periodLabel + '</div>' +
         '</div></div>' +
         
@@ -40520,7 +40520,7 @@
         .sort((a, b) => b.trueProfit - a.trueProfit);
       
       // Build HTML
-      c.innerHTML = '<div class="header"><h2>[[icon:gem]] Profitability Dashboard</h2><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><select onchange="profitabilityPeriod.type=this.value;if(profitabilityPeriod.type===\'year\'&&!profitabilityPeriod.year){profitabilityPeriod.year=new Date().getFullYear();}renderProfitability(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)"><option value="year"' + (profitabilityPeriod.type === 'year' ? ' selected' : '') + '>Year</option><option value="all"' + (profitabilityPeriod.type === 'all' ? ' selected' : '') + '>All Time</option></select>' + (profitabilityPeriod.type === 'year' ? '<select onchange="profitabilityPeriod.year=parseInt(this.value);renderProfitability(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)">' + profitabilityYearOptions + '</select>' : '') + '<span style="font-size:12px;background:var(--dim-blue);color:var(--info);padding:6px 10px;border-radius:4px;font-weight:600;border:1px solid var(--info-border)">' + getPeriodLabel(profitabilityPeriod) + '</span>' + (undatedTripCount > 0 && profitabilityPeriod.type !== 'all' ? '<span style="font-size:12px;background:var(--dim-amber);color:var(--warning);padding:6px 10px;border-radius:4px;font-weight:600;border:1px solid var(--warning-border)">Undated trips excluded: ' + undatedTripCount + '</span>' : '') + '</div></div>' +
+      c.innerHTML = '<div class="header"><h2>[[icon:gem]] Profitability Dashboard</h2><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><select onchange="profitabilityPeriod.type=this.value;if(profitabilityPeriod.type===\'year\'&&!profitabilityPeriod.year){profitabilityPeriod.year=new Date().getFullYear();}renderProfitability(reRenderCurrentPage())" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)"><option value="year"' + (profitabilityPeriod.type === 'year' ? ' selected' : '') + '>Year</option><option value="all"' + (profitabilityPeriod.type === 'all' ? ' selected' : '') + '>All Time</option></select>' + (profitabilityPeriod.type === 'year' ? '<select onchange="profitabilityPeriod.year=parseInt(this.value);renderProfitability(reRenderCurrentPage())" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)">' + profitabilityYearOptions + '</select>' : '') + '<span style="font-size:12px;background:var(--dim-blue);color:var(--info);padding:6px 10px;border-radius:4px;font-weight:600;border:1px solid var(--info-border)">' + getPeriodLabel(profitabilityPeriod) + '</span>' + (undatedTripCount > 0 && profitabilityPeriod.type !== 'all' ? '<span style="font-size:12px;background:var(--dim-amber);color:var(--warning);padding:6px 10px;border-radius:4px;font-weight:600;border:1px solid var(--warning-border)">Undated trips excluded: ' + undatedTripCount + '</span>' : '') + '</div></div>' +
         
         // Summary Stats - Enhanced with new metrics
         '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px">' +
@@ -40675,9 +40675,9 @@
 
         // Filters
         '<div class="responsive-filter-bar">' +
-        '<div class="responsive-filter-group"><label style="font-weight:500;color:var(--text-secondary);font-size:13px">[[icon:truck]] Truck:</label><select class="select" onchange="maintenanceFilter.truck=this.value;renderMaintenance(document.getElementById(\'main-content\'))"><option value="all"' + (maintenanceFilter.truck === 'all' ? ' selected' : '') + '>All Trucks</option>' + truckOptions + '</select></div>' +
-        '<div class="responsive-filter-group"><label style="font-weight:500;color:var(--text-secondary);font-size:13px">[[icon:calendar]] Sort:</label><select class="select" onchange="maintenanceFilter.sort=this.value;renderMaintenance(document.getElementById(\'main-content\'))"><option value="newest"' + (maintenanceFilter.sort === 'newest' ? ' selected' : '') + '>Newest First</option><option value="oldest"' + (maintenanceFilter.sort === 'oldest' ? ' selected' : '') + '>Oldest First</option></select></div>' +
-        '<button class="btn btn-secondary" style="padding:8px 16px" onclick="maintenanceFilter={truck:\'all\',sort:\'newest\'};renderMaintenance(document.getElementById(\'main-content\'))">Clear Filters</button>' +
+        '<div class="responsive-filter-group"><label style="font-weight:500;color:var(--text-secondary);font-size:13px">[[icon:truck]] Truck:</label><select class="select" onchange="maintenanceFilter.truck=this.value;renderMaintenance(reRenderCurrentPage())"><option value="all"' + (maintenanceFilter.truck === 'all' ? ' selected' : '') + '>All Trucks</option>' + truckOptions + '</select></div>' +
+        '<div class="responsive-filter-group"><label style="font-weight:500;color:var(--text-secondary);font-size:13px">[[icon:calendar]] Sort:</label><select class="select" onchange="maintenanceFilter.sort=this.value;renderMaintenance(reRenderCurrentPage())"><option value="newest"' + (maintenanceFilter.sort === 'newest' ? ' selected' : '') + '>Newest First</option><option value="oldest"' + (maintenanceFilter.sort === 'oldest' ? ' selected' : '') + '>Oldest First</option></select></div>' +
+        '<button class="btn btn-secondary" style="padding:8px 16px" onclick="maintenanceFilter={truck:\'all\',sort:\'newest\'};renderMaintenance(reRenderCurrentPage())">Clear Filters</button>' +
         '</div>' +
 
         '<div class="responsive-stat-strip">' +
@@ -46387,16 +46387,16 @@ function jsonResponse(data, status = 200) {
         '<div class="card" style="margin-bottom:20px;padding:16px">' +
         '<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">' +
         '<div style="display:flex;gap:8px;align-items:center"><label style="color:var(--text-secondary);font-size:13px;font-weight:500">Filter:</label>' +
-        '<select class="select" onchange="activityLogFilter=this.value;pagination.activity_log.page=1;renderActivityLog(document.getElementById(\'main-content\'))">' +
+        '<select class="select" onchange="activityLogFilter=this.value;pagination.activity_log.page=1;renderActivityLog(reRenderCurrentPage())">' +
         '<option value="all"' + (activityLogFilter === 'all' ? ' selected' : '') + '>All Activities</option>' +
         '<optgroup label="By Action">' + actionTypes.map(a => '<option value="' + a + '"' + (activityLogFilter === a ? ' selected' : '') + '>' + a.replace(/_/g, ' ') + '</option>').join('') + '</optgroup>' +
         '<optgroup label="By User">' + userEmails.map(e => '<option value="' + e + '"' + (activityLogFilter === e ? ' selected' : '') + '>' + e + '</option>').join('') + '</optgroup>' +
         '</select></div>' +
         '<div style="display:flex;gap:8px;align-items:center"><label style="color:var(--text-secondary);font-size:13px;font-weight:500">From:</label>' +
-        '<input class="input" type="date" value="' + activityDateFrom + '" onchange="activityDateFrom=this.value;pagination.activity_log.page=1;renderActivityLog(document.getElementById(\'main-content\'))"></div>' +
+        '<input class="input" type="date" value="' + activityDateFrom + '" onchange="activityDateFrom=this.value;pagination.activity_log.page=1;renderActivityLog(reRenderCurrentPage())"></div>' +
         '<div style="display:flex;gap:8px;align-items:center"><label style="color:var(--text-secondary);font-size:13px;font-weight:500">To:</label>' +
-        '<input class="input" type="date" value="' + activityDateTo + '" onchange="activityDateTo=this.value;pagination.activity_log.page=1;renderActivityLog(document.getElementById(\'main-content\'))"></div>' +
-        '<button class="btn btn-secondary" onclick="activityLogFilter=\'all\';activityDateFrom=\'\';activityDateTo=\'\';pagination.activity_log.page=1;renderActivityLog(document.getElementById(\'main-content\'))">↺ Clear</button>' +
+        '<input class="input" type="date" value="' + activityDateTo + '" onchange="activityDateTo=this.value;pagination.activity_log.page=1;renderActivityLog(reRenderCurrentPage())"></div>' +
+        '<button class="btn btn-secondary" onclick="activityLogFilter=\'all\';activityDateFrom=\'\';activityDateTo=\'\';pagination.activity_log.page=1;renderActivityLog(reRenderCurrentPage())">↺ Clear</button>' +
         '<span style="color:var(--text-muted);margin-left:auto;font-size:13px">Showing ' + paginatedData.data.length + ' / ' + filtered.length + '</span>' +
         '</div></div>' +
         
@@ -46771,14 +46771,14 @@ function jsonResponse(data, status = 200) {
       const periodChipLabel = getPeriodLabel(getReportPeriodContext(false));
       const undatedTripCount = (appData.trips || []).filter(t => !toDateKey(t.trip_date || t.period_start_date || t.created_at)).length;
 
-      c.innerHTML = '<div class="header"><h2>[[icon:chart]] Enhanced Reports</h2><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><select id="reportPeriod" onchange="reportPeriod=this.value;renderReports(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)"><option value="month"' + (reportPeriod === 'month' ? ' selected' : '') + '>Monthly</option><option value="quarter"' + (reportPeriod === 'quarter' ? ' selected' : '') + '>Quarterly</option><option value="year"' + (reportPeriod === 'year' ? ' selected' : '') + '>Yearly</option><option value="all"' + (reportPeriod === 'all' ? ' selected' : '') + '>All Time</option></select>' +
-        (reportPeriod === 'month' ? '<select id="reportMonth" onchange="reportMonth=parseInt(this.value);reportQuarter=Math.ceil(reportMonth/3);renderReports(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)">' + months.slice(1).map((m, i) => '<option value="' + (i+1) + '"' + (reportMonth === i+1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select>' : '') +
-        (reportPeriod === 'quarter' ? '<select id="reportQuarter" onchange="reportQuarter=parseInt(this.value);renderReports(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)"><option value="1"' + (reportQuarter === 1 ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="2"' + (reportQuarter === 2 ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="3"' + (reportQuarter === 3 ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="4"' + (reportQuarter === 4 ? ' selected' : '') + '>Q4 (Oct-Dec)</option></select>' : '') +
-        (reportPeriod !== 'all' ? '<select id="reportYear" onchange="reportYear=parseInt(this.value);renderReports(document.getElementById(\'main-content\'))" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)">' + reportYearOptions + '</select>' : '') +
+      c.innerHTML = '<div class="header"><h2>[[icon:chart]] Enhanced Reports</h2><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><select id="reportPeriod" onchange="reportPeriod=this.value;renderReports(reRenderCurrentPage())" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)"><option value="month"' + (reportPeriod === 'month' ? ' selected' : '') + '>Monthly</option><option value="quarter"' + (reportPeriod === 'quarter' ? ' selected' : '') + '>Quarterly</option><option value="year"' + (reportPeriod === 'year' ? ' selected' : '') + '>Yearly</option><option value="all"' + (reportPeriod === 'all' ? ' selected' : '') + '>All Time</option></select>' +
+        (reportPeriod === 'month' ? '<select id="reportMonth" onchange="reportMonth=parseInt(this.value);reportQuarter=Math.ceil(reportMonth/3);renderReports(reRenderCurrentPage())" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)">' + months.slice(1).map((m, i) => '<option value="' + (i+1) + '"' + (reportMonth === i+1 ? ' selected' : '') + '>' + m + '</option>').join('') + '</select>' : '') +
+        (reportPeriod === 'quarter' ? '<select id="reportQuarter" onchange="reportQuarter=parseInt(this.value);renderReports(reRenderCurrentPage())" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)"><option value="1"' + (reportQuarter === 1 ? ' selected' : '') + '>Q1 (Jan-Mar)</option><option value="2"' + (reportQuarter === 2 ? ' selected' : '') + '>Q2 (Apr-Jun)</option><option value="3"' + (reportQuarter === 3 ? ' selected' : '') + '>Q3 (Jul-Sep)</option><option value="4"' + (reportQuarter === 4 ? ' selected' : '') + '>Q4 (Oct-Dec)</option></select>' : '') +
+        (reportPeriod !== 'all' ? '<select id="reportYear" onchange="reportYear=parseInt(this.value);renderReports(reRenderCurrentPage())" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)">' + reportYearOptions + '</select>' : '') +
         '<span style="font-size:12px;background:var(--dim-blue);color:var(--info);padding:6px 10px;border-radius:4px;font-weight:600;border:1px solid var(--info-border)">' + periodChipLabel + '</span>' +
         (undatedTripCount > 0 && reportPeriod !== 'all' ? '<span style="font-size:12px;background:var(--dim-amber);color:var(--warning);padding:6px 10px;border-radius:4px;font-weight:600;border:1px solid var(--warning-border)">Undated trips excluded: ' + undatedTripCount + '</span>' : '') +
-        '<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox"' + (reportCompare ? ' checked' : '') + (reportPeriod === 'all' ? ' disabled' : '') + ' onchange="reportCompare=this.checked;renderReports(document.getElementById(\'main-content\'))"><span style="font-size:13px">Compare to previous</span></label><button class="btn btn-secondary" onclick="exportReportCSV()">[[icon:download]] Export CSV</button></div></div>' +
-        '<div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap"><button class="btn ' + (reportTab === 'truck_pl' ? 'btn-primary' : 'btn-secondary') + '" onclick="reportTab=\'truck_pl\';renderReports(document.getElementById(\'main-content\'))">[[icon:truck]] Truck P&L</button><button class="btn ' + (reportTab === 'driver_performance' ? 'btn-primary' : 'btn-secondary') + '" onclick="reportTab=\'driver_performance\';renderReports(document.getElementById(\'main-content\'))">[[icon:user]][[icon:plane]] Driver Performance</button><button class="btn ' + (reportTab === 'lane_analysis' ? 'btn-primary' : 'btn-secondary') + '" onclick="reportTab=\'lane_analysis\';renderReports(document.getElementById(\'main-content\'))">[[icon:route]] Lane Analysis</button><button class="btn ' + (reportTab === 'trip_kpis' ? 'btn-primary' : 'btn-secondary') + '" onclick="reportTab=\'trip_kpis\';renderReports(document.getElementById(\'main-content\'))">[[icon:chart]] Trip KPIs</button></div>' +
+        '<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox"' + (reportCompare ? ' checked' : '') + (reportPeriod === 'all' ? ' disabled' : '') + ' onchange="reportCompare=this.checked;renderReports(reRenderCurrentPage())"><span style="font-size:13px">Compare to previous</span></label><button class="btn btn-secondary" onclick="exportReportCSV()">[[icon:download]] Export CSV</button></div></div>' +
+        '<div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap"><button class="btn ' + (reportTab === 'truck_pl' ? 'btn-primary' : 'btn-secondary') + '" onclick="reportTab=\'truck_pl\';renderReports(reRenderCurrentPage())">[[icon:truck]] Truck P&L</button><button class="btn ' + (reportTab === 'driver_performance' ? 'btn-primary' : 'btn-secondary') + '" onclick="reportTab=\'driver_performance\';renderReports(reRenderCurrentPage())">[[icon:user]][[icon:plane]] Driver Performance</button><button class="btn ' + (reportTab === 'lane_analysis' ? 'btn-primary' : 'btn-secondary') + '" onclick="reportTab=\'lane_analysis\';renderReports(reRenderCurrentPage())">[[icon:route]] Lane Analysis</button><button class="btn ' + (reportTab === 'trip_kpis' ? 'btn-primary' : 'btn-secondary') + '" onclick="reportTab=\'trip_kpis\';renderReports(reRenderCurrentPage())">[[icon:chart]] Trip KPIs</button></div>' +
         '<div id="reportContent">' +
         (reportTab === 'truck_pl' ? renderTruckPLReport(filteredTrips, filteredOrders, prevPeriodTrips, prevPeriodOrders) : '') +
         (reportTab === 'driver_performance' ? renderDriverPerformanceReport(filteredTrips, filteredOrders, prevPeriodTrips, prevPeriodOrders) : '') +
@@ -49657,7 +49657,7 @@ function jsonResponse(data, status = 200) {
           '<div style="font-size:48px;margin-bottom:16px">⚠️</div>' +
           '<h3>Failed to Load Messages</h3>' +
           '<p style="color:var(--text-secondary)">' + escapeHtml(e.message || 'Unknown error') + '</p>' +
-          '<button class="btn btn-primary" onclick="renderDealerMessages(document.getElementById(\'main-content\'))" style="margin-top:16px">Retry</button></div>';
+          '<button class="btn btn-primary" onclick="renderDealerMessages(reRenderCurrentPage())" style="margin-top:16px">Retry</button></div>';
       }
     }
 
