@@ -17177,7 +17177,7 @@
       yearOrders.forEach(o => {
         if (o.dispatcher_id) {
           if (!dispPerf[o.dispatcher_id]) dispPerf[o.dispatcher_id] = { cars: 0, rev: 0 };
-          dispPerf[o.dispatcher_id].cars++;
+          dispPerf[o.dispatcher_id].cars += getOrderVehicleCount(o);
           dispPerf[o.dispatcher_id].rev += parseFloat(o.revenue || 0);
         }
         // Add standalone orders to revenue (orders not assigned to a trip)
@@ -24973,7 +24973,7 @@
           const rev = parseFloat(o.revenue || 0);
           const brokerFee = parseFloat(o.broker_fee || 0);
           const localFee = parseFloat(o.local_fee || 0);
-          dispStats[o.dispatcher_id].cars++;
+          dispStats[o.dispatcher_id].cars += getOrderVehicleCount(o);
           dispStats[o.dispatcher_id].revenue += rev;
           dispStats[o.dispatcher_id].brokerFees += brokerFee;
           dispStats[o.dispatcher_id].localFees += localFee;
