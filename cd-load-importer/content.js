@@ -672,7 +672,16 @@
                   ">
                 </div>
 
-                <!-- Vehicle Row -->
+                <!-- Multi-vehicle summary (if applicable) -->
+                ${loadData.vehicles && loadData.vehicles.length > 1 ? `
+                <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 8px; padding: 10px 12px; margin-bottom: 4px;">
+                  <div style="font-size: 12px; font-weight: 600; color: #22c55e; margin-bottom: 6px;">${loadData.vehicles.length} Vehicles in this load</div>
+                  ${loadData.vehicles.map((v, i) => `<div style="font-size: 12px; color: #94a3b8; padding: 2px 0;">${i + 1}. ${[v.year, v.make, v.model].filter(Boolean).join(' ') || 'Vehicle'}${v.vin ? ' &middot; ' + v.vin : ''}${v.body_type ? ' &middot; ' + v.body_type : ''}</div>`).join('')}
+                  <div style="font-size: 11px; color: #64748b; margin-top: 6px;">All vehicles will be saved to one order.</div>
+                </div>
+                ` : ''}
+
+                <!-- Vehicle Row (primary/first vehicle) -->
                 <div style="display: grid; grid-template-columns: 80px 1fr 1fr; gap: 8px;">
                   <div>
                     <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Year</label>
@@ -1325,15 +1334,18 @@
 
         try {
           const response = await chrome.runtime.sendMessage({ action: 'getTrips' });
-          if (response.success && response.trips) {
+          if (response.success && response.trips && response.trips.length > 0) {
             tripSelect.innerHTML = '<option value="">Select trip...</option>' +
-              response.trips.map(t => `<option value="${t.id}">${t.trip_number} - ${t.driver_name || 'No driver'}</option>`).join('');
+              response.trips.map(t => `<option value="${t.id}">${t.trip_number} - ${t.driver_name || 'No driver'} (${t.status})</option>`).join('');
+          } else if (response.success) {
+            tripSelect.innerHTML = '<option value="">No active trips found</option>';
           } else {
-            tripSelect.innerHTML = '<option value="">No trips available</option>';
+            log('Trip fetch error:', response.error);
+            tripSelect.innerHTML = `<option value="">Error: ${response.error || 'Failed to load trips'}</option>`;
           }
         } catch (err) {
           log('Error loading trips:', err);
-          tripSelect.innerHTML = '<option value="">Error loading trips</option>';
+          tripSelect.innerHTML = '<option value="">Error loading trips — check extension settings</option>';
         }
       }
     });
@@ -1353,6 +1365,7 @@
         vehicle_body_type: document.getElementById('tms-body-type')?.value || null,
         vehicle_lot_number: document.getElementById('tms-lot-number')?.value.trim() || null,
         vehicle_buyer_number: document.getElementById('tms-buyer-number')?.value.trim() || null,
+        vehicles: loadData.vehicles || [],
         origin: (() => {
           const c = document.getElementById('tms-pickup-city')?.value.trim();
           const s = document.getElementById('tms-pickup-state')?.value.trim().toUpperCase();
@@ -1722,14 +1735,16 @@
         tripSelect.innerHTML = '<option value="">Loading trips...</option>';
         try {
           const response = await chrome.runtime.sendMessage({ action: 'getTrips' });
-          if (response.success && response.trips) {
+          if (response.success && response.trips && response.trips.length > 0) {
             tripSelect.innerHTML = '<option value="">Select trip...</option>' +
-              response.trips.map(t => `<option value="${t.id}">${t.trip_number} - ${t.driver_name || 'No driver'}</option>`).join('');
+              response.trips.map(t => `<option value="${t.id}">${t.trip_number} - ${t.driver_name || 'No driver'} (${t.status})</option>`).join('');
+          } else if (response.success) {
+            tripSelect.innerHTML = '<option value="">No active trips found</option>';
           } else {
-            tripSelect.innerHTML = '<option value="">No trips available</option>';
+            tripSelect.innerHTML = `<option value="">Error: ${response.error || 'Failed to load trips'}</option>`;
           }
         } catch (err) {
-          tripSelect.innerHTML = '<option value="">Error loading trips</option>';
+          tripSelect.innerHTML = '<option value="">Error loading trips — check extension settings</option>';
         }
       }
     });
@@ -1832,30 +1847,509 @@
   }
 
   // Initialize
-  function init() {
-    log('=== CD LOAD IMPORTER v5 INITIALIZED ===');
-    log('URL:', window.location.href);
+  // ============================================================
+  // SUPER DISPATCH SUPPORT
+  // ============================================================
 
-    if (!isCentralDispatchPage()) {
-      log('Not a Central Dispatch page, skipping');
-      return;
+  function isSuperDispatchPage() {
+    return window.location.href.includes('carrier.superdispatch.com');
+  }
+
+  function parseSDDate(dateStr) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return null;
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function parseSDAddress(fullAddr) {
+    if (!fullAddr) return {};
+    const m = fullAddr.match(/^(.+),\s*(.+),\s*([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$/);
+    if (m) return { street: m[1].trim(), city: m[2].trim(), state: m[3], zip: m[4] };
+    const m2 = fullAddr.match(/^(.+),\s*([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$/);
+    if (m2) return { street: '', city: m2[1].trim(), state: m2[2], zip: m2[3] };
+    return { street: '', city: fullAddr, state: '', zip: '' };
+  }
+
+  function parseSDPaymentType(method, terms) {
+    const m = (method || '').toLowerCase();
+    const t = (terms || '').toLowerCase();
+    if (m.includes('cash') || t.includes('cash on delivery') || m === 'cod') return 'COD';
+    if (m.includes('certified') || m === 'cop') return 'COP';
+    if (m.includes('zelle')) return 'COD';
+    return 'BILL';
+  }
+
+  function parseSDPaymentTerms(terms) {
+    if (!terms) return null;
+    const t = terms.toLowerCase();
+    if (t.includes('quick pay')) return 'QUICK_PAY';
+    const netMatch = t.match(/(\d+)\s*(?:business\s*)?days?/i);
+    if (netMatch) {
+      const days = parseInt(netMatch[1], 10);
+      const valid = [5, 7, 10, 15, 21, 30, 45, 60];
+      const closest = valid.reduce((a, b) => Math.abs(b - days) < Math.abs(a - days) ? b : a);
+      return 'NET' + closest;
+    }
+    if (t.includes('cash on delivery') || t.includes('cod')) return null;
+    return 'NET30';
+  }
+
+  // Known auto makes for vehicle parsing (used by both detail + list scrapers)
+  const KNOWN_MAKES = ['Acura','Alfa Romeo','Aston Martin','Audi','Bentley','BMW','Buick','Cadillac','Chevrolet','Chrysler','Dodge','Ferrari','Fiat','Ford','Genesis','GMC','Honda','Hyundai','Infiniti','Jaguar','Jeep','Kia','Lamborghini','Land Rover','Lexus','Lincoln','Lucid','Maserati','Mazda','McLaren','Mercedes','Mercedes-Benz','Mini','Mitsubishi','Nissan','Polestar','Porsche','Ram','Rivian','Rolls-Royce','Rolls Royce','Saab','Saturn','Scion','Smart','Subaru','Tesla','Toyota','Volkswagen','Volvo'];
+
+  function scrapeSDLoadDetail() {
+    log('Scraping Super Dispatch load detail page...');
+    const data = {};
+
+    // Helper: parse section text into lines
+    const getLines = (el) => el ? el.innerText.split('\n').map(l => l.trim()).filter(Boolean) : [];
+
+    // Load number from heading
+    const loadHeading = document.querySelector('[aria-label="Load Number"] h2') || document.querySelector('h2');
+    if (loadHeading) {
+      const num = loadHeading.textContent.trim().match(/^[\dA-Z]+/);
+      if (num) data.order_number = num[0].substring(0, 20);
     }
 
-    setTimeout(injectButtons, 1000);
+    // === PICKUP (aria-label="Pickup Details") ===
+    const pickupSection = document.querySelector('[aria-label="Pickup Details"]');
+    if (pickupSection) {
+      const lines = getLines(pickupSection);
+      // Address: line with state+zip pattern
+      for (const line of lines) {
+        if (/[A-Z]{2}\s+\d{5}/.test(line)) {
+          data.pickup_full_address = line;
+          const parsed = parseSDAddress(line);
+          data.pickup_address = parsed.street || '';
+          data.pickup_city = parsed.city || '';
+          data.pickup_state = parsed.state || '';
+          data.pickup_zip = parsed.zip || '';
+          if (parsed.city && parsed.state) data.origin = parsed.city + ', ' + parsed.state;
+          break;
+        }
+      }
+      // Date: line after "Scheduled for"
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i] === 'Scheduled for' && lines[i+1]) {
+          data.pickup_date = parseSDDate(lines[i+1]);
+          break;
+        }
+        const dm = lines[i].match(/^([A-Z][a-z]{2}\s+\d{1,2},\s*\d{4})$/);
+        if (dm) { data.pickup_date = parseSDDate(dm[1]); break; }
+      }
+      // Phone: line matching phone pattern
+      for (const line of lines) {
+        if (/^\+?\d[\d\s()-]{8,}$/.test(line)) {
+          data.pickup_phone = line;
+          data.pickup_contact_phone = line;
+          break;
+        }
+      }
+      // Contact name: line before phone that looks like a name
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i] === data.pickup_phone && i > 0 && /^[A-Z][a-z]/.test(lines[i-1]) && !/Scheduled|pickup|delivery|No\s|notes/i.test(lines[i-1])) {
+          data.pickup_contact_name = lines[i-1];
+          break;
+        }
+      }
+    }
 
-    let debounceTimer = null;
-    const observer = new MutationObserver(() => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(injectButtons, 1500);
-    });
+    // === DELIVERY (aria-label="Delivery Details") ===
+    const deliverySection = document.querySelector('[aria-label="Delivery Details"]');
+    if (deliverySection) {
+      const lines = getLines(deliverySection);
+      for (const line of lines) {
+        if (/[A-Z]{2}\s+\d{5}/.test(line)) {
+          data.delivery_full_address = line;
+          const parsed = parseSDAddress(line);
+          data.delivery_address = parsed.street || '';
+          data.delivery_city = parsed.city || '';
+          data.delivery_state = parsed.state || '';
+          data.delivery_zip = parsed.zip || '';
+          if (parsed.city && parsed.state) data.destination = parsed.city + ', ' + parsed.state;
+          break;
+        }
+      }
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i] === 'Scheduled for' && lines[i+1]) {
+          data.dropoff_date = parseSDDate(lines[i+1]);
+          break;
+        }
+        const dm = lines[i].match(/^([A-Z][a-z]{2}\s+\d{1,2},\s*\d{4})$/);
+        if (dm) { data.dropoff_date = parseSDDate(dm[1]); break; }
+      }
+      for (const line of lines) {
+        if (/^\+?\d[\d\s()-]{8,}$/.test(line)) {
+          data.delivery_phone = line;
+          data.delivery_contact_phone = line;
+          break;
+        }
+      }
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i] === data.delivery_phone && i > 0 && /^[A-Z][a-z]/.test(lines[i-1]) && !/Scheduled|pickup|delivery|No\s|notes/i.test(lines[i-1])) {
+          data.delivery_contact_name = lines[i-1];
+          break;
+        }
+      }
+    }
 
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
+    // === VEHICLES (aria-label="Vehicles Table") — scrape ALL rows ===
+    const vehicleTable = document.querySelector('[aria-label="Vehicles Table"]');
+    if (vehicleTable) {
+      const rows = vehicleTable.querySelectorAll('tbody tr');
+      const allVehicles = [];
+      const sortedMakes = [...KNOWN_MAKES].sort((a, b) => b.length - a.length);
 
-    setTimeout(injectButtons, 3000);
-    setTimeout(injectButtons, 5000);
+      rows.forEach((row, rowIdx) => {
+        const vehicle = {};
+        const firstCell = row.querySelector('td');
+        if (firstCell) {
+          const paragraphs = firstCell.querySelectorAll('p');
+          const vehicleText = paragraphs[0]?.textContent.trim() || firstCell.textContent.trim();
+          const vm = vehicleText.match(/(\d{4})\s+(.+)/);
+          if (vm) {
+            vehicle.year = parseInt(vm[1], 10);
+            const rest = vm[2].trim();
+            let matched = false;
+            for (const make of sortedMakes) {
+              if (rest.toUpperCase().startsWith(make.toUpperCase())) {
+                vehicle.make = rest.substring(0, make.length).trim();
+                vehicle.model = rest.substring(make.length).trim();
+                matched = true;
+                break;
+              }
+            }
+            if (!matched) {
+              const parts = rest.split(/\s+/);
+              vehicle.make = parts[0] || '';
+              vehicle.model = parts.slice(1).join(' ') || '';
+            }
+          }
+          if (paragraphs.length >= 2) vehicle.body_type = paragraphs[1].textContent.trim();
+          // VIN: raw 17-char string
+          for (const p of paragraphs) {
+            const t = p.textContent.trim();
+            if (/^[A-HJ-NPR-Z0-9]{17}$/i.test(t)) { vehicle.vin = t.toUpperCase(); break; }
+          }
+          if (!vehicle.vin) {
+            const cellVin = firstCell.textContent.match(/([A-HJ-NPR-Z0-9]{17})/i);
+            if (cellVin) vehicle.vin = cellVin[1].toUpperCase();
+          }
+        }
+        // Price from cells
+        const cells = row.querySelectorAll('td');
+        for (const cell of cells) {
+          const pm = cell.textContent.match(/\$([\d,]+(?:\.\d{2})?)/);
+          if (pm) { vehicle.price = parseFloat(pm[1].replace(/,/g, '')); break; }
+        }
+        allVehicles.push(vehicle);
+      });
+
+      // Set first vehicle in legacy fields (backward compat)
+      if (allVehicles.length > 0) {
+        const first = allVehicles[0];
+        data.vehicle_year = first.year;
+        data.vehicle_make = first.make;
+        data.vehicle_model = first.model;
+        data.vehicle_vin = first.vin;
+        data.vehicle_body_type = first.body_type;
+        data.revenue = first.price;
+      }
+      // Store all vehicles in array
+      data.vehicles = allVehicles;
+
+      // Total revenue from all vehicles if multi
+      if (allVehicles.length > 1) {
+        const totalRevenue = allVehicles.reduce((s, v) => s + (v.price || 0), 0);
+        if (totalRevenue > 0) data.revenue = totalRevenue;
+      }
+
+      // Legacy: get revenue from price column if not set
+      if (!data.revenue && rows.length > 0) {
+        const cells = rows[0].querySelectorAll('td');
+        for (const cell of cells) {
+          const pm = cell.textContent.match(/\$([\d,]+(?:\.\d{2})?)/);
+          if (pm) { data.revenue = parseFloat(pm[1].replace(/,/g, '')); break; }
+        }
+      }
+    }
+
+    // VIN fallback: try "VIN #: xxx" label format (list page) or raw 17-char in page text
+    if (!data.vehicle_vin) {
+      const vinMatch = document.body.innerText.match(/VIN\s*#?\s*:?\s*([A-HJ-NPR-Z0-9]{17})/i);
+      if (vinMatch) data.vehicle_vin = vinMatch[1].toUpperCase();
+    }
+
+    // === PAYMENT (aria-label="Payment Agreement Details") ===
+    const paymentSection = document.querySelector('[aria-label="Payment Agreement Details"]');
+    if (paymentSection) {
+      const lines = getLines(paymentSection);
+      let method = '', terms = '';
+      for (let i = 0; i < lines.length; i++) {
+        const lbl = lines[i].toLowerCase();
+        const val = lines[i+1] || '';
+        if (lbl === 'price') {
+          const pm = val.match(/\$([\d,]+(?:\.\d{2})?)/);
+          if (pm && !data.revenue) data.revenue = parseFloat(pm[1].replace(/,/g, ''));
+        }
+        if (lbl === 'method') method = val;
+        if (lbl === 'terms') terms = val;
+        if (lbl === 'broker fee' && val !== 'No details') {
+          const bf = val.match(/\$([\d,]+(?:\.\d{2})?)/);
+          if (bf) data.broker_fee = parseFloat(bf[1].replace(/,/g, ''));
+        }
+      }
+      data.payment_type = parseSDPaymentType(method, terms);
+      data.payment_terms = parseSDPaymentTerms(terms);
+    }
+
+    // === CUSTOMER / BROKER (aria-label="Customer Details") ===
+    const customerSection = document.querySelector('[aria-label="Customer Details"]');
+    if (customerSection) {
+      const lines = getLines(customerSection);
+      // Line-by-line parsing:
+      // "Customer Information" (heading), Company name, Address, "Billing", email, contact name, phone, support email
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        // Company name: first line that's not the heading and not "Billing" etc
+        if (!data.broker_name && i > 0 && /[A-Z]/.test(line) && line !== 'Customer Information' && line !== 'Billing' && !line.includes('@') && !/^\+?\d/.test(line) && !/\d{5}/.test(line)) {
+          data.broker_name = line;
+          continue;
+        }
+        // Email
+        if (line.includes('@') && !data.broker_email) {
+          data.broker_email = line;
+          continue;
+        }
+        // Phone
+        if (/^\+?\d[\d\s()-]{8,}$/.test(line) && !data.broker_phone) {
+          data.broker_phone = line;
+          // Contact name is the line before the phone (after "Billing" + email)
+          if (i > 0 && /^[A-Z][a-z]/.test(lines[i-1]) && lines[i-1] !== 'Billing' && !lines[i-1].includes('@')) {
+            data.broker_contact_name = lines[i-1];
+          }
+          continue;
+        }
+      }
+    }
+
+    // === DRIVER INSTRUCTIONS ===
+    const instructionsHeading = Array.from(document.querySelectorAll('h3')).find(h => h.textContent.includes('Driver Instructions'));
+    if (instructionsHeading) {
+      const section = instructionsHeading.closest('div');
+      const p = section?.querySelector('p');
+      if (p) data.notes = p.textContent.trim().substring(0, 500);
+    }
+
+    data.dispatcher_notes = 'Imported from Super Dispatch';
+    log('Scraped SD data:', data);
+    return data;
+  }
+
+  function scrapeSDLoadFromListCard(card) {
+    log('Scraping SD list card...');
+    const data = {};
+    const text = card.innerText;
+
+    // Load number — first line, looks like digits or alphanumeric
+    const loadNum = text.match(/^([\dA-Z]{5,})/m);
+    if (loadNum) data.order_number = loadNum[1].substring(0, 20);
+
+    // Vehicle line: "2019 Land Rover Range Rover" then "Type: SUV" on next line
+    const vehicleLine = text.match(/(\d{4})\s+(.+)/m);
+    if (vehicleLine) {
+      data.vehicle_year = parseInt(vehicleLine[1], 10);
+      const rest = vehicleLine[2].trim();
+      // Try to match known make (case-insensitive, longest first)
+      const sorted = [...KNOWN_MAKES].sort((a, b) => b.length - a.length);
+      let matched = false;
+      for (const make of sorted) {
+        if (rest.toUpperCase().startsWith(make.toUpperCase())) {
+          data.vehicle_make = rest.substring(0, make.length).trim();
+          data.vehicle_model = rest.substring(make.length).trim();
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        // Fallback: first word is make, rest is model
+        const parts = rest.split(/\s+/);
+        data.vehicle_make = parts[0] || '';
+        data.vehicle_model = parts.slice(1).join(' ') || '';
+      }
+    }
+    const typeMatch = text.match(/Type:\s*(\w+)/);
+    if (typeMatch) data.vehicle_body_type = typeMatch[1];
+
+    const vinMatch = text.match(/VIN\s*#?\s*:?\s*([A-HJ-NPR-Z0-9]{17})/i);
+    if (vinMatch) data.vehicle_vin = vinMatch[1].toUpperCase();
+
+    // Price
+    const priceMatch = text.match(/\$([\d,]+(?:\.\d{2})?)/);
+    if (priceMatch) data.revenue = parseFloat(priceMatch[1].replace(/,/g, ''));
+
+    // Payment type from text
+    if (/Cash/i.test(text)) data.payment_type = 'COD';
+    else if (/Zelle/i.test(text)) data.payment_type = 'COD';
+    else if (/SuperPay/i.test(text)) data.payment_type = 'BILL';
+    else data.payment_type = 'BILL';
+
+    // Origin section
+    const originBlock = card.querySelector('[class*="origin"], div');
+    const originTexts = text.split('ORIGIN')[1]?.split('DESTINATION')[0] || '';
+    const addrMatch = originTexts.match(/([^,\n]+),\s*([A-Z]{2})\s+(\d{5})/);
+    if (addrMatch) {
+      data.pickup_city = addrMatch[1].trim();
+      data.pickup_state = addrMatch[2];
+      data.pickup_zip = addrMatch[3];
+      data.origin = addrMatch[1].trim() + ', ' + addrMatch[2];
+    }
+    const pickDateMatch = originTexts.match(/([A-Z][a-z]{2}\s+\d{1,2},\s*\d{4})/);
+    if (pickDateMatch) data.pickup_date = parseSDDate(pickDateMatch[1]);
+
+    // Destination section
+    const destTexts = text.split('DESTINATION')[1]?.split('SHIPPER')[0] || '';
+    const destMatch = destTexts.match(/([^,\n]+),\s*([A-Z]{2})\s+(\d{5})/);
+    if (destMatch) {
+      data.delivery_city = destMatch[1].trim();
+      data.delivery_state = destMatch[2];
+      data.delivery_zip = destMatch[3];
+      data.destination = destMatch[1].trim() + ', ' + destMatch[2];
+    }
+    const delDateMatch = destTexts.match(/([A-Z][a-z]{2}\s+\d{1,2},\s*\d{4})/);
+    if (delDateMatch) data.dropoff_date = parseSDDate(delDateMatch[1]);
+
+    // Shipper/Customer
+    const shipperTexts = text.split('SHIPPER/CUSTOMER')[1] || '';
+    const shipperName = shipperTexts.match(/\n\s*([A-Za-z][A-Za-z\s&.,()'-]+)/);
+    if (shipperName) data.broker_name = shipperName[1].trim();
+    const shipperPhone = shipperTexts.match(/Phone:\s*([\d()+-\s]+)/);
+    if (shipperPhone) data.broker_phone = shipperPhone[1].trim();
+
+    data.dispatcher_notes = 'Imported from Super Dispatch';
+    log('Scraped SD list data:', data);
+    return data;
+  }
+
+  function injectSDButtons() {
+    if (isInjecting) return;
+    isInjecting = true;
+    try {
+      // Remove existing TMS buttons
+      document.querySelectorAll('.tms-import-button, .tms-sd-wrapper').forEach(el => el.remove());
+      batchSelected.clear();
+
+      const isDetailPage = /\/tms\/loads\/[a-f0-9-]+/.test(window.location.pathname);
+
+      if (isDetailPage) {
+        // Detail page: inject button in header next to "Edit Load"
+        const editBtn = document.querySelector('a[href*="/edit"]');
+        const optionsBtn = document.querySelector('button[aria-label="options menu"]');
+        const target = optionsBtn || editBtn;
+        if (target && !target.parentElement.querySelector('.tms-import-button')) {
+          const btn = document.createElement('button');
+          btn.className = 'tms-import-button';
+          btn.innerHTML = '<span class="tms-btn-icon">&#x1F69B;</span> Import to TMS';
+          btn.style.marginLeft = '8px';
+          btn.onclick = () => {
+            const loadData = scrapeSDLoadDetail();
+            showImportModal(loadData, btn, btn.innerHTML);
+          };
+          target.parentElement.insertBefore(btn, target.nextSibling);
+          log('Injected SD detail page import button');
+        }
+      } else {
+        // List page: find each load card and inject button
+        // SD load cards contain "Assign", "Options", "Edit" button groups
+        const assignButtons = document.querySelectorAll('button');
+        const cardButtons = [];
+        assignButtons.forEach(btn => {
+          if (btn.textContent.trim() === 'Assign' && !btn.closest('.tms-sd-wrapper')) {
+            cardButtons.push(btn);
+          }
+        });
+
+        cardButtons.forEach((assignBtn, index) => {
+          const btnGroup = assignBtn.parentElement;
+          if (!btnGroup || btnGroup.querySelector('.tms-import-button')) return;
+
+          // Find the load card (parent container)
+          let card = assignBtn;
+          for (let i = 0; i < 8; i++) { card = card.parentElement; if (!card) break; }
+          if (!card) return;
+
+          const wrapper = document.createElement('span');
+          wrapper.className = 'tms-sd-wrapper';
+          wrapper.style.cssText = 'display:inline-flex;align-items:center;gap:4px;margin-left:4px;';
+
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.className = 'tms-batch-checkbox';
+          checkbox.style.cssText = 'width:16px;height:16px;cursor:pointer;accent-color:#22c55e;';
+          checkbox.dataset.cardIndex = index;
+          checkbox.onchange = () => {
+            if (checkbox.checked) batchSelected.add(index);
+            else batchSelected.delete(index);
+            updateBatchBar();
+          };
+
+          const btn = document.createElement('button');
+          btn.className = 'tms-import-button';
+          btn.innerHTML = '<span class="tms-btn-icon">&#x1F69B;</span> Import';
+          btn.style.fontSize = '12px';
+          btn.style.padding = '6px 10px';
+          btn.dataset.cardIndex = index;
+          btn.onclick = () => {
+            const loadData = scrapeSDLoadFromListCard(card);
+            showImportModal(loadData, btn, btn.innerHTML);
+          };
+
+          wrapper.appendChild(checkbox);
+          wrapper.appendChild(btn);
+          btnGroup.appendChild(wrapper);
+          log('Injected SD list button #' + (index + 1));
+        });
+        log('Total SD buttons injected: ' + cardButtons.length);
+      }
+    } finally {
+      isInjecting = false;
+    }
+  }
+
+  // ============================================================
+  // INIT — Route to CD or SD
+  // ============================================================
+
+  function init() {
+    log('=== LOAD IMPORTER v6 INITIALIZED ===');
+    log('URL:', window.location.href);
+
+    if (isSuperDispatchPage()) {
+      log('Super Dispatch detected, initializing SD mode');
+      setTimeout(injectSDButtons, 1500);
+      let debounceTimer = null;
+      const observer = new MutationObserver(() => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(injectSDButtons, 2000);
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      setTimeout(injectSDButtons, 4000);
+      setTimeout(injectSDButtons, 7000);
+    } else if (isCentralDispatchPage()) {
+      log('Central Dispatch detected, initializing CD mode');
+      setTimeout(injectButtons, 1000);
+      let debounceTimer = null;
+      const observer = new MutationObserver(() => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(injectButtons, 1500);
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      setTimeout(injectButtons, 3000);
+      setTimeout(injectButtons, 5000);
+    } else {
+      log('Unknown page, skipping');
+    }
   }
 
   // Start

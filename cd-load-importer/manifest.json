@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "CD Load Importer - Horizon Star TMS",
-  "version": "1.0.0",
-  "description": "Import loads from Central Dispatch directly to Horizon Star TMS",
+  "name": "Load Importer - Horizon Star TMS",
+  "version": "2.0.0",
+  "description": "Import loads from Central Dispatch and Super Dispatch into Horizon Star TMS",
   "permissions": [
     "activeTab",
     "storage",
@@ -13,6 +13,7 @@
     "*://site.centraldispatch.com/*",
     "*://app.centraldispatch.com/*",
     "*://*.centraldispatch.com/*",
+    "*://carrier.superdispatch.com/*",
     "https://yrrczhlzulwvdqjwvhtu.supabase.co/*"
   ],
   "background": {
@@ -24,7 +25,8 @@
         "*://www.centraldispatch.com/*",
         "*://site.centraldispatch.com/*",
         "*://app.centraldispatch.com/*",
-        "*://*.centraldispatch.com/*"
+        "*://*.centraldispatch.com/*",
+        "*://carrier.superdispatch.com/*"
       ],
       "js": ["content.js"],
       "css": ["styles.css"],

@@ -1,4 +1,4 @@
-// CD Load Importer - Background Service Worker v6
+// CD Load Importer - Background Service Worker v7
 // Handles Supabase API calls for load import and trip fetching
 
 const DEBUG = true;
@@ -36,6 +36,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
     return true;
   }
+
+  if (request.action === 'getDispatchers') {
+    handleGetDispatchers()
+      .then(result => sendResponse(result))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
 });
 
 // Get Supabase config from storage
@@ -58,32 +65,51 @@ async function handleGetTrips() {
     throw new Error('Supabase API key not configured. Please open extension settings.');
   }
 
-  // Fetch trips with driver info - get PLANNED and IN_PROGRESS trips
+  // Exclude completed/cancelled — catches all active statuses (PLANNED, IN_PROGRESS, DISPATCHED, IN_TRANSIT, AT_TERMINAL, etc.)
+  const statusFilter = 'status=not.in.(COMPLETED,CANCELLED)';
+  const headers = {
+    'apikey': config.key,
+    'Authorization': `Bearer ${config.key}`
+  };
+
+  // Fetch trips (simple query, no joins — most reliable)
   const response = await fetch(
-    `${config.url}/rest/v1/trips?status=in.(PLANNED,IN_PROGRESS)&select=id,trip_number,status,driver_id,drivers(name)&order=trip_date.desc`,
-    {
-      headers: {
-        'apikey': config.key,
-        'Authorization': `Bearer ${config.key}`
-      }
-    }
+    `${config.url}/rest/v1/trips?${statusFilter}&select=id,trip_number,status,driver_id&order=trip_date.desc`,
+    { headers }
   );
 
   if (!response.ok) {
     const errorText = await response.text();
     log('Trips fetch error:', response.status, errorText);
-    throw new Error(`Failed to fetch trips: ${response.status}`);
+    throw new Error(`Failed to fetch trips: ${response.status} - ${errorText}`);
   }
 
   const trips = await response.json();
   log('Fetched trips:', trips.length);
+
+  // Fetch drivers separately to resolve names (first_name + last_name)
+  let driverLookup = {};
+  try {
+    const driversResp = await fetch(
+      `${config.url}/rest/v1/drivers?select=id,first_name,last_name`,
+      { headers }
+    );
+    if (driversResp.ok) {
+      const drivers = await driversResp.json();
+      driverLookup = Object.fromEntries(
+        drivers.map(d => [d.id, ((d.first_name || '') + ' ' + (d.last_name || '')).trim()])
+      );
+    }
+  } catch (e) {
+    log('Driver lookup failed (non-critical):', e.message);
+  }
 
   // Format trips for dropdown
   const formattedTrips = trips.map(t => ({
     id: t.id,
     trip_number: t.trip_number,
     status: t.status,
-    driver_name: t.drivers?.name || null
+    driver_name: driverLookup[t.driver_id] || null
   }));
 
   return {
@@ -92,51 +118,92 @@ async function handleGetTrips() {
   };
 }
 
+// Get dispatchers from Supabase
+async function handleGetDispatchers() {
+  const config = await getSupabaseConfig();
+  if (!config.key) throw new Error('API key not configured');
+
+  const response = await fetch(
+    `${config.url}/rest/v1/dispatchers?select=id,name,code,email,user_id&order=name.asc`,
+    { headers: { 'apikey': config.key, 'Authorization': `Bearer ${config.key}` } }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    log('Dispatchers fetch error:', response.status, errorText);
+    throw new Error(`Failed to fetch dispatchers: ${response.status}`);
+  }
+
+  const dispatchers = await response.json();
+  log('Fetched dispatchers:', dispatchers.length);
+  return { success: true, dispatchers };
+}
+
 // Resolve broker name to broker_id, creating if needed
 async function resolveOrCreateBroker(brokerName, brokerDetails, config) {
   if (!brokerName) return { brokerId: null, brokerName: null };
 
+  const headers = { 'apikey': config.key, 'Authorization': `Bearer ${config.key}` };
+  const trimmedName = brokerName.trim();
+
+  // Helper: enrich existing broker with missing fields
+  async function enrichBroker(existing) {
+    const patchData = {};
+    if (!existing.contact_name && brokerDetails.contact_name) patchData.contact_name = brokerDetails.contact_name;
+    if (!existing.phone && brokerDetails.phone) patchData.phone = brokerDetails.phone;
+    if (!existing.email && brokerDetails.email) patchData.email = brokerDetails.email;
+    if (Object.keys(patchData).length > 0) {
+      log('Enriching broker with missing fields:', patchData);
+      await fetch(`${config.url}/rest/v1/brokers?id=eq.${existing.id}`, {
+        method: 'PATCH',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify(patchData)
+      });
+    }
+    return { brokerId: existing.id, brokerName: existing.name };
+  }
+
   try {
-    // Look up existing broker by name (case-insensitive)
-    const lookupUrl = `${config.url}/rest/v1/brokers?name=ilike.${encodeURIComponent(brokerName)}&select=id,name,contact_name,phone,email&limit=1`;
-    const lookupResponse = await fetch(lookupUrl, {
-      headers: {
-        'apikey': config.key,
-        'Authorization': `Bearer ${config.key}`
-      }
-    });
-
-    if (lookupResponse.ok) {
-      const brokers = await lookupResponse.json();
+    // 1. Exact name match (case-insensitive)
+    const exactUrl = `${config.url}/rest/v1/brokers?name=ilike.${encodeURIComponent(trimmedName)}&select=id,name,contact_name,phone,email&limit=1`;
+    const exactResp = await fetch(exactUrl, { headers });
+    if (exactResp.ok) {
+      const brokers = await exactResp.json();
       if (brokers.length > 0) {
-        const existing = brokers[0];
-        log('Found existing broker:', existing.id, existing.name);
-
-        // PATCH to fill in any missing fields (don't overwrite existing data)
-        const patchData = {};
-        if (!existing.contact_name && brokerDetails.contact_name) patchData.contact_name = brokerDetails.contact_name;
-        if (!existing.phone && brokerDetails.phone) patchData.phone = brokerDetails.phone;
-        if (!existing.email && brokerDetails.email) patchData.email = brokerDetails.email;
-
-        if (Object.keys(patchData).length > 0) {
-          log('Enriching broker with missing fields:', patchData);
-          await fetch(`${config.url}/rest/v1/brokers?id=eq.${existing.id}`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              'apikey': config.key,
-              'Authorization': `Bearer ${config.key}`
-            },
-            body: JSON.stringify(patchData)
-          });
-        }
-
-        return { brokerId: existing.id, brokerName: existing.name };
+        log('Found existing broker (exact match):', brokers[0].id, brokers[0].name);
+        return await enrichBroker(brokers[0]);
       }
     }
 
-    // Create new broker with all available details
-    const createBody = { name: brokerName };
+    // 2. Match by email (more reliable than name)
+    if (brokerDetails.email) {
+      const emailUrl = `${config.url}/rest/v1/brokers?email=ilike.${encodeURIComponent(brokerDetails.email.trim())}&select=id,name,contact_name,phone,email&limit=1`;
+      const emailResp = await fetch(emailUrl, { headers });
+      if (emailResp.ok) {
+        const brokers = await emailResp.json();
+        if (brokers.length > 0) {
+          log('Found existing broker (email match):', brokers[0].id, brokers[0].name);
+          return await enrichBroker(brokers[0]);
+        }
+      }
+    }
+
+    // 3. Fuzzy name match (contains, case-insensitive) — catches "LLC" vs "L.L.C." etc
+    const coreName = trimmedName.replace(/[.,\s]+(LLC|INC|CORP|LTD|CO)\.?$/i, '').trim();
+    if (coreName.length >= 4) {
+      const fuzzyUrl = `${config.url}/rest/v1/brokers?name=ilike.*${encodeURIComponent(coreName)}*&select=id,name,contact_name,phone,email&limit=1`;
+      const fuzzyResp = await fetch(fuzzyUrl, { headers });
+      if (fuzzyResp.ok) {
+        const brokers = await fuzzyResp.json();
+        if (brokers.length > 0) {
+          log('Found existing broker (fuzzy match):', brokers[0].id, brokers[0].name);
+          return await enrichBroker(brokers[0]);
+        }
+      }
+    }
+
+    // 4. No match found — create new broker
+    const createBody = { name: trimmedName };
     if (brokerDetails.contact_name) createBody.contact_name = brokerDetails.contact_name;
     if (brokerDetails.phone) createBody.phone = brokerDetails.phone;
     if (brokerDetails.email) createBody.email = brokerDetails.email;
@@ -212,6 +279,7 @@ async function handleImportLoad(loadData) {
     vehicle_body_type: loadData.vehicle_body_type || null,
     vehicle_lot_number: loadData.vehicle_lot_number || null,
     vehicle_buyer_number: loadData.vehicle_buyer_number || null,
+    vehicles: loadData.vehicles && loadData.vehicles.length > 0 ? loadData.vehicles : [],
     origin: loadData.origin || null,
     pickup_full_address: loadData.pickup_full_address || null,
     pickup_address: loadData.pickup_address || null,
@@ -352,4 +420,4 @@ chrome.runtime.onInstalled.addListener((details) => {
   }
 });
 
-log('Background service worker v6 started');
+log('Background service worker v7 started');

@@ -10265,9 +10265,45 @@
       if (!order.broker_name) return null;
       return (appData.brokers || []).find(b => String(b.name || '').trim().toLowerCase() === String(order.broker_name).trim().toLowerCase()) || null;
     }
+    function getOrderVehicles(order) {
+      if (!order) return [];
+      const vehicles = [];
+      if (order.vehicle_year || order.vehicle_make || order.vehicle_model) {
+        vehicles.push({
+          year: order.vehicle_year, make: order.vehicle_make, model: order.vehicle_model,
+          vin: order.vehicle_vin, color: order.vehicle_color, body_type: order.vehicle_body_type,
+          lot_number: order.vehicle_lot_number, buyer_number: order.vehicle_buyer_number
+        });
+      }
+      if (order.vehicles && Array.isArray(order.vehicles) && order.vehicles.length > 0) {
+        // If the array has the same first vehicle as the fields, use the array as-is
+        const first = order.vehicles[0];
+        if (vehicles.length > 0 && first && String(first.vin || '') === String(vehicles[0].vin || '') && String(first.make || '') === String(vehicles[0].make || '')) {
+          return order.vehicles;
+        }
+        // Otherwise append additional vehicles from the array
+        order.vehicles.forEach((v, i) => {
+          if (i === 0 && vehicles.length > 0) return; // skip first if already from fields
+          vehicles.push(v);
+        });
+      }
+      return vehicles.length > 0 ? vehicles : [{}];
+    }
+
+    function getOrderVehicleCount(order) {
+      return getOrderVehicles(order).length || 1;
+    }
+
+    function getVehicleLabel(v) {
+      return [v.year, v.make, v.model].filter(Boolean).join(' ') || '-';
+    }
+
     function getOrderVehicleLabel(order) {
       if (!order) return '-';
-      return [order.vehicle_year, order.vehicle_make, order.vehicle_model].filter(Boolean).join(' ') || '-';
+      const vehicles = getOrderVehicles(order);
+      const first = getVehicleLabel(vehicles[0] || {});
+      if (vehicles.length <= 1) return first;
+      return first + ' <span style="background:var(--dim-blue);color:var(--info);padding:1px 6px;border-radius:10px;font-size:10px;font-weight:600;margin-left:4px">+' + (vehicles.length - 1) + '</span>';
     }
     function getOrderAddressForMaps(order, type = 'pickup') {
       if (!order) return '';
@@ -11904,7 +11940,7 @@
         totalExpenses,
         directTripExpenses,  // All costs for this trip
         netProfit,           // Revenue - All Costs (for Owner-Op: dispatch fee)
-        vehicleCount: orders.length,
+        vehicleCount: orders.reduce((sum, o) => sum + getOrderVehicleCount(o), 0),
         cashCollected,
         isOwnerOp            // Flag to indicate Owner-Operator trip
       };
@@ -16116,39 +16152,45 @@
             </div>
 
             <!-- Vehicle Section -->
+            ${(() => {
+              const vehicles = getOrderVehicles(order);
+              const vCount = vehicles.length || 1;
+              const mobileCards = vehicles.map((v, i) => `
+                <div class="vehicle-summary-card mobile-only" style="${i > 0 ? 'border-top:1px solid var(--border);margin-top:8px;padding-top:8px' : ''}">
+                  <div class="vehicle-summary-title">
+                    <div>
+                      <strong>${escapeHtml(getVehicleLabel(v))}</strong>
+                      <span>${escapeHtml(v.body_type || 'N/A')}</span>
+                    </div>
+                    ${i === 0 ? '<span class="money positive">' + formatMoney(order.revenue || 0) + '</span>' : ''}
+                  </div>
+                  <div class="vehicle-summary-grid">
+                    <div class="vehicle-summary-item"><span class="vehicle-summary-item-label">VIN</span><span class="vehicle-summary-item-value" style="font-family:monospace">${escapeHtml(v.vin || 'N/A')}</span></div>
+                    <div class="vehicle-summary-item"><span class="vehicle-summary-item-label">Color</span><span class="vehicle-summary-item-value">${escapeHtml(v.color || '-')}</span></div>
+                    <div class="vehicle-summary-item"><span class="vehicle-summary-item-label">Lot #</span><span class="vehicle-summary-item-value">${escapeHtml(v.lot_number || '-')}</span></div>
+                    <div class="vehicle-summary-item"><span class="vehicle-summary-item-label">Buyer #</span><span class="vehicle-summary-item-value">${escapeHtml(v.buyer_number || '-')}</span></div>
+                  </div>
+                </div>
+              `).join('');
+              const tableRows = vehicles.map((v, i) => `
+                <tr>
+                  <td><strong>${escapeHtml(getVehicleLabel(v))}</strong></td>
+                  <td>${escapeHtml(v.body_type || '-')}</td>
+                  <td>${escapeHtml(v.lot_number || '-')}</td>
+                  <td>${escapeHtml(v.buyer_number || '-')}</td>
+                  <td style="font-family:monospace;font-size:12px;">${escapeHtml(v.vin || 'N/A')}</td>
+                  <td>${escapeHtml(v.color || '-')}</td>
+                  <td style="text-align:right;font-weight:600;">${i === 0 ? formatMoney(order.revenue || 0) : ''}</td>
+                </tr>
+              `).join('');
+              return `
             <div class="order-detail-card vehicle-section">
               <div class="order-detail-card-header">
-                <span>[[icon:car]] 1 Vehicle</span>
+                <span>[[icon:car]] ${vCount} Vehicle${vCount !== 1 ? 's' : ''}</span>
                 <span class="vehicle-total">${formatMoney(order.revenue || 0)}</span>
               </div>
               <div class="order-detail-card-body" style="padding:0;">
-                <div class="vehicle-summary-card mobile-only">
-                  <div class="vehicle-summary-title">
-                    <div>
-                      <strong>${escapeHtml(vehicleTitle.trim() || 'Vehicle not specified')}</strong>
-                      <span>${escapeHtml(order.vehicle_body_type || 'Body type not specified')}</span>
-                    </div>
-                    <span class="money positive">${formatMoney(order.revenue || 0)}</span>
-                  </div>
-                  <div class="vehicle-summary-grid">
-                    <div class="vehicle-summary-item">
-                      <span class="vehicle-summary-item-label">Lot #</span>
-                      <span class="vehicle-summary-item-value">${escapeHtml(order.vehicle_lot_number || '-')}</span>
-                    </div>
-                    <div class="vehicle-summary-item">
-                      <span class="vehicle-summary-item-label">Buyer #</span>
-                      <span class="vehicle-summary-item-value">${escapeHtml(order.vehicle_buyer_number || '-')}</span>
-                    </div>
-                    <div class="vehicle-summary-item">
-                      <span class="vehicle-summary-item-label">VIN</span>
-                      <span class="vehicle-summary-item-value" style="font-family:monospace">${escapeHtml(order.vehicle_vin || 'N/A')}</span>
-                    </div>
-                    <div class="vehicle-summary-item">
-                      <span class="vehicle-summary-item-label">Color</span>
-                      <span class="vehicle-summary-item-value">${escapeHtml(order.vehicle_color || '-')}</span>
-                    </div>
-                  </div>
-                </div>
+                ${mobileCards}
                 <table class="vehicle-table">
                   <thead>
                     <tr>
@@ -16161,20 +16203,11 @@
                       <th style="text-align:right;">Price</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    <tr>
-                      <td><strong>${order.vehicle_year || ''} ${order.vehicle_make || ''} ${order.vehicle_model || ''}</strong></td>
-                      <td>${order.vehicle_body_type || '-'}</td>
-                      <td>${order.vehicle_lot_number || '-'}</td>
-                      <td>${order.vehicle_buyer_number || '-'}</td>
-                      <td style="font-family:monospace;font-size:12px;">${order.vehicle_vin || 'N/A'}</td>
-                      <td>${order.vehicle_color || '-'}</td>
-                      <td style="text-align:right;font-weight:600;">${formatMoney(order.revenue || 0)}</td>
-                    </tr>
-                  </tbody>
+                  <tbody>${tableRows}</tbody>
                 </table>
               </div>
-            </div>
+            </div>`;
+            })()}
 
             <!-- Inspections Section -->
             <div class="inspections-grid">

@@ -5,7 +5,7 @@ const DEFAULT_SUPABASE_URL = 'https://yrrczhlzulwvdqjwvhtu.supabase.co';
 // DOM elements
 const supabaseUrlInput = document.getElementById('supabaseUrl');
 const supabaseKeyInput = document.getElementById('supabaseKey');
-const dispatcherIdInput = document.getElementById('dispatcherId');
+const dispatcherSelect = document.getElementById('dispatcherId');
 const saveBtn = document.getElementById('saveBtn');
 const testBtn = document.getElementById('testBtn');
 const statusIcon = document.getElementById('statusIcon');
@@ -13,13 +13,31 @@ const statusTitle = document.getElementById('statusTitle');
 const statusMessage = document.getElementById('statusMessage');
 const toast = document.getElementById('toast');
 
+// Load dispatchers into dropdown
+async function loadDispatchers(savedId) {
+  try {
+    const response = await chrome.runtime.sendMessage({ action: 'getDispatchers' });
+    if (response.success && response.dispatchers && response.dispatchers.length > 0) {
+      dispatcherSelect.innerHTML = '<option value="">Select Dispatcher</option>' +
+        response.dispatchers.map(d => {
+          const label = d.name + (d.code ? ' (' + d.code + ')' : '');
+          const selected = savedId && String(d.id) === String(savedId) ? ' selected' : '';
+          return '<option value="' + d.id + '"' + selected + '>' + label + '</option>';
+        }).join('');
+    } else {
+      dispatcherSelect.innerHTML = '<option value="">No dispatchers found</option>';
+    }
+  } catch (e) {
+    dispatcherSelect.innerHTML = '<option value="">Could not load dispatchers</option>';
+  }
+}
+
 // Load saved settings
 async function loadSettings() {
   const result = await chrome.storage.sync.get(['supabaseUrl', 'supabaseKey', 'dispatcherId', 'connected']);
 
   supabaseUrlInput.value = result.supabaseUrl || DEFAULT_SUPABASE_URL;
   supabaseKeyInput.value = result.supabaseKey || '';
-  dispatcherIdInput.value = result.dispatcherId || '';
 
   if (result.connected) {
     updateStatus('connected');
@@ -27,6 +45,13 @@ async function loadSettings() {
     updateStatus('configured');
   } else {
     updateStatus('disconnected');
+  }
+
+  // Load dispatchers if we have an API key
+  if (result.supabaseKey) {
+    await loadDispatchers(result.dispatcherId || '');
+  } else {
+    dispatcherSelect.innerHTML = '<option value="">Configure API key first</option>';
   }
 }
 
@@ -52,16 +77,19 @@ async function saveSettings() {
     await chrome.storage.sync.set({
       supabaseUrl: url,
       supabaseKey: key,
-      dispatcherId: dispatcherIdInput.value.trim() || null
+      dispatcherId: dispatcherSelect.value || null
     });
 
     showToast('Settings saved!', 'success');
     updateStatus('configured');
+
+    // Refresh dispatcher dropdown now that API key is saved
+    await loadDispatchers(dispatcherSelect.value || '');
   } catch (error) {
     showToast('Failed to save: ' + error.message, 'error');
   } finally {
     saveBtn.disabled = false;
-    saveBtn.innerHTML = '💾 Save Settings';
+    saveBtn.innerHTML = '\u{1F4BE} Save';
   }
 }
 
@@ -134,9 +162,44 @@ function showToast(message, type = 'success') {
   }, 3000);
 }
 
+// Load recent imports
+async function loadRecentImports() {
+  try {
+    const response = await chrome.runtime.sendMessage({ action: 'getRecentImports' });
+    if (response.success && response.imports && response.imports.length > 0) {
+      const section = document.getElementById('recentImportsSection');
+      const list = document.getElementById('recentImportsList');
+      section.style.display = 'block';
+
+      const imports = response.imports.slice(0, 5);
+      const countEl = document.getElementById('recentCount');
+      if (countEl) countEl.textContent = imports.length;
+      list.innerHTML = imports.map(imp => {
+        const date = new Date(imp.timestamp);
+        const timeStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const route = [imp.origin, imp.destination].filter(Boolean).join(' \u2192 ') || 'Unknown route';
+        const revenue = imp.revenue ? '$' + Number(imp.revenue).toLocaleString() : '';
+        return `
+          <div class="recent-item">
+            <div class="row">
+              <span class="order-num">${imp.order_number || '\u2014'}</span>
+              <span class="revenue">${revenue}</span>
+            </div>
+            <div class="route">${route}</div>
+            <div class="meta">${timeStr}${imp.broker_name ? ' \u00b7 ' + imp.broker_name : ''}</div>
+          </div>
+        `;
+      }).join('');
+    }
+  } catch (e) {
+    // Silently fail
+  }
+}
+
 // Event listeners
 saveBtn.addEventListener('click', saveSettings);
 testBtn.addEventListener('click', testConnection);
 
 // Initialize
 loadSettings();
+loadRecentImports();
