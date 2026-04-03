@@ -2460,7 +2460,7 @@
 
       if (isDetailPage) {
         // Detail page: inject button near "+ ADD TO A TRIP" or "more_vert" menu
-        const addToTripBtn = Array.from(document.querySelectorAll('button, a')).find(el => el.textContent.includes('ADD TO A TRIP'));
+        const addToTripBtn = Array.from(document.querySelectorAll('button, a')).find(el => /add to a trip/i.test(el.textContent));
         const moreVertBtn = Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'more_vert');
         const target = addToTripBtn || moreVertBtn;
         if (target && !target.parentElement.querySelector('.tms-import-button')) {
