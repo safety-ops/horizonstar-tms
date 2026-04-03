@@ -2231,11 +2231,312 @@
   }
 
   // ============================================================
-  // INIT — Route to CD or SD
+  // SHIP.CARS SUPPORT
+  // ============================================================
+
+  function isShipCarsPage() {
+    return window.location.href.includes('ship.cars/app/ctms');
+  }
+
+  function scrapeShipCarsDetail() {
+    log('Scraping Ship.Cars order detail page...');
+    const data = {};
+    const text = document.body.innerText;
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+
+    // Order number: "Order #11101192"
+    const orderMatch = text.match(/Order\s*#(\d+[A-Za-z0-9-]*)/i);
+    if (orderMatch) data.order_number = orderMatch[1].substring(0, 20);
+
+    // Vehicle section: "2017 Porsche 911 Cabriolet" then "Sedan" then fields
+    const vehicleIdx = lines.findIndex(l => l === 'VEHICLE');
+    if (vehicleIdx >= 0) {
+      const vLines = lines.slice(vehicleIdx + 1, vehicleIdx + 15);
+      for (const line of vLines) {
+        const vm = line.match(/^(\d{4})\s+(.+)/);
+        if (vm && !data.vehicle_year) {
+          data.vehicle_year = parseInt(vm[1], 10);
+          const rest = vm[2].trim();
+          const sortedMakes = [...KNOWN_MAKES].sort((a, b) => b.length - a.length);
+          let matched = false;
+          for (const make of sortedMakes) {
+            if (rest.toUpperCase().startsWith(make.toUpperCase())) {
+              data.vehicle_make = rest.substring(0, make.length).trim();
+              data.vehicle_model = rest.substring(make.length).trim();
+              matched = true;
+              break;
+            }
+          }
+          if (!matched) { const p = rest.split(/\s+/); data.vehicle_make = p[0] || ''; data.vehicle_model = p.slice(1).join(' ') || ''; }
+          continue;
+        }
+        if (/^(Sedan|Coupe|SUV|Truck|Pickup|Van|Minivan|Convertible|Wagon|Hatchback|Crossover)$/i.test(line) && !data.vehicle_body_type) {
+          data.vehicle_body_type = line;
+          continue;
+        }
+      }
+      // VIN
+      const vinMatch = text.match(/VIN#\s*([A-HJ-NPR-Z0-9]{17})/i);
+      if (vinMatch) data.vehicle_vin = vinMatch[1].toUpperCase();
+      // Color (skip "--")
+      const colorMatch = text.match(/Color\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i);
+      if (colorMatch && colorMatch[1] !== '--') data.vehicle_color = colorMatch[1].trim();
+      // Buyer# and LOT#
+      const buyerMatch = text.match(/Buyer#\s+([^\n-]+)/i);
+      if (buyerMatch && buyerMatch[1].trim() !== '--') data.vehicle_buyer_number = buyerMatch[1].trim();
+      const lotMatch = text.match(/LOT#\s+([^\n-]+)/i);
+      if (lotMatch && lotMatch[1].trim() !== '--') data.vehicle_lot_number = lotMatch[1].trim();
+    }
+    // Wrap in vehicles array
+    if (data.vehicle_year || data.vehicle_make) {
+      data.vehicles = [{ year: data.vehicle_year, make: data.vehicle_make, model: data.vehicle_model, vin: data.vehicle_vin, color: data.vehicle_color, body_type: data.vehicle_body_type }];
+    }
+
+    // Payment: "Carrier Pay $2200" and "COP/COD" etc
+    const payMatch = text.match(/Carrier\s*Pay\s*\$?([\d,]+(?:\.\d{2})?)/i);
+    if (payMatch) data.revenue = parseFloat(payMatch[1].replace(/,/g, ''));
+    // Payment type
+    if (/\bCOP\b/.test(text)) data.payment_type = 'COP';
+    else if (/\bCOD\b/.test(text)) data.payment_type = 'COD';
+    else if (/\bBill\b/i.test(text) && /Carrier Pay/i.test(text)) data.payment_type = 'BILL';
+    else data.payment_type = 'BILL';
+
+    // Pickup & Delivery
+    const pickupIdx = lines.findIndex(l => l === 'PICKUP');
+    const deliveryIdx = lines.findIndex(l => l === 'DELIVERY');
+    if (pickupIdx >= 0) {
+      const pLines = lines.slice(pickupIdx + 1, deliveryIdx > pickupIdx ? deliveryIdx : pickupIdx + 10);
+      for (const line of pLines) {
+        if (/[A-Z]{2},?\s*\d{5}/.test(line) && !data.pickup_full_address) {
+          data.pickup_full_address = line;
+          const parsed = parseSDAddress(line);
+          data.pickup_address = parsed.street || '';
+          data.pickup_city = parsed.city || '';
+          data.pickup_state = parsed.state || '';
+          data.pickup_zip = parsed.zip || '';
+          if (parsed.city && parsed.state) data.origin = parsed.city + ', ' + parsed.state;
+        }
+        if (/^\(\d{3}\)\s*\d{3}-\d{4}$/.test(line) && !data.pickup_phone) { data.pickup_phone = line; data.pickup_contact_phone = line; }
+      }
+      // Contact name: line before phone that looks like a name
+      for (let i = 0; i < pLines.length; i++) {
+        if (pLines[i] === data.pickup_phone && i > 0 && /[a-zA-Z]/.test(pLines[i-1]) && !/\d{5}/.test(pLines[i-1])) {
+          data.pickup_contact_name = pLines[i-1];
+        }
+      }
+    }
+    if (deliveryIdx >= 0) {
+      const dLines = lines.slice(deliveryIdx + 1, deliveryIdx + 10);
+      for (const line of dLines) {
+        if (/[A-Z]{2},?\s*\d{5}/.test(line) && !data.delivery_full_address) {
+          data.delivery_full_address = line;
+          const parsed = parseSDAddress(line);
+          data.delivery_address = parsed.street || '';
+          data.delivery_city = parsed.city || '';
+          data.delivery_state = parsed.state || '';
+          data.delivery_zip = parsed.zip || '';
+          if (parsed.city && parsed.state) data.destination = parsed.city + ', ' + parsed.state;
+        }
+        if (/^\(\d{3}\)\s*\d{3}-\d{4}$/.test(line) && !data.delivery_phone) { data.delivery_phone = line; data.delivery_contact_phone = line; }
+      }
+      for (let i = 0; i < dLines.length; i++) {
+        if (dLines[i] === data.delivery_phone && i > 0 && /[a-zA-Z]/.test(dLines[i-1]) && !/\d{5}/.test(dLines[i-1])) {
+          data.delivery_contact_name = dLines[i-1];
+        }
+      }
+    }
+
+    // Shipper (broker)
+    const shipperIdx = lines.findIndex(l => l === 'SHIPPER');
+    if (shipperIdx >= 0) {
+      const sLines = lines.slice(shipperIdx + 1, shipperIdx + 8);
+      // First non-"Edit" line is company name
+      for (const line of sLines) {
+        if (line === 'Edit' || line === 'SHIPPER') continue;
+        if (!data.broker_name && /[A-Z]/.test(line) && !line.includes('Missing') && !/^\(\d{3}\)/.test(line) && !/\d{5}/.test(line)) {
+          // Extract company name (may have "(Contact Name)" suffix)
+          const nameMatch = line.match(/^(.+?)(?:\s*\((.+?)\))?$/);
+          if (nameMatch) {
+            data.broker_name = nameMatch[1].trim();
+            if (nameMatch[2]) data.broker_contact_name = nameMatch[2].trim();
+          }
+          continue;
+        }
+        if (/[A-Z]{2},?\s*\d{5}/.test(line) && !data.broker_address) { /* skip broker address */ continue; }
+        if (/^\(\d{3}\)\s*\d{3}-\d{4}$/.test(line) && !data.broker_phone) { data.broker_phone = line; continue; }
+        if (/@/.test(line) && !data.broker_email) { data.broker_email = line; continue; }
+      }
+    }
+
+    // Dispatch instructions as notes
+    const instrIdx = lines.findIndex(l => l.includes('DISPATCH INSTRUCTIONS'));
+    if (instrIdx >= 0) {
+      const instrLines = lines.slice(instrIdx + 1, instrIdx + 5);
+      const note = instrLines.filter(l => l !== 'Edit' && l !== 'ADD DRIVER INSTRUCTIONS' && l.length > 3).join(' ');
+      if (note) data.notes = note.substring(0, 500);
+    }
+
+    data.dispatcher_notes = 'Imported from Ship.Cars';
+    log('Scraped Ship.Cars data:', data);
+    return data;
+  }
+
+  function scrapeShipCarsListRow(rowEl) {
+    log('Scraping Ship.Cars list row...');
+    const data = {};
+    const text = rowEl.innerText;
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+
+    // Order number: first line starting with #
+    for (const line of lines) {
+      const m = line.match(/^#([\dA-Za-z-]+)/);
+      if (m) { data.order_number = m[1].substring(0, 20); break; }
+    }
+
+    // Vehicle: "2017 Porsche 911 Cabriolet"
+    const allVehicles = [];
+    const sortedMakes = [...KNOWN_MAKES].sort((a, b) => b.length - a.length);
+    for (const line of lines) {
+      const vm = line.match(/^(\d{4})\s+(.+)/);
+      if (vm && parseInt(vm[1]) >= 1900 && parseInt(vm[1]) <= new Date().getFullYear() + 2) {
+        const v = { year: parseInt(vm[1], 10) };
+        const rest = vm[2].trim();
+        let matched = false;
+        for (const make of sortedMakes) {
+          if (rest.toUpperCase().startsWith(make.toUpperCase())) {
+            v.make = rest.substring(0, make.length).trim();
+            v.model = rest.substring(make.length).trim();
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) { const p = rest.split(/\s+/); v.make = p[0] || ''; v.model = p.slice(1).join(' ') || ''; }
+        allVehicles.push(v);
+      }
+    }
+    if (allVehicles.length > 0) {
+      data.vehicle_year = allVehicles[0].year;
+      data.vehicle_make = allVehicles[0].make;
+      data.vehicle_model = allVehicles[0].model;
+      data.vehicles = allVehicles;
+    }
+
+    // VIN
+    const vinMatch = text.match(/([A-HJ-NPR-Z0-9]{17})/);
+    if (vinMatch) data.vehicle_vin = vinMatch[1].toUpperCase();
+
+    // Addresses — look for "City, ST, ZIP" patterns
+    const addrMatches = text.match(/[\w\s.]+,\s*[A-Z]{2},?\s*\d{5}/g) || [];
+    if (addrMatches.length >= 1) {
+      data.pickup_full_address = addrMatches[0].trim();
+      const p = parseSDAddress(addrMatches[0].trim());
+      data.pickup_city = p.city || ''; data.pickup_state = p.state || ''; data.pickup_zip = p.zip || '';
+      if (p.city && p.state) data.origin = p.city + ', ' + p.state;
+    }
+    if (addrMatches.length >= 2) {
+      data.delivery_full_address = addrMatches[1].trim();
+      const d = parseSDAddress(addrMatches[1].trim());
+      data.delivery_city = d.city || ''; data.delivery_state = d.state || ''; data.delivery_zip = d.zip || '';
+      if (d.city && d.state) data.destination = d.city + ', ' + d.state;
+    }
+
+    // Price: "$2,200"
+    const priceMatch = text.match(/\$([\d,]+(?:\.\d{2})?)/);
+    if (priceMatch) data.revenue = parseFloat(priceMatch[1].replace(/,/g, ''));
+
+    data.dispatcher_notes = 'Imported from Ship.Cars';
+    log('Scraped Ship.Cars list data:', data);
+    return data;
+  }
+
+  function injectShipCarsButtons() {
+    if (isInjecting) return;
+    isInjecting = true;
+    try {
+      document.querySelectorAll('.tms-import-button, .tms-sc-wrapper').forEach(el => el.remove());
+      batchSelected.clear();
+
+      const isDetailPage = /\/order\/[a-z0-9]+/i.test(window.location.pathname);
+
+      if (isDetailPage) {
+        // Detail page: inject button near "+ ADD TO A TRIP" or "more_vert" menu
+        const addToTripBtn = Array.from(document.querySelectorAll('button, a')).find(el => el.textContent.includes('ADD TO A TRIP'));
+        const moreVertBtn = Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'more_vert');
+        const target = addToTripBtn || moreVertBtn;
+        if (target && !target.parentElement.querySelector('.tms-import-button')) {
+          const btn = document.createElement('button');
+          btn.className = 'tms-import-button';
+          btn.innerHTML = '<span class="tms-btn-icon">&#x1F69B;</span> Import to TMS';
+          btn.style.marginLeft = '8px';
+          btn.onclick = () => {
+            const loadData = scrapeShipCarsDetail();
+            showImportModal(loadData, btn, btn.innerHTML);
+          };
+          target.parentElement.insertBefore(btn, target.nextSibling);
+          log('Injected Ship.Cars detail page import button');
+        }
+      } else {
+        // List page: find each order link and inject button nearby
+        const orderLinks = document.querySelectorAll('a[href*="/order/"]');
+        const seen = new Set();
+        orderLinks.forEach((link, index) => {
+          const href = link.getAttribute('href');
+          if (seen.has(href)) return;
+          seen.add(href);
+
+          // Find the row container (go up several parents)
+          let row = link;
+          for (let i = 0; i < 6; i++) { row = row.parentElement; if (!row) break; }
+          if (!row || row.querySelector('.tms-import-button')) return;
+
+          const wrapper = document.createElement('span');
+          wrapper.className = 'tms-sc-wrapper';
+          wrapper.style.cssText = 'display:inline-flex;align-items:center;gap:4px;margin-left:4px;position:absolute;right:8px;top:50%;transform:translateY(-50%);z-index:10;';
+
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.className = 'tms-batch-checkbox';
+          checkbox.style.cssText = 'width:16px;height:16px;cursor:pointer;accent-color:#22c55e;';
+          checkbox.dataset.cardIndex = index;
+          checkbox.onchange = () => {
+            if (checkbox.checked) batchSelected.add(index);
+            else batchSelected.delete(index);
+            updateBatchBar();
+          };
+
+          const btn = document.createElement('button');
+          btn.className = 'tms-import-button';
+          btn.innerHTML = '<span class="tms-btn-icon">&#x1F69B;</span> Import';
+          btn.style.fontSize = '12px';
+          btn.style.padding = '6px 10px';
+          btn.dataset.cardIndex = index;
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            const loadData = scrapeShipCarsListRow(row);
+            showImportModal(loadData, btn, btn.innerHTML);
+          };
+
+          wrapper.appendChild(checkbox);
+          wrapper.appendChild(btn);
+
+          // Make row position relative so absolute wrapper works
+          if (row.style) row.style.position = 'relative';
+          row.appendChild(wrapper);
+          log('Injected Ship.Cars list button #' + (index + 1));
+        });
+      }
+    } finally {
+      isInjecting = false;
+    }
+  }
+
+  // ============================================================
+  // INIT — Route to CD, SD, or Ship.Cars
   // ============================================================
 
   function init() {
-    log('=== LOAD IMPORTER v6 INITIALIZED ===');
+    log('=== LOAD IMPORTER v7 INITIALIZED ===');
     log('URL:', window.location.href);
 
     if (isSuperDispatchPage()) {
@@ -2249,6 +2550,17 @@
       observer.observe(document.body, { childList: true, subtree: true });
       setTimeout(injectSDButtons, 4000);
       setTimeout(injectSDButtons, 7000);
+    } else if (isShipCarsPage()) {
+      log('Ship.Cars detected, initializing SC mode');
+      setTimeout(injectShipCarsButtons, 1500);
+      let debounceTimer = null;
+      const observer = new MutationObserver(() => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(injectShipCarsButtons, 2000);
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      setTimeout(injectShipCarsButtons, 4000);
+      setTimeout(injectShipCarsButtons, 7000);
     } else if (isCentralDispatchPage()) {
       log('Central Dispatch detected, initializing CD mode');
       setTimeout(injectButtons, 1000);
