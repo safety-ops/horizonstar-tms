@@ -10589,6 +10589,23 @@
       return { revenueData: revenueData, profitData: profitData, labels: labels };
     }
 
+    function getMonthlyAvgPricePerCar(trips, monthCount) {
+      monthCount = monthCount || 12;
+      var tripVolume = calculateTripVolume(trips);
+      var monthlyData = tripVolume.monthlyData;
+      var sortedMonths = Object.keys(monthlyData).sort();
+      var recentMonths = sortedMonths.slice(-monthCount);
+      var avgPriceData = [], labels = [];
+      recentMonths.forEach(function(key) {
+        var d = monthlyData[key];
+        avgPriceData.push(d.cars > 0 ? d.revenue / d.cars : 0);
+        var parts = key.split('-');
+        var monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        labels.push(monthNames[parseInt(parts[1])] + ' ' + parts[0].slice(-2));
+      });
+      return { avgPriceData: avgPriceData, labels: labels };
+    }
+
     // ============ STACKED BAR CHART (Pure SVG) ============
     function renderStackedBarChart(categories, options) {
       options = options || {};
@@ -37602,6 +37619,11 @@
       // Monthly series for trend chart
       const seriesData = getMonthlySeriesData(trips, 12);
 
+      // Avg price per car trend
+      const ppcData = getMonthlyAvgPricePerCar(trips, 12);
+      const prevAvgPerCar = prevTotalCars > 0 ? prevTotalRevenue / prevTotalCars : 0;
+      const ppcDelta = calculatePeriodDelta(avgRevenuePerCar, prevAvgPerCar);
+
       // Revenue/profit sparkline data
       const revSparkData = seriesData.revenueData.length >= 2 ? seriesData.revenueData : [0, 0];
       const profSparkData = seriesData.profitData.length >= 2 ? seriesData.profitData : [0, 0];
@@ -37697,6 +37719,19 @@
             { data: seriesData.revenueData, label: 'Revenue', color: 'var(--green)' },
             { data: seriesData.profitData, label: 'Profit', color: 'var(--blue)' }
           ], { xLabels: seriesData.labels, height: 220 }) : '<div style="text-align:center;padding:40px;color:var(--text-muted)">Need at least 2 months of data for trends</div>'}
+        </div>
+
+        <!-- C2. Avg Price Per Car Trend Chart -->
+        <div class="card" style="margin-bottom:20px;padding:16px 20px">
+          <div class="section-header" style="margin-bottom:12px">
+            <h3 class="section-title">Avg Price Per Car</h3>
+            <div style="display:flex;gap:12px;font-size:11px;color:var(--text-muted)">
+              <span>Current Avg: ${formatMoney(avgRevenuePerCar)} ${renderDeltaBadge(ppcDelta)}</span>
+            </div>
+          </div>
+          ${ppcData.labels.length >= 2 ? renderTrendChart([
+            { data: ppcData.avgPriceData, label: 'Avg Price/Car', color: 'var(--amber)' }
+          ], { xLabels: ppcData.labels, height: 220 }) : '<div style="text-align:center;padding:40px;color:var(--text-muted)">Need at least 2 months of data for trends</div>'}
         </div>
 
         <!-- D. Exception Alerts -->
