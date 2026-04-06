@@ -15579,7 +15579,7 @@
           { id: 'trips', label: 'Trips' },
           { id: 'orders', label: 'Orders' },
           { id: 'live_map', label: 'Live Map' },
-          { id: 'loadboard', label: 'Load Board' },
+          { id: 'loadboard', label: 'Future Cars' },
           { id: 'tasks', label: 'Tasks' },
           { id: 'local_drivers', label: 'Local Drivers' }
         ]
@@ -16361,8 +16361,8 @@
       const pageLabels = {
         'orders': 'Orders',
         'trips': 'Trips',
-        'loadboard': 'Loadboard',
-        'future_cars': 'Loadboard',
+        'loadboard': 'Future Cars',
+        'future_cars': 'Future Cars',
         'dashboard': 'Dashboard'
       };
       const backLabel = pageLabels[previousPage] || 'Back';
@@ -18769,7 +18769,7 @@
         '<div style="background:var(--dim-amber);padding:16px;border-radius:8px;margin-bottom:16px">' +
         '<div class="form-group" style="margin-bottom:10px"><label style="font-weight:600">[[icon:target]] Destination</label>' +
         '<div style="display:flex;gap:8px;margin-top:4px">' +
-        '<label style="display:inline-flex;align-items:center;gap:4px;font-size:13px;cursor:pointer"><input type="radio" name="importDestType" value="category" checked onchange="document.getElementById(\'importCategorySection\').style.display=\'block\';document.getElementById(\'importTripSection\').style.display=\'none\'"> Future Cars (Load Board)</label>' +
+        '<label style="display:inline-flex;align-items:center;gap:4px;font-size:13px;cursor:pointer"><input type="radio" name="importDestType" value="category" checked onchange="document.getElementById(\'importCategorySection\').style.display=\'block\';document.getElementById(\'importTripSection\').style.display=\'none\'"> Future Cars</label>' +
         '<label style="display:inline-flex;align-items:center;gap:4px;font-size:13px;cursor:pointer"><input type="radio" name="importDestType" value="trip" onchange="document.getElementById(\'importCategorySection\').style.display=\'none\';document.getElementById(\'importTripSection\').style.display=\'block\'"> Assign to Trip</label>' +
         '</div></div>' +
         '<div id="importCategorySection"><div class="form-row"><div class="form-group" style="margin-bottom:0"><label style="font-weight:600">[[icon:folder]] Category *</label><select id="importCategory" onchange="toggleImportSubcategory()" style="border:2px solid #f59e0b;font-weight:600">' + loadBoardCategories.map(cat => '<option value="' + cat.id + '">' + cat.name + '</option>').join('') + '</select></div>' +
@@ -24010,7 +24010,7 @@
         
         // Pending Local Pickup (from Load Board NY to Home)
         '<div class="card" style="margin-bottom:24px"><div class="card-header" style="border-left:3px solid var(--blue)"><h3 style="color:var(--text-primary);font-size:14px;font-weight:600;margin:0">Pending Local Pickup (' + pendingLocalPickup.length + ')</h3></div>' +
-        '<div style="padding:12px;background:var(--bg-secondary);border-bottom:1px solid var(--border);font-size:13px;color:var(--text-secondary);display:flex;flex-direction:column;gap:8px">Cars from <strong>Load Board → NY to Home</strong> that need pickup from NY/NJ to terminal. <span style="display:block;overflow-wrap:anywhere">[[icon:status-blue]] Pending | [[icon:status-orange]] Scheduled | [[icon:status-yellow]] Confirmed | [[icon:status-green]] Ready | [[icon:status-red]] Issue</span></div>' +
+        '<div style="padding:12px;background:var(--bg-secondary);border-bottom:1px solid var(--border);font-size:13px;color:var(--text-secondary);display:flex;flex-direction:column;gap:8px">Cars from <strong>Future Cars → NY to Home</strong> that need pickup from NY/NJ to terminal. <span style="display:block;overflow-wrap:anywhere">[[icon:status-blue]] Pending | [[icon:status-orange]] Scheduled | [[icon:status-yellow]] Confirmed | [[icon:status-green]] Ready | [[icon:status-red]] Issue</span></div>' +
         (pendingLocalPickup.length === 0 ? '<div style="padding:40px;text-align:center;color:var(--text-secondary)">No cars pending local pickup</div>' :
         '<div style="padding:12px;display:flex;flex-direction:column;gap:10px">' +
         pendingLocalPickup.map(o => {
