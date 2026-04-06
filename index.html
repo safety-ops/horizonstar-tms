@@ -3322,12 +3322,12 @@
     }
     
     .login-nav-btn.register {
-      background: var(--slate-900);
+      background: var(--btn-primary-bg, #1d4ed8);
       color: white;
     }
 
     .login-nav-btn.register:hover {
-      background: var(--slate-800);
+      background: var(--btn-primary-hover, #1e40af);
     }
 
     .login-nav-btn.login {
@@ -3513,7 +3513,7 @@
     .login-form-card .btn-submit {
       width: 100%;
       padding: 14px;
-      background: var(--slate-900);
+      background: var(--btn-primary-bg, #1d4ed8);
       color: white;
       border: none;
       border-radius: 8px;
@@ -3527,7 +3527,7 @@
     }
 
     .login-form-card .btn-submit:hover {
-      background: var(--slate-800);
+      background: var(--btn-primary-hover, #1e40af);
     }
 
     .login-form-card .form-footer {
@@ -3571,9 +3571,9 @@
     }
 
     .login-form-card .lang-btn.active {
-      background: var(--slate-900);
+      background: var(--btn-primary-bg, #1d4ed8);
       color: white;
-      border-color: var(--slate-900);
+      border-color: var(--btn-primary-bg, #1d4ed8);
     }
     
     .login-error {
@@ -13565,7 +13565,7 @@
       // Navigation bar
       const navBar = `
         <nav class="login-nav">
-          <button class="login-nav-btn" onclick="renderDriverApplication()" style="background:transparent;border:2px solid var(--slate-900);color:var(--text-primary)">APPLY TO DRIVE</button>
+          <button class="login-nav-btn" onclick="renderDriverApplication()" style="background:transparent;border:2px solid var(--btn-primary-bg, #1d4ed8);color:var(--text-primary)">APPLY TO DRIVE</button>
           <div class="login-nav-links"></div>
           <div class="login-nav-buttons">
             <button class="login-nav-btn login" onclick="renderLogin()">LOGIN</button>
