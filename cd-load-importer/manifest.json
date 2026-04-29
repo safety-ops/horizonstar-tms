@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Load Importer - Horizon Star TMS",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Import loads from Central Dispatch, Super Dispatch, and Ship.Cars into Horizon Star TMS",
   "permissions": [
     "activeTab",

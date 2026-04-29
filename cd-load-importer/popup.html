@@ -352,14 +352,21 @@
       </div>
     </div>
 
-    <div class="form-group">
-      <label for="supabaseUrl">Supabase URL</label>
-      <input type="text" id="supabaseUrl" placeholder="https://xxx.supabase.co" />
-    </div>
+    <!-- Admin-only fields. Hidden by default; shown when:
+           - user is not signed in (first-install / re-config flow), OR
+           - user is signed in with role=ADMIN.
+         Toggled by popup.js based on the role returned by
+         current_user_dispatcher() RPC. -->
+    <div id="adminConfigSection">
+      <div class="form-group">
+        <label for="supabaseUrl">Supabase URL</label>
+        <input type="text" id="supabaseUrl" placeholder="https://xxx.supabase.co" />
+      </div>
 
-    <div class="form-group">
-      <label for="supabaseKey">API Key (anon)</label>
-      <input type="password" id="supabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI..." />
+      <div class="form-group">
+        <label for="supabaseKey">API Key (anon)</label>
+        <input type="password" id="supabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI..." />
+      </div>
     </div>
 
     <div class="form-group">

@@ -14,6 +14,19 @@ const autoDispatcherRow = document.getElementById('autoDispatcherRow');
 const autoDispatcherLabel = document.getElementById('autoDispatcherLabel');
 const manualDispatcherRow = document.getElementById('manualDispatcherRow');
 const signOutBtn = document.getElementById('signOutBtn');
+const adminConfigSection = document.getElementById('adminConfigSection');
+
+// Show/hide the Supabase URL + anon-key inputs. Admin-only when signed in.
+// Always shown when not signed in so the first-install / re-config path
+// works without any account.
+function applyAdminConfigVisibility(role, isSignedIn) {
+  if (!adminConfigSection) return;
+  if (!isSignedIn || role === 'ADMIN') {
+    adminConfigSection.style.display = '';
+  } else {
+    adminConfigSection.style.display = 'none';
+  }
+}
 const saveBtn = document.getElementById('saveBtn');
 const testBtn = document.getElementById('testBtn');
 const statusIcon = document.getElementById('statusIcon');
@@ -34,9 +47,14 @@ function applyDispatcherUiMode(autoDispatcherName, autoDispatcherCode) {
   }
 }
 
-// Resolve the signed-in user's dispatcher row via the SECURITY DEFINER RPC.
-// Persists dispatcherId + dispatcherName to chrome.storage.sync. Returns
-// the resolved object {id, name, code} or null.
+// Resolve the signed-in user's dispatcher row + role via the SECURITY
+// DEFINER RPC. Persists dispatcher info AND role to chrome.storage.sync
+// so the popup can apply admin-only UI gating without re-querying on
+// every open. Returns {id, name, code, role, user_id} or null.
+//   - If the user has no dispatchers row, id/name/code are null but role
+//     is still populated (used to decide admin UI visibility).
+//   - If no public.users row matches auth.uid() at all, the RPC returns
+//     null; this function returns null too.
 async function resolveCurrentUserDispatcher(url, key, accessToken) {
   if (!accessToken) return null;
   try {
@@ -51,11 +69,12 @@ async function resolveCurrentUserDispatcher(url, key, accessToken) {
     });
     if (!resp.ok) return null;
     const data = await resp.json();
-    if (!data || typeof data !== 'object' || !data.id) return null;
+    if (!data || typeof data !== 'object') return null;
     await chrome.storage.sync.set({
-      dispatcherId: data.id,
+      dispatcherId: data.id || null,
       dispatcherName: data.name || '',
-      dispatcherCode: data.code || ''
+      dispatcherCode: data.code || '',
+      userRole: data.role || ''
     });
     return data;
   } catch (e) {
@@ -66,9 +85,10 @@ async function resolveCurrentUserDispatcher(url, key, accessToken) {
 async function signOut() {
   await chrome.storage.sync.remove([
     'userAccessToken', 'userRefreshToken', 'userTokenExpiresAt',
-    'dispatcherId', 'dispatcherName', 'dispatcherCode'
+    'dispatcherId', 'dispatcherName', 'dispatcherCode', 'userRole'
   ]);
   applyDispatcherUiMode(null);
+  applyAdminConfigVisibility(null, false);
   renderSessionStatus({});
   showToast('Signed out', 'success');
   // Reload the manual dispatcher dropdown so it's usable as a fallback.
@@ -99,7 +119,7 @@ async function loadSettings() {
   const result = await chrome.storage.sync.get([
     'supabaseUrl', 'supabaseKey', 'dispatcherId', 'connected',
     'userEmail', 'userAccessToken', 'userRefreshToken', 'userTokenExpiresAt',
-    'dispatcherName', 'dispatcherCode'
+    'dispatcherName', 'dispatcherCode', 'userRole'
   ]);
 
   supabaseUrlInput.value = result.supabaseUrl || DEFAULT_SUPABASE_URL;
@@ -107,12 +127,14 @@ async function loadSettings() {
   userEmailInput.value = result.userEmail || '';
   renderSessionStatus(result);
 
-  // If signed in AND we have a stored auto-dispatcher, render the auto-row
-  // immediately (no network needed). If signed in but no stored dispatcher,
-  // resolve via RPC (handles upgrade case where the user signed in before
-  // this feature shipped).
+  // If signed in AND we have a stored auto-dispatcher + role, render
+  // the auto-row immediately (no network). If signed in but missing
+  // either the dispatcher info or the role, re-resolve via RPC (handles
+  // upgrades from earlier versions).
+  let role = result.userRole || null;
   if (result.userAccessToken) {
-    if (result.dispatcherId && result.dispatcherName) {
+    const haveCachedDispatcher = result.dispatcherId && result.dispatcherName;
+    if (haveCachedDispatcher && role) {
       applyDispatcherUiMode(result.dispatcherName, result.dispatcherCode);
     } else {
       const resolved = await resolveCurrentUserDispatcher(
@@ -120,15 +142,17 @@ async function loadSettings() {
         supabaseKeyInput.value.trim(),
         result.userAccessToken
       );
-      if (resolved) {
+      if (resolved && resolved.id) {
         applyDispatcherUiMode(resolved.name, resolved.code);
       } else {
         applyDispatcherUiMode(null);
       }
+      if (resolved) role = resolved.role || null;
     }
   } else {
     applyDispatcherUiMode(null);
   }
+  applyAdminConfigVisibility(role, !!result.userAccessToken);
 
   if (result.connected) {
     updateStatus('connected');
@@ -314,9 +338,10 @@ async function signIn() {
     });
 
     // Auto-resolve the signed-in user's dispatcher record so imports
-    // are attributed to them automatically — no manual dropdown.
+    // are attributed to them automatically — no manual dropdown. Also
+    // fetches the user's role to drive admin-only UI gating.
     const resolved = await resolveCurrentUserDispatcher(url, key, data.access_token);
-    if (resolved) {
+    if (resolved && resolved.id) {
       applyDispatcherUiMode(resolved.name, resolved.code);
     } else {
       // Signed-in user without a dispatcher record (e.g. dealer or admin
@@ -324,6 +349,7 @@ async function signIn() {
       applyDispatcherUiMode(null);
       await loadDispatchers(dispatcherSelect.value || '');
     }
+    applyAdminConfigVisibility(resolved ? resolved.role : null, true);
     updateStatus('configured');
   } catch (error) {
     showToast('Sign-in failed: ' + error.message, 'error');
