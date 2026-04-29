@@ -1,12 +1,11 @@
 // CD Load Importer - Popup Script
 
 const DEFAULT_SUPABASE_URL = 'https://yrrczhlzulwvdqjwvhtu.supabase.co';
-// The Supabase anon key is intentionally public — it's already shipped
-// in the iOS app binary and embedded in the web TMS index.html. Treating
-// it as a per-user secret is theater and pushes a maintenance burden onto
-// anyone installing the extension. Pre-populate so the URL/anon-key
-// inputs can stay hidden by default.
-const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlycmN6aGx6dWx3dmRxand2aHR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1NDYyOTQsImV4cCI6MjA4MTEyMjI5NH0.qVVxDH36OkLXnUe3Sfng1CJY7_Qt_IOGC-1QaDw6WlE';
+// Per project policy: never hardcode keys or credentials in source. The
+// anon key is set once by the user (or admin) on first install via the
+// Advanced settings section, then persists in chrome.storage.sync. If
+// the project's anon key is ever rotated, an admin re-enters it once
+// without needing a new extension build.
 
 // DOM elements
 const supabaseUrlInput = document.getElementById('supabaseUrl');
@@ -143,10 +142,7 @@ async function loadSettings() {
   ]);
 
   supabaseUrlInput.value = result.supabaseUrl || DEFAULT_SUPABASE_URL;
-  // Pre-populate the anon key with the public default so first-install
-  // works without anyone needing to find/paste the key. It's already
-  // public in the iOS app + web TMS, so this is just convenience.
-  supabaseKeyInput.value = result.supabaseKey || DEFAULT_SUPABASE_ANON_KEY;
+  supabaseKeyInput.value = result.supabaseKey || '';
   userEmailInput.value = result.userEmail || '';
   renderSessionStatus(result);
 
