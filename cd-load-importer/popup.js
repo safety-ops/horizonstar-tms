@@ -1,6 +1,12 @@
 // CD Load Importer - Popup Script
 
 const DEFAULT_SUPABASE_URL = 'https://yrrczhlzulwvdqjwvhtu.supabase.co';
+// The Supabase anon key is intentionally public — it's already shipped
+// in the iOS app binary and embedded in the web TMS index.html. Treating
+// it as a per-user secret is theater and pushes a maintenance burden onto
+// anyone installing the extension. Pre-populate so the URL/anon-key
+// inputs can stay hidden by default.
+const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlycmN6aGx6dWx3dmRxand2aHR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1NDYyOTQsImV4cCI6MjA4MTEyMjI5NH0.qVVxDH36OkLXnUe3Sfng1CJY7_Qt_IOGC-1QaDw6WlE';
 
 // DOM elements
 const supabaseUrlInput = document.getElementById('supabaseUrl');
@@ -15,17 +21,31 @@ const autoDispatcherLabel = document.getElementById('autoDispatcherLabel');
 const manualDispatcherRow = document.getElementById('manualDispatcherRow');
 const signOutBtn = document.getElementById('signOutBtn');
 const adminConfigSection = document.getElementById('adminConfigSection');
+const advancedToggleRow = document.getElementById('advancedToggleRow');
+const advancedToggleBtn = document.getElementById('advancedToggleBtn');
 
-// Show/hide the Supabase URL + anon-key inputs. Admin-only when signed in.
-// Always shown when not signed in so the first-install / re-config path
-// works without any account.
+// Show/hide the "Advanced settings" toggle button. The toggle itself
+// only appears for users who might legitimately need to edit URL/anon-key:
+//   - not signed in (re-config / new install)
+//   - signed in with role='ADMIN'
+// Non-admin signed-in users never see the toggle. The inputs themselves
+// remain collapsed until the toggle is clicked, regardless.
 function applyAdminConfigVisibility(role, isSignedIn) {
-  if (!adminConfigSection) return;
-  if (!isSignedIn || role === 'ADMIN') {
-    adminConfigSection.style.display = '';
-  } else {
+  if (!advancedToggleRow || !adminConfigSection) return;
+  const allowed = !isSignedIn || role === 'ADMIN';
+  advancedToggleRow.style.display = allowed ? '' : 'none';
+  if (!allowed) {
+    // Force-collapse the inputs if a non-admin somehow had them open.
     adminConfigSection.style.display = 'none';
+    if (advancedToggleBtn) advancedToggleBtn.textContent = 'Show advanced settings';
   }
+}
+
+function toggleAdvancedSection() {
+  if (!adminConfigSection || !advancedToggleBtn) return;
+  const isHidden = adminConfigSection.style.display === 'none' || !adminConfigSection.style.display;
+  adminConfigSection.style.display = isHidden ? '' : 'none';
+  advancedToggleBtn.textContent = isHidden ? 'Hide advanced settings' : 'Show advanced settings';
 }
 const saveBtn = document.getElementById('saveBtn');
 const testBtn = document.getElementById('testBtn');
@@ -123,7 +143,10 @@ async function loadSettings() {
   ]);
 
   supabaseUrlInput.value = result.supabaseUrl || DEFAULT_SUPABASE_URL;
-  supabaseKeyInput.value = result.supabaseKey || '';
+  // Pre-populate the anon key with the public default so first-install
+  // works without anyone needing to find/paste the key. It's already
+  // public in the iOS app + web TMS, so this is just convenience.
+  supabaseKeyInput.value = result.supabaseKey || DEFAULT_SUPABASE_ANON_KEY;
   userEmailInput.value = result.userEmail || '';
   renderSessionStatus(result);
 
@@ -409,6 +432,7 @@ saveBtn.addEventListener('click', saveSettings);
 testBtn.addEventListener('click', testConnection);
 loginBtn.addEventListener('click', signIn);
 if (signOutBtn) signOutBtn.addEventListener('click', signOut);
+if (advancedToggleBtn) advancedToggleBtn.addEventListener('click', toggleAdvancedSection);
 
 // Initialize
 loadSettings();

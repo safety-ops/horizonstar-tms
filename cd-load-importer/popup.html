@@ -352,12 +352,20 @@
       </div>
     </div>
 
-    <!-- Admin-only fields. Hidden by default; shown when:
-           - user is not signed in (first-install / re-config flow), OR
-           - user is signed in with role=ADMIN.
-         Toggled by popup.js based on the role returned by
-         current_user_dispatcher() RPC. -->
-    <div id="adminConfigSection">
+    <!-- Connection defaults (Supabase URL + anon key) are auto-populated
+         from popup.js constants, so most users never see them. The
+         "Advanced" toggle is shown only when:
+           - the user is not signed in (re-config / new install), OR
+           - signed in as role='ADMIN'.
+         Toggle button hidden entirely for non-admin signed-in users.
+         Inputs themselves stay collapsed until the toggle is clicked. -->
+    <div id="advancedToggleRow" style="display:none;margin-top:-4px;margin-bottom:8px;">
+      <button id="advancedToggleBtn" type="button"
+        style="background:none;border:none;color:#64748b;font-size:11px;cursor:pointer;padding:0;text-decoration:underline;">
+        Show advanced settings
+      </button>
+    </div>
+    <div id="adminConfigSection" style="display:none;">
       <div class="form-group">
         <label for="supabaseUrl">Supabase URL</label>
         <input type="text" id="supabaseUrl" placeholder="https://xxx.supabase.co" />
