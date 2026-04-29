@@ -295,10 +295,18 @@
     const cardText = card.innerText || card.textContent || '';
     log('Card text length:', cardText.length);
 
-    // LOAD ID
-    const loadIdMatch = cardText.match(/Load\s*ID\s*\n\s*(.+?)(?:\n|$)/i);
+    // LOAD ID — Central Dispatch renders the load number as the line under
+    // "Load ID". The full ID can include a hyphen-prefixed suffix
+    // (e.g. "1268124-IX"). Some CD layouts put the suffix on its own line:
+    //   "Load ID\n1268124\n-IX"
+    // Capture the primary token plus any immediately-following "-XX" line.
+    const loadIdMatch = cardText.match(/Load\s*ID\s*\n\s*([A-Z0-9][A-Z0-9\-]*)/i);
     if (loadIdMatch) {
-      data.order_number = loadIdMatch[1].trim().substring(0, 20);
+      let orderNum = loadIdMatch[1].trim();
+      const after = cardText.substring(loadIdMatch.index + loadIdMatch[0].length);
+      const suffixMatch = after.match(/^\s*\n\s*(-[A-Z0-9]+)\b/i);
+      if (suffixMatch) orderNum += suffixMatch[1];
+      data.order_number = orderNum.substring(0, 20);
       log('Found Load ID:', data.order_number);
     } else {
       const altOrderMatch = cardText.match(/(\d{4}\s+\d{2}\s+\d{2}\s+[^\n]+?)(?:\n|Total|$)/);
@@ -1818,10 +1826,12 @@
     // Helper: parse section text into lines
     const getLines = (el) => el ? el.innerText.split('\n').map(l => l.trim()).filter(Boolean) : [];
 
-    // Load number from heading
+    // Load number from heading. Pattern allows hyphens so order numbers
+    // like "1268124-IX" are captured intact. Anchored on \d so plain
+    // letter headings don't accidentally match.
     const loadHeading = document.querySelector('[aria-label="Load Number"] h2') || document.querySelector('h2');
     if (loadHeading) {
-      const num = loadHeading.textContent.trim().match(/^[\dA-Z]+/);
+      const num = loadHeading.textContent.trim().match(/^\d+[A-Z0-9\-]*/i);
       if (num) data.order_number = num[0].substring(0, 20);
     }
 
@@ -2065,8 +2075,10 @@
     const data = {};
     const text = card.innerText;
 
-    // Load number — first line, looks like digits or alphanumeric
-    const loadNum = text.match(/^([\dA-Z]{5,})/m);
+    // Load number — first line that starts with digits, allowing hyphen
+    // suffixes like "1268124-IX". Anchored on \d so heading lines like
+    // "PICK-UP" don't accidentally match.
+    const loadNum = text.match(/^(\d+[A-Z0-9\-]*)/im);
     if (loadNum) data.order_number = loadNum[1].substring(0, 20);
 
     // Vehicle line: "2019 Land Rover Range Rover" then "Type: SUV" on next line
