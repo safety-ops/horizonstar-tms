@@ -30348,14 +30348,14 @@
       } else {
         brokerStats.slice(0, 5).forEach(b => {
           const statusColor = b.overdue > 0 ? 'var(--danger)' : b.outstanding > 0 ? 'var(--warning)' : 'var(--success)';
-          html += '<tr style="cursor:pointer" onclick="openBrokerBillingDetail(\'' + escapeHtml(b.brokerName).replace(/'/g, "\\'") + '\')">';
+          html += '<tr style="cursor:pointer" onclick="openBrokerBillingDetail(\'' + escapeHtml(b.brokerName.replace(/'/g, "\\'")) + '\')">';
           html += '<td><strong>' + escapeHtml(b.brokerName) + '</strong><br><span style="font-size:12px;color:var(--text-muted)">' + b.unpaidOrders.length + ' outstanding</span></td>';
           html += '<td style="text-align:right;font-weight:600;color:' + statusColor + ';font-family:var(--font-mono)">' + formatMoney(b.outstanding) + '</td>';
           html += '<td style="text-align:right;font-family:var(--font-mono)">' + formatMoney(b.totalInvoiced) + '</td>';
           html += '<td style="text-align:right;color:var(--success);font-family:var(--font-mono)">' + formatMoney(b.totalPaid) + '</td>';
           html += '<td style="text-align:right;color:var(--danger);font-family:var(--font-mono)">' + formatMoney(b.overdue) + '</td>';
           html += '<td>' + renderMiniAgingBar(b.aging, b.outstanding) + '</td>';
-          html += '<td onclick="event.stopPropagation()"><button class="btn btn-sm btn-secondary" onclick="openBrokerBillingDetail(\'' + escapeHtml(b.brokerName).replace(/'/g, "\\'") + '\')">View</button></td>';
+          html += '<td onclick="event.stopPropagation()"><button class="btn btn-sm btn-secondary" onclick="openBrokerBillingDetail(\'' + escapeHtml(b.brokerName.replace(/'/g, "\\'")) + '\')">View</button></td>';
           html += '</tr>';
         });
       }
@@ -30436,7 +30436,7 @@
           const brokerRecord = (appData.brokers || []).find(br => br.id === b.brokerId || (br.name || '').toLowerCase() === b.brokerName.toLowerCase());
           const brokerTerms = brokerRecord?.payment_terms || 'NET30';
 
-          html += '<tr style="cursor:pointer" onclick="openBrokerBillingDetail(\'' + escapeHtml(b.brokerName).replace(/'/g, "\\'") + '\')">';
+          html += '<tr style="cursor:pointer" onclick="openBrokerBillingDetail(\'' + escapeHtml(b.brokerName.replace(/'/g, "\\'")) + '\')">';
           html += '<td><div style="font-weight:600">' + escapeHtml(b.brokerName) + statusBadge + '</div>';
           html += '<div style="font-size:12px;color:var(--text-muted)">' + b.unpaidOrders.length + ' outstanding, ' + b.paidCount + ' paid</div></td>';
           html += '<td style="text-align:center"><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:var(--bg-tertiary);color:var(--text-secondary);border:1px solid var(--border)">' + escapeHtml(brokerTerms) + '</span></td>';
@@ -30446,7 +30446,7 @@
           html += '<td style="text-align:right;color:var(--danger);font-family:var(--font-mono)">' + formatMoney(b.overdue) + '</td>';
           html += '<td>' + renderMiniAgingBar(b.aging, b.outstanding) + '</td>';
           html += '<td style="text-align:center">' + (b.avgDaysToPay !== null ? b.avgDaysToPay + 'd' : '-') + '</td>';
-          html += '<td onclick="event.stopPropagation()"><button class="btn btn-sm btn-primary" onclick="openBrokerBillingDetail(\'' + escapeHtml(b.brokerName).replace(/'/g, "\\'") + '\')">View</button></td>';
+          html += '<td onclick="event.stopPropagation()"><button class="btn btn-sm btn-primary" onclick="openBrokerBillingDetail(\'' + escapeHtml(b.brokerName.replace(/'/g, "\\'")) + '\')">View</button></td>';
           html += '</tr>';
         });
       }
