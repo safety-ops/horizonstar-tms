@@ -78,8 +78,14 @@ Swift/SwiftUI app at `Horizon Star LLC Driver App/LuckyCabbage Driver App/`. Key
 
 - Project ref in `supabase/.temp/project-ref`
 - Migrations in `supabase/migrations/` (naming: `YYYYMMDD_N_description.sql`, multiple per day allowed)
-- Edge function: `supabase/functions/send-email/index.ts` (Resend email API)
+- Migrations are append-only: never edit a committed migration; write a new ALTER/DROP/RENAME migration instead. Enforced by the pre-commit hook below.
+- Rollback scripts (when needed) live in `supabase/rollbacks/<same-timestamp>_<name>.down.sql` (NOT in `migrations/` — they would otherwise be auto-applied).
+- Edge function: `supabase/functions/send-email/index.ts` (Resend email API). Required env vars: `RESEND_API_KEY`, `ALLOWED_ORIGINS` (comma-separated).
 - Tables: `orders`, `trips`, `drivers`, `trucks`, `expenses`, `inspections`, `brokers`, `fuel_transactions`, `maintenance_records`, `claims`, `tickets`, `violations`, `company_files`, `dealers`, `tasks`, etc.
+
+### Pre-commit hook
+
+Activate once per clone: `git config --local core.hooksPath .githooks`. The hook in `.githooks/pre-commit` blocks commits that modify or delete a migration file already tracked in `HEAD`. New migration files (status `A`) are allowed. Bypass (only if you really must) with `git commit --no-verify` and document why.
 
 ## Chrome Extension (cd-load-importer)
 

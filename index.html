@@ -3,6 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <!--
+    CSP rollout in REPORT-ONLY mode first — captures violations in browser console
+    (DevTools → Console → "Refused to load…") without blocking. After a day or two
+    of monitoring with no false positives, flip the http-equiv attribute from
+    `Content-Security-Policy-Report-Only` to `Content-Security-Policy` to enforce.
+    Origins below were audited from the codebase: Supabase, Google Fonts, jsDelivr,
+    cdnjs (jsPDF), unpkg (Leaflet), OSM/Carto tiles (live map), Anthropic API
+    (AI Advisor), Samsara API (telematics). 'unsafe-inline' for scripts is
+    required by existing inline `onclick=` handlers; removing those is P2 work.
+  -->
+  <meta http-equiv="Content-Security-Policy-Report-Only" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://*.supabase.co; worker-src 'self' blob: https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://api.samsara.com https://maps.googleapis.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none';">
   <title>HORIZON STAR TMS</title>
   
   <!-- PWA Support -->
@@ -11205,7 +11216,7 @@
       if (!container) return;
 
       container.setAttribute('data-original-content', container.innerHTML);
-      container.innerHTML = '<div class="loading-state" role="status" aria-live="polite"><div class="spinner"></div><div style="margin-top:12px;color:var(--text-muted)">' + (message || 'Loading...') + '</div></div>';
+      container.innerHTML = '<div class="loading-state" role="status" aria-live="polite"><div class="spinner"></div><div style="margin-top:12px;color:var(--text-muted)">' + escapeHtml(message || 'Loading...') + '</div></div>';
     }
 
     // Restore container from loading state
@@ -14088,7 +14099,7 @@
 
           <div class="form-group" style="margin-bottom:24px">
             <label>Explain any gaps in employment that exceeds more than 1 month</label>
-            <textarea name="employment_gaps" rows="3" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px">${applicationData.employment_gaps}</textarea>
+            <textarea name="employment_gaps" rows="3" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px">${escapeHtml(applicationData.employment_gaps)}</textarea>
           </div>
 
           <hr style="border:none;border-top:2px solid #e2e8f0;margin:32px 0">
@@ -14623,7 +14634,10 @@
         });
 
         // Insert into database
-        const { data, error } = await sb.from('driver_applications').insert([applicationData]).select();
+        // Note: no .select() chain — RLS now restricts SELECT to TMS staff,
+        // so asking PostgREST to return the inserted row would fail. Public
+        // form only needs success/error.
+        const { error } = await sb.from('driver_applications').insert([applicationData]);
 
         if (error) throw error;
 
@@ -16491,13 +16505,13 @@
             ${videoSection}
             <div class="photos-layout">
               <div class="featured-photo" onclick="openPhotoGallery(${orderDetailPhotos.indexOf(featuredPhoto)})">
-                <img src="${featuredPhoto.photo_url}" alt="${featuredPhoto.photo_type || 'Featured'}" loading="lazy">
+                <img src="${escapeHtml(escapeUrl(featuredPhoto.photo_url))}" alt="${escapeHtml(featuredPhoto.photo_type || 'Featured')}" loading="lazy">
                 <span class="photo-type-badge">${featuredPhoto.photo_type || ''}</span>
               </div>
               <div class="photos-grid-4col">
                 ${gridPhotos.map((p, idx) => `
                   <div class="photo-thumb-small" onclick="openPhotoGallery(${orderDetailPhotos.indexOf(p)})">
-                    <img src="${p.photo_url}" alt="${p.photo_type || 'Photo'}" loading="lazy">
+                    <img src="${escapeHtml(escapeUrl(p.photo_url))}" alt="${escapeHtml(p.photo_type || 'Photo')}" loading="lazy">
                     ${idx === gridPhotos.length - 1 && remainingCount > 0 ? `<div class="more-photos-overlay">+${remainingCount}</div>` : ''}
                   </div>
                 `).join('')}
@@ -16772,30 +16786,30 @@
               ${pickupInsp?.customer_signature ? `
                 <div class="signature-item">
                   <div class="signature-label">Pickup - Customer</div>
-                  <img src="${pickupInsp.customer_signature}" alt="Customer signature" class="signature-img">
-                  <div class="signature-name">${pickupInsp.customer_name || ''}</div>
+                  <img src="${escapeHtml(escapeUrl(pickupInsp.customer_signature))}" alt="Customer signature" class="signature-img">
+                  <div class="signature-name">${escapeHtml(pickupInsp.customer_name || '')}</div>
                   ${pickupInsp.customer_signed_at ? '<div class="signature-time">' + formatDate(pickupInsp.customer_signed_at) + '</div>' : ''}
                 </div>
               ` : ''}
               ${pickupInsp?.driver_signature ? `
                 <div class="signature-item">
                   <div class="signature-label">Pickup - Driver</div>
-                  <img src="${pickupInsp.driver_signature}" alt="Driver signature" class="signature-img">
+                  <img src="${escapeHtml(escapeUrl(pickupInsp.driver_signature))}" alt="Driver signature" class="signature-img">
                   ${pickupInsp.driver_signed_at ? '<div class="signature-time">' + formatDate(pickupInsp.driver_signed_at) + '</div>' : ''}
                 </div>
               ` : ''}
               ${deliveryInsp?.customer_signature ? `
                 <div class="signature-item">
                   <div class="signature-label">Delivery - Customer</div>
-                  <img src="${deliveryInsp.customer_signature}" alt="Customer signature" class="signature-img">
-                  <div class="signature-name">${deliveryInsp.customer_name || ''}</div>
+                  <img src="${escapeHtml(escapeUrl(deliveryInsp.customer_signature))}" alt="Customer signature" class="signature-img">
+                  <div class="signature-name">${escapeHtml(deliveryInsp.customer_name || '')}</div>
                   ${deliveryInsp.customer_signed_at ? '<div class="signature-time">' + formatDate(deliveryInsp.customer_signed_at) + '</div>' : ''}
                 </div>
               ` : ''}
               ${deliveryInsp?.driver_signature ? `
                 <div class="signature-item">
                   <div class="signature-label">Delivery - Driver</div>
-                  <img src="${deliveryInsp.driver_signature}" alt="Driver signature" class="signature-img">
+                  <img src="${escapeHtml(escapeUrl(deliveryInsp.driver_signature))}" alt="Driver signature" class="signature-img">
                   ${deliveryInsp.driver_signed_at ? '<div class="signature-time">' + formatDate(deliveryInsp.driver_signed_at) + '</div>' : ''}
                 </div>
               ` : ''}
@@ -16822,7 +16836,7 @@
       m.onclick = e => { if (e.target === m) closeModal('video-player-modal'); };
       m.innerHTML = `
         <div style="position:relative;max-width:90vw;max-height:90vh">
-          <video src="${videoUrl}" controls autoplay style="max-width:100%;max-height:85vh;border-radius:8px"></video>
+          <video src="${escapeHtml(escapeUrl(videoUrl))}" controls autoplay style="max-width:100%;max-height:85vh;border-radius:8px"></video>
           <button onclick="closeModal('video-player-modal')" style="position:absolute;top:-15px;right:-15px;background:white;border:none;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:20px;box-shadow:0 2px 8px rgba(0,0,0,0.3)">×</button>
         </div>
       `;
@@ -16852,7 +16866,7 @@
       m.onclick = e => { if (e.target === m) closeModal('photo-gallery-modal'); };
       m.innerHTML = `
         <div style="position:relative;max-width:90vw;max-height:90vh">
-          <img src="${photo.photo_url}" alt="${photo.photo_type || 'Photo'}" style="max-width:100%;max-height:85vh;border-radius:8px">
+          <img src="${escapeHtml(escapeUrl(photo.photo_url))}" alt="${escapeHtml(photo.photo_type || 'Photo')}" style="max-width:100%;max-height:85vh;border-radius:8px">
           <div style="position:absolute;bottom:-40px;left:50%;transform:translateX(-50%);color:white;text-align:center">
             <span style="background:rgba(0,0,0,0.6);padding:6px 16px;border-radius:20px">${photo.photo_type || 'Photo'} (${currentPhotoIndex + 1}/${orderDetailPhotos.length})</span>
           </div>
@@ -17928,8 +17942,8 @@
         '<div class="form-group" style="margin-bottom:0"><label>Bill Amount $</label><input type="number" id="lbSplitBillAmount" value="' + lbSplitBillAmount + '" readonly style="background:var(--surface-elevated)"></div>' +
         '</div></div></div>' +
         '<div class="form-row"><div class="form-group"><label>Broker Fee $</label><input type="number" id="lbBrokerFee" value="' + (o?.broker_fee || 0) + '"></div><div class="form-group"><label>Local Fee $</label><input type="number" id="lbLocalFee" value="' + (o?.local_fee || 0) + '"></div></div>' +
-        '<div class="form-group"><label>[[icon:note]] Notes for Dispatchers</label><textarea id="lbNotes" rows="2" placeholder="Internal dispatcher notes..." style="resize:vertical">' + (o?.dispatcher_notes || '') + '</textarea></div>' +
-        '<div class="form-group"><label>[[icon:receipt]] Notes for Driver</label><textarea id="lbDriverNotes" rows="2" placeholder="Driver-facing instructions..." style="resize:vertical">' + getOrderDriverNotes(o) + '</textarea></div>' +
+        '<div class="form-group"><label>[[icon:note]] Notes for Dispatchers</label><textarea id="lbNotes" rows="2" placeholder="Internal dispatcher notes..." style="resize:vertical">' + escapeHtml(o?.dispatcher_notes || '') + '</textarea></div>' +
+        '<div class="form-group"><label>[[icon:receipt]] Notes for Driver</label><textarea id="lbDriverNotes" rows="2" placeholder="Driver-facing instructions..." style="resize:vertical">' + escapeHtml(getOrderDriverNotes(o)) + '</textarea></div>' +
         '<div class="form-group"><label>Booked By</label>' +
         (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER'
           ? '<select id="lbDispatcher"><option value="">Select Dispatcher</option>' + appData.dispatchers.map(d => '<option value="' + d.id + '"' + ((o?.dispatcher_id === d.id || (!o && userDispatcher && userDispatcher.id === d.id)) ? ' selected' : '') + '>' + d.name + '</option>').join('') + '</select>'
@@ -21622,8 +21636,8 @@
         '<div class="form-row" style="grid-template-columns:1fr 1fr 1fr;gap:12px"><div class="form-group" style="margin-bottom:0"><label>Cash Type</label><select id="editSplitCodType"><option value="COD"' + (editSplitCashType === 'COD' ? ' selected' : '') + '>COD</option><option value="COP"' + (editSplitCashType === 'COP' ? ' selected' : '') + '>COP</option><option value="LOCAL_COD"' + (editSplitCashType === 'LOCAL_COD' ? ' selected' : '') + '>LOCAL_COD</option></select></div><div class="form-group" style="margin-bottom:0"><label>Cash Amount $</label><input type="number" id="editSplitCodAmount" value="' + editSplitCashAmount + '" onchange="updateEditOrderSplitBill()"></div><div class="form-group" style="margin-bottom:0"><label>Bill Amount $</label><input type="number" id="editSplitBillAmount" value="' + editSplitBillAmount + '" readonly style="background:var(--surface-elevated)"></div></div>' +
         '</div>' +
         '<div class="form-row"><div class="form-group"><label>Status</label><select id="editOrderStatus"><option value="PENDING"' + (o.status === 'PENDING' ? ' selected' : '') + '>NEW</option><option value="IN_TRANSIT"' + (o.status === 'IN_TRANSIT' ? ' selected' : '') + '>IN_TRANSIT</option><option value="DELIVERED"' + (o.status === 'DELIVERED' ? ' selected' : '') + '>DELIVERED</option></select></div><div class="form-group"><label>Booked By</label>' + dispatcherField + '</div></div>' +
-        '<div class="form-group"><label>[[icon:note]] Notes for Dispatchers</label><textarea id="editOrderNotes" rows="2" placeholder="Add notes visible to all dispatchers..." style="resize:vertical">' + (o.dispatcher_notes || '') + '</textarea></div>' +
-        '<div class="form-group"><label>[[icon:receipt]] Notes for Driver</label><textarea id="editOrderDriverNotes" rows="2" placeholder="Driver-facing instructions..." style="resize:vertical">' + getOrderDriverNotes(o) + '</textarea></div>' +
+        '<div class="form-group"><label>[[icon:note]] Notes for Dispatchers</label><textarea id="editOrderNotes" rows="2" placeholder="Add notes visible to all dispatchers..." style="resize:vertical">' + escapeHtml(o.dispatcher_notes || '') + '</textarea></div>' +
+        '<div class="form-group"><label>[[icon:receipt]] Notes for Driver</label><textarea id="editOrderDriverNotes" rows="2" placeholder="Driver-facing instructions..." style="resize:vertical">' + escapeHtml(getOrderDriverNotes(o)) + '</textarea></div>' +
         '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="updateVehicle(' + orderId + ',' + tripId + ')">Save</button></div></div>';
       document.body.appendChild(m);
       
@@ -22240,8 +22254,8 @@
         '<div class="form-row" style="grid-template-columns:1fr 1fr 1fr;gap:12px"><div class="form-group" style="margin-bottom:0"><label>Cash Type</label><select id="splitCodType"><option value="COD"' + (orderSplitCashType === 'COD' ? ' selected' : '') + '>COD</option><option value="COP"' + (orderSplitCashType === 'COP' ? ' selected' : '') + '>COP</option><option value="LOCAL_COD"' + (orderSplitCashType === 'LOCAL_COD' ? ' selected' : '') + '>LOCAL_COD</option></select></div><div class="form-group" style="margin-bottom:0"><label>Cash Amount $</label><input type="number" id="splitCodAmount" value="' + orderSplitCashAmount + '" onchange="updateSplitBill()"></div><div class="form-group" style="margin-bottom:0"><label>Bill Amount $</label><input type="number" id="splitBillAmount" value="' + orderSplitBillAmount + '" readonly style="background:var(--bg-tertiary)"></div></div>' +
         '</div>' +
         '</div>' +
-        '<div class="form-group"><label>[[icon:note]] Notes for Dispatchers</label><textarea id="orderNotes" rows="2" placeholder="Internal notes for dispatch team..." style="resize:vertical">' + (o?.dispatcher_notes || '') + '</textarea></div>' +
-        '<div class="form-group"><label>[[icon:receipt]] Notes for Driver</label><textarea id="orderDriverNotes" rows="2" placeholder="Driver-facing instructions..." style="resize:vertical">' + getOrderDriverNotes(o) + '</textarea></div>' +
+        '<div class="form-group"><label>[[icon:note]] Notes for Dispatchers</label><textarea id="orderNotes" rows="2" placeholder="Internal notes for dispatch team..." style="resize:vertical">' + escapeHtml(o?.dispatcher_notes || '') + '</textarea></div>' +
+        '<div class="form-group"><label>[[icon:receipt]] Notes for Driver</label><textarea id="orderDriverNotes" rows="2" placeholder="Driver-facing instructions..." style="resize:vertical">' + escapeHtml(getOrderDriverNotes(o)) + '</textarea></div>' +
         '<div class="form-group"><label>Booked By</label>' +
         (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER'
           ? '<select id="orderModalDispatcher"><option value="">Select Dispatcher</option>' + appData.dispatchers.map(d => '<option value="' + d.id + '"' + ((o?.dispatcher_id === d.id || (!o && orderModalDispatcher && orderModalDispatcher.id === d.id)) ? ' selected' : '') + '>' + d.name + '</option>').join('') + '</select>'
@@ -23812,7 +23826,7 @@
         '</div>' +
         
         // Notes
-        '<div class="form-group" style="margin-top:16px"><label>Notes</label><textarea id="tNotes" rows="2" placeholder="Additional notes...">' + (t?.notes || '') + '</textarea></div>' +
+        '<div class="form-group" style="margin-top:16px"><label>Notes</label><textarea id="tNotes" rows="2" placeholder="Additional notes...">' + escapeHtml(t?.notes || '') + '</textarea></div>' +
         
         '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveTruck(' + id + ')">Save</button></div></div>';
       document.body.appendChild(m);
@@ -24117,7 +24131,7 @@
         '<div class="form-row"><div class="form-group"><label>Driver App Email</label><input type="email" id="ldEmail" value="' + (ld?.email || '') + '" placeholder="localdriver@email.com"></div><div class="form-group"><label>Status</label><select id="ldStatus"><option value="ACTIVE"' + ((String(ld?.status || 'ACTIVE').toUpperCase() === 'ACTIVE') ? ' selected' : '') + '>ACTIVE</option><option value="INACTIVE"' + ((String(ld?.status || '').toUpperCase() === 'INACTIVE') ? ' selected' : '') + '>INACTIVE</option></select></div></div>' +
         '<div class="form-group"><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="ldEnableAppAccess"' + (((ld?.app_access_enabled === true) || hasAuthLink) ? ' checked' : '') + '> Enable Driver App access</label><small style="color:var(--text-secondary)">When enabled, this local driver can sign in using email verification code.</small></div>' +
         '<div class="form-row"><div class="form-group"><label>Auth Link</label><div id="ldAuthLinkStatus" style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-darker);font-size:12px;color:' + authStatusColor + ';font-weight:600">' + authStatusText + '</div></div><div class="form-group"><label>Account Action</label><button type="button" class="btn btn-secondary" id="ldCreateAuthAccountBtn" onclick="createLocalDriverAuthFromModal(' + (id || 0) + ')"' + (canCreateAccountNow ? '' : ' disabled') + '>' + createAccountLabel + '</button><div id="ldCreateAuthAccountMeta" style="margin-top:8px;padding:10px 12px;border:1px dashed var(--border);border-radius:8px;font-size:12px;color:var(--text-secondary)">' + createAccountHint + '</div></div></div>' +
-        '<div class="form-group"><label>Notes</label><textarea id="ldNotes" rows="2" placeholder="Any notes...">' + (ld?.notes || '') + '</textarea></div>' +
+        '<div class="form-group"><label>Notes</label><textarea id="ldNotes" rows="2" placeholder="Any notes...">' + escapeHtml(ld?.notes || '') + '</textarea></div>' +
         '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveLocalDriver(' + id + ')">Save</button></div></div>';
       document.body.appendChild(m);
 
@@ -24366,7 +24380,7 @@
         '<div style="background:var(--dim-purple);padding:12px;border-radius:8px;margin-bottom:16px">' +
         '<strong>' + o.order_number + '</strong> - ' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model +
         '<br><span style="color:var(--purple)">' + (o.origin || '-') + ' → ' + (o.destination || '-') + '</span></div>' +
-        '<div class="form-group"><label>Note</label><textarea id="localNoteText" rows="4" placeholder="Add note about this vehicle..." style="resize:vertical;width:100%">' + (o.local_notes || '') + '</textarea></div>' +
+        '<div class="form-group"><label>Note</label><textarea id="localNoteText" rows="4" placeholder="Add note about this vehicle..." style="resize:vertical;width:100%">' + escapeHtml(o.local_notes || '') + '</textarea></div>' +
         '</div><div class="modal-footer">' +
         (o.local_notes ? '<button class="btn btn-danger" style="margin-right:auto" onclick="clearLocalNote(' + orderId + ')">Clear Note</button>' : '') +
         '<button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>' +
@@ -24606,7 +24620,7 @@
         '<div style="background:var(--dim-purple);padding:12px;border-radius:8px;margin-bottom:16px">' +
         '<strong>' + o.order_number + '</strong> - ' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model +
         '<br><span style="color:var(--purple)">' + (o.origin || '-') + ' → ' + (o.destination || '-') + '</span></div>' +
-        '<div class="form-group"><label>Note</label><textarea id="localNoteText" rows="4" placeholder="Add note about this vehicle..." style="resize:vertical;width:100%">' + (o.local_notes || '') + '</textarea></div>' +
+        '<div class="form-group"><label>Note</label><textarea id="localNoteText" rows="4" placeholder="Add note about this vehicle..." style="resize:vertical;width:100%">' + escapeHtml(o.local_notes || '') + '</textarea></div>' +
         '</div><div class="modal-footer">' +
         (o.local_notes ? '<button class="btn btn-danger" style="margin-right:auto" onclick="clearLocalNoteFromDriver(' + orderId + ',' + localDriverId + ')">Clear Note</button>' : '') +
         '<button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>' +
@@ -27114,7 +27128,7 @@
             getPriorityBadge(t.priority) +
             getStatusBadge(t.status) +
             '</div>' +
-            (t.description ? '<p style="color:var(--text-secondary);margin:0 0 8px 32px;font-size:14px">' + t.description + '</p>' : '') +
+            (t.description ? '<p style="color:var(--text-secondary);margin:0 0 8px 32px;font-size:14px">' + escapeHtml(t.description) + '</p>' : '') +
             '<div style="display:flex;gap:16px;margin-left:32px;font-size:13px;color:var(--text-secondary)">' +
             '<span>[[icon:calendar]] ' + (isOverdue(t.due_date, t.status) ? '<span style="color:var(--red);font-weight:600">OVERDUE: </span>' : '') + formatDate(t.due_date) + '</span>' +
             (assignee ? '<span>[[icon:user]] ' + assignee.name + '</span>' : '') +
@@ -27140,7 +27154,7 @@
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
       m.innerHTML = '<div class="modal" style="max-width:500px"><div class="modal-header"><h3>' + (t ? 'Edit Task' : 'New Task') + '</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body">' +
         '<div class="form-group"><label>Task Title *</label><input class="input" id="taskTitle" value="' + (t?.title || '') + '" placeholder="What needs to be done?"></div>' +
-        '<div class="form-group"><label>Description</label><textarea class="textarea" id="taskDesc" rows="3" placeholder="Additional details...">' + (t?.description || '') + '</textarea></div>' +
+        '<div class="form-group"><label>Description</label><textarea class="textarea" id="taskDesc" rows="3" placeholder="Additional details...">' + escapeHtml(t?.description || '') + '</textarea></div>' +
         '<div class="form-row"><div class="form-group"><label>Due Date *</label><input class="input" type="date" id="taskDue" value="' + (t?.due_date || today) + '"></div><div class="form-group"><label>Priority</label><select class="select" id="taskPriority"><option value="LOW"' + (t?.priority === 'LOW' ? ' selected' : '') + '>Low</option><option value="NORMAL"' + (!t || t?.priority === 'NORMAL' ? ' selected' : '') + '>Normal</option><option value="HIGH"' + (t?.priority === 'HIGH' ? ' selected' : '') + '>High</option><option value="URGENT"' + (t?.priority === 'URGENT' ? ' selected' : '') + '>[[icon:fire]] Urgent</option></select></div></div>' +
         '<div class="form-row"><div class="form-group"><label>Assign To</label><select class="select" id="taskAssignee"><option value="">Everyone / Unassigned</option>' + dispatcherOptions + '</select></div><div class="form-group"><label>Status</label><select class="select" id="taskStatus"><option value="PENDING"' + (!t || t?.status === 'PENDING' ? ' selected' : '') + '>Pending</option><option value="IN_PROGRESS"' + (t?.status === 'IN_PROGRESS' ? ' selected' : '') + '>In Progress</option><option value="COMPLETED"' + (t?.status === 'COMPLETED' ? ' selected' : '') + '>Completed</option></select></div></div>' +
         '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveTask(' + id + ')">Save Task</button></div></div>';
@@ -27447,7 +27461,7 @@
         tasks.map(t => {
           const isOverdue = t.next_due_date && t.next_due_date < today;
           const isDueSoon = t.next_due_date && !isOverdue && t.next_due_date <= new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-          return '<tr><td><strong>' + t.task_name + '</strong>' + (t.description ? '<br><span style="font-size:11px;color:var(--text-muted)">' + t.description + '</span>' : '') + '</td>' +
+          return '<tr><td><strong>' + escapeHtml(t.task_name) + '</strong>' + (t.description ? '<br><span style="font-size:11px;color:var(--text-muted)">' + escapeHtml(t.description) + '</span>' : '') + '</td>' +
             '<td><span class="badge badge-blue">' + (t.frequency || 'ANNUALLY') + '</span></td>' +
             '<td>' + (t.last_completed ? formatDate(t.last_completed) : '-') + '</td>' +
             '<td>' + (t.next_due_date ? formatDate(t.next_due_date) : '-') + '</td>' +
@@ -27460,7 +27474,10 @@
         '<div class="card card-flush"><div class="section-header"><span class="section-header-title">[[icon:note]] Standard Compliance Tasks Reference</span></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Task</th><th>Frequency</th><th>Action</th></tr></thead><tbody>' +
         defaultTasks.map(dt => {
           const exists = tasks.find(t => t.task_name === dt.name);
-          return '<tr><td><strong>' + dt.name + '</strong><br><span style="font-size:11px;color:var(--text-muted)">' + dt.description + '</span></td><td><span class="badge badge-blue">' + dt.frequency + '</span></td><td>' + (exists ? '<span class="badge badge-green">Added</span>' : '<button class="btn btn-secondary btn-sm" onclick="addDefaultComplianceTask(\'' + dt.name.replace(/'/g, "\\'") + '\',\'' + dt.frequency + '\',\'' + dt.description.replace(/'/g, "\\'") + '\')">+ Add</button>') + '</td></tr>';
+          // NOTE: HTML-context interpolations are escapeHtml'd. The onclick attribute uses
+          // the existing JS-string escape (.replace(/'/g, "\\'")) which is brittle — proper
+          // JS-string-then-HTML double-escape is deferred to P2 (safeHtml architecture).
+          return '<tr><td><strong>' + escapeHtml(dt.name) + '</strong><br><span style="font-size:11px;color:var(--text-muted)">' + escapeHtml(dt.description) + '</span></td><td><span class="badge badge-blue">' + escapeHtml(dt.frequency) + '</span></td><td>' + (exists ? '<span class="badge badge-green">Added</span>' : '<button class="btn btn-secondary btn-sm" onclick="addDefaultComplianceTask(\'' + dt.name.replace(/'/g, "\\'") + '\',\'' + dt.frequency + '\',\'' + dt.description.replace(/'/g, "\\'") + '\')">+ Add</button>') + '</td></tr>';
         }).join('') +
         '</tbody></table></div></div>';
     }
@@ -27855,7 +27872,7 @@
             else if (days <= 7) expStatus = '<span class="badge badge-amber">' + days + 'd</span>';
             else expStatus = formatDate(f.expiration_date);
           }
-          return '<tr><td><strong>' + f.file_name + '</strong>' + (f.notes ? '<br><span style="font-size:11px;color:var(--text-muted)">' + f.notes + '</span>' : '') + '</td><td>' + f.file_type.replace(/_/g, ' ') + '</td><td>' + expStatus + '</td><td><div class="actions"><button class="action-btn view" onclick="viewCompanyFile(' + f.id + ')">View</button><button class="action-btn delete" onclick="deleteCompanyFileFromFolder(' + f.id + ',\'' + folderName.replace(/'/g, "\\'") + '\')">Del</button></div></td></tr>';
+          return '<tr><td><strong>' + escapeHtml(f.file_name) + '</strong>' + (f.notes ? '<br><span style="font-size:11px;color:var(--text-muted)">' + escapeHtml(f.notes) + '</span>' : '') + '</td><td>' + escapeHtml(f.file_type.replace(/_/g, ' ')) + '</td><td>' + expStatus + '</td><td><div class="actions"><button class="action-btn view" onclick="viewCompanyFile(' + f.id + ')">View</button><button class="action-btn delete" onclick="deleteCompanyFileFromFolder(' + f.id + ',\'' + folderName.replace(/'/g, "\\'") + '\')">Del</button></div></td></tr>';
         }).join('') +
         '</tbody></table>') +
         '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Close</button></div></div>';
@@ -27985,7 +28002,7 @@
         
         '<div class="form-group"><label>Drug/Alcohol Test Result</label><select id="accDrug"><option value="">Select</option><option value="NOT_REQUIRED"' + (a?.drug_test_result === 'NOT_REQUIRED' ? ' selected' : '') + '>Not Required</option><option value="PENDING"' + (a?.drug_test_result === 'PENDING' ? ' selected' : '') + '>Pending</option><option value="NEGATIVE"' + (a?.drug_test_result === 'NEGATIVE' ? ' selected' : '') + '>Negative</option><option value="POSITIVE"' + (a?.drug_test_result === 'POSITIVE' ? ' selected' : '') + '>Positive</option></select></div>' +
         
-        '<div class="form-group"><label>Notes</label><textarea id="accNotes" rows="2" placeholder="Additional details...">' + (a?.notes || '') + '</textarea></div>' +
+        '<div class="form-group"><label>Notes</label><textarea id="accNotes" rows="2" placeholder="Additional details...">' + escapeHtml(a?.notes || '') + '</textarea></div>' +
         
         '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveAccident(' + (id || 'null') + ')">Save</button></div></div>';
       document.body.appendChild(m);
@@ -28292,7 +28309,7 @@
         
         '<div class="form-group"><label>Shop Name</label><input id="maintShop" value="' + (record?.shop_name || '') + '" placeholder="e.g., Love\'s Truck Care"></div>' +
         
-        '<div class="form-group"><label>Description / Work Performed</label><textarea id="maintDesc" rows="5" placeholder="Detailed list of all services performed, parts replaced, work done...">' + (record?.description || '') + '</textarea></div>' +
+        '<div class="form-group"><label>Description / Work Performed</label><textarea id="maintDesc" rows="5" placeholder="Detailed list of all services performed, parts replaced, work done...">' + escapeHtml(record?.description || '') + '</textarea></div>' +
         
         '<div class="form-row"><div class="form-group"><label>Parts Cost</label><input type="number" step="0.01" id="maintParts" value="' + (record?.parts_cost || '') + '" placeholder="0.00"></div><div class="form-group"><label>Labor Cost</label><input type="number" step="0.01" id="maintLabor" value="' + (record?.labor_cost || '') + '" placeholder="0.00"></div><div class="form-group"><label>Total Cost *</label><input type="number" step="0.01" id="maintTotal" value="' + (record?.total_cost || record?.cost || '') + '" placeholder="0.00"></div></div>' +
         
@@ -28986,7 +29003,7 @@
         '<div class="form-row"><div class="form-group"><label>Ticket Date</label><input type="date" id="ticketDate" value="' + (t?.ticket_date || today) + '"></div>' +
         '<div class="form-group"><label>Court Date</label><input type="date" id="ticketCourtDate" value="' + (t?.court_date || '') + '"></div></div>' +
         
-        '<div class="form-group"><label>Ticket Description</label><textarea id="ticketDescription" rows="2" placeholder="e.g., Speeding 15mph over limit, Logbook violation...">' + (t?.ticket_description || '') + '</textarea></div>' +
+        '<div class="form-group"><label>Ticket Description</label><textarea id="ticketDescription" rows="2" placeholder="e.g., Speeding 15mph over limit, Logbook violation...">' + escapeHtml(t?.ticket_description || '') + '</textarea></div>' +
         
         '<div class="form-group"><label>Attorney Info</label><input type="text" id="ticketAttorney" value="' + (t?.attorney_info || '') + '" placeholder="Attorney name, phone, or firm"></div>' +
         
@@ -29008,7 +29025,7 @@
         '<div class="form-row"><div class="form-group"><label>Fine Amount ($)</label><input type="number" id="ticketFine" value="' + (t?.fine_amount || '') + '" placeholder="0.00"></div>' +
         '<div class="form-group"><label>Points</label><input type="number" id="ticketPoints" value="' + (t?.points || '') + '" placeholder="0"></div></div>' +
         
-        '<div class="form-group"><label>Notes</label><textarea id="ticketNotes" rows="2" placeholder="Additional notes...">' + (t?.notes || '') + '</textarea></div>' +
+        '<div class="form-group"><label>Notes</label><textarea id="ticketNotes" rows="2" placeholder="Additional notes...">' + escapeHtml(t?.notes || '') + '</textarea></div>' +
         
         '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveTicket(' + (id || 'null') + ')">Save</button></div></div>';
       document.body.appendChild(m);
@@ -29090,14 +29107,14 @@
         '<option value="CRITICAL"' + (v?.severity === 'CRITICAL' ? ' selected' : '') + '>Critical</option>' +
         '</select></div><div class="form-group"><label>Location</label><input type="text" id="violationLocation" value="' + (v?.location || '') + '" placeholder="City, State"></div></div>' +
         
-        '<div class="form-group"><label>Description</label><textarea id="violationDescription" rows="2" placeholder="Detailed description of the violation...">' + (v?.description || '') + '</textarea></div>' +
+        '<div class="form-group"><label>Description</label><textarea id="violationDescription" rows="2" placeholder="Detailed description of the violation...">' + escapeHtml(v?.description || '') + '</textarea></div>' +
         
         '<div class="form-row"><div class="form-group"><label>Fine Amount ($)</label><input type="number" id="violationFine" value="' + (v?.fine_amount || '') + '" placeholder="0.00"></div>' +
         '<div class="form-group"><label>Points</label><input type="number" id="violationPoints" value="' + (v?.points || '') + '" placeholder="0"></div></div>' +
         
         '<div class="form-group"><label>Inspection Report #</label><input type="text" id="violationReportNum" value="' + (v?.report_number || '') + '" placeholder="DOT inspection report number"></div>' +
         
-        '<div class="form-group"><label>Notes</label><textarea id="violationNotes" rows="2" placeholder="Additional notes...">' + (v?.notes || '') + '</textarea></div>' +
+        '<div class="form-group"><label>Notes</label><textarea id="violationNotes" rows="2" placeholder="Additional notes...">' + escapeHtml(v?.notes || '') + '</textarea></div>' +
         
         '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveViolation(' + (id || 'null') + ')">Save</button></div></div>';
       document.body.appendChild(m);
@@ -29333,14 +29350,14 @@
         '<div class="form-group"><label>Status *</label><select name="status" required>' + statusOptions + '</select></div>' +
         '</div>' +
         '<div style="background:var(--dim-amber);padding:12px;border-radius:8px;margin-bottom:16px;font-size:13px"><strong>[[icon:lightbulb]] Fault Party:</strong> If DRIVER is at fault and claim is SETTLED, it will be tracked as a company expense or driver deduction.</div>' +
-        '<div class="form-group"><label>Description *</label><textarea name="description" rows="3" required placeholder="Describe the damage incident...">' + (claim ? claim.description || '' : '') + '</textarea></div>' +
+        '<div class="form-group"><label>Description *</label><textarea name="description" rows="3" required placeholder="Describe the damage incident...">' + escapeHtml(claim ? claim.description || '' : '') + '</textarea></div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
         '<div class="form-group"><label>Claim Amount ($) *</label><input type="number" name="claim_amount" step="0.01" value="' + (claim ? claim.claim_amount || '' : '') + '" required placeholder="0.00"></div>' +
         '<div class="form-group"><label>Settlement Amount ($)</label><input type="number" name="settlement_amount" step="0.01" value="' + (claim ? claim.settlement_amount || '' : '') + '" placeholder="If settled"></div>' +
         '</div>' +
         '<div class="form-group"><label>Insurance Claim Number</label><input type="text" name="insurance_claim_number" value="' + (claim ? claim.insurance_claim_number || '' : '') + '" placeholder="Insurance reference #"></div>' +
         '<div class="form-group"><label>Location of Incident</label><input type="text" name="incident_location" value="' + (claim ? claim.incident_location || '' : '') + '" placeholder="Address or location"></div>' +
-        '<div class="form-group"><label>Resolution Notes</label><textarea name="resolution_notes" rows="2" placeholder="Notes about claim resolution...">' + (claim ? claim.resolution_notes || '' : '') + '</textarea></div>' +
+        '<div class="form-group"><label>Resolution Notes</label><textarea name="resolution_notes" rows="2" placeholder="Notes about claim resolution...">' + escapeHtml(claim ? claim.resolution_notes || '' : '') + '</textarea></div>' +
         '</form>',
         '<button class="btn btn-secondary" onclick="closeModal(\'claim-modal\')">Cancel</button>' +
         '<button class="btn btn-primary" onclick="saveClaim(' + (claimId || 'null') + ')">' + (isEdit ? 'Update' : 'Create') + ' Claim</button>'
@@ -30331,14 +30348,14 @@
       } else {
         brokerStats.slice(0, 5).forEach(b => {
           const statusColor = b.overdue > 0 ? 'var(--danger)' : b.outstanding > 0 ? 'var(--warning)' : 'var(--success)';
-          html += '<tr style="cursor:pointer" onclick="openBrokerBillingDetail(\'' + escapeHtml(b.brokerName).replace(/'/g, "\\'") + '\')">';
+          html += '<tr style="cursor:pointer" onclick="openBrokerBillingDetail(\'' + escapeHtml(b.brokerName.replace(/'/g, "\\'")) + '\')">';
           html += '<td><strong>' + escapeHtml(b.brokerName) + '</strong><br><span style="font-size:12px;color:var(--text-muted)">' + b.unpaidOrders.length + ' outstanding</span></td>';
           html += '<td style="text-align:right;font-weight:600;color:' + statusColor + ';font-family:var(--font-mono)">' + formatMoney(b.outstanding) + '</td>';
           html += '<td style="text-align:right;font-family:var(--font-mono)">' + formatMoney(b.totalInvoiced) + '</td>';
           html += '<td style="text-align:right;color:var(--success);font-family:var(--font-mono)">' + formatMoney(b.totalPaid) + '</td>';
           html += '<td style="text-align:right;color:var(--danger);font-family:var(--font-mono)">' + formatMoney(b.overdue) + '</td>';
           html += '<td>' + renderMiniAgingBar(b.aging, b.outstanding) + '</td>';
-          html += '<td onclick="event.stopPropagation()"><button class="btn btn-sm btn-secondary" onclick="openBrokerBillingDetail(\'' + escapeHtml(b.brokerName).replace(/'/g, "\\'") + '\')">View</button></td>';
+          html += '<td onclick="event.stopPropagation()"><button class="btn btn-sm btn-secondary" onclick="openBrokerBillingDetail(\'' + escapeHtml(b.brokerName.replace(/'/g, "\\'")) + '\')">View</button></td>';
           html += '</tr>';
         });
       }
@@ -30419,7 +30436,7 @@
           const brokerRecord = (appData.brokers || []).find(br => br.id === b.brokerId || (br.name || '').toLowerCase() === b.brokerName.toLowerCase());
           const brokerTerms = brokerRecord?.payment_terms || 'NET30';
 
-          html += '<tr style="cursor:pointer" onclick="openBrokerBillingDetail(\'' + escapeHtml(b.brokerName).replace(/'/g, "\\'") + '\')">';
+          html += '<tr style="cursor:pointer" onclick="openBrokerBillingDetail(\'' + escapeHtml(b.brokerName.replace(/'/g, "\\'")) + '\')">';
           html += '<td><div style="font-weight:600">' + escapeHtml(b.brokerName) + statusBadge + '</div>';
           html += '<div style="font-size:12px;color:var(--text-muted)">' + b.unpaidOrders.length + ' outstanding, ' + b.paidCount + ' paid</div></td>';
           html += '<td style="text-align:center"><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:var(--bg-tertiary);color:var(--text-secondary);border:1px solid var(--border)">' + escapeHtml(brokerTerms) + '</span></td>';
@@ -30429,7 +30446,7 @@
           html += '<td style="text-align:right;color:var(--danger);font-family:var(--font-mono)">' + formatMoney(b.overdue) + '</td>';
           html += '<td>' + renderMiniAgingBar(b.aging, b.outstanding) + '</td>';
           html += '<td style="text-align:center">' + (b.avgDaysToPay !== null ? b.avgDaysToPay + 'd' : '-') + '</td>';
-          html += '<td onclick="event.stopPropagation()"><button class="btn btn-sm btn-primary" onclick="openBrokerBillingDetail(\'' + escapeHtml(b.brokerName).replace(/'/g, "\\'") + '\')">View</button></td>';
+          html += '<td onclick="event.stopPropagation()"><button class="btn btn-sm btn-primary" onclick="openBrokerBillingDetail(\'' + escapeHtml(b.brokerName.replace(/'/g, "\\'")) + '\')">View</button></td>';
           html += '</tr>';
         });
       }
@@ -39089,7 +39106,7 @@
         '<div class="form-row"><div class="form-group"><label>Category *</label><select id="vcCategory">' + catOptions + '</select></div>' +
         '<div class="form-group"><label>Truck (Optional)</label><select id="vcTruck"><option value="">-- No Truck --</option>' + truckOptions + '</select></div></div>' +
         '<div class="form-group"><label>Trip # (Optional)</label><input id="vcTrip" value="' + (vc?.trip_number || '') + '" placeholder="e.g., T-1234"></div>' +
-        '<div class="form-group"><label>Notes</label><textarea id="vcNotes" rows="2" placeholder="Additional details...">' + (vc?.notes || '') + '</textarea></div>' +
+        '<div class="form-group"><label>Notes</label><textarea id="vcNotes" rows="2" placeholder="Additional details...">' + escapeHtml(vc?.notes || '') + '</textarea></div>' +
         '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveVariableCost(' + id + ')">Save</button></div></div>';
       document.body.appendChild(m);
     }
@@ -40672,7 +40689,7 @@
         '</tbody></table></div></div>';
       } catch (error) {
         console.error('Profitability error:', error);
-        c.innerHTML = '<div class="header"><h2>[[icon:gem]] Profitability Dashboard</h2></div><div class="card" style="padding:40px;text-align:center"><p style="color:#ef4444">Error loading profitability data: ' + error.message + '</p><p style="color:var(--text-secondary);margin-top:10px">Check console for details.</p></div>';
+        c.innerHTML = '<div class="header"><h2>[[icon:gem]] Profitability Dashboard</h2></div><div class="card" style="padding:40px;text-align:center"><p style="color:#ef4444">Error loading profitability data: ' + escapeHtml(error.message) + '</p><p style="color:var(--text-secondary);margin-top:10px">Check console for details.</p></div>';
       }
     }
     
@@ -40976,7 +40993,7 @@
         resultDiv.innerHTML = '<div style="background:var(--dim-green);padding:12px;border-radius:8px;color:#059669">Test email sent to ' + currentUser.email + '! Check your inbox.</div>';
       } catch (error) {
         console.error('Email test failed:', error);
-        resultDiv.innerHTML = '<div style="background:var(--dim-red);padding:12px;border-radius:8px;color:#dc2626">Failed: ' + error.message + '</div>';
+        resultDiv.innerHTML = '<div style="background:var(--dim-red);padding:12px;border-radius:8px;color:#dc2626">Failed: ' + escapeHtml(error.message) + '</div>';
       }
     }
 
@@ -41943,7 +41960,7 @@
           resultDiv.innerHTML = `<div style="color:#f59e0b">[[icon:alert]] Response: ${data.status}</div>`;
         }
       } catch(e) {
-        resultDiv.innerHTML = '<div style="color:#ef4444">[[icon:x_circle]] Connection failed: ' + e.message + '</div>';
+        resultDiv.innerHTML = '<div style="color:#ef4444">[[icon:x_circle]] Connection failed: ' + escapeHtml(e.message) + '</div>';
       }
     }
 
@@ -42145,7 +42162,7 @@ function jsonResponse(data, status = 200) {
         }
       } catch (e) {
         if (proxyUrl) {
-          resultDiv.innerHTML = '<div style="background:var(--dim-red);padding:12px;border-radius:8px;color:#dc2626">[[icon:x]] Proxy error: ' + e.message + '. Check your proxy URL.</div>';
+          resultDiv.innerHTML = '<div style="background:var(--dim-red);padding:12px;border-radius:8px;color:#dc2626">[[icon:x]] Proxy error: ' + escapeHtml(e.message) + '. Check your proxy URL.</div>';
         } else {
           resultDiv.innerHTML = '<div style="background:var(--dim-red);padding:12px;border-radius:8px;color:#dc2626">[[icon:x]] CORS blocked. Please set up a proxy (see instructions below) or deploy to a server.</div>';
         }
@@ -42270,7 +42287,7 @@ function jsonResponse(data, status = 200) {
 
       } catch (err) {
         console.error('Error fetching Samsara mileage:', err);
-        statusDiv.innerHTML = '<div style="background:var(--dim-red);padding:12px;border-radius:8px;color:#dc2626">[[icon:x]] Error: ' + err.message + '</div>';
+        statusDiv.innerHTML = '<div style="background:var(--dim-red);padding:12px;border-radius:8px;color:#dc2626">[[icon:x]] Error: ' + escapeHtml(err.message) + '</div>';
       }
     }
 
@@ -46320,10 +46337,10 @@ function jsonResponse(data, status = 200) {
           resultDiv.innerHTML = '<div style="background:var(--dim-green);padding:12px;border-radius:8px;color:#059669">[[icon:check]] Connection successful! API key is valid.</div>';
         } else {
           const error = await response.json();
-          resultDiv.innerHTML = '<div style="background:var(--dim-red);padding:12px;border-radius:8px;color:#dc2626">[[icon:x]] Error: ' + (error.error?.message || 'Invalid API key') + '</div>';
+          resultDiv.innerHTML = '<div style="background:var(--dim-red);padding:12px;border-radius:8px;color:#dc2626">[[icon:x]] Error: ' + escapeHtml(error.error?.message || 'Invalid API key') + '</div>';
         }
       } catch (e) {
-        resultDiv.innerHTML = '<div style="background:var(--dim-red);padding:12px;border-radius:8px;color:#dc2626">[[icon:x]] Connection failed: ' + e.message + '</div>';
+        resultDiv.innerHTML = '<div style="background:var(--dim-red);padding:12px;border-radius:8px;color:#dc2626">[[icon:x]] Connection failed: ' + escapeHtml(e.message) + '</div>';
       }
     }
 
@@ -47763,7 +47780,7 @@ function jsonResponse(data, status = 200) {
               else if (g.type === 'trucks') current = fs.activeTrucks;
               else if (g.type === 'margin') current = fs.profitMargin;
               const pct = g.target > 0 ? Math.min((current / g.target) * 100, 100) : 0;
-              return '<div class="goal-card"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px"><div><div style="font-weight:600">' + (g.icon||'[[icon:target]]') + ' ' + g.name + '</div>' + (g.description ? '<div style="font-size:12px;color:var(--text-muted)">' + g.description + '</div>' : '') + '</div><button class="btn btn-secondary btn-sm" onclick="deleteGoal(' + i + ')">×</button></div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>' + formatMoney(current) + ' / ' + formatMoney(g.target) + '</span><span style="color:' + (pct >= 100 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#64748b') + '">' + pct.toFixed(0) + '%</span></div><div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%;background:' + (pct >= 100 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#3b82f6') + '"></div></div>' + (pct >= 100 ? '<div style="margin-top:8px;font-size:12px;color:#22c55e">[[icon:party]] Goal achieved!</div>' : '') + '</div>';
+              return '<div class="goal-card"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px"><div><div style="font-weight:600">' + escapeHtml(g.icon||'[[icon:target]]') + ' ' + escapeHtml(g.name) + '</div>' + (g.description ? '<div style="font-size:12px;color:var(--text-muted)">' + escapeHtml(g.description) + '</div>' : '') + '</div><button class="btn btn-secondary btn-sm" onclick="deleteGoal(' + i + ')">×</button></div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>' + formatMoney(current) + ' / ' + formatMoney(g.target) + '</span><span style="color:' + (pct >= 100 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#64748b') + '">' + pct.toFixed(0) + '%</span></div><div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%;background:' + (pct >= 100 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#3b82f6') + '"></div></div>' + (pct >= 100 ? '<div style="margin-top:8px;font-size:12px;color:#22c55e">[[icon:party]] Goal achieved!</div>' : '') + '</div>';
             }).join('')}
           </div>
         </div>
@@ -48279,8 +48296,8 @@ function jsonResponse(data, status = 200) {
                 <div><span style="color:var(--text-muted);font-size:12px">Expires</span><div style="font-weight:500">${app.license_expires || 'N/A'}</div></div>
                 <div><span style="color:var(--text-muted);font-size:12px">Endorsements</span><div style="font-weight:500">${endorsements}</div></div>
               </div>
-              ${app.license_front_url ? `<div style="margin-top:16px"><a href="${app.license_front_url}" target="_blank" class="btn btn-secondary" style="font-size:12px">[[icon:file]] View License Front</a></div>` : ''}
-              ${app.license_back_url ? `<a href="${app.license_back_url}" target="_blank" class="btn btn-secondary" style="font-size:12px;margin-left:8px">[[icon:file]] View License Back</a>` : ''}
+              ${app.license_front_url ? `<div style="margin-top:16px"><a href="${escapeHtml(escapeUrl(app.license_front_url))}" target="_blank" class="btn btn-secondary" style="font-size:12px">[[icon:file]] View License Front</a></div>` : ''}
+              ${app.license_back_url ? `<a href="${escapeHtml(escapeUrl(app.license_back_url))}" target="_blank" class="btn btn-secondary" style="font-size:12px;margin-left:8px">[[icon:file]] View License Back</a>` : ''}
             </div>
 
             <!-- Medical Card -->
@@ -48291,7 +48308,7 @@ function jsonResponse(data, status = 200) {
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
                 <div><span style="color:var(--text-muted);font-size:12px">Expires</span><div style="font-weight:500">${app.medical_expires || 'N/A'}</div></div>
               </div>
-              ${app.medical_card_url ? `<div style="margin-top:16px"><a href="${app.medical_card_url}" target="_blank" class="btn btn-secondary" style="font-size:12px">[[icon:file]] View Medical Card</a></div>` : ''}
+              ${app.medical_card_url ? `<div style="margin-top:16px"><a href="${escapeHtml(escapeUrl(app.medical_card_url))}" target="_blank" class="btn btn-secondary" style="font-size:12px">[[icon:file]] View Medical Card</a></div>` : ''}
             </div>
 
             <!-- Drug & Alcohol -->
@@ -48364,7 +48381,7 @@ function jsonResponse(data, status = 200) {
                   `).join('')}
                 </div>
               `}
-              ${app.employment_gaps ? `<div style="margin-top:12px;padding:12px;border-radius:8px;background:#fef3c7"><strong>Employment Gaps Explained:</strong> ${app.employment_gaps}</div>` : ''}
+              ${app.employment_gaps ? `<div style="margin-top:12px;padding:12px;border-radius:8px;background:#fef3c7"><strong>Employment Gaps Explained:</strong> ${escapeHtml(app.employment_gaps)}</div>` : ''}
             </div>
 
             <!-- Signatures -->

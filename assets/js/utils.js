@@ -95,6 +95,37 @@ function sanitize(text) {
   return escapeHtml(text);
 }
 
+/**
+ * Validate a URL for safe use in href/src attributes by whitelisting protocols.
+ * Allows: https:, http:, mailto:, tel:, relative URLs (starting with / or #),
+ * and data:image/ (used for inspection photo previews).
+ * Rejects: javascript:, vbscript:, generic data: (non-image), and any other
+ * scheme. Returns '#' for rejected, null, or undefined input.
+ *
+ * Note: this is protocol validation only — it does NOT URL-encode the value.
+ * If the URL is interpolated into HTML attribute context, also wrap with
+ * escapeHtml() (e.g. `href="${escapeHtml(escapeUrl(url))}"`).
+ *
+ * @param {string} url - URL to validate
+ * @returns {string} Original URL if safe, otherwise '#'
+ */
+function escapeUrl(url) {
+  if (url === null || url === undefined) return '#';
+  const str = String(url).trim();
+  if (str === '') return '#';
+  // Relative URLs (path or fragment) are safe
+  if (str.startsWith('/') || str.startsWith('#')) return str;
+  // data:image/ subset is allowed (inspection photo previews)
+  if (/^data:image\//i.test(str)) return str;
+  // Whitelist explicit safe protocols
+  if (/^https:\/\//i.test(str)) return str;
+  if (/^http:\/\//i.test(str)) return str;
+  if (/^mailto:/i.test(str)) return str;
+  if (/^tel:/i.test(str)) return str;
+  // Anything else (javascript:, vbscript:, generic data:, etc.) is rejected
+  return '#';
+}
+
 // ============ DEBOUNCE UTILITY ============
 
 /**
