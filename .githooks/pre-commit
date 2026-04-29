@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Block edits to Supabase migration files that are already committed to main.
+#
+# Migrations are append-only by convention: once shipped, edit history would
+# silently diverge from production DB state. New work goes in a NEW migration.
+#
+# This hook:
+#   - Allows ADDING new migration files (status = A)
+#   - Allows DELETING migration files only via explicit commit message
+#   - BLOCKS modifying or deleting any migration file already tracked in HEAD
+#
+# Activate: git config --local core.hooksPath .githooks
+# (also documented in CLAUDE.md and the README; see "Pre-commit hook" section)
+
+set -euo pipefail
+
+violations=()
+
+while IFS=$'\t' read -r status path; do
+  case "$status" in
+    M*|D*)
+      # Modified or Deleted. Allow only if file is NEW in this commit (not
+      # tracked in HEAD).
+      if git ls-files --error-unmatch "$path" >/dev/null 2>&1; then
+        violations+=("$path ($status)")
+      fi
+      ;;
+  esac
+done < <(git diff --cached --name-status --diff-filter=MD -- 'supabase/migrations/*.sql')
+
+if [[ ${#violations[@]} -gt 0 ]]; then
+  cat >&2 <<EOF
+✗ Pre-commit blocked: do not edit committed migrations.
+
+The following migration files are already tracked in HEAD and cannot be
+modified or deleted:
+
+$(printf '  %s\n' "${violations[@]}")
+
+If the existing migration is wrong, write a NEW migration that fixes
+forward (e.g. ALTER, DROP, RENAME). If you must absolutely override this
+hook, run: git commit --no-verify   (and document why in the commit msg).
+EOF
+  exit 1
+fi
+
+exit 0
