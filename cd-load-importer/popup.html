@@ -378,7 +378,19 @@
 
     <div id="sessionStatus" style="font-size:11px;color:#64748b;margin:6px 0 12px 0;"></div>
 
-    <div class="form-group">
+    <!-- Auto-resolved dispatcher row — shown when signed in AND a
+         dispatcher record was found via current_user_dispatcher RPC. -->
+    <div class="form-group" id="autoDispatcherRow" style="display:none;">
+      <label>Dispatcher</label>
+      <div style="display:flex;align-items:center;gap:8px;padding:9px 12px;border:1px solid rgba(16,185,129,0.3);border-radius:8px;background:rgba(16,185,129,0.08);color:#e2e8f0;font-size:13px;">
+        <span style="flex:1;">Importing as <strong id="autoDispatcherLabel">…</strong></span>
+        <button class="btn btn-secondary" id="signOutBtn" style="padding:4px 10px;font-size:11px;background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:#fca5a5;">Sign out</button>
+      </div>
+    </div>
+
+    <!-- Manual dispatcher dropdown — fallback for non-signed-in or
+         non-staff users (no dispatcher record). -->
+    <div class="form-group" id="manualDispatcherRow">
       <label for="dispatcherId">Dispatcher</label>
       <select id="dispatcherId" style="width:100%;padding:9px 12px;border:1px solid rgba(255,255,255,0.08);border-radius:8px;background:rgba(255,255,255,0.03);color:#e2e8f0;font-size:13px;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2364748b%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 12px center;cursor:pointer;">
         <option value="">Loading dispatchers...</option>

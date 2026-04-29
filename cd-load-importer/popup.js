@@ -10,12 +10,70 @@ const userPasswordInput = document.getElementById('userPassword');
 const loginBtn = document.getElementById('loginBtn');
 const sessionStatusEl = document.getElementById('sessionStatus');
 const dispatcherSelect = document.getElementById('dispatcherId');
+const autoDispatcherRow = document.getElementById('autoDispatcherRow');
+const autoDispatcherLabel = document.getElementById('autoDispatcherLabel');
+const manualDispatcherRow = document.getElementById('manualDispatcherRow');
+const signOutBtn = document.getElementById('signOutBtn');
 const saveBtn = document.getElementById('saveBtn');
 const testBtn = document.getElementById('testBtn');
 const statusIcon = document.getElementById('statusIcon');
 const statusTitle = document.getElementById('statusTitle');
 const statusMessage = document.getElementById('statusMessage');
 const toast = document.getElementById('toast');
+
+// Toggle which dispatcher UI row is visible based on whether the user is
+// signed in AND we have an auto-resolved dispatcher.
+function applyDispatcherUiMode(autoDispatcherName, autoDispatcherCode) {
+  if (autoDispatcherName) {
+    autoDispatcherLabel.textContent = autoDispatcherName + (autoDispatcherCode ? ' (' + autoDispatcherCode + ')' : '');
+    autoDispatcherRow.style.display = '';
+    manualDispatcherRow.style.display = 'none';
+  } else {
+    autoDispatcherRow.style.display = 'none';
+    manualDispatcherRow.style.display = '';
+  }
+}
+
+// Resolve the signed-in user's dispatcher row via the SECURITY DEFINER RPC.
+// Persists dispatcherId + dispatcherName to chrome.storage.sync. Returns
+// the resolved object {id, name, code} or null.
+async function resolveCurrentUserDispatcher(url, key, accessToken) {
+  if (!accessToken) return null;
+  try {
+    const resp = await fetch(url + '/rest/v1/rpc/current_user_dispatcher', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': key,
+        'Authorization': 'Bearer ' + accessToken
+      },
+      body: '{}'
+    });
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    if (!data || typeof data !== 'object' || !data.id) return null;
+    await chrome.storage.sync.set({
+      dispatcherId: data.id,
+      dispatcherName: data.name || '',
+      dispatcherCode: data.code || ''
+    });
+    return data;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function signOut() {
+  await chrome.storage.sync.remove([
+    'userAccessToken', 'userRefreshToken', 'userTokenExpiresAt',
+    'dispatcherId', 'dispatcherName', 'dispatcherCode'
+  ]);
+  applyDispatcherUiMode(null);
+  renderSessionStatus({});
+  showToast('Signed out', 'success');
+  // Reload the manual dispatcher dropdown so it's usable as a fallback.
+  await loadDispatchers('');
+}
 
 // Load dispatchers into dropdown
 async function loadDispatchers(savedId) {
@@ -40,13 +98,37 @@ async function loadDispatchers(savedId) {
 async function loadSettings() {
   const result = await chrome.storage.sync.get([
     'supabaseUrl', 'supabaseKey', 'dispatcherId', 'connected',
-    'userEmail', 'userAccessToken', 'userRefreshToken', 'userTokenExpiresAt'
+    'userEmail', 'userAccessToken', 'userRefreshToken', 'userTokenExpiresAt',
+    'dispatcherName', 'dispatcherCode'
   ]);
 
   supabaseUrlInput.value = result.supabaseUrl || DEFAULT_SUPABASE_URL;
   supabaseKeyInput.value = result.supabaseKey || '';
   userEmailInput.value = result.userEmail || '';
   renderSessionStatus(result);
+
+  // If signed in AND we have a stored auto-dispatcher, render the auto-row
+  // immediately (no network needed). If signed in but no stored dispatcher,
+  // resolve via RPC (handles upgrade case where the user signed in before
+  // this feature shipped).
+  if (result.userAccessToken) {
+    if (result.dispatcherId && result.dispatcherName) {
+      applyDispatcherUiMode(result.dispatcherName, result.dispatcherCode);
+    } else {
+      const resolved = await resolveCurrentUserDispatcher(
+        supabaseUrlInput.value.trim(),
+        supabaseKeyInput.value.trim(),
+        result.userAccessToken
+      );
+      if (resolved) {
+        applyDispatcherUiMode(resolved.name, resolved.code);
+      } else {
+        applyDispatcherUiMode(null);
+      }
+    }
+  } else {
+    applyDispatcherUiMode(null);
+  }
 
   if (result.connected) {
     updateStatus('connected');
@@ -231,7 +313,17 @@ async function signIn() {
       userTokenExpiresAt: expiresAt
     });
 
-    await loadDispatchers(dispatcherSelect.value || '');
+    // Auto-resolve the signed-in user's dispatcher record so imports
+    // are attributed to them automatically — no manual dropdown.
+    const resolved = await resolveCurrentUserDispatcher(url, key, data.access_token);
+    if (resolved) {
+      applyDispatcherUiMode(resolved.name, resolved.code);
+    } else {
+      // Signed-in user without a dispatcher record (e.g. dealer or admin
+      // with no dispatcher row). Fall back to the manual dropdown.
+      applyDispatcherUiMode(null);
+      await loadDispatchers(dispatcherSelect.value || '');
+    }
     updateStatus('configured');
   } catch (error) {
     showToast('Sign-in failed: ' + error.message, 'error');
@@ -290,6 +382,7 @@ async function loadRecentImports() {
 saveBtn.addEventListener('click', saveSettings);
 testBtn.addEventListener('click', testConnection);
 loginBtn.addEventListener('click', signIn);
+if (signOutBtn) signOutBtn.addEventListener('click', signOut);
 
 // Initialize
 loadSettings();
