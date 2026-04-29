@@ -14623,7 +14623,10 @@
         });
 
         // Insert into database
-        const { data, error } = await sb.from('driver_applications').insert([applicationData]).select();
+        // Note: no .select() chain — RLS now restricts SELECT to TMS staff,
+        // so asking PostgREST to return the inserted row would fail. Public
+        // form only needs success/error.
+        const { error } = await sb.from('driver_applications').insert([applicationData]);
 
         if (error) throw error;
 
