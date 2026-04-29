@@ -7,6 +7,77 @@ const log = (...args) => DEBUG && console.log('[CD Importer BG]', ...args);
 // Default Supabase config (can be overridden in settings)
 const DEFAULT_SUPABASE_URL = 'https://yrrczhlzulwvdqjwvhtu.supabase.co';
 
+// Refresh-token-in-flight guard — multiple parallel API calls hitting 401
+// must not race to refresh.
+let refreshInFlight = null;
+
+// Refresh the user's access_token using the stored refresh_token. Updates
+// chrome.storage.sync. Returns the new access_token, or throws if refresh
+// fails (which means the user must sign in again from the popup).
+async function refreshUserSession(config) {
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = (async () => {
+    if (!config.refreshToken) {
+      throw new Error('Not signed in. Open extension popup and sign in to TMS.');
+    }
+    const resp = await fetch(config.url + '/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': config.key },
+      body: JSON.stringify({ refresh_token: config.refreshToken })
+    });
+    if (!resp.ok) {
+      await chrome.storage.sync.remove([
+        'userAccessToken', 'userRefreshToken', 'userTokenExpiresAt'
+      ]);
+      throw new Error('Session expired. Sign in again from the extension popup.');
+    }
+    const data = await resp.json();
+    const expiresAt = Math.floor(Date.now() / 1000) + (data.expires_in || 3600);
+    await chrome.storage.sync.set({
+      userAccessToken: data.access_token,
+      userRefreshToken: data.refresh_token,
+      userTokenExpiresAt: expiresAt
+    });
+    return data.access_token;
+  })();
+  try { return await refreshInFlight; } finally { refreshInFlight = null; }
+}
+
+// Build authenticated request headers. The user JWT goes in Authorization;
+// anon key still goes in `apikey` (Supabase REST requires it). Falls back
+// to anon Bearer when no session exists, so testConnection surfaces a
+// clear "sign in" error rather than silently returning [].
+async function buildAuthHeaders(config, extra) {
+  let bearer = config.accessToken;
+  if (bearer && config.expiresAt && (config.expiresAt * 1000 - Date.now()) < 60000) {
+    try { bearer = await refreshUserSession(config); } catch (e) { log('Pre-refresh failed:', e.message); }
+  }
+  const headers = {
+    'apikey': config.key,
+    'Authorization': 'Bearer ' + (bearer || config.key)
+  };
+  if (extra) Object.assign(headers, extra);
+  return headers;
+}
+
+// Authenticated fetch with one auto-retry on 401 after a refresh attempt.
+async function authedFetch(config, url, init) {
+  init = init || {};
+  init.headers = await buildAuthHeaders(config, init.headers);
+  let resp = await fetch(url, init);
+  if (resp.status === 401 && config.refreshToken) {
+    try {
+      await refreshUserSession(config);
+      const fresh = await getSupabaseConfig();
+      init.headers = await buildAuthHeaders(fresh, init.headers);
+      resp = await fetch(url, init);
+    } catch (e) {
+      log('401 refresh-retry failed:', e.message);
+    }
+  }
+  return resp;
+}
+
 // Listen for messages from content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'importLoad') {
@@ -45,13 +116,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Get Supabase config from storage
+// Get Supabase config from storage. Includes the user's session tokens so
+// authenticated requests can use the access_token (RLS now requires it for
+// all reads/writes on protected tables — anon-only auth returns []/403).
 async function getSupabaseConfig() {
-  const result = await chrome.storage.sync.get(['supabaseUrl', 'supabaseKey', 'dispatcherId']);
+  const result = await chrome.storage.sync.get([
+    'supabaseUrl', 'supabaseKey', 'dispatcherId',
+    'userAccessToken', 'userRefreshToken', 'userTokenExpiresAt'
+  ]);
   return {
     url: result.supabaseUrl || DEFAULT_SUPABASE_URL,
     key: result.supabaseKey || '',
-    dispatcherId: result.dispatcherId ? parseInt(result.dispatcherId, 10) : null
+    dispatcherId: result.dispatcherId ? parseInt(result.dispatcherId, 10) : null,
+    accessToken: result.userAccessToken || '',
+    refreshToken: result.userRefreshToken || '',
+    expiresAt: result.userTokenExpiresAt || 0
   };
 }
 
@@ -69,7 +148,7 @@ async function handleGetTrips() {
   const statusFilter = 'status=not.in.(COMPLETED,CANCELLED)';
   const headers = {
     'apikey': config.key,
-    'Authorization': `Bearer ${config.key}`
+    'Authorization': 'Bearer ' + (config.accessToken || config.key)
   };
 
   // Fetch trips (simple query, no joins — most reliable)
@@ -125,7 +204,7 @@ async function handleGetDispatchers() {
 
   const response = await fetch(
     `${config.url}/rest/v1/dispatchers?select=id,name,code,email,user_id&order=name.asc`,
-    { headers: { 'apikey': config.key, 'Authorization': `Bearer ${config.key}` } }
+    { headers: { 'apikey': config.key, 'Authorization': 'Bearer ' + (config.accessToken || config.key) } }
   );
 
   if (!response.ok) {
@@ -143,7 +222,7 @@ async function handleGetDispatchers() {
 async function resolveOrCreateBroker(brokerName, brokerDetails, config) {
   if (!brokerName) return { brokerId: null, brokerName: null };
 
-  const headers = { 'apikey': config.key, 'Authorization': `Bearer ${config.key}` };
+  const headers = { 'apikey': config.key, 'Authorization': 'Bearer ' + (config.accessToken || config.key) };
   const trimmedName = brokerName.trim();
 
   // Helper: enrich existing broker with missing fields
@@ -213,7 +292,7 @@ async function resolveOrCreateBroker(brokerName, brokerDetails, config) {
       headers: {
         'Content-Type': 'application/json',
         'apikey': config.key,
-        'Authorization': `Bearer ${config.key}`,
+        'Authorization': 'Bearer ' + (config.accessToken || config.key),
         'Prefer': 'return=representation'
       },
       body: JSON.stringify(createBody)
@@ -334,7 +413,7 @@ async function handleImportLoad(loadData) {
     const checkResponse = await fetch(checkUrl, {
       headers: {
         'apikey': config.key,
-        'Authorization': `Bearer ${config.key}`
+        'Authorization': 'Bearer ' + (config.accessToken || config.key)
       }
     });
     if (checkResponse.ok) {
@@ -351,7 +430,7 @@ async function handleImportLoad(loadData) {
     headers: {
       'Content-Type': 'application/json',
       'apikey': config.key,
-      'Authorization': `Bearer ${config.key}`,
+      'Authorization': 'Bearer ' + (config.accessToken || config.key),
       'Prefer': 'return=representation'
     },
     body: JSON.stringify(orderData)
@@ -402,7 +481,7 @@ async function testSupabaseConnection() {
   const response = await fetch(`${config.url}/rest/v1/orders?select=id&limit=1`, {
     headers: {
       'apikey': config.key,
-      'Authorization': `Bearer ${config.key}`
+      'Authorization': 'Bearer ' + (config.accessToken || config.key)
     }
   });
 

@@ -5,6 +5,10 @@ const DEFAULT_SUPABASE_URL = 'https://yrrczhlzulwvdqjwvhtu.supabase.co';
 // DOM elements
 const supabaseUrlInput = document.getElementById('supabaseUrl');
 const supabaseKeyInput = document.getElementById('supabaseKey');
+const userEmailInput = document.getElementById('userEmail');
+const userPasswordInput = document.getElementById('userPassword');
+const loginBtn = document.getElementById('loginBtn');
+const sessionStatusEl = document.getElementById('sessionStatus');
 const dispatcherSelect = document.getElementById('dispatcherId');
 const saveBtn = document.getElementById('saveBtn');
 const testBtn = document.getElementById('testBtn');
@@ -34,10 +38,15 @@ async function loadDispatchers(savedId) {
 
 // Load saved settings
 async function loadSettings() {
-  const result = await chrome.storage.sync.get(['supabaseUrl', 'supabaseKey', 'dispatcherId', 'connected']);
+  const result = await chrome.storage.sync.get([
+    'supabaseUrl', 'supabaseKey', 'dispatcherId', 'connected',
+    'userEmail', 'userAccessToken', 'userRefreshToken', 'userTokenExpiresAt'
+  ]);
 
   supabaseUrlInput.value = result.supabaseUrl || DEFAULT_SUPABASE_URL;
   supabaseKeyInput.value = result.supabaseKey || '';
+  userEmailInput.value = result.userEmail || '';
+  renderSessionStatus(result);
 
   if (result.connected) {
     updateStatus('connected');
@@ -151,6 +160,87 @@ function updateStatus(status) {
   }
 }
 
+function renderSessionStatus(result) {
+  if (result.userAccessToken && result.userTokenExpiresAt) {
+    const remaining = (result.userTokenExpiresAt * 1000) - Date.now();
+    if (remaining > 0) {
+      const mins = Math.floor(remaining / 60000);
+      sessionStatusEl.textContent = 'Signed in as ' + (result.userEmail || 'unknown') +
+        ' — expires in ' + mins + ' min (auto-refresh on use)';
+      sessionStatusEl.style.color = '#10b981';
+    } else {
+      sessionStatusEl.textContent = 'Signed in as ' + (result.userEmail || 'unknown') +
+        ' — token expired, will refresh on next request';
+      sessionStatusEl.style.color = '#f59e0b';
+    }
+  } else {
+    sessionStatusEl.textContent = 'Not signed in. RLS now blocks anon writes — sign in to use the importer.';
+    sessionStatusEl.style.color = '#ef4444';
+  }
+}
+
+// Sign in to TMS via Supabase Auth REST endpoint. Stores access_token and
+// refresh_token in chrome.storage.sync; background.js refreshes on 401.
+async function signIn() {
+  const url = supabaseUrlInput.value.trim();
+  const key = supabaseKeyInput.value.trim();
+  const email = userEmailInput.value.trim();
+  const password = userPasswordInput.value;
+
+  if (!url || !key) { showToast('Enter Supabase URL and API key first', 'error'); return; }
+  if (!email || !password) { showToast('Enter your TMS email and password', 'error'); return; }
+
+  loginBtn.disabled = true;
+  loginBtn.textContent = 'Signing in…';
+
+  try {
+    const response = await fetch(url + '/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': key },
+      body: JSON.stringify({ email: email, password: password })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let msg = 'Sign-in failed';
+      try { msg = JSON.parse(errorText).error_description || msg; } catch (_) {}
+      throw new Error(msg);
+    }
+
+    const data = await response.json();
+    if (!data.access_token || !data.refresh_token) {
+      throw new Error('Auth response missing tokens');
+    }
+
+    const expiresAt = Math.floor(Date.now() / 1000) + (data.expires_in || 3600);
+
+    await chrome.storage.sync.set({
+      userEmail: email,
+      userAccessToken: data.access_token,
+      userRefreshToken: data.refresh_token,
+      userTokenExpiresAt: expiresAt,
+      supabaseUrl: url,
+      supabaseKey: key
+    });
+
+    userPasswordInput.value = '';
+    showToast('Signed in successfully', 'success');
+    renderSessionStatus({
+      userEmail: email,
+      userAccessToken: data.access_token,
+      userTokenExpiresAt: expiresAt
+    });
+
+    await loadDispatchers(dispatcherSelect.value || '');
+    updateStatus('configured');
+  } catch (error) {
+    showToast('Sign-in failed: ' + error.message, 'error');
+  } finally {
+    loginBtn.disabled = false;
+    loginBtn.textContent = '\u{1F511} Sign in to TMS';
+  }
+}
+
 // Show toast notification
 function showToast(message, type = 'success') {
   toast.textContent = message;
@@ -199,6 +289,7 @@ async function loadRecentImports() {
 // Event listeners
 saveBtn.addEventListener('click', saveSettings);
 testBtn.addEventListener('click', testConnection);
+loginBtn.addEventListener('click', signIn);
 
 // Initialize
 loadSettings();

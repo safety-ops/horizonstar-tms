@@ -358,9 +358,25 @@
     </div>
 
     <div class="form-group">
-      <label for="supabaseKey">API Key</label>
+      <label for="supabaseKey">API Key (anon)</label>
       <input type="password" id="supabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI..." />
     </div>
+
+    <div class="form-group">
+      <label for="userEmail">TMS Email</label>
+      <input type="email" id="userEmail" placeholder="you@horizonstar.com" />
+    </div>
+
+    <div class="form-group">
+      <label for="userPassword">TMS Password</label>
+      <input type="password" id="userPassword" placeholder="••••••••" />
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="loginBtn" style="width:100%">&#x1F511; Sign in to TMS</button>
+    </div>
+
+    <div id="sessionStatus" style="font-size:11px;color:#64748b;margin:6px 0 12px 0;"></div>
 
     <div class="form-group">
       <label for="dispatcherId">Dispatcher</label>
