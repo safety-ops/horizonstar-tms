@@ -19692,8 +19692,15 @@
         const tripEndText = (isTripClosed && trip.period_end_date) ? formatDate(trip.period_end_date) : '-';
         const truckNum = selectedTruck ? selectedTruck.truck_number : '-';
 
+        // Miles badge: show miles_driven when available, with mileage_error indicator
+        const milesDriven = trip.miles_driven != null ? parseFloat(trip.miles_driven) : null;
+        const mileageErrorVal = trip.mileage_error ? escapeHtml(String(trip.mileage_error)) : null;
+        const milesBadgeHtml = milesDriven != null
+          ? '<span class="badge badge-blue" style="font-family:var(--font-mono);margin-left:6px" title="Mileage captured via ' + (trip.mileage_source ? escapeHtml(trip.mileage_source) : 'Samsara') + '">' + milesDriven.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' mi' + (mileageErrorVal ? ' ⚠️' : '') + '</span>'
+          : (mileageErrorVal ? '<span class="badge" style="background:var(--amber-dim);color:var(--warning);border:1px solid var(--warning-border);margin-left:6px" title="Mileage error: ' + mileageErrorVal + '">⚠️ mileage error</span>' : '');
+
         // Desktop table row
-        tripRows += '<tr><td><strong>' + trip.trip_number + '</strong></td><td>' + formatDate(trip.trip_date) + '</td><td>' + tripStartText + '</td><td>' + tripEndText + '</td><td>' + orders.length + '</td><td>' + driverName + '</td><td class="money" style="font-family:var(--font-mono)">' + formatMoney(f.loadRevenue) + '</td><td><span class="badge ' + getBadge(trip.status) + '">' + trip.status + '</span></td><td class="sticky-col"><div class="actions">' + completeBtn + '<button class="action-btn view" onclick="viewTrip(' + trip.id + ')">View</button><button class="action-btn edit" onclick="openTripModal(' + trip.id + ')">Edit</button>' + (currentUser && currentUser.role === 'ADMIN' ? '<button class="action-btn delete" onclick="deleteTrip(' + trip.id + ')">Del</button>' : '') + '</div></td></tr>';
+        tripRows += '<tr><td><strong>' + trip.trip_number + '</strong></td><td>' + formatDate(trip.trip_date) + '</td><td>' + tripStartText + '</td><td>' + tripEndText + '</td><td>' + orders.length + '</td><td>' + driverName + '</td><td class="money" style="font-family:var(--font-mono)">' + formatMoney(f.loadRevenue) + '</td><td><span class="badge ' + getBadge(trip.status) + '">' + trip.status + '</span>' + milesBadgeHtml + '</td><td class="sticky-col"><div class="actions">' + completeBtn + '<button class="action-btn view" onclick="viewTrip(' + trip.id + ')">View</button><button class="action-btn edit" onclick="openTripModal(' + trip.id + ')">Edit</button>' + (currentUser && currentUser.role === 'ADMIN' ? '<button class="action-btn delete" onclick="deleteTrip(' + trip.id + ')">Del</button>' : '') + '</div></td></tr>';
 
         // Mobile card
         const cardCompleteBtn = trip.status !== 'COMPLETED'
@@ -19708,7 +19715,7 @@
             '<div class="trip-card-meta">' +
               '<div>Driver: <strong>' + escapeHtml(driverName) + '</strong></div>' +
               '<div>Truck: <strong>#' + escapeHtml(String(truckNum)) + '</strong></div>' +
-              '<div>' + orders.length + ' car' + (orders.length !== 1 ? 's' : '') + ' | ' + formatDate(trip.trip_date) + '</div>' +
+              '<div>' + orders.length + ' car' + (orders.length !== 1 ? 's' : '') + ' | ' + formatDate(trip.trip_date) + (milesBadgeHtml ? ' | ' + (milesDriven != null ? milesDriven.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' mi' + (mileageErrorVal ? ' ⚠️' : '') : ('⚠️ mileage error')) : '') + '</div>' +
               '<div style="text-align:right;font-weight:500;font-family:var(--font-mono);color:var(--text-primary)">' + formatMoney(f.loadRevenue) + '</div>' +
             '</div>' +
             '<div class="trip-card-actions" onclick="event.stopPropagation()">' +
@@ -20573,6 +20580,48 @@
         
         '<div class="card"><div class="card-header"><h3>[[icon:expense]] Expenses (' + expenses.length + ')</h3><button class="btn btn-primary btn-sm" onclick="openAddExpense(' + id + ')">+ Add Expense</button></div>' + (expenses.length === 0 ? '<div style="padding:40px;text-align:center">No expenses yet. Click "+ Add Expense" to record expenses.</div>' : '<div class="table-wrapper"><table><thead><tr><th>Category</th><th>Description</th><th>Amount</th><th>Actions</th></tr></thead><tbody>' + expenses.map(e => '<tr><td><span class="badge badge-blue">' + e.category + '</span></td><td>' + (e.description || '-') + '</td><td class="money negative">' + formatMoney(e.amount) + '</td><td><button class="action-btn delete" onclick="deleteExpense(' + e.id + ',' + id + ')">Delete</button></td></tr>').join('') + '</tbody></table></div>') + '</div>' +
         
+        (function() {
+          // Samsara Mileage section (Phase D)
+          const odoFmt = function(val) {
+            if (val == null) return '<span style="color:var(--text-muted)">—</span>';
+            return parseFloat(val).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' mi';
+          };
+          const tsFmt = function(val) {
+            if (!val) return '<span style="color:var(--text-muted)">Not recorded</span>';
+            try { return escapeHtml(formatDateTime(val)); } catch(e) { return escapeHtml(String(val)); }
+          };
+          const hasMileageData = t.trip_started_at || t.trip_ended_at || t.start_odometer != null || t.end_odometer != null || t.miles_driven != null || t.mileage_error;
+          const mileageErrCode = t.mileage_error ? escapeHtml(String(t.mileage_error)) : null;
+          // Retry-event inference: figure out whether to re-attempt 'start' or 'end'.
+          // We treat any "start failed" state (start_odometer NULL with mileage_error)
+          // as retry-start, and "end failed" similarly as retry-end.
+          const retryEvent =
+            (t.start_odometer == null && t.mileage_error)
+              ? 'start'
+              : (t.end_odometer == null && t.start_odometer != null && t.mileage_error)
+                ? 'end'
+                : null;
+          const retryBtnHtml = (mileageErrCode && retryEvent)
+            ? '<button class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="retryMileageCapture(' + Number(t.id) + ', \'' + retryEvent + '\')">Retry mileage capture</button>'
+            : '';
+          const errorRowHtml = mileageErrCode
+            ? '<tr><td style="padding:8px 12px;color:var(--text-secondary);font-size:12px;white-space:nowrap">Error</td><td style="padding:8px 12px"><span style="background:var(--amber-dim);color:var(--warning);border:1px solid var(--warning-border);padding:2px 8px;border-radius:4px;font-size:12px;font-family:var(--font-mono)">⚠️ ' + mileageErrCode + '</span>' + retryBtnHtml + '</td></tr>'
+            : '';
+          const mileageTableHtml = '<div style="padding:16px"><table style="width:100%;border-collapse:collapse">' +
+            '<tr><td style="padding:8px 12px;color:var(--text-secondary);font-size:12px;white-space:nowrap;width:160px">Trip Started</td><td style="padding:8px 12px;font-size:13px">' + tsFmt(t.trip_started_at) + '</td></tr>' +
+            '<tr style="background:var(--bg-secondary)"><td style="padding:8px 12px;color:var(--text-secondary);font-size:12px;white-space:nowrap">Trip Ended</td><td style="padding:8px 12px;font-size:13px">' + tsFmt(t.trip_ended_at) + '</td></tr>' +
+            '<tr><td style="padding:8px 12px;color:var(--text-secondary);font-size:12px;white-space:nowrap">Start Odometer</td><td style="padding:8px 12px;font-size:13px;font-family:var(--font-mono)">' + odoFmt(t.start_odometer) + '</td></tr>' +
+            '<tr style="background:var(--bg-secondary)"><td style="padding:8px 12px;color:var(--text-secondary);font-size:12px;white-space:nowrap">End Odometer</td><td style="padding:8px 12px;font-size:13px;font-family:var(--font-mono)">' + odoFmt(t.end_odometer) + '</td></tr>' +
+            '<tr><td style="padding:8px 12px;color:var(--text-secondary);font-size:12px;white-space:nowrap">Total Miles</td><td style="padding:8px 12px;font-size:16px;font-weight:700;color:#1d4ed8;font-family:var(--font-mono)">' + odoFmt(t.miles_driven) + '</td></tr>' +
+            '<tr style="background:var(--bg-secondary)"><td style="padding:8px 12px;color:var(--text-secondary);font-size:12px;white-space:nowrap">Source</td><td style="padding:8px 12px;font-size:13px">' + (t.mileage_source ? '<span class="badge badge-blue" style="font-size:11px">' + escapeHtml(String(t.mileage_source)) + '</span>' : '<span style="color:var(--text-muted)">—</span>') + '</td></tr>' +
+            errorRowHtml +
+            '</table></div>';
+          const emptyMileageHtml = '<div style="padding:32px;text-align:center;color:var(--text-secondary)">No mileage data yet. The driver starts the trip on iOS to capture odometer readings.</div>';
+          return '<div class="card" style="margin-bottom:20px"><div class="card-header"><h3>[[icon:route]] Samsara Mileage</h3></div>' +
+            (hasMileageData ? mileageTableHtml : emptyMileageHtml) +
+            '</div>';
+        })() +
+
         '<div class="card"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3>[[icon:route]] Trip Miles</h3><button class="btn btn-secondary btn-sm" onclick="openEditMiles(' + id + ')">[[icon:edit]] Edit Miles</button></div><div style="padding:20px;display:flex;align-items:center;gap:20px"><div style="font-size:32px;font-weight:700;color:#1e40af">' + (t.miles || 0).toLocaleString() + '</div><div style="color:var(--text-secondary)">miles</div></div></div>';
     }
 
@@ -41511,6 +41560,7 @@
         (samsaraKey ? '<button class="btn btn-danger" onclick="clearSamsaraKey()">[[icon:trash]] Remove</button>' : '') +
         '<button class="btn btn-secondary" onclick="testSamsaraConnection()">[[icon:flask]] Test Connection</button>' +
         (samsaraKey ? '<button class="btn btn-secondary" onclick="manageTruckSamsaraLinks()">[[icon:link]] Link Trucks to Vehicles</button>' : '') +
+        (samsaraKey && currentUser && currentUser.role === 'ADMIN' ? '<button class="btn btn-secondary" onclick="migrateLocalStorageTruckLinksToDb()">[[icon:upload]] Migrate localStorage links to DB</button>' : '') +
         '</div>' +
 
         '<div id="samsaraTestResult" style="margin-top:16px"></div>' +
@@ -42762,6 +42812,10 @@ function jsonResponse(data, status = 200) {
         delete links[truckId];
       }
       localStorage.setItem('truck_samsara_links', JSON.stringify(links));
+      // Also persist to DB so iOS and other browsers see the mapping
+      dbUpdate('trucks', parseInt(truckId, 10), { samsara_vehicle_id: samsaraVehicleId || null }, true).catch(function(e) {
+        console.error('Failed to persist samsara_vehicle_id for truck', truckId, ':', e && e.message);
+      });
     }
     
     async function manageTruckSamsaraLinks() {
@@ -42799,6 +42853,53 @@ function jsonResponse(data, status = 200) {
       );
     }
     
+    async function migrateLocalStorageTruckLinksToDb() {
+      if (!confirm('Migrate truck-to-Samsara links from this browser to the database? Run this only once per Samsara account.')) return;
+
+      const links = getTruckSamsaraLinks();
+      const truckIds = Object.keys(links);
+      if (truckIds.length === 0) {
+        showToast('No localStorage links to migrate.', 'info');
+        return;
+      }
+
+      let success = 0, failed = 0;
+      for (const truckId of truckIds) {
+        const vehicleId = links[truckId];
+        if (!vehicleId) continue;
+        try {
+          await dbUpdate('trucks', parseInt(truckId, 10), { samsara_vehicle_id: vehicleId }, true);
+          success++;
+        } catch (e) {
+          console.error('Failed to migrate truck', truckId, ':', e && e.message);
+          failed++;
+        }
+      }
+
+      const tone = success === 0 && failed > 0 ? 'error' : (failed > 0 ? 'warning' : 'success');
+      showToast('Migrated ' + success + ' truck link' + (success !== 1 ? 's' : '') + '.' + (failed > 0 ? ' ' + failed + ' failed.' : ''), tone);
+    }
+
+    async function retryMileageCapture(tripId, event) {
+      if (!tripId || !event) return;
+      try {
+        const { data, error } = await sb.functions.invoke('record-trip-odometer', {
+          body: { trip_id: tripId, event }
+        });
+        if (error) throw new Error(error.message || 'Edge function failed');
+        if (data && data.warning) {
+          showToast('Mileage capture partial: ' + data.warning, 'warning');
+        } else {
+          showToast('Mileage capture succeeded.', 'success');
+        }
+        // Reload the page or trip detail to reflect new state
+        if (typeof loadAllData === 'function') await loadAllData(true);
+        if (typeof renderPage === 'function') renderPage();
+      } catch (e) {
+        showToast('Retry failed: ' + e.message, 'error');
+      }
+    }
+
     // ============ LIVE MAP PAGE ============
     let liveMapInstance = null;
     let liveMapTileLayer = null;
