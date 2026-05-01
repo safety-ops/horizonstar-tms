@@ -9474,16 +9474,20 @@
 
     async function dbDelete(table, id) {
       requireTableAuth(table);
-      const { error } = await sb
+      const { data, error } = await sb
         .from(table)
         .delete()
-        .eq('id', id);
-      
+        .eq('id', id)
+        .select();
+
       if (error) throw new Error(error.message || 'Delete failed');
-      
+      if (!data || data.length === 0) {
+        throw new Error("Delete blocked — you don't have permission, or the record no longer exists");
+      }
+
       // Track that we just made a change (for realtime sync)
       window.lastSaveTimestamp = Date.now();
-      
+
       // Invalidate cache so next load gets fresh data
       dataCache.invalidate('appData');
     }
@@ -11033,6 +11037,22 @@
         "'": '&#039;'
       };
       return str.replace(/[&<>"']/g, char => map[char]);
+    }
+
+    // Validate URL protocol to prevent javascript:/vbscript:/data: XSS via href/src.
+    // Returns the original URL if safe, otherwise '#'. Caller must still wrap with
+    // escapeHtml() when interpolating into an HTML attribute.
+    function escapeUrl(url) {
+      if (url === null || url === undefined) return '#';
+      const str = String(url).trim();
+      if (str === '') return '#';
+      if (str.startsWith('/') || str.startsWith('#')) return str;
+      if (/^data:image\//i.test(str)) return str;
+      if (/^https:\/\//i.test(str)) return str;
+      if (/^http:\/\//i.test(str)) return str;
+      if (/^mailto:/i.test(str)) return str;
+      if (/^tel:/i.test(str)) return str;
+      return '#';
     }
 
     // Sanitize user input before displaying (alias for escapeHtml)
