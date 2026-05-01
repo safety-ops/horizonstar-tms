@@ -43503,7 +43503,7 @@ function jsonResponse(data, status = 200) {
       setTimeout(() => document.getElementById('chatInput')?.focus(), 100);
     }
 
-    // Called by realtime handler in api.js when a new chat message arrives
+    // Called by the realtime handler when a new chat message arrives
     async function appendChatMessageRealtime(newMsg) {
       // Don't duplicate messages already in the list
       if (chatMessages.some(m => m.id === newMsg.id)) return;

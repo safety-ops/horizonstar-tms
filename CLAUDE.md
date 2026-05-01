@@ -22,18 +22,27 @@ There are no test suites, linters, or build commands.
 
 ## Web TMS Architecture
 
-The web app is a **single ~38,000-line `index.html`** file with all page rendering functions inline, plus 6 external JS modules:
+The web app is a **single ~51,000-line `index.html`** file. **All application JavaScript is inlined** in a single `<script>` block that opens at `index.html:8782` and closes near the end of the file. There are NO `<script src="assets/js/...">` includes — `assets/js/` does not exist as a directory and any `.js` file there would not be loaded.
+
+> **DO NOT create new files under `assets/js/`** and do not move inline functions out into external `.js` modules. The HTML never requests them, so the browser never executes them — your code looks correct, the page loads fine, but your changes have zero runtime effect. New utilities go in the inline `<script>` block alongside the others. Past commits (`3f8afa3`, `7eda0a0`, `44a7a9c`) all hit this trap; `dc648bf` cleaned it up.
+
+CSS, by contrast, IS loaded via external `<link>` tags at `index.html:34-37`:
 
 | File | Purpose |
 |---|---|
-| `assets/js/config.js` | Supabase client init, global state (`appData`, `currentUser`), pagination, data cache |
-| `assets/js/app.js` | `initApp()` bootstrap, DOM ready handler |
-| `assets/js/api.js` | `dbFetch()`, `dbInsert()`, `dbUpdate()`, `dbDelete()`, realtime sync, `loadAllData()` |
-| `assets/js/auth.js` | Login/logout, session timeout, PIN lockout, password reset |
-| `assets/js/ui.js` | Theme toggle, toasts (`showToast()`), sidebar, modals (`showModal()`), loading states |
-| `assets/js/utils.js` | `formatMoney()`, `formatDate()`, `escapeHtml()`, validators |
 | `assets/css/variables.css` | CSS custom properties for light/dark theming |
 | `assets/css/base.css` | Global layout and component styles |
+| `assets/css/theme-driver-parity.css` | Shared theme tokens with the iOS driver app |
+| `assets/css/print.css` | Print stylesheet (loaded with `media="print"`) |
+
+Inline JavaScript is organized in roughly these sections within the single `<script>` block:
+- Supabase client init + `appData` / `currentUser` globals + `dataCache`
+- `dbFetch` / `dbFetchAll` / `dbInsert` / `dbUpdate` / `dbDelete` (around line 9301-9492) + realtime sync + `loadAllData`
+- Auth: login/logout, session timeout, PIN lockout, password reset
+- HTML sanitization: `escapeHtml`, `escapeUrl`, `sanitize` (around line 11025-11060)
+- UI helpers: `showToast`, `showModal`, sidebar/dropdown, theme toggle
+- ~30 `renderXxx(container)` page functions (orders, trips, drivers, dispatchers, brokers, etc.)
+- Navigation: `navigate(page)` → `renderPage()` → dispatch to the correct `renderXxx`
 
 **Rendering pattern**: Each page has a `renderXxx(c)` function (e.g., `renderTrips(c)`, `renderOrders(c)`) that takes a container element and builds DOM via template literals with `innerHTML`. Navigation uses `navigate(page)` which calls `renderPage()` → dispatches to the correct render function. All state lives in the global `appData` object populated by `loadAllData()`.
 
@@ -41,7 +50,7 @@ The web app is a **single ~38,000-line `index.html`** file with all page renderi
 - Theme: CSS variables (`--bg-primary`, `--text-primary`, etc.) with `.dark-theme` class toggle
 - Data: All tables cached in `appData.trips`, `appData.orders`, etc. with 5-minute TTL via `dataCache`
 - XSS prevention: Use `escapeHtml()` for user-provided text in templates
-- Supabase client: Global `sb` variable initialized in `config.js`
+- Supabase client: Global `sb` variable initialized inline near the top of the inline `<script>` block
 - Auth: `currentUser` object stored in localStorage (`horizonstar_user`)
 - Modals: `showModal(modalId, title, bodyContent, footerContent, maxWidth='600px')` — close via overlay click or Escape
 - Toasts: `showToast(msg, type)` where type is `'success'` | `'error'` | `'warning'` | `'info'` (auto-dismiss 3s)
@@ -95,9 +104,20 @@ Manifest V3 extension that scrapes load data from Central Dispatch and imports i
 
 - **ALWAYS debug and test every task after completing it.** Do not consider any task done until you have verified it works. For UI changes, check affected pages in the browser. For logic changes, trace the code path and confirm correctness. Never ship untested code.
 
+- **STRICTLY use specialist agents to write code, then run `debugger` + `code-reviewer` agents after every code change.** This is a non-negotiable quality gate.
+  - **For implementation:** dispatch the specialist agent that matches the work — `mobile-developer` for iOS/Swift, `frontend-developer` or `Senior Developer` for web TMS, `backend-architect` for Supabase functions/RLS, `Database Optimizer` for query/migration work, `Security Engineer` for auth or RLS-sensitive code, `MCP Builder` for MCP server work, etc. Do NOT write code directly when a specialist agent fits — delegate.
+  - **After every code change** (any commit, any meaningful Edit batch, any restoration / refactor): dispatch `debugger` and `code-reviewer` in parallel. Both must approve before moving on.
+    - `code-reviewer` checks code quality, naming, scope creep, security, maintainability.
+    - `debugger` independently re-runs builds/tests, traces failure modes, checks hygiene (no scratch files, clean commit boundaries).
+    - If either flags issues, fix them and re-run both.
+  - **Spec compliance gate before code quality:** when restoring or porting work that has a written spec, also dispatch a `general-purpose` spec-compliance reviewer first to confirm the code matches the spec verbatim (no scope creep, no spec deviation). Spec ✅ → then `debugger` + `code-reviewer`.
+  - **Skill invocations:** invoke `superpowers:verification-before-completion` before declaring done, `superpowers:requesting-code-review` to frame the review, `superpowers:systematic-debugging` when bugs surface, `superpowers:test-driven-development` when adding new code.
+  - **Plan-mode coverage:** when in plan mode for any code task, the plan must explicitly list the specialist + reviewer agents that will run for each commit/phase. Reviews are part of the plan, not optional polish.
+  - This rule applies to **any code change**, not just multi-phase projects. Even a one-file fix gets a specialist implementer + debugger + code-reviewer pass before the commit is considered done.
+
 ## Important Notes
 
-- The Supabase anon key in `config.js` is a public/anon key (safe to be in client code, protected by RLS)
+- The Supabase anon key embedded inline in `index.html` is a public/anon key (safe to be in client code, protected by RLS)
 - `index.html` contains both HTML structure and ~30,000 lines of JavaScript — when editing, search for the relevant `renderXxx()` function rather than scrolling
 - `mockups/` and `prototypes/` contain standalone HTML design mockups, not production code
 - `AGENT_PROMPT.md` contains the phased implementation guide for the iOS driver app UI overhaul
