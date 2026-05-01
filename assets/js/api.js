@@ -176,12 +176,16 @@ async function dbUpdate(table, id, data, skipConflictCheck = false) {
  * @param {string|number} id - Record ID
  */
 async function dbDelete(table, id) {
-  const { error } = await sb
+  const { data, error } = await sb
     .from(table)
     .delete()
-    .eq('id', id);
+    .eq('id', id)
+    .select();
 
   if (error) throw new Error(error.message || 'Delete failed');
+  if (!data || data.length === 0) {
+    throw new Error("Delete blocked — you don't have permission, or the record no longer exists");
+  }
 
   // Track that we just made a change (for realtime sync)
   window.lastSaveTimestamp = Date.now();
