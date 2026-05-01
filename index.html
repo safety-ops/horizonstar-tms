@@ -10149,10 +10149,16 @@
     function renderSuggestedActions() {
       const suggestions = [];
 
-      // Delivered but not invoiced
-      const deliveredNotInvoiced = (appData.orders || []).filter(o =>
-        o.status === 'DELIVERED' && o.payment_type === 'BILLING' && (!o.invoice_status || o.invoice_status === 'NOT_INVOICED')
-      );
+      // Delivered but not invoiced (Phase 3: NET_* terms or legacy BILLING type)
+      const deliveredNotInvoiced = (appData.orders || []).filter(o => {
+        if (o.status !== 'DELIVERED') return false;
+        if (o.invoice_status && o.invoice_status !== 'NOT_INVOICED') return false;
+        const eff = getEffectivePaymentTerms(o);
+        const isInvoiceable = (typeof eff === 'string' && eff.startsWith('NET_'))
+          || o.payment_type === 'BILLING'
+          || o.payment_type === 'BILL';
+        return isInvoiceable;
+      });
       if (deliveredNotInvoiced.length > 0) {
         suggestions.push({
           icon: '[[icon:dollar]]',
@@ -10230,6 +10236,11 @@
       return raw || normalized;
     }
     function getPaymentTermsDisplay(order, broker = null) {
+      // Phase 3 V2 path: if order carries the new payment_method, render via composed label
+      if (order && order.payment_method) {
+        const composed = getPaymentDisplayLabel(order);
+        if (composed && composed !== '-') return composed;
+      }
       const normalizedTerms = String(order?.payment_terms || broker?.payment_terms || '').toUpperCase();
       const customDaysParsed = parseInt(order?.custom_terms_days, 10);
       const customDays = Number.isFinite(customDaysParsed) && customDaysParsed > 0 ? customDaysParsed : null;
@@ -10241,14 +10252,15 @@
         NET21: 'Net 21',
         NET30: 'Net 30',
         NET45: 'Net 45',
-        NET60: 'Net 60'
+        NET60: 'Net 60',
+        NET_5: 'Net 5', NET_7: 'Net 7', NET_10: 'Net 10', NET_15: 'Net 15', NET_20: 'Net 20', NET_30: 'Net 30'
       };
-      if (normalizedTerms === 'QUICK_PAY') return 'QuickPay (Net 2)';
-      if (normalizedTerms === 'COLLECT_AT_DELIVERY') return 'Collect At Delivery';
-      if (normalizedTerms === 'COLLECT_AT_PICKUP') return 'Collect At Pick Up';
+      if (normalizedTerms === 'QUICK_PAY' || normalizedTerms === 'QUICKPAY') return 'QuickPay (Net 2)';
+      if (normalizedTerms === 'COLLECT_AT_DELIVERY' || normalizedTerms === 'COD') return 'Collect At Delivery';
+      if (normalizedTerms === 'COLLECT_AT_PICKUP' || normalizedTerms === 'COP') return 'Collect At Pick Up';
       if (netTerms[normalizedTerms]) return netTerms[normalizedTerms];
       if (normalizedTerms === 'CUSTOM') return customDays ? ('Custom (Net ' + customDays + ')') : 'Custom';
-      const dynamicNetMatch = normalizedTerms.match(/^NET(\d+)$/);
+      const dynamicNetMatch = normalizedTerms.match(/^NET_?(\d+)$/);
       if (dynamicNetMatch) return 'Net ' + parseInt(dynamicNetMatch[1], 10);
       if (customDays) return 'Custom (Net ' + customDays + ')';
 
@@ -10261,6 +10273,183 @@
       if (paymentType === 'SPLIT') return 'Split Terms';
       return '-';
     }
+
+    // === Payment method/terms vocabulary (Phase 3 — restructure 2026-05) ===
+
+    const PAYMENT_METHOD_OPTIONS = [
+      'CASH','CHECK','ZELLE','CASHIERS_CHECK','MONEY_ORDER','COMCHEK',
+      'ACH','CREDIT_CARD','VENMO','CASHAPP','USHIP','FACTORING'
+    ];
+    const PAYMENT_TERMS_OPTIONS_V2 = [
+      'QUICKPAY','COMCHEK','COP','COD',
+      'NET_5','NET_7','NET_10','NET_15','NET_20','NET_30'
+    ];
+
+    const PAYMENT_METHOD_LABELS = {
+      CASH:"Cash", CHECK:"Check", ZELLE:"Zelle",
+      CASHIERS_CHECK:"Cashier's Check", MONEY_ORDER:"Money Order",
+      COMCHEK:"Comchek", ACH:"ACH", CREDIT_CARD:"Credit Card",
+      VENMO:"Venmo", CASHAPP:"Cash App", USHIP:"uShip", FACTORING:"Factoring"
+    };
+    const PAYMENT_TERMS_LABELS = {
+      QUICKPAY:"Quick Pay", COMCHEK:"Comchek",
+      COP:"On Pickup", COD:"On Delivery",
+      NET_5:"Net 5", NET_7:"Net 7", NET_10:"Net 10",
+      NET_15:"Net 15", NET_20:"Net 20", NET_30:"Net 30"
+    };
+
+    // Marketplace methods where terms shouldn't appear in the display label
+    const PAYMENT_METHOD_HIDES_TERMS = new Set(['USHIP']);
+
+    // Common (method, terms) combos. Anything outside this set renders a yellow warning chip.
+    const PAYMENT_COMMON_PAIRS = new Set([
+      'CASH|COD','CASH|COP','CHECK|COD','CHECK|COP',
+      'CASHIERS_CHECK|COP','CASHIERS_CHECK|COD',
+      'MONEY_ORDER|COP','MONEY_ORDER|COD',
+      'ZELLE|COP','ZELLE|COD','ZELLE|QUICKPAY','ZELLE|NET_5','ZELLE|NET_7',
+      'VENMO|COP','VENMO|COD','VENMO|QUICKPAY',
+      'CASHAPP|COP','CASHAPP|COD','CASHAPP|QUICKPAY',
+      'CREDIT_CARD|QUICKPAY','CREDIT_CARD|NET_5',
+      'COMCHEK|COMCHEK','COMCHEK|QUICKPAY',
+      'ACH|NET_5','ACH|NET_7','ACH|NET_10','ACH|NET_15','ACH|NET_20','ACH|NET_30','ACH|QUICKPAY',
+      'USHIP|COD','USHIP|NET_5','USHIP|NET_7','USHIP|NET_30',
+      'FACTORING|NET_30','FACTORING|QUICKPAY','FACTORING|NET_15'
+    ]);
+
+    // Legacy payment_type → (method, terms) for orders that haven't been re-saved post-migration.
+    function methodTermsFromLegacy(paymentType, paymentTerms) {
+      const pt = String(paymentType || '').toUpperCase().trim();
+      let method = null;
+      let terms = String(paymentTerms || '').toUpperCase().trim();
+      if (terms === '' || terms === 'NULL') terms = null;
+      switch (pt) {
+        case 'BILL': case 'BILLING': method = 'ACH';   if (!terms) terms = 'NET_30'; break;
+        case 'COD':                  method = 'CASH';  terms = 'COD'; break;
+        case 'COP':                  method = 'CASH';  terms = 'COP'; break;
+        case 'LOCAL_COD':            method = 'CASH';  terms = 'COD'; break;
+        case 'CHECK':                method = 'CHECK'; terms = 'COD'; break;
+        case 'SPLIT':                method = 'CASH';  terms = 'COD'; break;
+      }
+      return { method, terms };
+    }
+
+    // Reads new payment_method first; falls back to deriving from legacy payment_type.
+    function getEffectivePaymentMethod(order) {
+      if (!order) return null;
+      if (order.payment_method) {
+        const m = String(order.payment_method).trim().toUpperCase();
+        if (PAYMENT_METHOD_OPTIONS.indexOf(m) >= 0) return m;
+      }
+      return methodTermsFromLegacy(order.payment_type, order.payment_terms).method;
+    }
+
+    // Reads new payment_terms first; falls back to deriving from legacy.
+    function getEffectivePaymentTerms(order) {
+      if (!order) return null;
+      if (order.payment_terms) {
+        const t = String(order.payment_terms).trim().toUpperCase();
+        if (PAYMENT_TERMS_OPTIONS_V2.indexOf(t) >= 0) return t;
+        // V1 → V2 normalization (mirrors Phase 2 SQL migration; handles partially-migrated rows)
+        const v1Map = {
+          NET5:'NET_5', NET7:'NET_7', NET10:'NET_10', NET15:'NET_15',
+          NET21:'NET_30', NET30:'NET_30', NET45:'NET_30', NET60:'NET_30',
+          QUICK_PAY:'QUICKPAY',
+          COLLECT_AT_PICKUP:'COP', COLLECT_AT_DELIVERY:'COD'
+        };
+        if (v1Map[t]) return v1Map[t];
+      }
+      return methodTermsFromLegacy(order.payment_type, order.payment_terms).terms;
+    }
+
+    // Composes the display label following the locked rules.
+    function composePaymentLabel(method, terms) {
+      const m = String(method || '').toUpperCase();
+      const t = String(terms || '').toUpperCase();
+      if (!m && !t) return '-';
+
+      const mLabel = PAYMENT_METHOD_LABELS[m] || m || '';
+      const tLabel = PAYMENT_TERMS_LABELS[t] || t || '';
+
+      // Marketplace method: show method only
+      if (PAYMENT_METHOD_HIDES_TERMS.has(m)) return mLabel;
+
+      // Cash/Check/etc. + COP/COD → "Cash on Pickup" / "Check on Delivery"
+      if ((m === 'CASH' || m === 'CHECK' || m === 'CASHIERS_CHECK' || m === 'MONEY_ORDER' || m === 'ZELLE' || m === 'VENMO' || m === 'CASHAPP') && (t === 'COP' || t === 'COD')) {
+        return mLabel + ' ' + (t === 'COP' ? 'on Pickup' : 'on Delivery');
+      }
+
+      // Method only when no terms
+      if (!t) return mLabel;
+      if (!m) return tLabel;
+
+      // Default: "Method, Terms"
+      return mLabel + ', ' + tLabel;
+    }
+
+    // Convenience for callers that have an order
+    function getPaymentDisplayLabel(order) {
+      return composePaymentLabel(getEffectivePaymentMethod(order), getEffectivePaymentTerms(order));
+    }
+
+    // Maps new (method, terms) → legacy payment_type for dual-write back-compat during the 90d window.
+    function legacyTypeFromMethodTerms(method, terms) {
+      const m = String(method || '').toUpperCase();
+      const t = String(terms || '').toUpperCase();
+      if (m === 'CASH'  && t === 'COD') return 'COD';
+      if (m === 'CASH'  && t === 'COP') return 'COP';
+      if (m === 'CHECK' && (t === 'COD' || t === 'COP')) return 'CHECK';
+      if (t === 'COD' || t === 'COP') return t;
+      return 'BILL';
+    }
+
+    // True if the driver collects money on this order — replaces legacy `['COD','COP','SPLIT'].includes(...)` checks.
+    function paymentInvolvesCash(order) {
+      const t = getEffectivePaymentTerms(order);
+      if (t === 'COP' || t === 'COD') return true;
+      // Split orders: cod_amount > 0 AND bill_amount > 0
+      const cod = Number(order?.cod_amount || 0);
+      const bill = Number(order?.bill_amount || 0);
+      return cod > 0 && bill > 0;
+    }
+
+    function isPaymentPairCommon(method, terms) {
+      return PAYMENT_COMMON_PAIRS.has(String(method||'').toUpperCase() + '|' + String(terms||'').toUpperCase());
+    }
+
+    // Returns `<select>` HTML for method/terms dropdowns. Used by the 4 form locations.
+    function getPaymentMethodOptionsHtml(selected) {
+      const sel = String(selected || '').toUpperCase();
+      return PAYMENT_METHOD_OPTIONS.map(m =>
+        '<option value="' + m + '"' + (m === sel ? ' selected' : '') + '>' + escapeHtml(PAYMENT_METHOD_LABELS[m]) + '</option>'
+      ).join('');
+    }
+    function getPaymentTermsOptionsHtmlV2(selected) {
+      const sel = String(selected || '').toUpperCase();
+      return PAYMENT_TERMS_OPTIONS_V2.map(t =>
+        '<option value="' + t + '"' + (t === sel ? ' selected' : '') + '>' + escapeHtml(PAYMENT_TERMS_LABELS[t]) + '</option>'
+      ).join('');
+    }
+
+    // Renders the warning chip when method/terms pair is unusual. Hidden by default until a change handler runs.
+    function getPaymentPairWarningChipHtml(chipId) {
+      return '<span id="' + chipId + '" style="display:none;font-size:10px;background:var(--dim-amber);color:var(--warning);padding:2px 6px;border-radius:4px;margin-left:8px;border:1px solid var(--warning-border)">⚠ Unusual combination — confirm with broker</span>';
+    }
+
+    // Wires change handlers on a method+terms select pair to toggle the warning chip
+    function wirePaymentPairValidation(methodSelectId, termsSelectId, chipId) {
+      const methodEl = document.getElementById(methodSelectId);
+      const termsEl = document.getElementById(termsSelectId);
+      const chip = document.getElementById(chipId);
+      if (!methodEl || !termsEl || !chip) return;
+      function refresh() {
+        const ok = isPaymentPairCommon(methodEl.value, termsEl.value);
+        chip.style.display = ok ? 'none' : 'inline-block';
+      }
+      methodEl.addEventListener('change', refresh);
+      termsEl.addEventListener('change', refresh);
+      refresh();
+    }
+
     function getGoogleMapsUrl(address) {
       if (!address || !String(address).trim()) return null;
       return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(String(address).trim());
@@ -10694,7 +10883,7 @@
       const orderLabel = options.orderLabel || order.order_number || ('ORD-' + order.id);
       const tripLabel = options.tripLabel !== undefined ? options.tripLabel : (trip?.trip_number || 'Unassigned');
       const driverLabel = options.driverLabel !== undefined ? options.driverLabel : (driver ? ((driver.first_name || '') + ' ' + (driver.last_name || '')).trim() : 'Unassigned');
-      const paymentLabel = options.paymentLabel !== undefined ? options.paymentLabel : (order.payment_type || '-');
+      const paymentLabel = options.paymentLabel !== undefined ? options.paymentLabel : getPaymentDisplayLabel(order);
       const revenueValue = options.revenueValue !== undefined ? options.revenueValue : parseFloat(order.revenue || 0);
       const deliveryStatus = order.delivery_status || 'pending';
       const deliveryStatusMap = {
@@ -11294,9 +11483,13 @@
     }
 
     function isOrderSplitLike(order) {
+      // Phase 3: amounts-based detection — split = both cash leg and bill leg present
       if (!order) return false;
-      const paymentType = String(order.payment_type || '').toUpperCase();
+      const codAmount = Math.max(0, toMoneyNumber(order.cod_amount));
       const billAmount = Math.max(0, toMoneyNumber(order.bill_amount));
+      if (codAmount > 0 && billAmount > 0) return true;
+      // Backward-compat fallback for legacy rows that still carry payment_type='SPLIT' without amounts
+      const paymentType = String(order.payment_type || '').toUpperCase();
       return paymentType === 'SPLIT' || (
         billAmount > 0 &&
         (paymentType === 'COD' || paymentType === 'COP' || paymentType === 'LOCAL_COD')
@@ -11316,9 +11509,14 @@
     }
 
     function getSplitFormConfig(prefix = 'order') {
+      // Phase 3 V2: paymentTypeId removed (now derived from method+terms+splitToggleId).
+      // splitToggleId is the new "Split (cash + bill)" checkbox.
       const map = {
         order: {
-          paymentTypeId: 'orderPay',
+          paymentTypeId: 'orderPay', // legacy — DOM element no longer exists; kept for older callers
+          splitToggleId: 'orderSplitToggle',
+          methodId: 'orderPaymentMethod',
+          termsId: 'orderPaymentTerms',
           revenueId: 'orderRev',
           sectionId: 'splitPaymentSection',
           cashTypeId: 'splitCodType',
@@ -11327,6 +11525,9 @@
         },
         editOrder: {
           paymentTypeId: 'editOrderPay',
+          splitToggleId: 'editOrderSplitToggle',
+          methodId: 'editOrderPaymentMethod',
+          termsId: 'editOrderPaymentTerms',
           revenueId: 'editOrderRev',
           sectionId: 'editSplitPaymentSection',
           cashTypeId: 'editSplitCodType',
@@ -11335,6 +11536,9 @@
         },
         lb: {
           paymentTypeId: 'lbPayment',
+          splitToggleId: 'lbSplitToggle',
+          methodId: 'lbPaymentMethod',
+          termsId: 'lbPaymentTerms',
           revenueId: 'lbRevenue',
           sectionId: 'lbSplitPaymentSection',
           cashTypeId: 'lbSplitCodType',
@@ -11343,6 +11547,9 @@
         },
         import: {
           paymentTypeId: 'importPaymentType',
+          splitToggleId: 'importSplitToggle',
+          methodId: 'importPaymentMethod',
+          termsId: 'importPaymentTerms',
           revenueId: 'importRevenue',
           sectionId: 'importSplitPaymentSection',
           cashTypeId: 'importSplitCashType',
@@ -11383,10 +11590,13 @@
         };
       }
 
-      const paymentType = String(document.getElementById(cfg.paymentTypeId)?.value || order?.payment_type || 'BILL').toUpperCase();
-      const selectedSplit = paymentType === 'SPLIT';
+      // Phase 3 V2: prefer the new split toggle checkbox; fall back to legacy paymentType select / order shape.
+      const splitToggleEl = cfg.splitToggleId ? document.getElementById(cfg.splitToggleId) : null;
+      const legacyTypeEl = cfg.paymentTypeId ? document.getElementById(cfg.paymentTypeId) : null;
+      const paymentType = String(legacyTypeEl?.value || order?.payment_type || 'BILL').toUpperCase();
       const splitLikeOrder = isOrderSplitLike(order);
-      const isSplit = selectedSplit || splitLikeOrder;
+      const selectedSplit = splitToggleEl ? !!splitToggleEl.checked : (paymentType === 'SPLIT');
+      const isSplit = selectedSplit || (!splitToggleEl && splitLikeOrder);
 
       const revenue = toMoneyNumber(document.getElementById(cfg.revenueId)?.value || order?.revenue);
       let cashAmount = Math.max(0, toMoneyNumber(document.getElementById(cfg.cashAmountId)?.value));
@@ -11446,12 +11656,24 @@
       const cfg = getSplitFormConfig(prefix);
       if (!cfg) return;
 
-      const paymentSelect = document.getElementById(cfg.paymentTypeId);
-      if (!paymentSelect) return;
+      // Phase 3 V2: wire the method/terms validation chip if both selects + chip exist
+      const chipMap = { order: 'orderPaymentPairChip', editOrder: 'editOrderPaymentPairChip', lb: 'lbPaymentPairChip', import: 'importPaymentPairChip' };
+      if (cfg.methodId && cfg.termsId && chipMap[prefix]) {
+        wirePaymentPairValidation(cfg.methodId, cfg.termsId, chipMap[prefix]);
+      }
+
+      // Phase 3 V2: prefer the split toggle checkbox; fall back to legacy paymentType select.
+      const splitToggle = cfg.splitToggleId ? document.getElementById(cfg.splitToggleId) : null;
+      const paymentSelect = cfg.paymentTypeId ? document.getElementById(cfg.paymentTypeId) : null;
+      if (!splitToggle && !paymentSelect) return;
 
       const splitLike = isOrderSplitLike(order);
-      if (splitLike) paymentSelect.value = 'SPLIT';
-      const showSplit = String(paymentSelect.value || '').toUpperCase() === 'SPLIT';
+      if (splitToggle) {
+        if (splitLike) splitToggle.checked = true;
+      } else if (paymentSelect) {
+        if (splitLike) paymentSelect.value = 'SPLIT';
+      }
+      const showSplit = splitToggle ? !!splitToggle.checked : (String(paymentSelect.value || '').toUpperCase() === 'SPLIT');
       setSplitSectionVisibility(prefix, showSplit);
       if (!showSplit) return;
 
@@ -11835,6 +12057,7 @@
       return breakdown.cashGross;
     }
 
+    // TODO Phase 5: route through paymentInvolvesCash(order)
     function isTripManualCashEligible(order) {
       return ['COD', 'COP', 'SPLIT'].includes(String(order?.payment_type || '').toUpperCase()) && getOrderCashCollectedAmount(order) > 0;
     }
@@ -11896,7 +12119,7 @@
               const vehicleLabel = [order.vehicle_year, order.vehicle_make, order.vehicle_model].filter(Boolean).join(' ') || 'Vehicle';
               return '<div style="border:1px solid ' + (isCollected ? 'var(--success-border)' : 'var(--border)') + ';background:' + (isCollected ? 'var(--dim-green)' : 'var(--surface-card)') + ';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap">' +
                 '<div style="min-width:220px;flex:1">' +
-                  '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px"><strong style="font-size:15px">' + escapeHtml(order.order_number || ('Order #' + order.id)) + '</strong><span class="badge badge-blue">' + escapeHtml(String(order.payment_type || method).toUpperCase()) + '</span>' + (isCollected ? '<span class="badge badge-green">Collected</span>' : '<span class="badge badge-amber">Pending</span>') + '</div>' +
+                  '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px"><strong style="font-size:15px">' + escapeHtml(order.order_number || ('Order #' + order.id)) + '</strong><span class="badge badge-blue">' + escapeHtml(getPaymentDisplayLabel(order) || method) + '</span>' + (isCollected ? '<span class="badge badge-green">Collected</span>' : '<span class="badge badge-amber">Pending</span>') + '</div>' +
                   '<div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px">' + escapeHtml(vehicleLabel) + '</div>' +
                   '<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text-secondary)">' +
                     '<span>Cash Side: <strong style="color:var(--text-primary)">' + formatMoney(expectedCash) + '</strong></span>' +
@@ -11972,8 +12195,10 @@
       
       // Driver-collected cash (LOCAL_COD goes to local driver, not trip driver)
       const cashCollected = orders.reduce((sum, order) => {
+        // LOCAL_COD is intentionally excluded from trip-driver totals (handled by local driver).
         const paymentType = String(order.payment_type || '').toUpperCase();
-        if (paymentType !== 'COD' && paymentType !== 'COP' && paymentType !== 'SPLIT') return sum;
+        if (paymentType === 'LOCAL_COD') return sum;
+        if (!paymentInvolvesCash(order)) return sum;
         return sum + getOrderCashCollectedAmount(order);
       }, 0);
       
@@ -16114,10 +16339,10 @@
       const isSplitPayment = isOrderSplitLike(order);
       const splitMethodHtml = isSplitPayment ? (
         '<div class="payment-row"><span>Method</span><span style="color:#f59e0b;font-weight:600">Split Payment</span></div>' +
-        '<div class="payment-row" style="padding-left:12px"><span>' + escapeHtml(order.payment_type || 'COD') + ' Amount</span><span>' + formatMoney(order.cod_amount || 0) + '</span></div>' +
+        '<div class="payment-row" style="padding-left:12px"><span>' + escapeHtml((getEffectivePaymentTerms(order) || 'COD')) + ' Amount</span><span>' + formatMoney(order.cod_amount || 0) + '</span></div>' +
         '<div class="payment-row" style="padding-left:12px"><span>Bill Amount</span><span>' + formatMoney(order.bill_amount || 0) + (paymentTermsLabel !== '-' ? ' <span style="color:var(--text-secondary);font-size:12px">(' + escapeHtml(paymentTermsLabel) + ')</span>' : '') + '</span></div>'
       ) : (
-        '<div class="payment-row"><span>Method</span><span>' + escapeHtml(order.payment_type || 'Not specified') + '</span></div>' +
+        '<div class="payment-row"><span>Method</span><span>' + escapeHtml(PAYMENT_METHOD_LABELS[getEffectivePaymentMethod(order)] || getEffectivePaymentMethod(order) || order.payment_type || 'Not specified') + '</span></div>' +
         '<div class="payment-row"><span>Terms</span><span>' + escapeHtml(paymentTermsLabel) + '</span></div>'
       );
       const driverNotesLabel = getOrderDriverNotes(order);
@@ -17374,7 +17599,12 @@
       const unassignedOrdersCount = (appData.orders || []).filter(o => !o.trip_id).length;
       const activeTripsCount = (appData.trips || []).filter(t => t.status !== 'COMPLETED').length;
       const pendingTasksCount = (appData.tasks || []).filter(t => t.status !== 'COMPLETED').length;
-      const unpaidInvoicesCount = (appData.orders || []).filter(o => o.payment_type === 'BILLING' && o.invoice_status !== 'PAID').length;
+      // Phase 3: NET_* terms = invoiceable; legacy BILLING type also counted
+      const unpaidInvoicesCount = (appData.orders || []).filter(o => {
+        if (o.invoice_status === 'PAID') return false;
+        const eff = getEffectivePaymentTerms(o);
+        return (typeof eff === 'string' && eff.startsWith('NET_')) || o.payment_type === 'BILLING' || o.payment_type === 'BILL';
+      }).length;
 
       // ── Needs Action list (max 8) ────────────────────────────────────────
       const needsActionItems = [];
@@ -17954,7 +18184,11 @@
         '</div>' +
         '<div class="form-row"><div class="form-group"><label>Pick-Up Date</label><input type="date" id="lbPickup" value="' + (o?.pickup_date || '') + '"></div><div class="form-group"><label>Drop-Off Date</label><input type="date" id="lbDropoff" value="' + (o?.dropoff_date || '') + '"></div></div>' +
         '<div style="background:var(--dim-amber);padding:12px;border-radius:8px;margin-bottom:16px"><label style="font-weight:600;margin-bottom:8px;display:block">[[icon:money]] Payment</label>' +
-        '<div class="form-row" style="gap:12px"><div class="form-group" style="margin-bottom:0"><label>Total Revenue $</label><input type="number" id="lbRevenue" value="' + (o?.revenue || '') + '" onchange="updateLBPaymentSplit()"></div><div class="form-group" style="margin-bottom:0"><label>Payment Type</label><select id="lbPayment" onchange="toggleLBSplitPayment()"><option value="BILL"' + ((!o || (!lbSplitLike && o?.payment_type === 'BILL')) ? ' selected' : '') + '>BILL (Invoice)</option><option value="COD"' + ((!lbSplitLike && o?.payment_type === 'COD') ? ' selected' : '') + '>COD (Cash on Delivery)</option><option value="COP"' + ((!lbSplitLike && o?.payment_type === 'COP') ? ' selected' : '') + '>COP (Cash on Pickup)</option><option value="LOCAL_COD"' + ((!lbSplitLike && o?.payment_type === 'LOCAL_COD') ? ' selected' : '') + '>LOCAL_COD (Local Driver)</option><option value="CHECK"' + ((!lbSplitLike && o?.payment_type === 'CHECK') ? ' selected' : '') + '>CHECK</option><option value="SPLIT"' + (lbSplitLike ? ' selected' : '') + '>SPLIT (Multiple)</option></select></div><div class="form-group" style="margin-bottom:0"><label>Terms</label><select id="lbPaymentTerms">' + getPaymentTermsOptionsHtml(o?.payment_terms || existingBroker?.payment_terms || 'NET30') + '</select></div></div>' +
+        '<div class="form-row" style="gap:12px;align-items:flex-end"><div class="form-group" style="margin-bottom:0"><label>Total Revenue $</label><input type="number" id="lbRevenue" value="' + (o?.revenue || '') + '" onchange="updateLBPaymentSplit()"></div>' +
+          '<div class="form-group" style="margin-bottom:0;flex:1;min-width:0"><label style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-secondary);margin-bottom:4px;display:block">Method</label><select id="lbPaymentMethod" style="width:100%">' + getPaymentMethodOptionsHtml(getEffectivePaymentMethod(o) || (lbSplitLike ? 'CASH' : 'ACH')) + '</select></div>' +
+          '<div class="form-group" style="margin-bottom:0;flex:1;min-width:0"><label style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-secondary);margin-bottom:4px;display:block">Terms ' + getPaymentPairWarningChipHtml('lbPaymentPairChip') + '</label><select id="lbPaymentTerms" style="width:100%">' + getPaymentTermsOptionsHtmlV2(getEffectivePaymentTerms(o) || existingBroker?.payment_terms || 'NET_30') + '</select></div>' +
+          '<div class="form-group" style="margin-bottom:0;flex:0 0 auto"><label style="display:block;font-size:11px;color:var(--text-secondary);text-transform:uppercase;font-weight:600">Split</label><label style="display:inline-flex;align-items:center;gap:6px;padding:7px 0;font-size:13px;cursor:pointer"><input type="checkbox" id="lbSplitToggle" onchange="toggleLBSplitPayment()" ' + (lbSplitLike ? 'checked' : '') + '>Cash + Bill</label></div>' +
+          '</div>' +
         '<div id="lbSplitPaymentSection" style="display:' + (lbSplitLike ? 'block' : 'none') + ';margin-top:12px;padding-top:12px;border-top:1px dashed #f59e0b">' +
         '<div class="form-row" style="grid-template-columns:1fr 1fr 1fr;gap:12px">' +
         '<div class="form-group" style="margin-bottom:0"><label>Cash Type</label><select id="lbSplitCodType"><option value="COD"' + (lbSplitCashType === 'COD' ? ' selected' : '') + '>COD</option><option value="COP"' + (lbSplitCashType === 'COP' ? ' selected' : '') + '>COP</option><option value="LOCAL_COD"' + (lbSplitCashType === 'LOCAL_COD' ? ' selected' : '') + '>LOCAL_COD</option></select></div>' +
@@ -18036,9 +18270,9 @@
     }
     
     function toggleLBSplitPayment() {
-      const payType = String(document.getElementById('lbPayment')?.value || '').toUpperCase();
-      setSplitSectionVisibility('lb', payType === 'SPLIT');
-      if (payType === 'SPLIT') updateSplitBillForPrefix('lb');
+      const isSplit = !!document.getElementById('lbSplitToggle')?.checked;
+      setSplitSectionVisibility('lb', isSplit);
+      if (isSplit) updateSplitBillForPrefix('lb');
     }
     
     function updateLBPaymentSplit() {
@@ -18083,7 +18317,11 @@
         return;
       }
 
-      const selectedPaymentType = String(document.getElementById('lbPayment')?.value || 'BILL').toUpperCase();
+      // Phase 3 V2: read method+terms; legacy payment_type derived for dual-write
+      const lbMethod = String(document.getElementById('lbPaymentMethod')?.value || '').toUpperCase();
+      const lbTerms = String(document.getElementById('lbPaymentTerms')?.value || 'NET_30').toUpperCase();
+      const lbSplitChecked = !!document.getElementById('lbSplitToggle')?.checked;
+      const selectedPaymentType = lbSplitChecked ? 'SPLIT' : legacyTypeFromMethodTerms(lbMethod, lbTerms);
       const totalRevenue = parseFloat(document.getElementById('lbRevenue')?.value) || 0;
       const splitState = getSplitFormState('lb', id ? appData.orders.find(x => x.id === id) : null);
       if (selectedPaymentType === 'SPLIT') {
@@ -18143,8 +18381,10 @@
         revenue: totalRevenue,
         broker_fee: parseFloat(document.getElementById('lbBrokerFee').value) || 0,
         local_fee: parseFloat(document.getElementById('lbLocalFee').value) || 0,
+        // Phase 3 dual-write: new method+terms + legacy payment_type for ~90d back-compat
+        payment_method: (lbSplitChecked ? 'CASH' : lbMethod) || null,
+        payment_terms: lbSplitChecked ? (splitState.cashType === 'COP' ? 'COP' : 'COD') : lbTerms,
         payment_type: splitPayload.payment_type,
-        payment_terms: document.getElementById('lbPaymentTerms')?.value || null,
         cod_amount: splitPayload.cod_amount,
         bill_amount: splitPayload.bill_amount,
         load_category: loadCategory,
@@ -18422,7 +18662,11 @@
       showToast('Opened review mode with extracted data. Verify and save.', 'warning');
     }
     function getImportFormSnapshotForValidation() {
-      const paymentType = String(document.getElementById('importPaymentType')?.value || '').toUpperCase();
+      // Phase 3 V2: derive legacy payment_type from method+terms+split toggle
+      const importMethod = String(document.getElementById('importPaymentMethod')?.value || '').toUpperCase();
+      const importTerms = String(document.getElementById('importPaymentTerms')?.value || '').toUpperCase();
+      const importSplitChecked = !!document.getElementById('importSplitToggle')?.checked;
+      const paymentType = importSplitChecked ? 'SPLIT' : legacyTypeFromMethodTerms(importMethod, importTerms);
       const splitCashType = String(document.getElementById('importSplitCashType')?.value || '').toUpperCase();
       const codAmount = parseImportNumber(document.getElementById('importSplitCodAmount')?.value);
       const billAmount = parseImportNumber(document.getElementById('importSplitBillAmount')?.value);
@@ -18771,18 +19015,33 @@
       document.getElementById('importPickupDate').value = normalizeDateForImport(normalized.pickup_date) || '';
       document.getElementById('importDeliveryDate').value = normalizeDateForImport(normalized.delivery_date) || '';
       document.getElementById('importRevenue').value = parseImportNumber(normalized.revenue) || '';
+      // Phase 3 V2: route extracted legacy payment_type into the new method+terms+split toggle
       const validPaymentTypes = ['BILL', 'COD', 'COP', 'LOCAL_COD', 'CHECK', 'SPLIT'];
       const extractedPayment = String(normalized.payment_type || '').toUpperCase();
-      document.getElementById('importPaymentType').value = validPaymentTypes.includes(extractedPayment) ? extractedPayment : 'BILL';
+      const safeLegacyType = validPaymentTypes.includes(extractedPayment) ? extractedPayment : 'BILL';
+      const splitToggleEl = document.getElementById('importSplitToggle');
+      const methodEl = document.getElementById('importPaymentMethod');
+      if (splitToggleEl) splitToggleEl.checked = (safeLegacyType === 'SPLIT');
+      if (methodEl) {
+        const mt = methodTermsFromLegacy(safeLegacyType, null);
+        if (mt.method) methodEl.value = mt.method;
+      }
       if (normalized.payment_type === 'SPLIT') {
         document.getElementById('importSplitCashType').value = normalizeSplitCashType(normalized.split_cash_type || 'COD', 'COD');
         document.getElementById('importSplitCodAmount').value = parseImportNumber(normalized.cod_amount) || 0;
         document.getElementById('importSplitBillAmount').value = parseImportNumber(normalized.bill_amount) || 0;
       }
-      const terms = String(normalized.broker_terms || '').toUpperCase();
-      if (terms && PAYMENT_TERMS_OPTIONS.includes(terms)) {
-        document.getElementById('importPaymentTerms').value = terms;
-        document.getElementById('importBrokerTerms').value = terms;
+      // Try to map extracted broker_terms to V2 terms; fall back to NET_30
+      const rawTerms = String(normalized.broker_terms || '').toUpperCase();
+      const termsMap = { NET5:'NET_5', NET7:'NET_7', NET10:'NET_10', NET15:'NET_15', NET21:'NET_30', NET30:'NET_30', NET45:'NET_30', NET60:'NET_30', QUICK_PAY:'QUICKPAY', COLLECT_AT_PICKUP:'COP', COLLECT_AT_DELIVERY:'COD' };
+      const termsV2 = PAYMENT_TERMS_OPTIONS_V2.includes(rawTerms) ? rawTerms : (termsMap[rawTerms] || null);
+      if (termsV2) {
+        document.getElementById('importPaymentTerms').value = termsV2;
+      }
+      // Keep legacy importBrokerTerms in sync (used by older form fields elsewhere)
+      const importBrokerTermsEl = document.getElementById('importBrokerTerms');
+      if (importBrokerTermsEl && rawTerms && PAYMENT_TERMS_OPTIONS.includes(rawTerms)) {
+        importBrokerTermsEl.value = rawTerms;
       }
       document.getElementById('importBrokerFee').value = parseImportNumber(normalized.broker_fee) || 0;
       document.getElementById('importNotes').value = normalized.notes || '';
@@ -18875,8 +19134,9 @@
         '<label style="font-weight:600;display:block;margin-bottom:8px">[[icon:money]] Payment</label>' +
         '<div class="form-row" style="gap:12px">' +
         '<div class="form-group" style="margin-bottom:0"><label style="font-size:12px">Revenue $</label><input type="number" id="importRevenue" style="font-size:14px" onchange="updateImportPaymentSplit()"></div>' +
-        '<div class="form-group" style="margin-bottom:0"><label style="font-size:12px">Payment Type</label><select id="importPaymentType" onchange="toggleImportSplitPayment()" style="font-size:14px"><option value="BILL">BILL</option><option value="COD">COD</option><option value="COP">COP</option><option value="LOCAL_COD">LOCAL_COD</option><option value="CHECK">CHECK</option><option value="SPLIT">SPLIT</option></select></div>' +
-        '<div class="form-group" style="margin-bottom:0"><label style="font-size:12px">Terms</label><select id="importPaymentTerms" style="font-size:14px">' + getPaymentTermsOptionsHtml('NET30') + '</select></div>' +
+        '<div class="form-group" style="margin-bottom:0;flex:1;min-width:0"><label style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-secondary);margin-bottom:4px;display:block">Method</label><select id="importPaymentMethod" style="font-size:14px;width:100%">' + getPaymentMethodOptionsHtml('ACH') + '</select></div>' +
+        '<div class="form-group" style="margin-bottom:0;flex:1;min-width:0"><label style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-secondary);margin-bottom:4px;display:block">Terms ' + getPaymentPairWarningChipHtml('importPaymentPairChip') + '</label><select id="importPaymentTerms" style="font-size:14px;width:100%">' + getPaymentTermsOptionsHtmlV2('NET_30') + '</select></div>' +
+        '<div class="form-group" style="margin-bottom:0;flex:0 0 auto"><label style="font-size:11px;display:block;color:var(--text-secondary);text-transform:uppercase;font-weight:600">Split</label><label style="display:inline-flex;align-items:center;gap:6px;padding:7px 0;font-size:13px;cursor:pointer"><input type="checkbox" id="importSplitToggle" onchange="toggleImportSplitPayment()">Cash + Bill</label></div>' +
         '<div class="form-group" style="margin-bottom:0"><label style="font-size:12px">Broker Fee $</label><input type="number" id="importBrokerFee" value="0" style="font-size:14px"></div>' +
         '<div class="form-group" style="margin-bottom:0"><label style="font-size:12px">Local Fee $</label><input type="number" id="importLocalFee" value="0" style="font-size:14px"></div>' +
         '</div>' +
@@ -18903,14 +19163,18 @@
       setupAddressAutocomplete('importPickupStreet');
       setupAddressAutocomplete('importDeliveryStreet');
       toggleImportSplitPayment();
+      // Phase 3 V2: wire the method/terms validation chip — import modal doesn't go through hydrateSplitControls
+      if (typeof wirePaymentPairValidation === 'function') {
+        wirePaymentPairValidation('importPaymentMethod', 'importPaymentTerms', 'importPaymentPairChip');
+      }
       toggleImportSubcategory();
       applyImportReviewHandoffIfPresent();
     }
 
     function toggleImportSplitPayment() {
-      const payType = String(document.getElementById('importPaymentType')?.value || '').toUpperCase();
-      setSplitSectionVisibility('import', payType === 'SPLIT');
-      if (payType === 'SPLIT') updateSplitBillForPrefix('import');
+      const isSplit = !!document.getElementById('importSplitToggle')?.checked;
+      setSplitSectionVisibility('import', isSplit);
+      if (isSplit) updateSplitBillForPrefix('import');
     }
 
     function updateImportPaymentSplit() {
@@ -19063,10 +19327,11 @@
         if (!continueAnyway) return;
       }
       
-      // Validate payment type
-      const validPaymentTypes = ['BILL', 'COD', 'COP', 'LOCAL_COD', 'CHECK', 'SPLIT'];
-      const selectedPayment = String(document.getElementById('importPaymentType')?.value || 'BILL').toUpperCase();
-      const paymentType = validPaymentTypes.includes(selectedPayment) ? selectedPayment : 'BILL';
+      // Phase 3 V2: read method+terms; legacy payment_type derived for dual-write
+      const importMethod = String(document.getElementById('importPaymentMethod')?.value || 'ACH').toUpperCase();
+      const importTerms = String(document.getElementById('importPaymentTerms')?.value || 'NET_30').toUpperCase();
+      const importSplitChecked = !!document.getElementById('importSplitToggle')?.checked;
+      const paymentType = importSplitChecked ? 'SPLIT' : legacyTypeFromMethodTerms(importMethod, importTerms);
       const totalRevenue = parseFloat(document.getElementById('importRevenue')?.value) || 0;
       const splitState = getSplitFormState('import');
       if (paymentType === 'SPLIT') {
@@ -19135,10 +19400,12 @@
         pickup_date: document.getElementById('importPickupDate').value || null,
         dropoff_date: document.getElementById('importDeliveryDate').value || null,
         revenue: totalRevenue,
+        // Phase 3 dual-write: new method+terms + legacy payment_type
+        payment_method: (importSplitChecked ? 'CASH' : importMethod) || null,
+        payment_terms: importSplitChecked ? (splitState.cashType === 'COP' ? 'COP' : 'COD') : importTerms,
         payment_type: splitPayload.payment_type,
         cod_amount: splitPayload.cod_amount,
         bill_amount: splitPayload.bill_amount,
-        payment_terms: document.getElementById('importPaymentTerms')?.value || null,
         broker_fee: parseFloat(document.getElementById('importBrokerFee').value) || 0,
         local_fee: parseFloat(document.getElementById('importLocalFee').value) || 0,
         dispatcher_notes: document.getElementById('importNotes').value || null,
@@ -20406,7 +20673,7 @@
         '<tr>' +
           '<td>' + escapeHtml(order.orderNumber || 'Order') + '</td>' +
           '<td>' + escapeHtml(order.vehicleDescription || 'Vehicle') + '</td>' +
-          '<td>' + escapeHtml(order.paymentType || 'BILL') + '</td>' +
+          '<td>' + escapeHtml(order.paymentLabel || order.paymentType || 'BILL') + '</td>' +
           '<td class="money">' + formatMoney(order.revenue || 0) + '</td>' +
           '<td class="money" style="color:var(--danger)">-' + formatMoney(order.cashCollected || order.expectedCashCollected || 0) + '</td>' +
           '<td class="money" style="font-weight:700">' + formatMoney(order.driverCut || order.settlementAmount || 0) + '</td>' +
@@ -20925,13 +21192,16 @@
         
         '<div class="form-row"><div class="form-group"><label>Pick-Up Date</label><input type="date" id="orderPickup" value="' + new Date().toISOString().split('T')[0] + '"></div><div class="form-group"><label>Drop-Off Date</label><input type="date" id="orderDropoff"></div></div>' +
         
-        // Payment Section with Split Payment
+        // Payment Section with Split Payment (Phase 3 V2 — method+terms+split toggle)
         '<div style="background:var(--dim-amber);padding:12px;border-radius:8px;margin-bottom:16px"><label style="font-weight:600;margin-bottom:8px;display:block">[[icon:money]] Payment (Total for ALL vehicles)</label>' +
-        '<div class="form-row" style="gap:12px"><div class="form-group" style="margin-bottom:0"><label>Total Revenue $</label><input type="number" id="orderRev" onchange="updatePaymentSplit()"></div>' +
-        '<div class="form-group" style="margin-bottom:0"><label>Payment Type</label><select id="orderPay" onchange="toggleSplitPayment();togglePaymentTerms()"><option value="BILL">BILL (Invoice)</option><option value="COD">COD (Cash on Delivery)</option><option value="COP">COP (Cash on Pickup)</option><option value="LOCAL_COD">LOCAL_COD (Local Driver)</option><option value="CHECK">CHECK</option><option value="SPLIT">SPLIT (Multiple)</option></select></div></div>' +
+        '<div class="form-row" style="gap:12px;align-items:flex-end">' +
+          '<div class="form-group" style="margin-bottom:0"><label>Total Revenue $</label><input type="number" id="orderRev" onchange="updatePaymentSplit()"></div>' +
+          '<div class="form-group" style="margin-bottom:0;flex:1;min-width:0"><label style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-secondary);margin-bottom:4px;display:block">Method</label><select id="orderPaymentMethod" style="width:100%" onchange="togglePaymentTerms()">' + getPaymentMethodOptionsHtml('ACH') + '</select></div>' +
+          '<div class="form-group" style="margin-bottom:0;flex:1;min-width:0"><label style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-secondary);margin-bottom:4px;display:block">Terms ' + getPaymentPairWarningChipHtml('addVehiclePaymentPairChip') + '</label><select id="orderPaymentTerms" style="width:100%" onchange="togglePaymentTerms();updateOrderDueDate()">' + getPaymentTermsOptionsHtmlV2('NET_30') + '</select></div>' +
+          '<div class="form-group" style="margin-bottom:0;flex:0 0 auto"><label style="display:block;font-size:11px;color:var(--text-secondary);text-transform:uppercase;font-weight:600">Split</label><label style="display:inline-flex;align-items:center;gap:6px;padding:7px 0;font-size:13px;cursor:pointer"><input type="checkbox" id="orderSplitToggle" onchange="toggleSplitPayment();togglePaymentTerms()">Cash + Bill</label></div>' +
+        '</div>' +
         '<div id="paymentTermsSection" style="margin-top:12px;padding-top:12px;border-top:1px dashed #f59e0b">' +
-        '<div class="form-row" style="grid-template-columns:1fr 1fr 1fr;gap:12px">' +
-        '<div class="form-group" style="margin-bottom:0"><label>Payment Terms</label><select id="orderPaymentTerms" onchange="updateOrderDueDate()"><option value="QUICK_PAY">QuickPay (Net 2)</option><option value="NET5">NET 5</option><option value="NET7">NET 7</option><option value="NET10">NET 10</option><option value="NET15">NET 15</option><option value="NET21">NET 21</option><option value="NET30" selected>NET 30</option><option value="NET45">NET 45</option><option value="NET60">NET 60</option><option value="CUSTOM">Custom</option></select></div>' +
+        '<div class="form-row" style="grid-template-columns:1fr 1fr;gap:12px">' +
         '<div class="form-group" style="margin-bottom:0" id="customTermsGroup" style="display:none"><label>Custom Days</label><input type="number" id="orderCustomDays" min="1" max="365" placeholder="Days" onchange="updateOrderDueDate()"></div>' +
         '<div class="form-group" style="margin-bottom:0"><label>Due Date</label><input type="date" id="orderDueDate" readonly style="background:var(--surface-elevated)"></div></div></div>' +
         '<div id="splitPaymentSection" style="display:none;margin-top:12px;padding-top:12px;border-top:1px dashed #f59e0b">' +
@@ -20970,6 +21240,16 @@
 
       // Setup model autocomplete (depends on make)
       setupModelAutocomplete('vehModel');
+
+      // Phase 3 V2: hydrate the method/terms validation chip + initial visibility for terms section.
+      // Note: this form uses a namespaced chip ID (addVehiclePaymentPairChip) to avoid collision with
+      // the renderOrderForm modal which also uses orderPaymentMethod/orderPaymentTerms. hydrateSplitControls
+      // looks for 'orderPaymentPairChip' (the new-order modal's chip) and no-ops here; we wire ours explicitly.
+      hydrateSplitControls('order', null);
+      if (typeof wirePaymentPairValidation === 'function') {
+        wirePaymentPairValidation('orderPaymentMethod', 'orderPaymentTerms', 'addVehiclePaymentPairChip');
+      }
+      togglePaymentTerms();
 
       // Auto-detect direction when origin/destination changes
       const originInput = document.getElementById('orderOrigin');
@@ -21064,18 +21344,22 @@
       fillBrokerFormFields(prefix, broker);
 
       // Auto-fill order payment terms from broker defaults in trip add flow.
+      // Phase 3 V2: getEffectivePaymentTerms handles V1→V2 normalization centrally.
       const termsSelect = document.getElementById('orderPaymentTerms');
       if (broker && broker.payment_terms && termsSelect) {
-        termsSelect.value = broker.payment_terms;
+        const v2 = getEffectivePaymentTerms({ payment_terms: broker.payment_terms });
+        if (v2) termsSelect.value = v2;
         updateOrderDueDate();
       }
       const lbTermsSelect = document.getElementById('lbPaymentTerms');
       if (broker && broker.payment_terms && lbTermsSelect) {
-        lbTermsSelect.value = broker.payment_terms;
+        const v2 = getEffectivePaymentTerms({ payment_terms: broker.payment_terms });
+        if (v2) lbTermsSelect.value = v2;
       }
       const importTermsSelect = document.getElementById('importPaymentTerms');
       if (broker && broker.payment_terms && importTermsSelect) {
-        importTermsSelect.value = broker.payment_terms;
+        const v2 = getEffectivePaymentTerms({ payment_terms: broker.payment_terms });
+        if (v2) importTermsSelect.value = v2;
       }
     }
     
@@ -21331,21 +21615,32 @@
     }
     
     function toggleSplitPayment() {
-      const payType = String(document.getElementById('orderPay')?.value || '').toUpperCase();
-      setSplitSectionVisibility('order', payType === 'SPLIT');
-      if (payType === 'SPLIT') updateSplitBillForPrefix('order');
+      // Phase 3 V2: prefer the new split toggle checkbox; fall back to legacy orderPay value.
+      const toggle = document.getElementById('orderSplitToggle');
+      const isSplit = toggle ? !!toggle.checked : (String(document.getElementById('orderPay')?.value || '').toUpperCase() === 'SPLIT');
+      setSplitSectionVisibility('order', isSplit);
+      if (isSplit) updateSplitBillForPrefix('order');
     }
 
     function togglePaymentTerms() {
-      const payType = document.getElementById('orderPay').value;
+      // Phase 3 V2: prefer new IDs (orderPaymentMethod + split toggle); fall back to legacy orderPay
+      const methodEl = document.getElementById('orderPaymentMethod');
+      const splitEl = document.getElementById('orderSplitToggle');
       const termsSection = document.getElementById('paymentTermsSection');
-      if (termsSection) {
-        // Show payment terms for BILL and SPLIT types
-        termsSection.style.display = (payType === 'BILL' || payType === 'SPLIT') ? 'block' : 'none';
-        if (payType === 'BILL' || payType === 'SPLIT') {
-          updateOrderDueDate();
-        }
+      if (!termsSection) return;
+      let showTerms;
+      if (methodEl) {
+        // Hide due-date section for cash-on-pickup/delivery and Comchek (broker provides code — no due date).
+        // Always show for split (has a billed leg).
+        const isSplit = !!splitEl?.checked;
+        const currentTerms = (document.getElementById('orderPaymentTerms')?.value || '').toUpperCase();
+        showTerms = isSplit || !['COP', 'COD', 'COMCHEK'].includes(currentTerms);
+      } else {
+        const payType = document.getElementById('orderPay')?.value;
+        showTerms = (payType === 'BILL' || payType === 'SPLIT');
       }
+      termsSection.style.display = showTerms ? 'block' : 'none';
+      if (showTerms) updateOrderDueDate();
     }
 
     function updateOrderDueDate() {
@@ -21360,18 +21655,20 @@
         customGroup.style.display = terms === 'CUSTOM' ? 'block' : 'none';
       }
 
-      // Calculate due date
+      // Calculate due date — accept BOTH legacy V1 (NET30) and V2 (NET_30) terms
       let days = 30; // default
       switch (terms) {
-        case 'QUICK_PAY': days = 2; break;
-        case 'NET5': days = 5; break;
-        case 'NET7': days = 7; break;
-        case 'NET10': days = 10; break;
-        case 'NET15': days = 15; break;
+        case 'QUICK_PAY': case 'QUICKPAY': days = 2; break;
+        case 'NET5':  case 'NET_5':  days = 5; break;
+        case 'NET7':  case 'NET_7':  days = 7; break;
+        case 'NET10': case 'NET_10': days = 10; break;
+        case 'NET15': case 'NET_15': days = 15; break;
+        case 'NET20': case 'NET_20': days = 20; break;
         case 'NET21': days = 21; break;
-        case 'NET30': days = 30; break;
+        case 'NET30': case 'NET_30': days = 30; break;
         case 'NET45': days = 45; break;
         case 'NET60': days = 60; break;
+        case 'COD': case 'COP': case 'COMCHEK': days = 0; break;
         case 'CUSTOM':
           days = parseInt(customDaysEl?.value) || 30;
           break;
@@ -21396,9 +21693,9 @@
     }
 
     function toggleEditOrderSplitPayment() {
-      const payType = String(document.getElementById('editOrderPay')?.value || '').toUpperCase();
-      setSplitSectionVisibility('editOrder', payType === 'SPLIT');
-      if (payType === 'SPLIT') updateSplitBillForPrefix('editOrder');
+      const isSplit = !!document.getElementById('editOrderSplitToggle')?.checked;
+      setSplitSectionVisibility('editOrder', isSplit);
+      if (isSplit) updateSplitBillForPrefix('editOrder');
     }
 
     function updateEditOrderPaymentSplit() {
@@ -21458,8 +21755,16 @@
       const vehicleLotNumber = document.getElementById('vehLotNumber')?.value || null;
       const vehicleBuyerNumber = document.getElementById('vehBuyerNumber')?.value || null;
 
-      // Handle payment type (including split)
-      const selectedPaymentType = String(document.getElementById('orderPay')?.value || 'BILL').toUpperCase();
+      // Phase 3 V2: read method+terms (prefer V2 IDs, fall back to legacy orderPay)
+      const sv_methodEl = document.getElementById('orderPaymentMethod');
+      const sv_termsEl = document.getElementById('orderPaymentTerms');
+      const sv_splitEl = document.getElementById('orderSplitToggle');
+      const sv_method = String(sv_methodEl?.value || '').toUpperCase();
+      const sv_terms = String(sv_termsEl?.value || 'NET_30').toUpperCase();
+      const sv_splitChecked = sv_splitEl ? !!sv_splitEl.checked : false;
+      const selectedPaymentType = sv_methodEl
+        ? (sv_splitChecked ? 'SPLIT' : legacyTypeFromMethodTerms(sv_method, sv_terms))
+        : (String(document.getElementById('orderPay')?.value || 'BILL').toUpperCase());
       const totalRevenue = parseFloat(document.getElementById('orderRev').value) || 0;
       const splitState = getSplitFormState('order');
       if (selectedPaymentType === 'SPLIT') {
@@ -21479,18 +21784,29 @@
       const codAmount = splitPayload.cod_amount;
       const billAmount = splitPayload.bill_amount;
 
-      // Payment terms (for BILL and SPLIT types)
+      // Payment terms — V2 path stores method+terms; due date applies to billable paths
       let paymentTerms = null;
       let dueDate = null;
       let customTermsDays = null;
 
-      if (selectedPaymentType === 'BILL' || selectedPaymentType === 'SPLIT') {
-        paymentTerms = document.getElementById('orderPaymentTerms')?.value || 'NET30';
+      if (sv_methodEl) {
+        // V2 path
+        paymentTerms = sv_splitChecked ? (splitState.cashType === 'COP' ? 'COP' : 'COD') : sv_terms;
+        dueDate = document.getElementById('orderDueDate')?.value || null;
+        if (paymentTerms === 'CUSTOM') {
+          customTermsDays = parseInt(document.getElementById('orderCustomDays')?.value) || null;
+        }
+      } else if (selectedPaymentType === 'BILL' || selectedPaymentType === 'SPLIT') {
+        // Legacy fallback path
+        paymentTerms = sv_termsEl?.value || 'NET30';
         dueDate = document.getElementById('orderDueDate')?.value || null;
         if (paymentTerms === 'CUSTOM') {
           customTermsDays = parseInt(document.getElementById('orderCustomDays')?.value) || null;
         }
       }
+      const sv_paymentMethod = sv_methodEl
+        ? ((sv_splitChecked ? 'CASH' : sv_method) || null)
+        : null;
 
       // Check if there's a current vehicle in the form that hasn't been added to list
       const currentMake = document.getElementById('vehMake').value.trim();
@@ -21543,6 +21859,8 @@
           revenue: totalRevenue,
           broker_fee: brokerFee,
           local_fee: localFee,
+          // Phase 3 dual-write: new method+terms + legacy payment_type
+          payment_method: sv_paymentMethod,
           payment_type: paymentType,
           cod_amount: codAmount,
           bill_amount: billAmount,
@@ -21655,7 +21973,12 @@
         
         '<div class="form-row"><div class="form-group"><label>Pick-Up Date</label><input type="date" id="editOrderPickup" value="' + (o.pickup_date || '') + '"></div><div class="form-group"><label>Drop-Off Date</label><input type="date" id="editOrderDropoff" value="' + (o.dropoff_date || '') + '"></div></div>' +
         '<div class="form-row"><div class="form-group"><label>Revenue $</label><input type="number" id="editOrderRev" value="' + o.revenue + '" onchange="updateEditOrderPaymentSplit()"></div><div class="form-group"><label>Broker Fee $</label><input type="number" id="editOrderBrokerFee" value="' + (o.broker_fee || 0) + '"></div></div>' +
-        '<div class="form-row"><div class="form-group"><label>Local Fee $</label><input type="number" id="editOrderFee" value="' + (o.local_fee || 0) + '"></div><div class="form-group"><label>Payment</label><select id="editOrderPay" onchange="toggleEditOrderSplitPayment()"><option value="BILL"' + ((!editSplitLike && o.payment_type === 'BILL') ? ' selected' : '') + '>BILL</option><option value="COD"' + ((!editSplitLike && o.payment_type === 'COD') ? ' selected' : '') + '>COD</option><option value="COP"' + ((!editSplitLike && o.payment_type === 'COP') ? ' selected' : '') + '>COP</option><option value="CHECK"' + ((!editSplitLike && o.payment_type === 'CHECK') ? ' selected' : '') + '>CHECK</option><option value="LOCAL_COD"' + ((!editSplitLike && o.payment_type === 'LOCAL_COD') ? ' selected' : '') + '>LOCAL_COD</option><option value="SPLIT"' + (editSplitLike ? ' selected' : '') + '>SPLIT</option></select></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Local Fee $</label><input type="number" id="editOrderFee" value="' + (o.local_fee || 0) + '"></div></div>' +
+        '<div class="form-row" style="gap:12px;align-items:flex-end">' +
+          '<div class="form-group" style="flex:1;min-width:0;margin-bottom:0"><label style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-secondary);margin-bottom:4px;display:block">Method</label><select id="editOrderPaymentMethod" style="width:100%">' + getPaymentMethodOptionsHtml(getEffectivePaymentMethod(o) || (editSplitLike ? 'CASH' : 'ACH')) + '</select></div>' +
+          '<div class="form-group" style="flex:1;min-width:0;margin-bottom:0"><label style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-secondary);margin-bottom:4px;display:block">Terms ' + getPaymentPairWarningChipHtml('editOrderPaymentPairChip') + '</label><select id="editOrderPaymentTerms" style="width:100%">' + getPaymentTermsOptionsHtmlV2(getEffectivePaymentTerms(o) || 'NET_30') + '</select></div>' +
+          '<div class="form-group" style="flex:0 0 auto;margin-bottom:0"><label style="display:block;font-size:11px;color:var(--text-secondary);text-transform:uppercase;font-weight:600">Split</label><label style="display:inline-flex;align-items:center;gap:6px;padding:7px 0;font-size:13px;cursor:pointer"><input type="checkbox" id="editOrderSplitToggle" onchange="toggleEditOrderSplitPayment()" ' + (editSplitLike ? 'checked' : '') + '>Cash + Bill</label></div>' +
+          '</div>' +
         '<div id="editSplitPaymentSection" style="display:' + (editSplitLike ? 'block' : 'none') + ';margin-top:8px;padding-top:12px;border-top:1px dashed #f59e0b">' +
         '<div class="form-row" style="grid-template-columns:1fr 1fr 1fr;gap:12px"><div class="form-group" style="margin-bottom:0"><label>Cash Type</label><select id="editSplitCodType"><option value="COD"' + (editSplitCashType === 'COD' ? ' selected' : '') + '>COD</option><option value="COP"' + (editSplitCashType === 'COP' ? ' selected' : '') + '>COP</option><option value="LOCAL_COD"' + (editSplitCashType === 'LOCAL_COD' ? ' selected' : '') + '>LOCAL_COD</option></select></div><div class="form-group" style="margin-bottom:0"><label>Cash Amount $</label><input type="number" id="editSplitCodAmount" value="' + editSplitCashAmount + '" onchange="updateEditOrderSplitBill()"></div><div class="form-group" style="margin-bottom:0"><label>Bill Amount $</label><input type="number" id="editSplitBillAmount" value="' + editSplitBillAmount + '" readonly style="background:var(--surface-elevated)"></div></div>' +
         '</div>' +
@@ -21711,7 +22034,11 @@
         zip: document.getElementById('editDeliveryZip')?.value || ''
       });
 
-      const selectedPaymentType = String(document.getElementById('editOrderPay')?.value || 'BILL').toUpperCase();
+      // Phase 3 V2: read method+terms; legacy payment_type derived for dual-write
+      const editMethod = String(document.getElementById('editOrderPaymentMethod')?.value || '').toUpperCase();
+      const editTerms = String(document.getElementById('editOrderPaymentTerms')?.value || 'NET_30').toUpperCase();
+      const editSplitChecked = !!document.getElementById('editOrderSplitToggle')?.checked;
+      const selectedPaymentType = editSplitChecked ? 'SPLIT' : legacyTypeFromMethodTerms(editMethod, editTerms);
       const revenue = parseFloat(document.getElementById('editOrderRev')?.value) || 0;
       const splitState = getSplitFormState('editOrder', appData.orders.find(x => x.id === orderId));
       if (selectedPaymentType === 'SPLIT') {
@@ -21755,6 +22082,9 @@
         revenue,
         broker_fee: parseFloat(document.getElementById('editOrderBrokerFee').value) || 0,
         local_fee: parseFloat(document.getElementById('editOrderFee').value) || 0,
+        // Phase 3 dual-write: new method+terms + legacy payment_type
+        payment_method: (editSplitChecked ? 'CASH' : editMethod) || null,
+        payment_terms: editSplitChecked ? (splitState.cashType === 'COP' ? 'COP' : 'COD') : editTerms,
         payment_type: splitPayload.payment_type,
         cod_amount: splitPayload.cod_amount,
         bill_amount: splitPayload.bill_amount,
@@ -22273,7 +22603,12 @@
         '</div>' +
         '<div style="background:var(--dim-amber);padding:12px;border-radius:8px;margin-bottom:12px"><label style="font-weight:600;display:block;margin-bottom:8px">[[icon:money]] Payment</label>' +
         '<div class="form-row" style="gap:12px"><div class="form-group" style="margin-bottom:0"><label>Revenue $</label><input type="number" id="orderRev" value="' + (o?.revenue || '') + '" onchange="updatePaymentSplit()"></div><div class="form-group" style="margin-bottom:0"><label>Broker Fee $</label><input type="number" id="orderBrokerFee" value="' + (o?.broker_fee || 0) + '"></div><div class="form-group" style="margin-bottom:0"><label>Local Fee $</label><input type="number" id="orderFee" value="' + (o?.local_fee || 0) + '"></div></div>' +
-        '<div class="form-row" style="gap:12px;margin-top:8px"><div class="form-group" style="margin-bottom:0"><label>Payment</label><select id="orderPay" onchange="toggleSplitPayment()"><option value="BILL"' + ((!o || (!orderSplitLike && o?.payment_type === 'BILL')) ? ' selected' : '') + '>BILL</option><option value="COD"' + ((!orderSplitLike && o?.payment_type === 'COD') ? ' selected' : '') + '>COD</option><option value="COP"' + ((!orderSplitLike && o?.payment_type === 'COP') ? ' selected' : '') + '>COP</option><option value="CHECK"' + ((!orderSplitLike && o?.payment_type === 'CHECK') ? ' selected' : '') + '>CHECK</option><option value="LOCAL_COD"' + ((!orderSplitLike && o?.payment_type === 'LOCAL_COD') ? ' selected' : '') + '>LOCAL_COD</option><option value="SPLIT"' + (orderSplitLike ? ' selected' : '') + '>SPLIT</option></select></div><div class="form-group" style="margin-bottom:0"><label>Status</label><select id="orderStatus"><option value="PENDING"' + (o?.status === 'PENDING' ? ' selected' : '') + '>NEW</option><option value="IN_TRANSIT"' + (o?.status === 'IN_TRANSIT' ? ' selected' : '') + '>IN_TRANSIT</option><option value="DELIVERED"' + (o?.status === 'DELIVERED' ? ' selected' : '') + '>DELIVERED</option></select></div></div>' +
+        '<div class="form-row" style="gap:12px;margin-top:8px;align-items:flex-end">' +
+          '<div class="form-group" style="margin-bottom:0;flex:1;min-width:0"><label style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-secondary);margin-bottom:4px;display:block">Method</label><select id="orderPaymentMethod" style="width:100%">' + getPaymentMethodOptionsHtml(getEffectivePaymentMethod(o) || (orderSplitLike ? 'CASH' : 'ACH')) + '</select></div>' +
+          '<div class="form-group" style="margin-bottom:0;flex:1;min-width:0"><label style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-secondary);margin-bottom:4px;display:block">Terms ' + getPaymentPairWarningChipHtml('orderPaymentPairChip') + '</label><select id="orderPaymentTerms" style="width:100%">' + getPaymentTermsOptionsHtmlV2(getEffectivePaymentTerms(o) || existingBroker?.payment_terms || 'NET_30') + '</select></div>' +
+          '<div class="form-group" style="margin-bottom:0;flex:0 0 auto"><label style="display:block;font-size:11px;color:var(--text-secondary);text-transform:uppercase;font-weight:600">Split</label><label style="display:inline-flex;align-items:center;gap:6px;padding:7px 0;font-size:13px;cursor:pointer"><input type="checkbox" id="orderSplitToggle" onchange="toggleSplitPayment()" ' + (orderSplitLike ? 'checked' : '') + '>Cash + Bill</label></div>' +
+          '<div class="form-group" style="margin-bottom:0;flex:0 0 140px"><label>Status</label><select id="orderStatus" style="width:100%"><option value="PENDING"' + (o?.status === 'PENDING' ? ' selected' : '') + '>NEW</option><option value="IN_TRANSIT"' + (o?.status === 'IN_TRANSIT' ? ' selected' : '') + '>IN_TRANSIT</option><option value="DELIVERED"' + (o?.status === 'DELIVERED' ? ' selected' : '') + '>DELIVERED</option></select></div>' +
+          '</div>' +
         '<div id="splitPaymentSection" style="display:' + (orderSplitLike ? 'block' : 'none') + ';margin-top:12px;padding-top:12px;border-top:1px dashed var(--border-primary)">' +
         '<div class="form-row" style="grid-template-columns:1fr 1fr 1fr;gap:12px"><div class="form-group" style="margin-bottom:0"><label>Cash Type</label><select id="splitCodType"><option value="COD"' + (orderSplitCashType === 'COD' ? ' selected' : '') + '>COD</option><option value="COP"' + (orderSplitCashType === 'COP' ? ' selected' : '') + '>COP</option><option value="LOCAL_COD"' + (orderSplitCashType === 'LOCAL_COD' ? ' selected' : '') + '>LOCAL_COD</option></select></div><div class="form-group" style="margin-bottom:0"><label>Cash Amount $</label><input type="number" id="splitCodAmount" value="' + orderSplitCashAmount + '" onchange="updateSplitBill()"></div><div class="form-group" style="margin-bottom:0"><label>Bill Amount $</label><input type="number" id="splitBillAmount" value="' + orderSplitBillAmount + '" readonly style="background:var(--bg-tertiary)"></div></div>' +
         '</div>' +
@@ -22411,9 +22746,16 @@
                 return '<option value="' + dd.id + '"' + (isSel ? ' selected' : '') + '>' + escapeHtml(dd.name) + '</option>';
               }).join('') + '</select>'
           : '<input type="text" value="' + escapeHtml(dispatcherSelf ? dispatcherSelf.name : currentUser.first_name + ' ' + currentUser.last_name) + '" readonly style="background:var(--surface-elevated,#f0f0f2);cursor:not-allowed"><input type="hidden" id="wiz_dispatcher" value="' + (dispatcherSelf ? dispatcherSelf.id : '') + '">';
-        var isSplit = (d.payment_type || '') === 'SPLIT';
+        var isSplit = (d.payment_type || '') === 'SPLIT' || !!d.split_payment;
         var codSel = function(val) { return (d.split_cash_type || 'COD') === val ? ' selected' : ''; };
-        var ptSel  = function(val) { return (d.payment_type || 'COD') === val ? ' selected' : ''; };
+        // Phase 3 V2: derive defaults from any existing payment_method/payment_terms or legacy payment_type
+        var initMethod = String(d.payment_method || '').toUpperCase()
+          || methodTermsFromLegacy(d.payment_type || '', d.payment_terms || '').method
+          || 'ACH';
+        var initTerms = String(d.payment_terms || '').toUpperCase();
+        if (PAYMENT_TERMS_OPTIONS_V2.indexOf(initTerms) < 0) {
+          initTerms = methodTermsFromLegacy(d.payment_type || '', d.payment_terms || '').terms || 'NET_30';
+        }
         return '<div style="padding:24px">'
           + '<div style="margin-bottom:16px"><h4 style="margin:0 0 4px;font-size:16px;font-weight:700;color:var(--text-primary)">Payment &amp; Broker</h4>'
           + '<p style="margin:0;font-size:13px;color:var(--text-secondary)">Enter financials and assign a broker.</p></div>'
@@ -22425,15 +22767,13 @@
           + '</div>'
           + '<div class="form-row" style="margin-bottom:12px">'
           + '<div class="form-group" style="margin-bottom:0"><label>Local Fee $</label><input type="number" id="wiz_local_fee" value="' + (d.local_fee || '') + '" placeholder="0.00" min="0" step="0.01"></div>'
-          + '<div class="form-group" style="margin-bottom:0"><label>Payment Type</label>'
-          + '<select id="wiz_payment_type" onchange="_wizToggleSplit()">'
-          + '<option value="COD"'       + ptSel('COD')       + '>COD</option>'
-          + '<option value="COP"'       + ptSel('COP')       + '>COP</option>'
-          + '<option value="BILL"'      + ptSel('BILL')      + '>BILLING</option>'
-          + '<option value="CHECK"'     + ptSel('CHECK')     + '>CHECK</option>'
-          + '<option value="LOCAL_COD"' + ptSel('LOCAL_COD') + '>LOCAL COD</option>'
-          + '<option value="SPLIT"'     + ptSel('SPLIT')     + '>SPLIT</option>'
-          + '</select></div></div>'
+          + '<div class="form-group" style="margin-bottom:0"></div>'
+          + '</div>'
+          + '<div class="form-row" style="margin-bottom:12px;align-items:flex-end">'
+          + '<div class="form-group" style="margin-bottom:0;flex:1;min-width:0"><label style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-secondary);margin-bottom:4px;display:block">Method</label><select id="wiz_payment_method" style="width:100%">' + getPaymentMethodOptionsHtml(initMethod) + '</select></div>'
+          + '<div class="form-group" style="margin-bottom:0;flex:1;min-width:0"><label style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-secondary);margin-bottom:4px;display:block">Terms ' + getPaymentPairWarningChipHtml('wizPaymentPairChip') + '</label><select id="wiz_payment_terms" style="width:100%">' + getPaymentTermsOptionsHtmlV2(initTerms) + '</select></div>'
+          + '<div class="form-group" style="margin-bottom:0;flex:0 0 auto"><label style="display:block;font-size:11px;color:var(--text-secondary);text-transform:uppercase;font-weight:600">Split</label><label style="display:inline-flex;align-items:center;gap:6px;padding:7px 0;font-size:13px;cursor:pointer"><input type="checkbox" id="wiz_split_toggle" onchange="_wizToggleSplit()" ' + (isSplit ? 'checked' : '') + '>Cash + Bill</label></div>'
+          + '</div>'
           + '<div id="wiz_split_section" style="display:' + (isSplit ? 'block' : 'none') + ';padding-top:12px;border-top:1px dashed rgba(245,158,11,.4)">'
           + '<div class="form-row" style="margin-bottom:8px">'
           + '<div class="form-group" style="margin-bottom:0"><label>Cash Type</label>'
@@ -22460,8 +22800,12 @@
 
       function _wizStep4Html() {
         var d = _wiz.data;
+        // Phase 3 V2: prefer composed label; fall back to legacy mapping
         var payLabels = {COD:'COD',COP:'COP',BILL:'BILLING',CHECK:'CHECK',LOCAL_COD:'LOCAL COD',SPLIT:'SPLIT'};
-        var payLabel  = payLabels[d.payment_type] || (d.payment_type || 'COD');
+        var payLabel  = (d.payment_method)
+          ? composePaymentLabel(d.payment_method, d.payment_terms)
+          : (payLabels[d.payment_type] || (d.payment_type || 'COD'));
+        if (d.split_payment) payLabel = 'Split (Cash + Bill)';
         var pickupStr = [d.pickup_address,  [d.pickup_city,   d.pickup_state].filter(Boolean).join(', ')].filter(Boolean).join(', ')  || '—';
         var delivStr  = [d.delivery_address, [d.delivery_city, d.delivery_state].filter(Boolean).join(', ')].filter(Boolean).join(', ') || '—';
         var dispMatch = (appData.dispatchers || []).find(function(dd) { return dd.id === d.dispatcher_id; });
@@ -22547,6 +22891,10 @@
             });
           }
           _wizUpdateSplitPreview();
+          // Phase 3 V2: wire validation chip for method/terms
+          if (typeof wirePaymentPairValidation === 'function') {
+            wirePaymentPairValidation('wiz_payment_method', 'wiz_payment_terms', 'wizPaymentPairChip');
+          }
         }
       }
 
@@ -22577,7 +22925,18 @@
           d.revenue           = parseFloat(document.getElementById('wiz_revenue')           ? document.getElementById('wiz_revenue').value           : '') || 0;
           d.broker_fee        = parseFloat(document.getElementById('wiz_broker_fee')        ? document.getElementById('wiz_broker_fee').value        : '') || 0;
           d.local_fee         = parseFloat(document.getElementById('wiz_local_fee')         ? document.getElementById('wiz_local_fee').value         : '') || 0;
-          d.payment_type      = document.getElementById('wiz_payment_type')      ? document.getElementById('wiz_payment_type').value      : 'COD';
+          // Phase 3 V2: store new method+terms+split_payment, derive legacy payment_type for back-compat
+          var wizMethodEl = document.getElementById('wiz_payment_method');
+          var wizTermsEl = document.getElementById('wiz_payment_terms');
+          var wizSplitToggle = document.getElementById('wiz_split_toggle');
+          if (wizMethodEl && wizTermsEl) {
+            d.payment_method  = String(wizMethodEl.value || 'ACH').toUpperCase();
+            d.payment_terms   = String(wizTermsEl.value || 'NET_30').toUpperCase();
+            d.split_payment   = !!wizSplitToggle?.checked;
+            d.payment_type    = d.split_payment ? 'SPLIT' : legacyTypeFromMethodTerms(d.payment_method, d.payment_terms);
+          } else {
+            d.payment_type    = document.getElementById('wiz_payment_type') ? document.getElementById('wiz_payment_type').value : 'COD';
+          }
           d.split_cash_type   = document.getElementById('wiz_split_cash_type')   ? document.getElementById('wiz_split_cash_type').value   : 'COD';
           d.split_cash_amount = parseFloat(document.getElementById('wiz_split_cash_amount') ? document.getElementById('wiz_split_cash_amount').value : '') || 0;
           d.broker_name       = (document.getElementById('wiz_broker_name')  ? document.getElementById('wiz_broker_name').value  : '').trim();
@@ -22608,7 +22967,7 @@
             return false;
           }
         }
-        if (step === 3 && d.payment_type === 'SPLIT') {
+        if (step === 3 && (d.payment_type === 'SPLIT' || d.split_payment)) {
           if (!d.split_cash_amount || d.split_cash_amount <= 0) {
             showToast('Enter a cash amount for split payment.', 'warning');
             return false;
@@ -22620,10 +22979,17 @@
       }
 
       window._wizToggleSplit = function () {
-        var sel     = document.getElementById('wiz_payment_type');
+        // Phase 3 V2: prefer the new split toggle; fall back to legacy payment_type select
+        var toggle = document.getElementById('wiz_split_toggle');
+        var sel = document.getElementById('wiz_payment_type');
         var section = document.getElementById('wiz_split_section');
-        if (sel && section) section.style.display = sel.value === 'SPLIT' ? 'block' : 'none';
+        if (!section) return;
+        var isSplit = toggle ? !!toggle.checked : (sel && sel.value === 'SPLIT');
+        section.style.display = isSplit ? 'block' : 'none';
         _wizUpdateSplitPreview();
+        if (typeof wirePaymentPairValidation === 'function') {
+          wirePaymentPairValidation('wiz_payment_method', 'wiz_payment_terms', 'wizPaymentPairChip');
+        }
       };
 
       window._wizUpdateSplitPreview = function () {
@@ -22674,6 +23040,13 @@
           var pickupAddrPayload   = buildOrderAddressPayload('pickup',   {street: d.pickup_address  || '', city: d.pickup_city     || '', state: d.pickup_state    || '', zip: d.pickup_zip   || ''});
           var deliveryAddrPayload = buildOrderAddressPayload('delivery', {street: d.delivery_address || '', city: d.delivery_city  || '', state: d.delivery_state  || '', zip: d.delivery_zip || ''});
           var splitPayload = applySplitToPayload({paymentType: d.payment_type || 'COD', revenue: d.revenue || 0, splitCashType: d.split_cash_type || 'COD', splitCashAmount: d.split_cash_amount || 0});
+          // Phase 3 dual-write defaults
+          var wizPaymentMethodOut = d.split_payment
+            ? 'CASH'
+            : (d.payment_method || methodTermsFromLegacy(d.payment_type || '', d.payment_terms || '').method || null);
+          var wizPaymentTermsOut = d.split_payment
+            ? (d.split_cash_type === 'COP' ? 'COP' : 'COD')
+            : (d.payment_terms || methodTermsFromLegacy(d.payment_type || '', d.payment_terms || '').terms || 'NET_30');
           var orderData = Object.assign({
             order_number:           'ORD-' + Date.now().toString().slice(-4),
             trip_id:                null,
@@ -22705,10 +23078,12 @@
             broker_fee:             d.broker_fee || 0,
             local_fee:              d.local_fee  || 0,
             local_driver_id:        null,
+            // Phase 3 dual-write: new method+terms + legacy payment_type
+            payment_method:         wizPaymentMethodOut,
             payment_type:           splitPayload.payment_type,
             cod_amount:             splitPayload.cod_amount,
             bill_amount:            splitPayload.bill_amount,
-            payment_terms:          null,
+            payment_terms:          wizPaymentTermsOut,
             status:                 'PENDING',
             delivery_status:        'pending',
             pickup_eta:             null,
@@ -22885,7 +23260,17 @@
 
       const pickupEtaVal = document.getElementById('pickupEta')?.value || '';
       const deliveryEtaVal = document.getElementById('deliveryEta')?.value || '';
-      const selectedPaymentType = String(document.getElementById('orderPay')?.value || 'BILL').toUpperCase();
+      // Phase 3 V2: read method+terms (prefer V2 IDs, fall back to legacy orderPay)
+      const orderMethodEl = document.getElementById('orderPaymentMethod');
+      const orderTermsEl = document.getElementById('orderPaymentTerms');
+      const orderSplitToggleEl = document.getElementById('orderSplitToggle');
+      const orderMethod = String(orderMethodEl?.value || '').toUpperCase();
+      const orderTerms = String(orderTermsEl?.value || 'NET_30').toUpperCase();
+      const orderSplitChecked = orderSplitToggleEl ? !!orderSplitToggleEl.checked : false;
+      const legacyOrderPayValue = String(document.getElementById('orderPay')?.value || '').toUpperCase();
+      const selectedPaymentType = orderMethodEl
+        ? (orderSplitChecked ? 'SPLIT' : legacyTypeFromMethodTerms(orderMethod, orderTerms))
+        : (legacyOrderPayValue || 'BILL');
       const revenue = parseFloat(document.getElementById('orderRev')?.value) || 0;
       const splitState = getSplitFormState('order', id ? appData.orders.find(o => o.id === id) : null);
       if (selectedPaymentType === 'SPLIT') {
@@ -22928,10 +23313,16 @@
         broker_fee: parseFloat(document.getElementById('orderBrokerFee')?.value) || 0,
         local_fee: parseFloat(document.getElementById('orderFee').value) || 0,
         local_driver_id: (id ? appData.orders.find(o => o.id === id)?.local_driver_id : null) || null,
+        // Phase 3 dual-write: new method+terms + legacy payment_type
+        payment_method: orderMethodEl
+          ? ((orderSplitChecked ? 'CASH' : orderMethod) || null)
+          : null,
+        payment_terms: orderMethodEl
+          ? (orderSplitChecked ? (splitState.cashType === 'COP' ? 'COP' : 'COD') : orderTerms)
+          : (document.getElementById('orderBrokerTerms')?.value || null),
         payment_type: splitPayload.payment_type,
         cod_amount: splitPayload.cod_amount,
         bill_amount: splitPayload.bill_amount,
-        payment_terms: document.getElementById('orderBrokerTerms')?.value || null,
         status: document.getElementById('orderStatus').value,
         delivery_status: { 'PENDING': 'pending', 'IN_TRANSIT': 'picked_up', 'DELIVERED': 'delivered' }[document.getElementById('orderStatus').value] || 'pending',
         pickup_contact_name: document.getElementById('pickupContactName').value || null,
@@ -24983,7 +25374,7 @@
                   driverLabel: driverName,
                   extraMetaHtml:
                     '<span style="font-size:12px;color:var(--text-secondary)">BROKER FEE: <strong style="color:var(--danger)">' + formatMoney(o.broker_fee || 0) + '</strong></span>' +
-                    '<span style="font-size:12px;color:var(--text-secondary)">PAYMENT: <strong>' + escapeHtml(o.payment_type || '-') + '</strong></span>'
+                    '<span style="font-size:12px;color:var(--text-secondary)">PAYMENT: <strong>' + escapeHtml(getPaymentDisplayLabel(o)) + '</strong></span>'
                 });
               }).join('') +
               '</div>') +
@@ -31691,6 +32082,8 @@
       return Array.from(new Set((tripIds || []).map(id => parseInt(id, 10)).filter(id => Number.isFinite(id))));
     }
 
+    // TODO Phase 5: route through paymentInvolvesCash(order) — currently relies on legacy payment_type
+    // which the DB mirror trigger keeps populated, so this still works for dual-write rows.
     function isTripDriverCashPaymentType(paymentType) {
       return ['COD', 'COP', 'SPLIT'].includes(String(paymentType || '').toUpperCase());
     }
@@ -31806,6 +32199,7 @@
             orderNumber: o.order_number || ('Order #' + o.id),
             vehicleDescription: [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).join(' ').trim() || 'Vehicle',
             paymentType: String(o.payment_type || 'BILL').toUpperCase(),
+            paymentLabel: getPaymentDisplayLabel(o),
             revenue,
             brokerFee,
             localFee,
@@ -31955,6 +32349,7 @@
             orderNumber: o.order_number || ('Order #' + o.id),
             vehicleDescription: [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).join(' ').trim() || 'Vehicle',
             paymentType: String(o.payment_type || 'BILL').toUpperCase(),
+            paymentLabel: getPaymentDisplayLabel(o),
             revenue,
             brokerFee,
             localFee,
@@ -33494,7 +33889,9 @@
       orders.forEach((o, idx) => {
         const revenue = parseFloat(o.revenue || 0);
         const paymentType = String(o.payment_type || '').toUpperCase();
-        const isCash = paymentType === 'COD' || paymentType === 'COP' || paymentType === 'SPLIT'; // LOCAL_COD goes to local driver
+        // TODO Phase 5: route remaining sites through paymentInvolvesCash()
+        // LOCAL_COD goes to local driver, not the trip driver — exclude explicitly.
+        const isCash = paymentType !== 'LOCAL_COD' && paymentInvolvesCash(o);
         const cashAmount = isCash ? getOrderCashCollectedAmount(o) : 0;
         tripCashTotal += cashAmount;
 
@@ -35811,7 +36208,7 @@
           order.vehicle_vin || 'N/A',
           '1',
           (order.pickup_state || order.origin || '') + ' \u2192 ' + (order.delivery_state || order.destination || ''),
-          order.payment_type || 'BILL'
+          getPaymentDisplayLabel(order) || order.payment_type || 'BILL'
         ]],
         theme: 'grid',
         headStyles: { fillColor: darkGray, textColor: white, fontSize: 8, cellPadding: 4 },
@@ -35894,8 +36291,10 @@
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...medGray);
-      doc.text('Payment Type: ' + (order.payment_type || 'BILL'), margin + 5, y + 12);
-      if (order.payment_type === 'COD' || order.payment_type === 'COP') {
+      doc.text('Payment Type: ' + (getPaymentDisplayLabel(order) || order.payment_type || 'BILL'), margin + 5, y + 12);
+      // Phase 3: route through effective terms (V2 path) — fall back to legacy for old rows
+      var _effTerms = getEffectivePaymentTerms(order);
+      if (_effTerms === 'COP' || _effTerms === 'COD' || order.payment_type === 'COD' || order.payment_type === 'COP') {
         doc.text('Payment due upon delivery.', margin + 5, y + 17);
       } else {
         doc.text('Payment due within 30 days of invoice date.', margin + 5, y + 17);
@@ -40405,8 +40804,8 @@
         orders.map(o => {
           const disp = appData.dispatchers.find(d => d.id === o.dispatcher_id);
           const dirLabel = vehicleDirections.find(d => d.id === o.vehicle_direction)?.label || '-';
-          const noteHtml = o.dispatcher_notes ? '<tr style="background:var(--dim-amber)"><td colspan="13" style="padding:8px 16px;font-size:13px"><span style="font-weight:600;color:#92400e">[[icon:note]] Note:</span> ' + o.dispatcher_notes + '</td></tr>' : '';
-          return '<tr><td><span class="badge" style="background:#6366f1;color:white">' + dirLabel + '</span></td><td><strong>' + o.order_number + '</strong>' + (o.dispatcher_notes ? ' [[icon:note]]' : '') + '</td><td>' + (disp ? disp.name : '-') + '</td><td>' + (o.broker_name || '-') + '</td><td>' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model + '</td><td>' + (o.origin || '-') + '</td><td>' + (o.destination || '-') + '</td><td>' + (o.pickup_date ? formatDate(o.pickup_date) : '-') + '</td><td>' + (o.dropoff_date ? formatDate(o.dropoff_date) : '-') + '</td><td><span class="badge badge-blue">' + (o.payment_type || '-') + '</span></td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee || 0) + '</td><td class="money">' + formatMoney(o.revenue) + '</td></tr>' + noteHtml;
+          const noteHtml = o.dispatcher_notes ? '<tr style="background:var(--dim-amber)"><td colspan="13" style="padding:8px 16px;font-size:13px"><span style="font-weight:600;color:#92400e">[[icon:note]] Note:</span> ' + escapeHtml(o.dispatcher_notes) + '</td></tr>' : '';
+          return '<tr><td><span class="badge" style="background:#6366f1;color:white">' + dirLabel + '</span></td><td><strong>' + escapeHtml(o.order_number || '') + '</strong>' + (o.dispatcher_notes ? ' [[icon:note]]' : '') + '</td><td>' + (disp ? escapeHtml(disp.name) : '-') + '</td><td>' + escapeHtml(o.broker_name || '-') + '</td><td>' + escapeHtml((o.vehicle_year || '') + ' ' + (o.vehicle_make || '') + ' ' + (o.vehicle_model || '')) + '</td><td>' + escapeHtml(o.origin || '-') + '</td><td>' + escapeHtml(o.destination || '-') + '</td><td>' + (o.pickup_date ? formatDate(o.pickup_date) : '-') + '</td><td>' + (o.dropoff_date ? formatDate(o.dropoff_date) : '-') + '</td><td><span class="badge badge-blue">' + escapeHtml(getPaymentDisplayLabel(o)) + '</span></td><td class="money negative">' + formatMoney(o.broker_fee || 0) + '</td><td class="money negative">' + formatMoney(o.local_fee || 0) + '</td><td class="money">' + formatMoney(o.revenue) + '</td></tr>' + noteHtml;
         }).join('') +
         '</tbody></table></div></div>' +
         '</div>';
