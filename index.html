@@ -10275,6 +10275,12 @@
     }
 
     // === Payment method/terms vocabulary (Phase 3 — restructure 2026-05) ===
+    // Source of truth for the legacy → new mapping is the Phase 2 SQL migration's
+    // mirror_payment_type_to_method() trigger. Mirror copies live in:
+    //   - this file (methodTermsFromLegacy)
+    //   - iOS Models.swift (Order.effectivePaymentMethod / effectivePaymentTerms)
+    //   - supabase/migrations/20260501130000_payment_method_terms_restructure.sql
+    // If you change the locked vocabulary or the legacy mapping, update all three.
 
     const PAYMENT_METHOD_OPTIONS = [
       'CASH','CHECK','ZELLE','CASHIERS_CHECK','MONEY_ORDER','COMCHEK',
@@ -12119,7 +12125,7 @@
               const vehicleLabel = [order.vehicle_year, order.vehicle_make, order.vehicle_model].filter(Boolean).join(' ') || 'Vehicle';
               return '<div style="border:1px solid ' + (isCollected ? 'var(--success-border)' : 'var(--border)') + ';background:' + (isCollected ? 'var(--dim-green)' : 'var(--surface-card)') + ';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap">' +
                 '<div style="min-width:220px;flex:1">' +
-                  '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px"><strong style="font-size:15px">' + escapeHtml(order.order_number || ('Order #' + order.id)) + '</strong><span class="badge badge-blue">' + escapeHtml(getPaymentDisplayLabel(order) || method) + '</span>' + (isCollected ? '<span class="badge badge-green">Collected</span>' : '<span class="badge badge-amber">Pending</span>') + '</div>' +
+                  '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px"><strong style="font-size:15px">' + escapeHtml(order.order_number || ('Order #' + order.id)) + '</strong><span class="badge badge-blue">' + escapeHtml(getPaymentDisplayLabel(order)) + '</span>' + (isCollected ? '<span class="badge badge-green">Collected</span>' : '<span class="badge badge-amber">Pending</span>') + '</div>' +
                   '<div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px">' + escapeHtml(vehicleLabel) + '</div>' +
                   '<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text-secondary)">' +
                     '<span>Cash Side: <strong style="color:var(--text-primary)">' + formatMoney(expectedCash) + '</strong></span>' +
@@ -16345,6 +16351,27 @@
         '<div class="payment-row"><span>Method</span><span>' + escapeHtml(PAYMENT_METHOD_LABELS[getEffectivePaymentMethod(order)] || getEffectivePaymentMethod(order) || order.payment_type || 'Not specified') + '</span></div>' +
         '<div class="payment-row"><span>Terms</span><span>' + escapeHtml(paymentTermsLabel) + '</span></div>'
       );
+      // Phase 5: uShip confirmation code row — only shown for USHIP-method orders.
+      // Populated by the driver app at delivery via orders.uship_delivery_confirmation_code.
+      const effectiveMethod = getEffectivePaymentMethod(order);
+      const ushipCode = order.uship_delivery_confirmation_code ? String(order.uship_delivery_confirmation_code).trim() : '';
+      const ushipCodeHtml = effectiveMethod === 'USHIP' ? (
+        ushipCode
+          ? '<div class="payment-row" style="align-items:center">' +
+              '<span>uShip Code</span>' +
+              '<span style="display:flex;align-items:center;gap:6px">' +
+                '<code style="font-family:var(--font-mono);font-size:12px;background:var(--bg-secondary);padding:2px 6px;border-radius:4px;letter-spacing:0.04em">' + escapeHtml(ushipCode) + '</code>' +
+                '<button data-uship-code="' + escapeHtml(ushipCode) + '" ' +
+                  'onclick="(navigator.clipboard&&navigator.clipboard.writeText)?navigator.clipboard.writeText(this.dataset.ushipCode).then(()=>showToast(\'Code copied!\',\'success\')).catch(()=>showToast(\'Copy failed\',\'error\')):showToast(\'Copy unavailable\',\'error\')" ' +
+                  'style="border:none;background:none;cursor:pointer;color:var(--text-secondary);padding:2px 4px;border-radius:3px;font-size:11px;line-height:1" ' +
+                  'title="Copy uShip code">[[icon:clipboard]]</button>' +
+              '</span>' +
+            '</div>'
+          : '<div class="payment-row">' +
+              '<span>uShip Code</span>' +
+              '<span style="color:var(--text-muted);font-style:italic;font-size:12px">Awaiting driver delivery</span>' +
+            '</div>'
+      ) : '';
       const driverNotesLabel = getOrderDriverNotes(order);
 
       const bodyContent = `
@@ -16507,6 +16534,7 @@
                 <div class="payment-amount">${formatMoney(order.revenue || 0)}</div>
                 <div class="payment-details">
                   ${splitMethodHtml}
+                  ${ushipCodeHtml}
                   <div class="payment-row">
                     <span>Broker Fee</span>
                     <span class="negative">-${formatMoney(order.broker_fee || 0)}</span>
