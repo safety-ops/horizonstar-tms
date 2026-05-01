@@ -15,6 +15,12 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS uship_delivery_confirmation_code TEX
 -- 3. Audit-flag column for orders that need manual payment-method review
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_review_required BOOLEAN DEFAULT FALSE;
 
+-- The block_orders_field_escalation trigger (RLS migration 20260429200000) refuses
+-- writes to orders columns outside its allow-list when auth.uid() is not staff.
+-- Migrations run as a Supabase migration role, which is_tms_staff() returns false for.
+-- Disable it for the duration of the data backfill, re-enable before COMMIT.
+ALTER TABLE orders DISABLE TRIGGER block_orders_field_escalation;
+
 -- 4. Normalize existing payment_terms in orders/brokers/dealers (idempotent).
 -- Lossy: NET21/45/60 (and underscored NET_21/_45/_60) all collapse to NET_30
 -- because the new schema has no NET_21/45/60 buckets. Documented in rollback.
@@ -75,6 +81,10 @@ END WHERE payment_terms IS NULL OR payment_terms = '';
 UPDATE orders SET payment_review_required = TRUE
   WHERE UPPER(TRIM(COALESCE(payment_type, ''))) = 'CHECK'
     AND payment_review_required IS DISTINCT FROM TRUE;
+
+-- Re-enable the field-escalation trigger now that data backfill is done.
+-- Subsequent DDL (constraints, trigger, indexes, comments) doesn't trigger UPDATE.
+ALTER TABLE orders ENABLE TRIGGER block_orders_field_escalation;
 
 -- 8. CHECK constraints (NOT VALID — don't fail on legacy outliers, validate later)
 DO $$ BEGIN
