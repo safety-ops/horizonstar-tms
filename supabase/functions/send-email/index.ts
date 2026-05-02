@@ -53,13 +53,15 @@ interface NormalizedAttachment { filename: string; content: string; bytes: numbe
 
 // ---------- CORS ----------
 function corsHeadersFor(origin: string | null): Record<string, string> {
-  const allowed = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ""
-  return {
-    "Access-Control-Allow-Origin": allowed,
+  const base: Record<string, string> = {
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, idempotency-key",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Vary": "Origin",
   }
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    return { ...base, "Access-Control-Allow-Origin": origin, "Vary": "Origin" }
+  }
+  // Native client / no Origin — CORS headers are irrelevant; return base only
+  return base
 }
 function json(status: number, payload: Record<string, unknown>, origin: string | null) {
   return new Response(JSON.stringify(payload), {
@@ -199,15 +201,20 @@ async function postToResend(payload: Record<string, unknown>): Promise<Response>
 // ---------- Main handler ----------
 serve(async (req) => {
   const requestOrigin = req.headers.get("origin")
+  const isBrowserRequest = requestOrigin !== null && requestOrigin !== ""
 
   // 1. CORS allowlist BEFORE any other logic. Preflight short-circuits.
   if (req.method === "OPTIONS") {
-    if (requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin)) {
+    // CORS preflight is browser-only. Native apps (iOS URLSession, etc.) don't preflight.
+    if (isBrowserRequest && ALLOWED_ORIGINS.includes(requestOrigin)) {
       return new Response("ok", { headers: corsHeadersFor(requestOrigin) })
     }
     return new Response("forbidden", { status: 403 })
   }
-  if (!requestOrigin || !ALLOWED_ORIGINS.includes(requestOrigin)) {
+
+  // For non-OPTIONS: reject only if a browser is calling from an unauthorized origin.
+  // Native clients (no Origin header) pass CORS; JWT auth below is the real security gate.
+  if (isBrowserRequest && !ALLOWED_ORIGINS.includes(requestOrigin)) {
     return new Response("forbidden", { status: 403 })
   }
 
