@@ -9583,6 +9583,11 @@
       currentUser = null;
       localStorage.removeItem('horizonstar_user');
       localStorage.removeItem('last_activity');
+      // Clear upload-issues polling
+      if (window._stuckUploadsInterval) {
+        clearInterval(window._stuckUploadsInterval);
+        window._stuckUploadsInterval = null;
+      }
       if (typeof realtimeUiState !== 'undefined') {
         realtimeUiState.pending = false;
         realtimeUiState.pendingPayloads = [];
@@ -15244,6 +15249,12 @@
         clearInterval(sessionTimeoutId);
         sessionTimeoutId = null;
       }
+
+      // Clear upload-issues polling
+      if (window._stuckUploadsInterval) {
+        clearInterval(window._stuckUploadsInterval);
+        window._stuckUploadsInterval = null;
+      }
       
       // Clear user data and session
       currentUser = null; 
@@ -16119,6 +16130,13 @@
       // Cleanup chat if navigating away
       if (currentPage === 'team_chat' && page !== 'team_chat') {
         cleanupChat();
+      }
+      // Cleanup upload-issues polling if navigating away from dashboard
+      if (currentPage === 'dashboard' && page !== 'dashboard') {
+        if (window._stuckUploadsInterval) {
+          clearInterval(window._stuckUploadsInterval);
+          window._stuckUploadsInterval = null;
+        }
       }
       // Check if page is restricted to admin/manager only
       if (restrictedPages.includes(page)) {
@@ -17415,6 +17433,129 @@
       return 'Year ' + dashboardYear;
     }
 
+    // ── Upload Issues helpers ────────────────────────────────────────────────
+
+    async function fetchStuckUploads() {
+      try {
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+
+        // Fetch failed/pending photos and videos in parallel
+        const [photos, videos] = await Promise.all([
+          dbFetch('inspection_photos', {
+            select: 'id,inspection_id,upload_state,last_error,updated_at',
+            filter: { upload_state: 'in.(failed,pending)', updated_at: 'gte.' + twentyFourHoursAgo },
+            order: 'updated_at.desc',
+            range: [0, 99]
+          }).catch(() => []),
+          dbFetch('inspection_videos', {
+            select: 'id,inspection_id,upload_state,last_error,updated_at',
+            filter: { upload_state: 'in.(failed,pending)', updated_at: 'gte.' + twentyFourHoursAgo },
+            order: 'updated_at.desc',
+            range: [0, 99]
+          }).catch(() => [])
+        ]);
+
+        const taggedPhotos = photos.map(r => Object.assign({}, r, { _kind: 'photo' }));
+        const taggedVideos = videos.map(r => Object.assign({}, r, { _kind: 'video' }));
+
+        // Merge and take top 20 by updated_at desc
+        const merged = taggedPhotos.concat(taggedVideos)
+          .sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''))
+          .slice(0, 20);
+
+        if (merged.length === 0) return [];
+
+        // Batch-fetch parent inspections not already in cache
+        const cachedInspectionIds = new Set((appData.vehicle_inspections || []).map(i => i.id));
+        const missingIds = [...new Set(merged.map(r => r.inspection_id))].filter(id => id && !cachedInspectionIds.has(id));
+
+        let extraInspections = [];
+        if (missingIds.length > 0) {
+          extraInspections = await dbFetch('vehicle_inspections', {
+            select: 'id,driver_id,order_id,inspection_type',
+            filter: { id: 'in.(' + missingIds.join(',') + ')' }
+          }).catch(() => []);
+        }
+
+        const inspectionIndex = {};
+        (appData.vehicle_inspections || []).forEach(i => { inspectionIndex[i.id] = i; });
+        extraInspections.forEach(i => { inspectionIndex[i.id] = i; });
+
+        // Enrich with driver/order names from existing caches
+        return merged.map(row => {
+          const insp = inspectionIndex[row.inspection_id] || {};
+          const driver = (appData.drivers || []).find(d => d.id === insp.driver_id);
+          const order = (appData.orders || []).find(o => o.id === insp.order_id);
+          return Object.assign({}, row, {
+            _driver_name: driver ? (driver.name || driver.full_name || 'Driver #' + driver.id) : 'Unknown Driver',
+            _order_id: insp.order_id || null,
+            _order_number: order ? (order.order_number ? '#' + order.order_number : 'Order ' + order.id) : (insp.order_id ? 'Order ' + insp.order_id : '—'),
+            _inspection_type: insp.inspection_type || ''
+          });
+        });
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function renderUploadIssuesCard(items) {
+      const SHOW_MAX = 5;
+      if (!items || items.length === 0) {
+        return '<div class="card" style="padding:14px 16px;border-left:3px solid var(--green)">' +
+          '<div class="section-header" style="margin-bottom:0">' +
+          '<h3 class="section-title">Upload Issues</h3>' +
+          '<span class="badge-xs" style="background:var(--green-dim);color:var(--green)">Clear</span>' +
+          '</div>' +
+          '<div style="padding:10px 0 4px;text-align:center;color:var(--text-muted);font-size:12px">All uploads clear — no failed or stuck uploads in last 24h</div>' +
+          '</div>';
+      }
+
+      function relTime(ts) {
+        if (!ts) return '';
+        const diffMs = Date.now() - new Date(ts).getTime();
+        const diffMin = Math.floor(diffMs / 60000);
+        if (diffMin < 1) return 'just now';
+        if (diffMin < 60) return diffMin + 'm ago';
+        const diffH = Math.floor(diffMin / 60);
+        if (diffH < 24) return diffH + 'h ago';
+        return Math.floor(diffH / 24) + 'd ago';
+      }
+
+      const top = items.slice(0, SHOW_MAX);
+      const extra = items.length - SHOW_MAX;
+
+      const rowsHtml = top.map(row => {
+        const kindLabel = row._kind === 'video' ? 'video' : 'photo';
+        const stateColor = row.upload_state === 'failed' ? 'var(--red)' : 'var(--amber)';
+        const errStr = row.last_error ? String(row.last_error) : '';
+        const errorText = errStr ? escapeHtml(errStr.slice(0, 80)) + (errStr.length > 80 ? '…' : '') : 'No error detail';
+        const clickAttr = row._order_id ? ' onclick="openOrderDetailPage(' + row._order_id + ')" style="cursor:pointer"' : '';
+        return '<div class="card-row"' + clickAttr + '>' +
+          '<div style="min-width:0;flex:1">' +
+          '<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">' +
+          '<span style="font-size:12px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px">' + escapeHtml(row._order_number) + '</span>' +
+          '<span style="font-size:10px;font-weight:600;color:' + stateColor + ';text-transform:uppercase;flex-shrink:0">' + escapeHtml(row.upload_state) + ' ' + kindLabel + '</span>' +
+          '</div>' +
+          '<div style="font-size:11px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeHtml(row._driver_name) + ' &bull; ' + errorText + '</div>' +
+          '</div>' +
+          '<span style="font-size:10px;color:var(--text-muted);flex-shrink:0;margin-left:6px">' + relTime(row.updated_at) + '</span>' +
+          '</div>';
+      }).join('');
+
+      const footerHtml = extra > 0
+        ? '<div style="margin-top:8px;text-align:center;font-size:12px;color:var(--blue);cursor:pointer" onclick="navigate(\'orders\')">' + extra + ' more issue' + (extra > 1 ? 's' : '') + ' — view in Orders &rarr;</div>'
+        : '';
+
+      return '<div class="card" data-stuck-uploads-panel style="padding:14px 16px;border-left:3px solid var(--red)">' +
+        '<div class="section-header" style="margin-bottom:8px">' +
+        '<h3 class="section-title">Upload Issues</h3>' +
+        '<span class="badge-xs" style="background:var(--red-dim);color:var(--red)">' + items.length + ' stuck</span>' +
+        '</div>' +
+        rowsHtml +
+        footerHtml +
+        '</div>';
+    }
+
     // Get date range for dashboard period
     function getDashboardDateRange() {
       const periodCtx = getDashboardPeriodContext();
@@ -17777,6 +17918,9 @@
         renderTasksWidget() +
         '</div>' +
 
+        // Upload Issues card (async-filled; placeholder rendered immediately)
+        '<div data-stuck-uploads-panel style="padding:14px 16px;background:var(--bg-card);border:1px solid var(--border-default);border-radius:var(--radius);color:var(--text-muted);font-size:12px;text-align:center">Checking uploads…</div>' +
+
         // Quick Actions card
         '<div class="card" style="padding:14px 16px">' +
         '<h3 class="section-title" style="margin:0 0 var(--space-3)">Quick Actions</h3>' +
@@ -17984,8 +18128,33 @@
 
         '</div>' +
         '</div>';
+
+      // ── Async: fill Upload Issues panel and set up 30s polling ──────────────
+      function _loadStuckUploadsPanel() {
+        fetchStuckUploads().then(function(items) {
+          var panel = document.querySelector('[data-stuck-uploads-panel]');
+          if (!panel) return; // navigated away
+          panel.outerHTML = renderUploadIssuesCard(items);
+        });
+      }
+
+      _loadStuckUploadsPanel();
+
+      // Clear any prior polling interval before starting a new one
+      if (window._stuckUploadsInterval) {
+        clearInterval(window._stuckUploadsInterval);
+        window._stuckUploadsInterval = null;
+      }
+      window._stuckUploadsInterval = setInterval(function() {
+        if (currentPage !== 'dashboard') {
+          clearInterval(window._stuckUploadsInterval);
+          window._stuckUploadsInterval = null;
+          return;
+        }
+        _loadStuckUploadsPanel();
+      }, 30000);
     }
-    
+
     function renderTasksWidget() {
       const tasks = appData.tasks || [];
       const today = new Date().toISOString().split('T')[0];
