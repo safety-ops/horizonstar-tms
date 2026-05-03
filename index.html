@@ -34,6 +34,7 @@
   <link rel="stylesheet" href="assets/css/variables.css">
   <link rel="stylesheet" href="assets/css/base.css">
   <link rel="stylesheet" href="assets/css/theme-driver-parity.css">
+  <link rel="stylesheet" href="assets/css/settlement.css">
   <link rel="stylesheet" href="assets/css/print.css" media="print">
 
   <!-- Supabase Client Library -->
@@ -34150,9 +34151,44 @@
       const driver = (appData.drivers || []).find(d => String(d.id) === String(record.driver_id));
       if (!driver) { showToast('Driver not found', 'error'); return; }
       if (record.line_items && record.totals) {
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(buildPayrollRecordPrintHTML(record, driver));
-        printWindow.document.close();
+        // Phase 4 Part A2: route the historical-record print path through the
+        // canonical renderer so the popup window matches the modal layout
+        // exactly. Previously buildPayrollRecordPrintHTML produced a bland
+        // template that diverged from generatePaystub/generateSettlement.
+        const trip = record.trip_id
+          ? (appData.trips || []).find(t => Number(t.id) === Number(record.trip_id))
+          : null;
+        const orders = trip
+          ? (appData.orders || []).filter(o => String(o.trip_id) === String(trip.id))
+          : ((record.line_items && Array.isArray(record.line_items.orders)) ? record.line_items.orders : []);
+        const html = renderSettlementView({
+          record,
+          driver,
+          trip,
+          orders,
+          deductions: record.deductions || {},
+          bonuses: record.bonuses || {},
+          cashCollected: (record.totals && record.totals.cashCollected) || record.cash_collected || 0,
+          totals: record.totals || {},
+          stubNumber: record.record_number || record.stub_number || '',
+          checkNumber: record.check_number || ''
+        }, 'print');
+        const w = window.open('', '_blank');
+        if (w) {
+          // Resolve the absolute path of settlement.css relative to the host page
+          // so the popup (which is served as about:blank) can still load it.
+          const cssHref = window.location.origin + window.location.pathname.replace(/[^/]*$/, '') + 'assets/css/settlement.css';
+          const title = 'Settlement ' + (record.record_number || record.id);
+          w.document.write('<!DOCTYPE html><html><head><title>' + escapeHtml(title) + '</title>');
+          w.document.write('<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">');
+          w.document.write('<link rel="stylesheet" href="' + cssHref + '">');
+          w.document.write('<style>body{margin:0;padding:0;background:#fff;font-family:Inter,-apple-system,sans-serif}</style>');
+          w.document.write('</head><body>');
+          w.document.write('<button class="settlement-doc-print-btn" onclick="window.print()" style="display:none">Print</button>');
+          w.document.write(html);
+          w.document.write('</body></html>');
+          w.document.close();
+        }
         return;
       }
       const tripIds = record.trip_ids || [];
@@ -34706,171 +34742,225 @@
       // Money-display helper (always show parens for negatives; preserve formatMoney behaviour)
       const m = (v) => formatMoney(v || 0);
 
-      // ---- Header strip ------------------------------------------------------
-      const stmtNumber = record
-        ? getPayrollRecordDisplayNumber(record)
-        : ('PR-' + (ctx.stubNumber || ''));
-      const statusBadge = record ? renderSettlementStatusBadge(record) : '';
-      const revisionTxt = (record && record.revision && record.revision > 1) ? ' rev ' + record.revision : '';
-      const docKind = isOwnerOp ? 'Settlement Statement' : 'Earnings Statement';
-      const driverNameRaw = (driver.first_name || '') + ' ' + (driver.last_name || '');
-      const driverTypeLabel = isOwnerOp ? 'OWNER-OP' : 'COMPANY DRIVER';
-      const tripLabel = trip
-        ? '#' + (trip.trip_number || trip.id)
-        : (Array.isArray(ctx.tripIds) && ctx.tripIds.length > 1 ? (ctx.tripIds.length + ' trips') : '—');
-      const payDateRaw = ctx.payDate || (record && record.pay_date) || '';
-      const periodStartRaw = ctx.periodStart || (record && record.period_start) || '';
-      const periodEndRaw = ctx.periodEnd || (record && record.period_end) || '';
-
-      const viewHint = isView
-        ? '<div class="no-print" style="margin-bottom:12px;padding:8px 12px;border-radius:4px;background:var(--bg-secondary);border:1px solid var(--border);font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;font-weight:600">View only — read-only display</div>'
-        : '';
-
-      const headerHTML =
-        '<div class="settlement-section settlement-header" style="border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:12px;background:var(--bg-card,var(--card-bg))">' +
-          '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:8px">' +
-            '<div>' +
-              '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted)">Statement</div>' +
-              '<div style="font-size:18px;font-weight:700;font-family:var(--font-mono,monospace)">' + escapeHtml(String(stmtNumber)) + escapeHtml(revisionTxt) + '</div>' +
-              '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.03em;font-weight:600">' + escapeHtml(docKind) + '</div>' +
-            '</div>' +
-            '<div style="text-align:right">' + statusBadge + '</div>' +
-          '</div>' +
-          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;font-size:12px;border-top:1px dashed var(--border);padding-top:10px">' +
-            '<div><div style="font-size:10px;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.04em">Driver</div>' +
-              '<div style="font-weight:600">' + escapeHtml(driverNameRaw.trim() || '—') + '</div>' +
-              '<div style="font-size:10px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em">' + escapeHtml(driverTypeLabel) + '</div>' +
-            '</div>' +
-            '<div><div style="font-size:10px;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.04em">Trip</div>' +
-              '<div style="font-weight:600;font-family:var(--font-mono,monospace)">' + escapeHtml(tripLabel) + '</div>' +
-            '</div>' +
-            '<div><div style="font-size:10px;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.04em">Pay Date</div>' +
-              (isEdit
-                ? '<input type="date" id="payDate" value="' + escapeHtml(String(payDateRaw || new Date().toISOString().split('T')[0])) + '" style="font-size:12px;padding:4px 6px">'
-                : '<div style="font-weight:600">' + (payDateRaw ? escapeHtml(formatDate(payDateRaw)) : '—') + '</div>') +
-            '</div>' +
-            '<div><div style="font-size:10px;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.04em">Period</div>' +
-              (isEdit
-                ? '<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">' +
-                    '<input type="date" id="periodStart" value="' + escapeHtml(String(periodStartRaw || '')) + '" style="font-size:11px;padding:4px 6px;width:120px">' +
-                    '<span style="color:var(--text-muted)">→</span>' +
-                    '<input type="date" id="periodEnd" value="' + escapeHtml(String(periodEndRaw || '')) + '" style="font-size:11px;padding:4px 6px;width:120px">' +
-                  '</div>'
-                : '<div style="font-weight:600;font-size:11px">' + (periodStartRaw ? escapeHtml(formatDate(periodStartRaw)) : '—') + ' → ' + (periodEndRaw ? escapeHtml(formatDate(periodEndRaw)) : '—') + '</div>') +
-            '</div>' +
-          '</div>' +
-        '</div>';
-
-      // ---- Per-vehicle line items -------------------------------------------
-      // For per-trip: list orders. For multi-trip: group by trip with subheaders.
-      // Historical-record fallback: when viewing a finalized settlement whose
-      // orders have since been deleted/archived, ctx.orders (live join) will be
-      // empty. The savePayrollRecord snapshot in record.line_items.orders has
-      // the same shape (year/make/model/vin/pickup/delivery/etc.), so use it.
-      let resolvedOrders = orders;
-      if ((!resolvedOrders || resolvedOrders.length === 0) && ctx.record?.line_items?.orders?.length) {
-        resolvedOrders = ctx.record.line_items.orders;
-      }
-      let vehicleRowsHTML = '';
-      const groupedOrders = ctx.multiTripSnapshot && ctx.multiTripSnapshot.lineItems
-        ? (ctx.multiTripSnapshot.lineItems.orders || [])
-        : resolvedOrders.map(o => ({
-            orderId: o.id,
-            tripId: o.trip_id,
-            tripNumber: trip ? (trip.trip_number || ('Trip #' + trip.id)) : '',
-            orderNumber: o.order_number || ('Order #' + o.id),
-            vehicleDescription: [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).join(' ').trim() || 'Vehicle',
-            vin: o.vin || '',
-            origin: o.pickup_city || o.origin || trip?.origin || '',
-            destination: o.delivery_city || o.destination || trip?.destination || '',
-            paymentType: String(o.payment_type || 'BILL').toUpperCase(),
-            revenue: parseFloat(o.revenue || 0),
-            brokerFee: parseFloat(o.broker_fee || 0),
-            localFee: parseFloat(o.local_fee || 0),
-            cleanGross: Math.max(0, parseFloat(o.revenue || 0) - parseFloat(o.broker_fee || 0) - parseFloat(o.local_fee || 0)),
-            driverCut: 0,
-            settlementAmount: 0
-          }));
-
-      const showTripCol = !!ctx.multiTripSnapshot;
-      const tableHeader =
-        '<thead><tr style="background:var(--bg-secondary);font-size:10px;text-transform:uppercase;letter-spacing:0.04em;font-weight:600;color:var(--text-secondary)">' +
-          '<th style="padding:8px 12px;text-align:left;width:36px">#</th>' +
-          (showTripCol ? '<th style="padding:8px 12px;text-align:left">Trip</th>' : '') +
-          '<th style="padding:8px 12px;text-align:left">Vehicle</th>' +
-          '<th style="padding:8px 12px;text-align:left">Route</th>' +
-          '<th style="padding:8px 12px;text-align:right">Revenue</th>' +
-        '</tr></thead>';
-
-      if (groupedOrders.length === 0) {
-        vehicleRowsHTML = '<tr><td colspan="' + (showTripCol ? 5 : 4) + '" style="padding:18px;text-align:center;color:var(--text-muted);font-size:12px">No vehicles on this settlement</td></tr>';
-      } else {
-        vehicleRowsHTML = groupedOrders.map((o, idx) => {
-          const veh = escapeHtml(String(o.vehicleDescription || 'Vehicle'));
-          const vin = o.vin ? '<div style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono,monospace)">VIN: ' + escapeHtml(String(o.vin).slice(-8)) + '</div>' : '';
-          const route = escapeHtml(String((o.origin || '—') + ' → ' + (o.destination || '—')));
-          const tripCell = showTripCol ? '<td style="padding:8px 12px;font-size:11px;font-family:var(--font-mono,monospace)">' + escapeHtml(String(o.tripNumber || '')) + '</td>' : '';
-          return '<tr style="border-top:1px solid var(--border)">' +
-            '<td style="padding:8px 12px;color:var(--text-muted);font-family:var(--font-mono,monospace);font-size:11px">' + (idx + 1) + '</td>' +
-            tripCell +
-            '<td style="padding:8px 12px;font-size:12px"><div style="font-weight:600">' + veh + '</div>' + vin + '</td>' +
-            '<td style="padding:8px 12px;font-size:11px;color:var(--text-secondary)">' + route + '</td>' +
-            '<td style="padding:8px 12px;text-align:right;font-family:var(--font-mono,monospace);font-size:12px;font-weight:600">' + escapeHtml(m(o.revenue)) + '</td>' +
-          '</tr>';
-        }).join('');
-      }
-
-      const vehiclesHTML =
-        '<div class="settlement-section settlement-vehicles" style="border:1px solid var(--border);border-radius:6px;margin-bottom:12px;overflow:hidden">' +
-          '<div style="padding:10px 14px;background:var(--bg-secondary);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em">Per-Vehicle Line Items</div>' +
-          '<table style="width:100%;border-collapse:collapse">' + tableHeader + '<tbody>' + vehicleRowsHTML + '</tbody></table>' +
-        '</div>';
-
-      // ---- Trip totals -------------------------------------------------------
+      // ---- Resolve totals (handles both record-snapshot and live-derived shapes) -
       const gross = parseFloat(totals.gross ?? totals.grossRevenue ?? 0) || 0;
       const brokerFee = parseFloat(totals.brokerFee ?? totals.brokerFees ?? 0) || 0;
       const localFee = parseFloat(totals.localFee ?? totals.localFees ?? 0) || 0;
       const cleanGross = parseFloat(totals.cleanGross ?? (gross - brokerFee - localFee)) || 0;
       const dispatchFee = parseFloat(totals.dispatchFee ?? 0) || 0;
-      const driverCut = parseFloat(totals.driverCut ?? 0) || 0;
+      const driverCutInit = parseFloat(totals.driverCut ?? 0) || 0;
       const totalDed = parseFloat(totals.deductions ?? 0) || 0;
       const totalBon = parseFloat(totals.bonuses ?? 0) || 0;
       const reimb = parseFloat(totals.reimbursements ?? 0) || 0;
       const netPay = parseFloat(totals.netPay ?? 0) || 0;
+      const grossEarnings = isOwnerOp ? Math.max(0, cleanGross - dispatchFee) : (driverCutInit || cleanGross * (cutPercent / 100));
+      const totalRevenue = gross || (cleanGross + brokerFee + localFee);
 
-      const totalRow = (label, value, opts) => {
-        opts = opts || {};
-        return '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;' + (opts.emphasis ? 'font-weight:700;border-top:1px dashed var(--border);margin-top:4px;padding-top:8px' : '') + '">' +
-          '<span style="color:' + (opts.emphasis ? 'var(--text-primary)' : 'var(--text-secondary)') + '">' + escapeHtml(label) + '</span>' +
-          '<span style="font-family:var(--font-mono,monospace);' + (opts.color ? 'color:' + opts.color + ';' : '') + '">' + (opts.sign || '') + escapeHtml(m(value)) + '</span>' +
+      // ---- Header strip ------------------------------------------------------
+      // For display: use the prettified display number ("PR-12345" / "ST-67").
+      // For the editable input value: use the raw integer so a `type="number"`
+      // field can accept it (existing save flow reads this raw number).
+      const stmtNumberDisplay = record
+        ? getPayrollRecordDisplayNumber(record)
+        : (ctx.stubNumber ? String(ctx.stubNumber) : '—');
+      const stmtNumberRaw = String(
+        ctx.stubNumber || (record && (record.record_number || record.stub_number)) || ''
+      );
+      const checkNumberDisplay = ctx.checkNumber || (record && record.check_number) || '—';
+      const checkNumberRaw = String(ctx.checkNumber || (record && record.check_number) || '');
+      const docKind = isOwnerOp ? 'Settlement Statement' : 'Earnings Statement';
+      const payDateRaw = ctx.payDate || (record && record.pay_date) || '';
+      const periodStartRaw = ctx.periodStart || (record && record.period_start) || '';
+      const periodEndRaw = ctx.periodEnd || (record && record.period_end) || '';
+      const driverFirst = String(driver.first_name || '').trim();
+      const driverLast = String(driver.last_name || '').trim();
+      const driverNameUpper = (driverFirst + ' ' + driverLast).trim().toUpperCase() || 'DRIVER';
+      const driverDetailLine = isOwnerOp
+        ? 'Owner-Operator | Dispatch Fee ' + dispatchFeePercent + '%'
+        : 'Driver | ' + cutPercent + '% Commission Rate';
+
+      // ---- Resolve line items (live orders, multi-trip snapshot, or record snapshot) -
+      let resolvedOrders = orders;
+      if ((!resolvedOrders || resolvedOrders.length === 0) && ctx.record?.line_items?.orders?.length) {
+        resolvedOrders = ctx.record.line_items.orders;
+      }
+      const lineItems = ctx.multiTripSnapshot && ctx.multiTripSnapshot.lineItems
+        ? (ctx.multiTripSnapshot.lineItems.orders || [])
+        : (resolvedOrders || []).map(o => {
+            const rev = parseFloat(o.revenue || 0) || 0;
+            const bf  = parseFloat(o.broker_fee || o.brokerFee || 0) || 0;
+            const lf  = parseFloat(o.local_fee || o.localFee || 0) || 0;
+            const cg  = parseFloat(o.cleanGross != null ? o.cleanGross : Math.max(0, rev - bf - lf)) || 0;
+            const cut = isOwnerOp ? Math.max(0, cg - cg * (dispatchFeePercent / 100)) : cg * (cutPercent / 100);
+            const cash = (String(o.payment_type || '').toUpperCase() === 'COD' || (o.cashOnHand != null))
+              ? parseFloat(o.cashOnHand || o.revenue || 0) || 0
+              : 0;
+            return {
+              date: o.delivery_date || o.pickup_date || o.created_at || (trip && (trip.delivery_date || trip.pickup_date)) || '',
+              tripNumber: o.tripNumber || (trip ? (trip.trip_number || ('Trip #' + trip.id)) : ''),
+              vehicleDescription: o.vehicleDescription || [o.vehicle_year, o.vehicle_make, o.vehicle_model].filter(Boolean).join(' ').trim() || 'Vehicle',
+              revenue: rev,
+              brokerFee: bf,
+              localFee: lf,
+              cleanGross: cg,
+              driverCut: parseFloat(o.driverCut != null ? o.driverCut : cut) || 0,
+              cutPercent: isOwnerOp ? dispatchFeePercent : cutPercent,
+              cashOnHand: cash
+            };
+          });
+      const tripsCount = ctx.multiTripSnapshot ? (Array.isArray(ctx.tripIds) ? ctx.tripIds.length : 1) : (trip ? 1 : (record && Array.isArray(record.trip_ids) ? record.trip_ids.length : (lineItems.length > 0 ? 1 : 0)));
+      const ordersCount = lineItems.length;
+      const avgPerTrip = tripsCount > 0 ? grossEarnings / tripsCount : 0;
+
+      // ── HEADER (dark navy strip, brand + doc info) ────────────────────────
+      // Inline header style: white-tinted inputs sit on the dark navy strip.
+      const headerInputStyle = 'font-size:11px;padding:2px 6px;background:rgba(255,255,255,0.95);color:#111827;border:1px solid rgba(255,255,255,0.4);border-radius:3px;font-family:inherit';
+      const buildMetaRow = (lbl, displayVal, rawVal, editable, inputId, inputType, fieldWidth) => {
+        const dv = displayVal == null ? '' : String(displayVal);
+        const rv = rawVal == null ? '' : String(rawVal);
+        if (isEdit && editable) {
+          return '<div class="settlement-doc-meta-row">' +
+            '<span><span class="settlement-doc-meta-label">' + escapeHtml(lbl) + '</span> ' +
+            '<input type="' + (inputType || 'text') + '" id="' + escapeHtml(inputId) + '" value="' + escapeHtml(rv) + '" style="' + (fieldWidth || 'width:140px') + ';' + headerInputStyle + '"></span>' +
+          '</div>';
+        }
+        return '<div class="settlement-doc-meta-row">' +
+          '<span><span class="settlement-doc-meta-label">' + escapeHtml(lbl) + '</span> <span class="settlement-doc-meta-value">' + escapeHtml(dv || '—') + '</span></span>' +
         '</div>';
       };
 
-      const tripTotalsHTML =
-        '<div class="settlement-section settlement-totals" style="border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:12px">' +
-          '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Trip Totals</div>' +
-          totalRow('Gross Revenue', gross) +
-          totalRow('Broker Fee', brokerFee, { sign: '-', color: 'var(--danger)' }) +
-          totalRow('Local Fee', localFee, { sign: '-', color: 'var(--danger)' }) +
-          totalRow('Clean Gross', cleanGross, { emphasis: true }) +
+      const stubFieldId = isOwnerOp ? 'settlementNumber' : 'stubNumber';
+      const stubLabel = isOwnerOp ? 'Settlement No.' : 'Stub No.';
+      const headerHTML =
+        '<div class="settlement-doc-header">' +
+          '<div class="settlement-doc-brand">' +
+            '<div class="settlement-doc-brand-mark">HS</div>' +
+            '<div>' +
+              '<div class="settlement-doc-brand-text">HORIZON STAR</div>' +
+              '<div class="settlement-doc-brand-sub">Transportation Services</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="settlement-doc-info">' +
+            '<div class="settlement-doc-title">Official Document</div>' +
+            '<div class="settlement-doc-type">' + escapeHtml(docKind) + '</div>' +
+            '<div class="settlement-doc-meta">' +
+              buildMetaRow(stubLabel, stmtNumberDisplay, stmtNumberRaw, true, stubFieldId, 'number', 'width:120px') +
+              buildMetaRow('Check No.', checkNumberDisplay, checkNumberRaw, true, 'checkNumber', 'number', 'width:120px') +
+              (isEdit
+                ? '<div class="settlement-doc-meta-row"><span><span class="settlement-doc-meta-label">Period</span> ' +
+                    '<input type="date" id="periodStart" value="' + escapeHtml(periodStartRaw || '') + '" style="' + headerInputStyle + '"> – ' +
+                    '<input type="date" id="periodEnd" value="' + escapeHtml(periodEndRaw || '') + '" style="' + headerInputStyle + '">' +
+                  '</span></div>'
+                : '<div class="settlement-doc-meta-row"><span><span class="settlement-doc-meta-label">Period</span> <span class="settlement-doc-meta-value">' +
+                    (periodStartRaw ? escapeHtml(formatDate(periodStartRaw)) : '—') + ' - ' + (periodEndRaw ? escapeHtml(formatDate(periodEndRaw)) : '—') +
+                  '</span></span></div>') +
+              (isEdit
+                ? '<div class="settlement-doc-meta-row"><span><span class="settlement-doc-meta-label">Pay Date</span> <input type="date" id="payDate" value="' + escapeHtml(payDateRaw || (new Date().toISOString().split('T')[0])) + '" style="' + headerInputStyle + '"></span></div>'
+                : buildMetaRow('Pay Date', payDateRaw ? formatDate(payDateRaw) : '—', '', false)) +
+              (isEdit && !isOwnerOp ? '<div class="settlement-doc-meta-row"><span><span class="settlement-doc-meta-label">Email</span> <input type="email" id="driverEmail" value="' + escapeHtml(driver.email || '') + '" placeholder="driver@email.com" style="width:200px;' + headerInputStyle + '"></span></div>' : '') +
+            '</div>' +
+          '</div>' +
         '</div>';
 
-      // ---- Driver compensation ----------------------------------------------
-      const compFormulaText = isOwnerOp
-        ? 'Clean Gross − Dispatch Fee (' + dispatchFeePercent + '%) = ' + m(cleanGross - dispatchFee)
-        : 'Clean Gross × ' + cutPercent + '% (driver cut) = ' + m(driverCut || cleanGross * (cutPercent / 100));
-      const compHTML =
-        '<div class="settlement-section settlement-comp" style="border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:12px">' +
-          '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Driver Compensation</div>' +
-          (isOwnerOp
-            ? totalRow('Clean Gross', cleanGross) + totalRow('Dispatch Fee (' + dispatchFeePercent + '%)', dispatchFee, { sign: '-', color: 'var(--danger)' })
-            : totalRow('Driver Cut (' + cutPercent + '%)', driverCut || cleanGross * (cutPercent / 100), { color: 'var(--success)' })) +
-          '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;font-style:italic">' + escapeHtml(compFormulaText) + '</div>' +
+      // ── NET PAY BANNER (green / red) ──────────────────────────────────────
+      const bannerHTML =
+        '<div class="settlement-doc-banner' + (netPay < 0 ? ' is-negative' : '') + '">' +
+          '<div class="settlement-doc-banner-label">Net Pay This Period</div>' +
+          '<div class="settlement-doc-banner-value">' + escapeHtml(m(netPay)) + '</div>' +
         '</div>';
 
-      // ---- Deductions (varies by driver type — same template) ---------------
-      // Field map for both driver types. Edit-mode emits the same input IDs the
-      // existing generateSettlement / generatePaystub helpers read from.
+      // ── DRIVER section (name + 3 stats) ───────────────────────────────────
+      const driverHTML =
+        '<div class="settlement-doc-driver">' +
+          '<div class="settlement-doc-driver-info">' +
+            '<h2>' + escapeHtml(driverNameUpper) + '</h2>' +
+            '<div class="settlement-doc-driver-detail">' + escapeHtml(driverDetailLine) + '</div>' +
+          '</div>' +
+          '<div class="settlement-doc-driver-stats">' +
+            '<div class="settlement-doc-stat"><div class="settlement-doc-stat-value">' + tripsCount + '</div><div class="settlement-doc-stat-label">Trips</div></div>' +
+            '<div class="settlement-doc-stat"><div class="settlement-doc-stat-value">' + ordersCount + '</div><div class="settlement-doc-stat-label">Loads</div></div>' +
+            '<div class="settlement-doc-stat"><div class="settlement-doc-stat-value">' + escapeHtml(m(avgPerTrip)) + '</div><div class="settlement-doc-stat-label">Avg Per Trip</div></div>' +
+          '</div>' +
+        '</div>';
+
+      // ── 4-CARD SUMMARY (Gross / Cash / Reimb / Total Revenue) ─────────────
+      const summaryHTML =
+        '<div class="settlement-doc-summary">' +
+          '<div class="settlement-doc-summary-card is-highlight">' +
+            '<div class="settlement-doc-summary-amount is-green">' + escapeHtml(m(grossEarnings)) + '</div>' +
+            '<div class="settlement-doc-summary-label">Gross Earnings</div>' +
+          '</div>' +
+          '<div class="settlement-doc-summary-card is-negative">' +
+            '<div class="settlement-doc-summary-amount is-red">-' + escapeHtml(m(cashCollected)) + '</div>' +
+            '<div class="settlement-doc-summary-label">Cash Collected</div>' +
+          '</div>' +
+          '<div class="settlement-doc-summary-card">' +
+            '<div class="settlement-doc-summary-amount">+' + escapeHtml(m(reimb)) + '</div>' +
+            '<div class="settlement-doc-summary-label">Reimbursements</div>' +
+          '</div>' +
+          '<div class="settlement-doc-summary-card">' +
+            '<div class="settlement-doc-summary-amount">' + escapeHtml(m(totalRevenue)) + '</div>' +
+            '<div class="settlement-doc-summary-label">Total Revenue</div>' +
+          '</div>' +
+        '</div>';
+
+      // ── EARNINGS DETAIL TABLE (per-load, with totals row) ─────────────────
+      const cutColLabel = isOwnerOp ? 'Dispatch Fee' : 'Driver Cut';
+      const tableRowsHTML = lineItems.length === 0
+        ? '<tr><td colspan="9" class="text-center text-muted">No line items on this statement</td></tr>'
+        : lineItems.map(e => {
+            const dateCell = e.date ? formatDate(e.date) : '—';
+            const bfCell = e.brokerFee > 0 ? '-' + m(e.brokerFee) : '<span class="text-muted">—</span>';
+            const lfCell = e.localFee > 0 ? '-' + m(e.localFee) : '<span class="text-muted">—</span>';
+            const cashCell = e.cashOnHand > 0
+              ? '<span class="settlement-doc-cash-badge">' + escapeHtml(m(e.cashOnHand)) + '</span>'
+              : '<span class="text-muted">—</span>';
+            const cutPct = (e.cutPercent != null) ? Number(e.cutPercent).toFixed(0) : (isOwnerOp ? dispatchFeePercent : cutPercent);
+            const cutValue = isOwnerOp ? (e.cleanGross * (dispatchFeePercent / 100)) : (e.driverCut || e.cleanGross * (cutPercent / 100));
+            return '<tr>' +
+              '<td class="mono">' + escapeHtml(dateCell) + '</td>' +
+              '<td><span class="settlement-doc-trip-badge">' + escapeHtml(String(e.tripNumber || '—')) + '</span></td>' +
+              '<td class="text-right mono">' + escapeHtml(m(e.revenue)) + '</td>' +
+              '<td class="text-right mono text-red">' + bfCell + '</td>' +
+              '<td class="text-right mono text-red">' + lfCell + '</td>' +
+              '<td class="text-right mono font-medium">' + escapeHtml(m(e.cleanGross)) + '</td>' +
+              '<td class="text-right mono font-semibold ' + (isOwnerOp ? 'text-red' : 'text-green') + '">' + (isOwnerOp ? '-' : '') + escapeHtml(m(cutValue)) + '</td>' +
+              '<td class="text-center">' + cutPct + '%</td>' +
+              '<td class="text-right">' + cashCell + '</td>' +
+            '</tr>';
+          }).join('');
+
+      const totalCutValue = isOwnerOp ? dispatchFee : (driverCutInit || cleanGross * (cutPercent / 100));
+      const tableTotalRow =
+        '<tr class="is-total-row">' +
+          '<td colspan="2">TOTAL</td>' +
+          '<td class="text-right mono">' + escapeHtml(m(totalRevenue)) + '</td>' +
+          '<td class="text-right mono text-red">-' + escapeHtml(m(brokerFee)) + '</td>' +
+          '<td class="text-right mono text-red">-' + escapeHtml(m(localFee)) + '</td>' +
+          '<td class="text-right mono">' + escapeHtml(m(cleanGross)) + '</td>' +
+          '<td class="text-right mono ' + (isOwnerOp ? 'text-red' : 'text-green') + '">' + (isOwnerOp ? '-' : '') + escapeHtml(m(totalCutValue)) + '</td>' +
+          '<td class="text-center">' + (isOwnerOp ? dispatchFeePercent : cutPercent) + '%</td>' +
+          '<td class="text-right mono">' + escapeHtml(m(cashCollected)) + '</td>' +
+        '</tr>';
+
+      const tableHTML =
+        '<div class="settlement-doc-section-header">Earnings Detail</div>' +
+        '<table class="settlement-doc-table">' +
+          '<thead><tr>' +
+            '<th>Date</th>' +
+            '<th>Trip</th>' +
+            '<th class="text-right">Revenue</th>' +
+            '<th class="text-right">Broker Fee</th>' +
+            '<th class="text-right">Local Fee</th>' +
+            '<th class="text-right">Clean Gross</th>' +
+            '<th class="text-right">' + escapeHtml(cutColLabel) + '</th>' +
+            '<th class="text-center">Rate</th>' +
+            '<th class="text-right">Cash</th>' +
+          '</tr></thead>' +
+          '<tbody>' + tableRowsHTML + tableTotalRow + '</tbody>' +
+        '</table>';
+
+      // ── DEDUCTIONS / BONUSES (two columns) ────────────────────────────────
       const dedFields = isOwnerOp
         ? [
             { key: 'ifta',       id: 'settDedIFTA',       label: 'IFTA' },
@@ -34878,24 +34968,22 @@
             { key: 'tolls',      id: 'settDedTolls',      label: 'Tolls' },
             { key: 'insurance',  id: 'settDedInsurance',  label: 'Insurance' },
             { key: 'fuel',       id: 'settDedFuel',       label: 'Fuel' },
-            { key: 'hut2290',    id: 'settDed2290',       label: 'HUT 2290' },
-            { key: 'regRenewal', id: 'settDedReg',        label: 'Reg Renewal' },
+            { key: 'hut2290',    id: 'settDed2290',       label: 'Highway Use Tax (2290)' },
+            { key: 'regRenewal', id: 'settDedReg',        label: 'Registration Renewal' },
             { key: 'advances',   id: 'settDedAdvances',   label: 'Advances' },
             { key: 'other',      id: 'settDedOther',      label: 'Other' }
           ]
         : [
-            { key: 'insurance',  id: 'dedInsurance',   label: 'Insurance (Cargo/Liab/Phys)' },
+            { key: 'insurance',  id: 'dedInsurance',   label: 'Insurance (Cargo/Liability/Physical)' },
             { key: 'fuel',       id: 'dedFuel',        label: 'Fuel' },
             { key: 'fuelDeposit',id: 'dedFuelDeposit', label: 'Fuel Deposit' },
             { key: 'eld',        id: 'dedELD',         label: 'ELD' },
             { key: 'tolls',      id: 'dedTolls',       label: 'Tolls' },
             { key: 'ifta',       id: 'dedIFTA',        label: 'IFTA' },
-            { key: 'hut2290',    id: 'ded2290',        label: 'HUT 2290' },
-            { key: 'regRenewal', id: 'dedRegRenewal',  label: 'Reg Renewal' },
-            { key: 'other',      id: 'dedOther',       label: 'Other' }
+            { key: 'hut2290',    id: 'ded2290',        label: 'Highway Use Tax (2290)' },
+            { key: 'regRenewal', id: 'dedRegRenewal',  label: 'Registration Renewal' },
+            { key: 'other',      id: 'dedOther',       label: 'Other Deductions' }
           ];
-
-      // Custom rows for owner-op (label + amount pairs)
       const customRows = isOwnerOp ? ['custom1', 'custom2', 'custom3'] : [];
 
       const dedValueOf = (key) => {
@@ -34909,55 +34997,73 @@
         return '';
       };
 
-      const dedRows = dedFields.map(f => {
+      const dedClass = isOwnerOp ? 'settlement-ded' : 'deduction-input';
+      const dedTotalSpanId = isOwnerOp ? 'totalSettlementDeductions' : 'totalDeductionsDisplay';
+      const dedRowsHTML = dedFields.map(f => {
         const val = dedValueOf(f.key);
+        // In view/print modes, hide rows with no value to keep the document clean.
+        if (!isEdit && val <= 0) return '';
         const valueHTML = isEdit
-          ? '<input type="number" step="0.01" id="' + f.id + '" value="' + (val || 0) + '" oninput="updateSettlementViewLiveTotals(this)" class="' + (isOwnerOp ? 'settlement-ded' : 'deduction-input') + '" style="width:120px;text-align:right;font-family:var(--font-mono,monospace);font-size:12px;padding:4px 8px">'
-          : '<span style="font-family:var(--font-mono,monospace);font-size:12px">' + escapeHtml(m(val)) + '</span>';
-        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;gap:10px">' +
-          '<span style="font-size:12px;color:var(--text-secondary);flex:1">' + escapeHtml(f.label) + '</span>' +
-          valueHTML +
-        '</div>';
-      }).join('');
+          ? '<input type="number" step="0.01" id="' + f.id + '" value="' + (val || 0) + '" class="' + dedClass + ' mono" oninput="updateSettlementViewLiveTotals(this)">'
+          : '<span class="text-red mono">-' + escapeHtml(m(val)) + '</span>';
+        return '<div class="settlement-doc-line"><span>' + escapeHtml(f.label) + '</span>' + valueHTML + '</div>';
+      }).filter(Boolean).join('');
 
-      const customDedRows = customRows.map((key, i) => {
+      const customDedHTML = customRows.map((key, i) => {
         const val = dedValueOf(key);
         const lbl = dedLabelOf(key);
+        const idAmt = 'settDedCustom' + (i + 1);
+        const idLbl = 'settDedCustom' + (i + 1) + 'Label';
         if (isEdit) {
-          return '<div style="display:flex;gap:8px;align-items:center;padding:4px 0">' +
-            '<input type="text" id="settDedCustom' + (i + 1) + 'Label" value="' + escapeHtml(lbl) + '" placeholder="Advance / custom label" style="flex:1;font-size:12px;padding:4px 8px">' +
-            '<input type="number" step="0.01" id="settDedCustom' + (i + 1) + '" value="' + (val || 0) + '" oninput="updateSettlementViewLiveTotals(this)" class="settlement-ded" style="width:120px;text-align:right;font-family:var(--font-mono,monospace);font-size:12px;padding:4px 8px">' +
+          return '<div class="settlement-doc-line">' +
+            '<input type="text" id="' + idLbl + '" value="' + escapeHtml(lbl) + '" placeholder="Custom #' + (i + 1) + ' label">' +
+            '<input type="number" step="0.01" id="' + idAmt + '" value="' + (val || 0) + '" class="' + dedClass + ' mono" oninput="updateSettlementViewLiveTotals(this)">' +
           '</div>';
         }
-        // view/print: only show if has label or value
         if (!lbl && !val) return '';
-        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
-          '<span style="font-size:12px;color:var(--text-secondary)">' + (lbl ? escapeHtml(lbl) : '<em style="color:var(--text-muted)">Custom #' + (i + 1) + '</em>') + '</span>' +
-          '<span style="font-family:var(--font-mono,monospace);font-size:12px">' + escapeHtml(m(val)) + '</span>' +
+        return '<div class="settlement-doc-line">' +
+          '<span>' + (lbl ? escapeHtml(lbl) : '<em class="text-muted">Custom #' + (i + 1) + '</em>') + '</span>' +
+          '<span class="text-red mono">-' + escapeHtml(m(val)) + '</span>' +
         '</div>';
       }).filter(Boolean).join('');
 
-      const deductionsHTML =
-        '<div class="settlement-section settlement-deductions" style="border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:12px;background:var(--dim-red,rgba(239,68,68,0.04))">' +
-          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
-            '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--danger)">Deductions</div>' +
-            (isEdit ? '<button class="btn btn-sm btn-secondary no-print" onclick="' + (isOwnerOp ? 'saveSettlementDeductionDefaults' : 'savePaystubDeductionDefaults') + '(' + (driver.id || 0) + ')" style="font-size:10px;padding:3px 8px">Save as Default</button>' : '') +
+      const dedAnyValue = totalDed > 0 || isEdit;
+      const saveDefaultsBtn = isEdit
+        ? '<button class="btn btn-sm btn-secondary no-print" onclick="' + (isOwnerOp ? 'saveSettlementDeductionDefaults' : 'savePaystubDeductionDefaults') + '(' + (driver.id || 0) + ')" style="font-size:10px;padding:3px 8px;margin-left:auto">Save as Default</button>'
+        : '';
+      const deductionsColHTML =
+        '<div class="settlement-doc-col">' +
+          '<div class="settlement-doc-col-header is-red">' +
+            '<span class="settlement-doc-col-icon">−</span> Deductions' + saveDefaultsBtn +
           '</div>' +
-          dedRows +
-          (customDedRows ? '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)">' + customDedRows + '</div>' : '') +
-          '<div style="display:flex;justify-content:space-between;border-top:1px dashed var(--border);margin-top:8px;padding-top:8px;font-weight:700;font-size:12px">' +
-            '<span>Total Deductions</span>' +
-            '<span style="font-family:var(--font-mono,monospace);color:var(--danger)">-<span id="' + (isOwnerOp ? 'totalSettlementDeductions' : 'totalDeductionsDisplay') + '">' + (totalDed || 0).toFixed(2) + '</span></span>' +
-          '</div>' +
+          (dedAnyValue
+            ? (dedRowsHTML + customDedHTML +
+               '<div class="settlement-doc-line-total is-red">' +
+                 '<span>Total Deductions</span>' +
+                 '<span class="mono">-<span id="' + dedTotalSpanId + '">' + (totalDed || 0).toFixed(2) + '</span></span>' +
+               '</div>')
+            : '<div class="settlement-doc-empty">No deductions this period</div>') +
         '</div>';
 
-      // ---- Bonuses (company drivers only — owner-op snapshot has no bonus fields) ----
-      let bonusesHTML = '';
-      if (!isOwnerOp) {
+      // Bonuses column — company drivers only render input rows; owner-op shows
+      // an empty-state placeholder so the two-col grid stays balanced.
+      let bonusesColHTML;
+      if (isOwnerOp) {
+        bonusesColHTML =
+          '<div class="settlement-doc-col">' +
+            '<div class="settlement-doc-col-header is-green">' +
+              '<span class="settlement-doc-col-icon">+</span> Bonuses & Additions' +
+            '</div>' +
+            (reimb > 0
+              ? ('<div class="settlement-doc-line"><span>Expense Reimbursements</span><span class="text-green mono">+' + escapeHtml(m(reimb)) + '</span></div>' +
+                 '<div class="settlement-doc-line-total is-green"><span>Total Additions</span><span class="mono">+' + escapeHtml(m(reimb)) + '</span></div>')
+              : '<div class="settlement-doc-empty">No bonuses this period</div>') +
+          '</div>';
+      } else {
         const bonusFields = [
-          { key: 'level1', id: 'bonusLevel1', label: 'Level I Inspection' },
-          { key: 'level2', id: 'bonusLevel2', label: 'Level II Inspection' },
-          { key: 'level3', id: 'bonusLevel3', label: 'Level III Inspection' },
+          { key: 'level1', id: 'bonusLevel1', label: 'Level I Inspection Bonus' },
+          { key: 'level2', id: 'bonusLevel2', label: 'Level II Inspection Bonus' },
+          { key: 'level3', id: 'bonusLevel3', label: 'Level III Inspection Bonus' },
           { key: 'other',  id: 'bonusOther',  label: 'Other Bonus' }
         ];
         const bonusValueOf = (key) => {
@@ -34965,87 +35071,108 @@
           if (v && typeof v === 'object') return parseFloat(v.amount || 0) || 0;
           return parseFloat(v || 0) || 0;
         };
-        const bonusRows = bonusFields.map(f => {
+        const bonusRowsHTML = bonusFields.map(f => {
           const val = bonusValueOf(f.key);
+          if (!isEdit && val <= 0) return '';
           const valueHTML = isEdit
-            ? '<input type="number" step="0.01" id="' + f.id + '" value="' + (val || 0) + '" oninput="updateSettlementViewLiveTotals(this)" class="bonus-input" style="width:120px;text-align:right;font-family:var(--font-mono,monospace);font-size:12px;padding:4px 8px">'
-            : '<span style="font-family:var(--font-mono,monospace);font-size:12px">' + escapeHtml(m(val)) + '</span>';
-          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;gap:10px">' +
-            '<span style="font-size:12px;color:var(--text-secondary);flex:1">' + escapeHtml(f.label) + '</span>' +
-            valueHTML +
-          '</div>';
-        }).join('');
+            ? '<input type="number" step="0.01" id="' + f.id + '" value="' + (val || 0) + '" class="bonus-input mono" oninput="updateSettlementViewLiveTotals(this)">'
+            : '<span class="text-green mono">+' + escapeHtml(m(val)) + '</span>';
+          return '<div class="settlement-doc-line"><span>' + escapeHtml(f.label) + '</span>' + valueHTML + '</div>';
+        }).filter(Boolean).join('');
 
-        bonusesHTML =
-          '<div class="settlement-section settlement-bonuses" style="border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:12px;background:var(--dim-green,rgba(34,197,94,0.04))">' +
-            '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--success);margin-bottom:8px">Bonuses</div>' +
-            bonusRows +
-            '<div style="display:flex;justify-content:space-between;border-top:1px dashed var(--border);margin-top:8px;padding-top:8px;font-weight:700;font-size:12px">' +
-              '<span>Total Bonuses</span>' +
-              '<span style="font-family:var(--font-mono,monospace);color:var(--success)">+<span id="totalBonusesDisplay">' + (totalBon || 0).toFixed(2) + '</span></span>' +
+        const reimbRow = reimb > 0
+          ? '<div class="settlement-doc-line"><span>Expense Reimbursements</span><span class="text-green mono">+' + escapeHtml(m(reimb)) + '</span></div>'
+          : '';
+        const bonusAny = totalBon > 0 || reimb > 0 || isEdit;
+        bonusesColHTML =
+          '<div class="settlement-doc-col">' +
+            '<div class="settlement-doc-col-header is-green">' +
+              '<span class="settlement-doc-col-icon">+</span> Bonuses & Additions' +
             '</div>' +
+            (bonusAny
+              ? (reimbRow + bonusRowsHTML +
+                 '<div class="settlement-doc-line-total is-green">' +
+                   '<span>Total Additions</span>' +
+                   '<span class="mono">+<span id="totalBonusesDisplay">' + (totalBon || 0).toFixed(2) + '</span></span>' +
+                 '</div>')
+              : '<div class="settlement-doc-empty">No bonuses this period</div>') +
           '</div>';
       }
 
-      // ---- Cash collected ---------------------------------------------------
-      const cashHTML =
-        '<div class="settlement-section settlement-cash" style="border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:12px">' +
-          '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Cash Collected</div>' +
-          '<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">Driver collected from customers — subtracted from settlement.</div>' +
-          '<div style="display:flex;justify-content:space-between;align-items:center">' +
-            '<span style="font-size:12px;color:var(--text-secondary)">Cash collected</span>' +
-            '<span style="font-family:var(--font-mono,monospace);font-size:12px;font-weight:600;color:var(--danger)">-' + escapeHtml(m(cashCollected)) + '</span>' +
-          '</div>' +
-        '</div>';
+      const twocolHTML =
+        '<div class="settlement-doc-twocol">' + deductionsColHTML + bonusesColHTML + '</div>';
 
-      // ---- Net Pay ----------------------------------------------------------
-      const netHTML =
-        '<div class="settlement-section settlement-net" style="border:2px solid ' + (netPay >= 0 ? 'var(--success)' : 'var(--danger)') + ';border-radius:6px;padding:16px;margin-bottom:12px;background:var(--bg-secondary)">' +
-          '<div style="display:flex;justify-content:space-between;align-items:center">' +
-            '<div>' +
-              '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted)">Net Pay</div>' +
-              '<div style="font-size:10px;color:var(--text-muted)">Final amount after deductions, bonuses, and cash</div>' +
+      // ── Optional Check Stub (print mode only, when check_number exists) ───
+      const cp = (typeof getCompanyProfile === 'function') ? getCompanyProfile() : { name: 'Horizon Star, LLC', address: '', phone: '' };
+      const checkNumDisplay = ctx.checkNumber || (record && record.check_number) || '';
+      const checkStubHTML = (isPrint && checkNumDisplay)
+        ? '<div class="settlement-doc-check-stub">' +
+            '<div class="settlement-doc-check-header">' +
+              '<div class="settlement-doc-check-company">' +
+                '<strong>' + escapeHtml(cp.name) + '</strong>' +
+                escapeHtml(cp.address) + '<br>' +
+                escapeHtml(cp.phone) +
+              '</div>' +
+              '<div class="settlement-doc-check-numbers">' +
+                'Check No. <strong>' + escapeHtml(String(checkNumDisplay)) + '</strong><br>' +
+                'Date: ' + escapeHtml(payDateRaw ? formatDate(payDateRaw) : '—') +
+              '</div>' +
             '</div>' +
-            '<div id="settlementViewNetDisplay" style="font-size:24px;font-weight:700;font-family:var(--font-mono,monospace);color:' + (netPay >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + escapeHtml(m(netPay)) + '</div>' +
-          '</div>' +
-        '</div>';
-
-      // ---- Stub / Check numbers (edit only — they're metadata, not core layout) ----
-      const metaHTML = isEdit
-        ? '<div class="settlement-section no-print" style="border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:12px">' +
-            '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Statement Metadata</div>' +
-            '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px">' +
-              '<div><label style="font-size:10px;font-weight:600;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:2px">' + (isOwnerOp ? 'Settlement #' : 'Stub #') + '</label>' +
-                '<input type="number" id="' + (isOwnerOp ? 'settlementNumber' : 'stubNumber') + '" value="' + escapeHtml(String(ctx.stubNumber || (record && (record.record_number || record.stub_number)) || '')) + '" style="font-size:12px;padding:4px 8px;width:100%"></div>' +
-              '<div><label style="font-size:10px;font-weight:600;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:2px">Check #</label>' +
-                '<input type="number" id="checkNumber" value="' + escapeHtml(String(ctx.checkNumber || (record && record.check_number) || '')) + '" style="font-size:12px;padding:4px 8px;width:100%"></div>' +
-              '<div><label style="font-size:10px;font-weight:600;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:2px">Driver Email</label>' +
-                '<input type="email" id="driverEmail" value="' + escapeHtml(String(driver.email || '')) + '" placeholder="driver@email.com" style="font-size:12px;padding:4px 8px;width:100%"></div>' +
+            '<div class="settlement-doc-check-body">' +
+              '<div>' +
+                '<div class="settlement-doc-pay-to-label">Pay to the order of</div>' +
+                '<div class="settlement-doc-pay-to-name">' + escapeHtml(driverNameUpper) + '</div>' +
+              '</div>' +
+              '<div class="settlement-doc-check-amount' + (netPay < 0 ? ' is-negative' : '') + '">' +
+                '<div class="settlement-doc-check-amount-value">' + escapeHtml(m(netPay)) + '</div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="settlement-doc-check-footer">' +
+              '<span>This is not a negotiable instrument</span>' +
+              '<span>For record keeping purposes only</span>' +
             '</div>' +
           '</div>'
         : '';
 
-      // ---- Optional trip-selector block (edit mode only) --------------------
-      // Callers in edit mode (modal) may need a wizard-style trip-selection list
-      // before the canonical settlement view. Pass it through as raw HTML;
-      // canonical renderer just embeds it. View/print modes ignore it (trips are
-      // already known from the saved record).
-      const tripSelectorHTML = (isEdit && ctx.tripSelectorHTML) ? ctx.tripSelectorHTML : '';
+      // ── Footer (company line + generated-at) ──────────────────────────────
+      const footerHTML =
+        '<div class="settlement-doc-footer">' +
+          escapeHtml(cp.name) + (cp.address ? ' | ' + escapeHtml(cp.address) : '') + (cp.phone ? ' | ' + escapeHtml(cp.phone) : '') + '<br>' +
+          'Statement generated ' + escapeHtml(new Date().toLocaleDateString()) + ' at ' + escapeHtml(new Date().toLocaleTimeString()) +
+        '</div>';
 
-      // ---- Wrap the whole thing ---------------------------------------------
-      const wrapperClass = 'settlement-canonical' + (isPrint ? ' settlement-print' : '') + (isView ? ' settlement-view-mode' : '') + (isEdit ? ' settlement-edit-mode' : '');
-      return '<div class="' + wrapperClass + '" data-settlement-mode="' + escapeHtml(mode) + '">' +
-        viewHint +
-        headerHTML +
-        tripSelectorHTML +
-        vehiclesHTML +
-        tripTotalsHTML +
-        compHTML +
-        deductionsHTML +
-        bonusesHTML +
-        cashHTML +
-        netHTML +
-        metaHTML +
+      // ── View-only banner hint (only in view mode) ─────────────────────────
+      const viewHintHTML = isView
+        ? '<div class="settlement-doc-view-hint no-print">View only — read-only display</div>'
+        : '';
+
+      // ── Trip selector (edit mode wizard, only when caller passed one) ────
+      const tripSelectorHTML = (isEdit && ctx.tripSelectorHTML)
+        ? '<div class="settlement-doc-trip-selector no-print">' + ctx.tripSelectorHTML + '</div>'
+        : '';
+
+      // ── Wrap everything ───────────────────────────────────────────────────
+      const wrapClass = 'settlement-doc settlement-doc--' + mode + (netPay < 0 ? ' is-negative' : '');
+      // Keep legacy `.settlement-canonical` class so existing live-recompute
+      // querySelector and other helpers continue to find the wrapper.
+      const legacyClass = ' settlement-canonical' + (isPrint ? ' settlement-print' : '') + (isView ? ' settlement-view-mode' : '') + (isEdit ? ' settlement-edit-mode' : '');
+      return '<div class="' + wrapClass + legacyClass + '" data-settlement-mode="' + escapeHtml(mode) + '">' +
+        '<div class="page">' +
+          headerHTML +
+          bannerHTML +
+          viewHintHTML +
+          '<div class="settlement-doc-content">' +
+            tripSelectorHTML +
+            driverHTML +
+            summaryHTML +
+            tableHTML +
+            twocolHTML +
+            // Hidden field that legacy generatePaystub reads for cash-collected total
+            '<span id="settlementViewNetDisplay" style="display:none">' + escapeHtml(m(netPay)) + '</span>' +
+            checkStubHTML +
+            footerHTML +
+          '</div>' +
+        '</div>' +
       '</div>';
     }
 
@@ -35053,8 +35180,13 @@
     // displays + Net Pay. Wired via oninput on canonical-renderer inputs.
     // Only the in-DOM canonical wrapper participates so multiple modals can't fight.
     function updateSettlementViewLiveTotals(srcInput) {
-      const wrap = (srcInput && srcInput.closest && srcInput.closest('.settlement-canonical')) || document.querySelector('.settlement-canonical.settlement-edit-mode');
+      // Locate the canonical wrapper. Prefer the one that contains the
+      // input that fired the event; fall back to the active edit-mode wrap.
+      const wrap = (srcInput && srcInput.closest && (srcInput.closest('.settlement-doc') || srcInput.closest('.settlement-canonical')))
+        || document.querySelector('.settlement-doc--edit')
+        || document.querySelector('.settlement-canonical.settlement-edit-mode');
       if (!wrap) return;
+
       const dedInputs = wrap.querySelectorAll('.deduction-input, .settlement-ded');
       let totalDed = 0;
       dedInputs.forEach(inp => { totalDed += parseFloat(inp.value || 0) || 0; });
@@ -35062,32 +35194,41 @@
       let totalBon = 0;
       bonInputs.forEach(inp => { totalBon += parseFloat(inp.value || 0) || 0; });
 
+      // Update legacy total spans (existing save/print code reads these)
       const dedDisplay = wrap.querySelector('#totalSettlementDeductions, #totalDeductionsDisplay');
       if (dedDisplay) dedDisplay.textContent = totalDed.toFixed(2);
       const bonDisplay = wrap.querySelector('#totalBonusesDisplay');
       if (bonDisplay) bonDisplay.textContent = totalBon.toFixed(2);
 
-      // Net pay live recompute: pull baseline numbers from the trip-totals
-      // and compensation sections (already rendered) — we only adjust by
-      // changes in deductions/bonuses since net = comp - cash - ded + bon
-      // The renderer puts the static netPay number in #settlementViewNetDisplay.
-      // Recompute it from cleanGross/dispatchFee or driverCut + bonuses - deductions - cash.
+      // Live recompute Net Pay using context stashed by modal openers.
       const ctxData = wrap.__settlementCtx;
-      if (ctxData) {
-        const t = ctxData.totals || {};
-        const cleanGross = parseFloat(t.cleanGross ?? 0) || 0;
-        const dispatchFee = parseFloat(t.dispatchFee ?? 0) || 0;
-        const driverCut = parseFloat(t.driverCut ?? 0) || 0;
-        const reimb = parseFloat(t.reimbursements ?? 0) || 0;
-        const cash = parseFloat(ctxData.cashCollected ?? t.cashCollected ?? 0) || 0;
-        const isOO = ctxData.isOwnerOp;
-        const baseEarnings = isOO ? (cleanGross - dispatchFee) : driverCut;
-        const newNet = baseEarnings - cash + reimb - totalDed + totalBon;
-        const netDisp = wrap.querySelector('#settlementViewNetDisplay');
-        if (netDisp) {
-          netDisp.textContent = formatMoney(newNet);
-          netDisp.style.color = newNet >= 0 ? 'var(--success)' : 'var(--danger)';
-        }
+      if (!ctxData) return;
+      const t = ctxData.totals || {};
+      const cleanGross = parseFloat(t.cleanGross ?? 0) || 0;
+      const dispatchFee = parseFloat(t.dispatchFee ?? 0) || 0;
+      const driverCut = parseFloat(t.driverCut ?? 0) || 0;
+      const reimb = parseFloat(t.reimbursements ?? 0) || 0;
+      const cash = parseFloat(ctxData.cashCollected ?? t.cashCollected ?? 0) || 0;
+      const isOO = !!ctxData.isOwnerOp;
+      const baseEarnings = isOO ? (cleanGross - dispatchFee) : driverCut;
+      const newNet = baseEarnings - cash + reimb - totalDed + totalBon;
+
+      // Update the canonical Net Pay banner (visible) — toggles green/red via
+      // the .is-negative class on the .settlement-doc wrapper.
+      const bannerVal = wrap.querySelector('.settlement-doc-banner-value');
+      if (bannerVal) bannerVal.textContent = formatMoney(newNet);
+      if (wrap.classList) {
+        wrap.classList.toggle('is-negative', newNet < 0);
+      }
+      const banner = wrap.querySelector('.settlement-doc-banner');
+      if (banner && banner.classList) {
+        banner.classList.toggle('is-negative', newNet < 0);
+      }
+
+      // Legacy hidden span — still updated for any code that reads it.
+      const netDisp = wrap.querySelector('#settlementViewNetDisplay');
+      if (netDisp) {
+        netDisp.textContent = formatMoney(newNet);
       }
     }
 
@@ -35104,9 +35245,9 @@
       const tripIds = Array.isArray(record.trip_ids) ? record.trip_ids : [];
       const editPayload = JSON.stringify({ preselectedTripIds: tripIds, source: 'history-view', existingRecord: record }).replace(/"/g, '&quot;');
       m.innerHTML =
-        '<div class="modal" style="max-width:780px;max-height:92vh;display:flex;flex-direction:column">' +
+        '<div class="modal" style="max-width:820px;max-height:92vh;display:flex;flex-direction:column">' +
         '<div class="modal-header"><h3>[[icon:file]] Settlement ' + escapeHtml(getPayrollRecordDisplayNumber(record)) + '</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div>' +
-        '<div class="modal-body" style="overflow:auto">' + html + '</div>' +
+        '<div class="modal-body" style="overflow:auto;padding:0">' + html + '</div>' +
         '<div class="modal-footer no-print">' +
           '<button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Close</button>' +
           '<button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove();reprintPayrollRecord(' + record.id + ')">Print</button>' +
@@ -35518,7 +35659,7 @@
 
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
       m.dataset.statementOptions = JSON.stringify(modalOptions);
-      m.innerHTML = '<div class="modal" style="max-width:780px;max-height:92vh;display:flex;flex-direction:column"><div class="modal-header"><h3>[[icon:file]] ' + escapeHtml(modalTitle) + '</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
+      m.innerHTML = '<div class="modal" style="max-width:820px;max-height:92vh;display:flex;flex-direction:column"><div class="modal-header"><h3>[[icon:file]] ' + escapeHtml(modalTitle) + '</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1;padding:0">' +
         editingBanner +
         canonicalBody +
         '</div><div class="modal-footer" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>' +
@@ -35706,7 +35847,7 @@
 
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
       m.dataset.statementOptions = JSON.stringify(modalOptions);
-      m.innerHTML = '<div class="modal" style="max-width:780px;max-height:92vh;display:flex;flex-direction:column"><div class="modal-header" style="background:var(--amber);color:white"><h3>[[icon:clipboard]] ' + escapeHtml(modalTitle) + '</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()" style="color:white">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
+      m.innerHTML = '<div class="modal" style="max-width:820px;max-height:92vh;display:flex;flex-direction:column"><div class="modal-header" style="background:var(--amber);color:white"><h3>[[icon:clipboard]] ' + escapeHtml(modalTitle) + '</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()" style="color:white">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1;padding:0">' +
         editingBanner +
         canonicalBody +
         '</div><div class="modal-footer" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>' +

@@ -1,0 +1,619 @@
+/* ============================================================================
+   Settlement Document — Canonical Earnings/Settlement Statement
+   ----------------------------------------------------------------------------
+   Lifted from the polished paystubHTML template (index.html lines 36625-37130).
+   Namespaced under `.settlement-doc` so the financial-document palette
+   (#111827 navy header, #047857 green / #b91c1c red Net Pay banner) cannot
+   leak into the v4 enterprise TMS chrome.
+
+   Used by:
+     - renderSettlementView(context, mode) — embedded inside modal frames
+       (openPaystubModal, openSettlementModal, showSettlementViewModal)
+     - reprintPayrollRecord — wraps in a popup window that <link>s this file
+
+   Modes:
+     .settlement-doc--view   read-only display
+     .settlement-doc--edit   inputs editable, live recompute
+     .settlement-doc--print  popup-window standalone print mode
+   ============================================================================ */
+
+.settlement-doc {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  background: #ffffff;
+  color: #111827;
+  line-height: 1.4;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.settlement-doc * {
+  box-sizing: border-box;
+}
+
+/* ── Header strip ─────────────────────────────────────────────────────────── */
+.settlement-doc-header {
+  background: #111827;
+  color: #ffffff;
+  padding: 24px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.settlement-doc-brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.settlement-doc-brand-mark {
+  width: 48px;
+  height: 48px;
+  background: #ffffff;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -1px;
+}
+.settlement-doc-brand-text {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+.settlement-doc-brand-sub {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-top: 2px;
+  font-weight: 400;
+}
+.settlement-doc-info {
+  text-align: right;
+}
+.settlement-doc-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  opacity: 0.7;
+}
+.settlement-doc-type {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 4px 0 12px;
+}
+.settlement-doc-meta {
+  font-size: 11px;
+  opacity: 0.85;
+}
+.settlement-doc-meta-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 24px;
+  margin: 2px 0;
+}
+.settlement-doc-meta-label {
+  opacity: 0.7;
+}
+.settlement-doc-meta-value {
+  font-weight: 600;
+}
+
+/* ── Net Pay banner (green positive, red negative) ────────────────────────── */
+.settlement-doc-banner {
+  background: #047857;
+  color: #ffffff;
+  padding: 28px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.settlement-doc-banner.is-negative {
+  background: #b91c1c;
+}
+.settlement-doc-banner-label {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+.settlement-doc-banner-value {
+  font-size: 36px;
+  font-weight: 600;
+  letter-spacing: -1px;
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+}
+
+/* ── Content area ─────────────────────────────────────────────────────────── */
+.settlement-doc-content {
+  padding: 24px 32px;
+  background: #ffffff;
+}
+
+/* ── Driver section (name + role + 3-stat block) ──────────────────────────── */
+.settlement-doc-driver {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 20px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.settlement-doc-driver-info h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+.settlement-doc-driver-detail {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+.settlement-doc-driver-stats {
+  display: flex;
+  gap: 32px;
+}
+.settlement-doc-stat {
+  text-align: right;
+}
+.settlement-doc-stat-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+}
+.settlement-doc-stat-label {
+  font-size: 10px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── 4-card summary grid ──────────────────────────────────────────────────── */
+.settlement-doc-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.settlement-doc-summary-card {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  padding: 14px;
+  text-align: center;
+}
+.settlement-doc-summary-card.is-highlight {
+  background: #d1fae5;
+  border-color: #bbf7d0;
+}
+.settlement-doc-summary-card.is-negative {
+  background: #fee2e2;
+  border-color: #fecaca;
+}
+.settlement-doc-summary-amount {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+}
+.settlement-doc-summary-amount.is-green { color: #047857; }
+.settlement-doc-summary-amount.is-red   { color: #b91c1c; }
+.settlement-doc-summary-label {
+  font-size: 9px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+/* ── Section headers (left-border accent) ─────────────────────────────────── */
+.settlement-doc-section-header {
+  background: #f3f4f6;
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #374151;
+  margin: 24px 0 0;
+  border-left: 3px solid #111827;
+}
+
+/* ── EARNINGS DETAIL table ────────────────────────────────────────────────── */
+.settlement-doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0;
+}
+.settlement-doc-table thead {
+  background: #f9fafb;
+}
+.settlement-doc-table th {
+  padding: 10px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: #6b7280;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.settlement-doc-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 11px;
+  color: #111827;
+}
+.settlement-doc-table .text-right  { text-align: right; }
+.settlement-doc-table .text-center { text-align: center; }
+.settlement-doc-table .mono {
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+  font-size: 11px;
+}
+.settlement-doc-table .text-green { color: #047857; }
+.settlement-doc-table .text-red   { color: #b91c1c; }
+.settlement-doc-table .text-muted { color: #9ca3af; }
+.settlement-doc-table .font-medium   { font-weight: 500; }
+.settlement-doc-table .font-semibold { font-weight: 600; }
+
+.settlement-doc-table tr.is-trip-subheader td {
+  background: #f9fafb;
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #374151;
+  padding: 8px 8px;
+}
+.settlement-doc-table tr.is-total-row td {
+  background: #f3f4f6;
+  font-weight: 600;
+  padding: 12px 8px;
+  border-bottom: none;
+}
+
+.settlement-doc-trip-badge {
+  display: inline-block;
+  background: #e5e7eb;
+  color: #374151;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 500;
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+}
+.settlement-doc-cash-badge {
+  display: inline-block;
+  background: #dcfce7;
+  color: #166534;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 500;
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+}
+
+/* ── Two-column DEDUCTIONS / BONUSES ──────────────────────────────────────── */
+.settlement-doc-twocol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  margin-top: 24px;
+}
+.settlement-doc-twocol.is-single {
+  grid-template-columns: 1fr;
+}
+.settlement-doc-col {
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+}
+.settlement-doc-twocol > .settlement-doc-col:first-child {
+  border-right: none;
+}
+.settlement-doc-twocol.is-single > .settlement-doc-col {
+  border-right: 1px solid #e5e7eb;
+}
+.settlement-doc-col-header {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.settlement-doc-col-header.is-red   { color: #b91c1c; border-color: #fecaca; }
+.settlement-doc-col-header.is-green { color: #047857; border-color: #bbf7d0; }
+.settlement-doc-col-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+.settlement-doc-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 11px;
+  border-bottom: 1px dashed #f3f4f6;
+  gap: 12px;
+}
+.settlement-doc-line:last-of-type { border-bottom: none; }
+.settlement-doc-line .mono {
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+}
+.settlement-doc-line .text-red   { color: #b91c1c; }
+.settlement-doc-line .text-green { color: #047857; }
+.settlement-doc-line input[type="number"],
+.settlement-doc-line input[type="text"] {
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+  text-align: right;
+  width: 110px;
+  background: #ffffff;
+  color: #111827;
+}
+.settlement-doc-line input[type="text"] {
+  text-align: left;
+  flex: 1;
+  font-family: 'Inter', sans-serif;
+}
+.settlement-doc-line-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  margin-top: 12px;
+  font-weight: 600;
+  font-size: 12px;
+}
+.settlement-doc-line-total.is-red   { background: #fee2e2; color: #b91c1c; }
+.settlement-doc-line-total.is-green { background: #d1fae5; color: #047857; }
+.settlement-doc-line-total .mono {
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+}
+
+.settlement-doc-empty {
+  text-align: center;
+  padding: 20px;
+  color: #9ca3af;
+  font-size: 11px;
+  font-style: italic;
+}
+
+/* ── Metadata edit block (stub#/check#/email — edit mode only) ─────────────── */
+.settlement-doc-meta-edit {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #f9fafb;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+.settlement-doc-meta-edit-field label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+.settlement-doc-meta-edit-field input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  background: #ffffff;
+  color: #111827;
+  font-family: inherit;
+}
+
+/* ── Trip selector (edit mode only — passed in by modal) ──────────────────── */
+.settlement-doc-trip-selector {
+  margin-bottom: 20px;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #f9fafb;
+}
+.settlement-doc-trip-selector-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+  color: #374151;
+}
+
+/* ── Optional check stub at the bottom ────────────────────────────────────── */
+.settlement-doc-check-stub {
+  margin-top: 32px;
+  border: 2px solid #111827;
+}
+.settlement-doc-check-header {
+  background: #f9fafb;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #e5e7eb;
+  gap: 16px;
+}
+.settlement-doc-check-company {
+  font-size: 11px;
+  color: #374151;
+}
+.settlement-doc-check-company strong {
+  display: block;
+  color: #111827;
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+.settlement-doc-check-numbers {
+  text-align: right;
+  font-size: 11px;
+}
+.settlement-doc-check-numbers strong {
+  font-size: 13px;
+}
+.settlement-doc-check-body {
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.settlement-doc-pay-to-label {
+  font-size: 10px;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+.settlement-doc-pay-to-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 4px 0;
+}
+.settlement-doc-check-amount {
+  background: #d1fae5;
+  border: 2px solid #047857;
+  padding: 12px 24px;
+  text-align: center;
+}
+.settlement-doc-check-amount.is-negative {
+  background: #fee2e2;
+  border-color: #b91c1c;
+}
+.settlement-doc-check-amount-value {
+  font-size: 24px;
+  font-weight: 600;
+  color: #047857;
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+}
+.settlement-doc-check-amount.is-negative .settlement-doc-check-amount-value {
+  color: #b91c1c;
+}
+.settlement-doc-check-footer {
+  background: #111827;
+  color: #ffffff;
+  padding: 8px 20px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  gap: 12px;
+}
+
+/* ── Footer (company line + generated-at timestamp) ───────────────────────── */
+.settlement-doc-footer {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+  text-align: center;
+  font-size: 10px;
+  color: #9ca3af;
+}
+
+/* ── In-document Print button (only in print mode) ────────────────────────── */
+.settlement-doc-print-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 24px;
+  background: #111827;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 1000;
+}
+.settlement-doc-print-btn:hover { background: #1f2937; }
+
+.settlement-doc--view .settlement-doc-print-btn,
+.settlement-doc--edit .settlement-doc-print-btn {
+  display: none;
+}
+
+/* ── View-only banner hint ────────────────────────────────────────────────── */
+.settlement-doc-view-hint {
+  margin: 0 32px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  font-size: 11px;
+  color: #1d4ed8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+/* ── Print media ──────────────────────────────────────────────────────────── */
+@media print {
+  body { background: #ffffff; }
+  .settlement-doc { padding: 0; max-width: none; }
+  .settlement-doc-print-btn { display: none !important; }
+  .settlement-doc .no-print { display: none !important; }
+}
+
+/* ── PDF export (html2canvas capture) ─────────────────────────────────────── */
+body.pdf-export {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #ffffff !important;
+}
+body.pdf-export .settlement-doc-print-btn { display: none !important; }
+body.pdf-export .settlement-doc {
+  margin: 0 !important;
+  padding: 20px !important;
+  max-width: none !important;
+}
+
+/* ── Responsive (mobile narrow) ───────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .settlement-doc-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .settlement-doc-twocol {
+    grid-template-columns: 1fr;
+  }
+  .settlement-doc-twocol > .settlement-doc-col:first-child {
+    border-right: 1px solid #e5e7eb;
+    border-bottom: none;
+  }
+  .settlement-doc-driver {
+    flex-direction: column;
+  }
+  .settlement-doc-driver-stats {
+    gap: 20px;
+  }
+  .settlement-doc-stat { text-align: left; }
+}
