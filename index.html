@@ -13741,6 +13741,11 @@
         // Inspection media metadata and order attachments are intentionally loaded on-demand
         // per order/detail views to avoid expensive global preload at scale.
 
+        // Load payroll records (paystubs/settlements) so per-trip lookups work on cold navigation
+        let payroll_records = [];
+        try { payroll_records = await dbFetch('payroll_records', { order: 'created_at.desc' }) || []; }
+        catch (e) { console.warn('payroll_records load failed (non-fatal):', e); payroll_records = appData.payroll_records || []; }
+
         // Load fleet mileage data from Samsara uploads
         let fleet_mileage = [];
         try { fleet_mileage = await dbFetch('fleet_mileage', { order: 'period_end.desc' }) || []; } catch(e) { fleet_mileage = []; }
@@ -13785,7 +13790,8 @@
           inspection_photos: [],
           inspection_damages: [],
           order_attachments: [],
-          billing_events: billing_events
+          billing_events: billing_events,
+          payroll_records: payroll_records
         });
         
         // Update cache
@@ -20665,9 +20671,15 @@
       const payPeriodText = formatTripMoment(t.period_start_date, '-') + ' → ' + formatTripMoment(payPeriodEnd, 'In Progress');
       const canGenerateTripStatement = isTripClosed && !!d;
       const hasDriver = !!d;
+      const existingSettlement = canGenerateTripStatement ? findActivePerTripSettlement(t.driver_id, t.id) : null;
+      const settlementBadgeHtml = existingSettlement ? renderSettlementStatusBadge(existingSettlement) : '';
       const tripStatementButtonHtml = hasDriver
         ? '<button class="btn btn-secondary" onclick="openTripPaystubPreview(' + id + ')">[[icon:file]] Preview Statement</button>' +
-          (canGenerateTripStatement ? '<button class="btn btn-primary" onclick="openTripDriverStatement(' + id + ')">[[icon:print]] Generate Statement</button>' : '')
+          (canGenerateTripStatement
+            ? (existingSettlement
+                ? '<button class="btn btn-primary" onclick="openTripDriverStatement(' + id + ')">[[icon:eye]] View Settlement ' + escapeHtml(getPayrollRecordDisplayNumber(existingSettlement)) + '</button>' + settlementBadgeHtml
+                : '<button class="btn btn-primary" onclick="openTripDriverStatement(' + id + ')">[[icon:print]] Generate Statement</button>')
+            : '')
         : '';
       
       // Get pricing guidance for dispatchers
@@ -20878,10 +20890,12 @@
       }
 
       const driver = appData.drivers.find(d => String(d.id) === String(trip.driver_id));
+      const existingRecord = findActivePerTripSettlement(trip.driver_id, trip.id);
       const options = {
         preselectedTripIds: [trip.id],
         lockTripSelection: true,
-        source: 'trip'
+        source: 'trip',
+        existingRecord: existingRecord || null
       };
 
       if (driver?.driver_type === 'OWNER_OP') {
@@ -20926,8 +20940,12 @@
         '</tr>'
       ).join('');
 
+      const existingPreviewSettlement = isTripClosed ? findActivePerTripSettlement(trip.driver_id, trip.id) : null;
       const generateBtnDisabled = isTripClosed ? '' : ' disabled style="opacity:0.5;cursor:not-allowed"';
-      const generateLabel = isOwnerOp ? 'Generate Settlement' : 'Generate Paystub';
+      const generateLabel = existingPreviewSettlement
+        ? 'View ' + (isOwnerOp ? 'Settlement' : 'Paystub') + ' ' + getPayrollRecordDisplayNumber(existingPreviewSettlement)
+        : (isOwnerOp ? 'Generate Settlement' : 'Generate Paystub');
+      const generateBtnIcon = existingPreviewSettlement ? '[[icon:eye]]' : '[[icon:print]]';
 
       const m = document.createElement('div');
       m.className = 'modal-overlay';
@@ -20971,7 +20989,7 @@
         '</div>' +
         '<div class="modal-footer">' +
           '<button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Close</button>' +
-          '<button class="btn btn-primary"' + generateBtnDisabled + ' onclick="this.closest(\'.modal-overlay\').remove();openTripDriverStatement(' + tripId + ')">[[icon:print]] ' + generateLabel + '</button>' +
+          '<button class="btn btn-primary"' + generateBtnDisabled + ' onclick="this.closest(\'.modal-overlay\').remove();openTripDriverStatement(' + tripId + ')">' + generateBtnIcon + ' ' + escapeHtml(generateLabel) + '</button>' +
         '</div>' +
         '</div>';
       document.body.appendChild(m);
@@ -32907,7 +32925,10 @@
         '</div>' +
         '<div class="modal-footer">' +
           '<button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Close</button>' +
-          '<button class="btn btn-primary" onclick="this.closest(\'.modal-overlay\').remove();' + (isOwnerOp ? 'openSettlementModal(' + driverId + ')' : 'openPaystubModal(' + driverId + ')') + '">' + (isOwnerOp ? 'Generate Settlement' : 'Generate Paystub') + '</button>' +
+          // Pre-resolve existingRecord when this period has exactly one completed trip — avoids the
+          // "Generate Statement" / "View Settlement" label-flip when entering from the review modal.
+          // Multi-trip periods correctly fall through to a fresh modal (findActivePerTripSettlement is per-trip).
+          '<button class="btn btn-primary" onclick="this.closest(\'.modal-overlay\').remove();' + (isOwnerOp ? 'openSettlementModalFromReview(' + driverId + ', ' + JSON.stringify(tripIds) + ')' : 'openPaystubModalFromReview(' + driverId + ', ' + JSON.stringify(tripIds) + ')') + '">' + (isOwnerOp ? 'Generate Settlement' : 'Generate Paystub') + '</button>' +
         '</div>' +
         '</div>';
       document.body.appendChild(m);
@@ -32915,6 +32936,30 @@
 
     // Legacy alias — openPayrollPreviewModal now points to the merged review modal
     function openPayrollPreviewModal(driverId) { openPayrollReviewModal(driverId); }
+
+    // Wrappers used by the review modal's "Generate" button. When the period contains exactly one
+    // completed trip we look up an existing per-trip settlement so the modal opens in edit mode
+    // instead of fresh — keeping label/state consistent with Trip Detail.
+    function openPaystubModalFromReview(driverId, tripIds) {
+      const list = Array.isArray(tripIds) ? tripIds : [];
+      const existingRecord = list.length === 1
+        ? findActivePerTripSettlement(driverId, list[0], 'paystub')
+        : null;
+      openPaystubModal(driverId, {
+        preselectedTripIds: list,
+        lockTripSelection: true,
+        source: 'review',
+        existingRecord
+      });
+    }
+    function openSettlementModalFromReview(driverId, tripIds) {
+      const list = Array.isArray(tripIds) ? tripIds : [];
+      let existingRecord = null;
+      if (list.length === 1) {
+        try { existingRecord = findActivePerTripSettlement(driverId, list[0]); } catch (e) { existingRecord = null; }
+      }
+      openSettlementModal(driverId, { existingRecord: existingRecord || null });
+    }
 
     function resetPayrollHistoryFilters() {
       payrollSearch = '';
@@ -33676,7 +33721,17 @@
         return;
       }
       const tripIds = record.trip_ids || [];
-      openPaystubModal(driver.id, { preselectedTripIds: tripIds, source: 'history' });
+      // Pass the record as existingRecord so the modal opens in edit mode with consistent labels/state.
+      // Owner-Op records open the settlement modal, company-driver paystubs the paystub modal.
+      // Record type wins over current driver classification, since drivers can be
+      // reclassified after a record is finalized.
+      const isOwnerOpRecord = String(driver.driver_type || '').toUpperCase() === 'OWNER_OP' || record.type === 'settlement';
+      const reopenOptions = { preselectedTripIds: tripIds, source: 'history', existingRecord: record };
+      if (isOwnerOpRecord) {
+        openSettlementModal(driver.id, reopenOptions);
+      } else {
+        openPaystubModal(driver.id, reopenOptions);
+      }
     }
 
     // Batch payroll generation modal
@@ -34144,6 +34199,37 @@
       return record?.record_number || record?.stub_number || ('PR-' + record?.id);
     }
 
+    // Find the active (non-superseded) per-trip payroll record for a given driver+trip.
+    // Defaults to 'settlement' since that's the dominant per-trip case (per-trip pay
+    // model). Pass 'paystub' for the rare single-trip company-driver paystub.
+    function findActivePerTripSettlement(driverId, tripId, type) {
+      if (!driverId || !tripId) return null;
+      const targetType = type || 'settlement';
+      return (appData.payroll_records || []).find(r =>
+        Number(r.driver_id) === Number(driverId) &&
+        Number(r.trip_id) === Number(tripId) &&
+        r.type === targetType &&
+        !r.superseded_by
+      ) || null;
+    }
+
+    // Render a small status badge for an existing settlement record (FINALIZED/PAID/etc.)
+    // Used in Trip Detail next to the "View Settlement" button.
+    function renderSettlementStatusBadge(record) {
+      if (!record) return '';
+      const status = String(record.status || 'finalized').toLowerCase();
+      const labelMap = { draft: 'DRAFT', finalized: 'FINALIZED', emailed: 'EMAILED', paid: 'PAID' };
+      const colorMap = {
+        draft:     { bg: 'var(--bg-secondary)',  fg: 'var(--text-secondary)' },
+        finalized: { bg: 'var(--dim-blue)',      fg: 'var(--info, #3b82f6)' },
+        emailed:   { bg: 'var(--dim-amber)',     fg: 'var(--warning)' },
+        paid:      { bg: 'var(--dim-green)',     fg: 'var(--success)' }
+      };
+      const c = colorMap[status] || colorMap.finalized;
+      const revisionPart = (record.revision && record.revision > 1) ? ' • rev ' + record.revision : '';
+      return '<span class="badge" style="margin-left:8px;padding:3px 8px;font-size:11px;font-weight:600;background:' + c.bg + ';color:' + c.fg + '">' + (labelMap[status] || status.toUpperCase()) + revisionPart + '</span>';
+    }
+
     function openDriverPayrollLedger(driverId) {
       const driver = (appData.drivers || []).find(d => String(d.id) === String(driverId));
       if (!driver) {
@@ -34327,7 +34413,8 @@
       return {
         preselectedTripIds,
         lockTripSelection: incoming.lockTripSelection === true,
-        source: incoming.source || 'payroll'
+        source: incoming.source || 'payroll',
+        existingRecord: (incoming.existingRecord && typeof incoming.existingRecord === 'object') ? incoming.existingRecord : null
       };
     }
 
@@ -34376,18 +34463,50 @@
         ? completedTrips.filter(t => selectedTripIdSet.has(parseInt(t.id, 10)))
         : completedTrips;
 
-      // Load saved deduction defaults
-      const savedDed = driver.default_deductions && typeof driver.default_deductions === 'object' ? driver.default_deductions : {};
-      const dedVal = (key) => parseFloat(savedDed[key] || 0) || 0;
+      // If editing an existing settlement, pre-fill from its saved values.
+      const existingRecord = modalOptions.existingRecord || null;
+      const isEditing = !!existingRecord;
+      const existingDed = (existingRecord && existingRecord.deductions && typeof existingRecord.deductions === 'object') ? existingRecord.deductions : null;
+      const existingBon = (existingRecord && existingRecord.bonuses && typeof existingRecord.bonuses === 'object') ? existingRecord.bonuses : null;
 
-      // Auto-fill period dates from payroll period
+      // Load saved deduction defaults (used only when not editing an existing record)
+      const savedDed = driver.default_deductions && typeof driver.default_deductions === 'object' ? driver.default_deductions : {};
+      const dedVal = (key) => {
+        if (existingDed && Object.prototype.hasOwnProperty.call(existingDed, key)) {
+          return parseFloat(existingDed[key] || 0) || 0;
+        }
+        return parseFloat(savedDed[key] || 0) || 0;
+      };
+      const bonVal = (key) => {
+        if (existingBon && Object.prototype.hasOwnProperty.call(existingBon, key)) {
+          return parseFloat(existingBon[key] || 0) || 0;
+        }
+        return 0;
+      };
+
+      // Auto-fill period dates from payroll period (or from existing record when editing)
       const periodRange = buildPayrollPeriodRange(payrollPeriod);
-      const pStart = periodRange.start || new Date().toISOString().split('T')[0];
-      const pEnd = periodRange.end || new Date().toISOString().split('T')[0];
+      const pStart = isEditing ? (existingRecord.period_start || periodRange.start) : (periodRange.start || new Date().toISOString().split('T')[0]);
+      const pEnd = isEditing ? (existingRecord.period_end || periodRange.end) : (periodRange.end || new Date().toISOString().split('T')[0]);
+      const payDateInit = isEditing ? (existingRecord.pay_date || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0];
+      const stubNumberInit = isEditing
+        ? (existingRecord.stub_number || existingRecord.record_number || (1000 + Math.floor(Math.random() * 9000)))
+        : (1000 + Math.floor(Math.random() * 9000));
+      const checkNumberInit = isEditing
+        ? (existingRecord.check_number || (10000 + Math.floor(Math.random() * 90000)))
+        : (10000 + Math.floor(Math.random() * 90000));
+
+      const modalTitle = isEditing ? 'Edit Paystub' : 'Generate Paystub';
+      const submitLabel = isEditing ? 'Save Changes' : 'Print';
+      const emailLabel = isEditing ? 'Save & Email' : 'Send Email';
+      const editingBanner = isEditing
+        ? '<div style="margin-bottom:12px;padding:10px 12px;border-radius:8px;background:var(--dim-blue);border:1px solid var(--info,#3b82f6);font-size:12px;font-weight:600;color:var(--info,#3b82f6)">Editing existing paystub ' + escapeHtml(getPayrollRecordDisplayNumber(existingRecord)) + ' (status: ' + escapeHtml(String(existingRecord.status || 'finalized').toUpperCase()) + ')</div>'
+        : '';
 
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
       m.dataset.statementOptions = JSON.stringify(modalOptions);
-      m.innerHTML = '<div class="modal" style="max-width:650px;max-height:90vh;display:flex;flex-direction:column"><div class="modal-header"><h3>[[icon:file]] Generate Paystub</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
+      m.innerHTML = '<div class="modal" style="max-width:650px;max-height:90vh;display:flex;flex-direction:column"><div class="modal-header"><h3>[[icon:file]] ' + escapeHtml(modalTitle) + '</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
+        editingBanner +
         '<div class="form-row"><div class="form-group"><label>Driver</label><input value="' + driver.first_name + ' ' + driver.last_name + '" readonly style="background:var(--bg-tertiary)"></div><div class="form-group"><label>Driver Email</label><input type="email" id="driverEmail" value="' + (driver.email || '') + '" placeholder="driver@email.com"></div></div>' +
         (modalOptions.lockTripSelection ? '<div style="margin-bottom:10px;font-size:12px;color:var(--text-secondary);background:var(--dim-blue);border:1px solid var(--info-border);padding:8px 10px;border-radius:8px">Trip selection is locked from Trip Detail.</div>' : '') +
         '<div class="form-group"><label>Select Trip(s) for Paystub</label><div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px">' +
@@ -34397,9 +34516,9 @@
           disabled: modalOptions.lockTripSelection
         })).join('')) +
         '</div></div>' +
-        '<div class="form-row"><div class="form-group"><label>Stub #</label><input type="number" id="stubNumber" value="' + (1000 + Math.floor(Math.random() * 9000)) + '"></div><div class="form-group"><label>Check #</label><input type="number" id="checkNumber" value="' + (10000 + Math.floor(Math.random() * 90000)) + '"></div></div>' +
-        '<div class="form-row"><div class="form-group"><label>Period Starting</label><input type="date" id="periodStart" value="' + pStart + '"></div><div class="form-group"><label>Period Ending</label><input type="date" id="periodEnd" value="' + pEnd + '"></div></div>' +
-        '<div class="form-group"><label>Pay Date</label><input type="date" id="payDate" value="' + new Date().toISOString().split('T')[0] + '"></div>' +
+        '<div class="form-row"><div class="form-group"><label>Stub #</label><input type="number" id="stubNumber" value="' + escapeHtml(String(stubNumberInit)) + '"></div><div class="form-group"><label>Check #</label><input type="number" id="checkNumber" value="' + escapeHtml(String(checkNumberInit)) + '"></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Period Starting</label><input type="date" id="periodStart" value="' + escapeHtml(String(pStart)) + '"></div><div class="form-group"><label>Period Ending</label><input type="date" id="periodEnd" value="' + escapeHtml(String(pEnd)) + '"></div></div>' +
+        '<div class="form-group"><label>Pay Date</label><input type="date" id="payDate" value="' + escapeHtml(String(payDateInit)) + '"></div>' +
 
         // Deductions Section (pre-filled from saved defaults)
         '<div style="background:var(--dim-red);padding:12px;border-radius:8px;margin-top:12px">' +
@@ -34416,16 +34535,26 @@
         '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Other Deductions</label><input type="number" id="dedOther" value="' + dedVal('other') + '" class="deduction-input" onchange="updatePaystubTotals()"></div></div>' +
         '<div style="text-align:right;margin-top:8px;font-weight:600;color:var(--red)">Total Deductions: $<span id="totalDeductionsDisplay">0.00</span></div></div>' +
 
-        // Bonuses Section
+        // Bonuses Section (pre-filled from existing record when editing)
         '<div style="background:var(--dim-green);padding:12px;border-radius:8px;margin-top:12px">' +
         '<label style="font-weight:600;margin-bottom:8px;display:block;color:var(--green)">[[icon:plus]] BONUSES</label>' +
-        '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Level I Inspection</label><input type="number" id="bonusLevel1" value="0" class="bonus-input" onchange="updatePaystubTotals()"></div>' +
-        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Level II Inspection</label><input type="number" id="bonusLevel2" value="0" class="bonus-input" onchange="updatePaystubTotals()"></div>' +
-        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Level III Inspection</label><input type="number" id="bonusLevel3" value="0" class="bonus-input" onchange="updatePaystubTotals()"></div></div>' +
-        '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:0"><label style="font-size:12px">Other Bonus</label><input type="number" id="bonusOther" value="0" class="bonus-input" onchange="updatePaystubTotals()"></div></div>' +
+        '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Level I Inspection</label><input type="number" id="bonusLevel1" value="' + bonVal('level1') + '" class="bonus-input" onchange="updatePaystubTotals()"></div>' +
+        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Level II Inspection</label><input type="number" id="bonusLevel2" value="' + bonVal('level2') + '" class="bonus-input" onchange="updatePaystubTotals()"></div>' +
+        '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Level III Inspection</label><input type="number" id="bonusLevel3" value="' + bonVal('level3') + '" class="bonus-input" onchange="updatePaystubTotals()"></div></div>' +
+        '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:0"><label style="font-size:12px">Other Bonus</label><input type="number" id="bonusOther" value="' + bonVal('other') + '" class="bonus-input" onchange="updatePaystubTotals()"></div></div>' +
         '<div style="text-align:right;margin-top:8px;font-weight:600;color:var(--green)">Total Bonuses: $<span id="totalBonusesDisplay">0.00</span></div></div>' +
 
-        '</div><div class="modal-footer" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="generatePaystub(' + driverId + ', \'print\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/><path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7z"/></svg>Print</button><button class="btn btn-primary" style="background:var(--green)" onclick="generatePaystub(' + driverId + ', \'email\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>Send Email</button><button class="btn btn-secondary" onclick="generatePaystub(' + driverId + ', \'both\')">Print & Email</button></div></div>';
+        '</div><div class="modal-footer" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>' +
+        // When editing, the primary "Save Changes" button persists only — does NOT print or email.
+        // When generating fresh, the primary "Print" button keeps existing print-and-save behavior.
+        (isEditing
+          ? '<button class="btn btn-primary" onclick="generatePaystub(' + driverId + ', \'save\')">' + escapeHtml(submitLabel) + '</button>' +
+            '<button class="btn btn-secondary" onclick="generatePaystub(' + driverId + ', \'print\')">Print</button>' +
+            '<button class="btn btn-secondary" style="background:var(--green);color:#fff;border-color:var(--green)" onclick="generatePaystub(' + driverId + ', \'email\')">Send Email</button>'
+          : '<button class="btn btn-primary" onclick="generatePaystub(' + driverId + ', \'print\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/><path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7z"/></svg>' + escapeHtml(submitLabel) + '</button>' +
+            '<button class="btn btn-primary" style="background:var(--green)" onclick="generatePaystub(' + driverId + ', \'email\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>' + escapeHtml(emailLabel) + '</button>' +
+            '<button class="btn btn-secondary" onclick="generatePaystub(' + driverId + ', \'both\')">Print & Email</button>') +
+        '</div></div>';
       document.body.appendChild(m);
       updatePaystubTotals();
     }
@@ -34470,18 +34599,55 @@
         ? completedTrips.filter(t => selectedTripIdSet.has(parseInt(t.id, 10)))
         : completedTrips;
 
+      // If editing an existing settlement, pre-fill from its saved values.
+      const existingRecord = modalOptions.existingRecord || null;
+      const isEditing = !!existingRecord;
+      const existingDed = (existingRecord && existingRecord.deductions && typeof existingRecord.deductions === 'object') ? existingRecord.deductions : null;
+
       // Load saved deduction defaults for owner-operators
       const savedDed = driver.default_deductions && typeof driver.default_deductions === 'object' ? driver.default_deductions : {};
-      const dedVal = (key) => parseFloat(savedDed[key] || 0) || 0;
+      const dedVal = (key) => {
+        if (existingDed && Object.prototype.hasOwnProperty.call(existingDed, key)) {
+          return parseFloat(existingDed[key] || 0) || 0;
+        }
+        return parseFloat(savedDed[key] || 0) || 0;
+      };
+      const customDedLabel = (key) => {
+        if (existingDed && existingDed[key] && typeof existingDed[key] === 'object') {
+          return String(existingDed[key].label || '');
+        }
+        return '';
+      };
+      const customDedAmount = (key) => {
+        if (existingDed && existingDed[key] && typeof existingDed[key] === 'object') {
+          return parseFloat(existingDed[key].amount || 0) || 0;
+        }
+        return 0;
+      };
 
-      // Auto-fill period dates from payroll period
+      // Auto-fill period dates from payroll period (or from existing record when editing)
       const periodRange = buildPayrollPeriodRange(payrollPeriod);
-      const pStart = periodRange.start || new Date().toISOString().split('T')[0];
-      const pEnd = periodRange.end || new Date().toISOString().split('T')[0];
+      const pStart = isEditing ? (existingRecord.period_start || periodRange.start) : (periodRange.start || new Date().toISOString().split('T')[0]);
+      const pEnd = isEditing ? (existingRecord.period_end || periodRange.end) : (periodRange.end || new Date().toISOString().split('T')[0]);
+      const payDateInit = isEditing ? (existingRecord.pay_date || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0];
+      const settlementNumberInit = isEditing
+        ? (existingRecord.record_number || existingRecord.stub_number || (1000 + Math.floor(Math.random() * 9000)))
+        : (1000 + Math.floor(Math.random() * 9000));
+      const checkNumberInit = isEditing
+        ? (existingRecord.check_number || (10000 + Math.floor(Math.random() * 90000)))
+        : (10000 + Math.floor(Math.random() * 90000));
+
+      const modalTitle = isEditing ? 'Edit Settlement Statement' : 'Generate Settlement Statement';
+      const submitLabel = isEditing ? 'Save Changes' : 'Print';
+      const emailLabel = isEditing ? 'Save & Email' : 'Send Email';
+      const editingBanner = isEditing
+        ? '<div style="margin-bottom:12px;padding:10px 12px;border-radius:8px;background:var(--dim-blue);border:1px solid var(--info,#3b82f6);font-size:12px;font-weight:600;color:var(--info,#3b82f6)">Editing existing settlement ' + escapeHtml(getPayrollRecordDisplayNumber(existingRecord)) + ' (status: ' + escapeHtml(String(existingRecord.status || 'finalized').toUpperCase()) + ')</div>'
+        : '';
 
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
       m.dataset.statementOptions = JSON.stringify(modalOptions);
-      m.innerHTML = '<div class="modal" style="max-width:650px;max-height:90vh;display:flex;flex-direction:column"><div class="modal-header" style="background:var(--amber);color:white"><h3>[[icon:clipboard]] Generate Settlement Statement</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()" style="color:white">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
+      m.innerHTML = '<div class="modal" style="max-width:650px;max-height:90vh;display:flex;flex-direction:column"><div class="modal-header" style="background:var(--amber);color:white"><h3>[[icon:clipboard]] ' + escapeHtml(modalTitle) + '</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()" style="color:white">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
+        editingBanner +
         '<div style="background:var(--dim-amber);padding:12px;border-radius:8px;margin-bottom:16px;border:2px solid var(--amber)"><div style="font-weight:600;color:#92400e">[[icon:truck]] Owner-Operator Settlement</div><div style="font-size:12px;color:#92400e">Dispatch Fee: ' + dispatchFeePercent + '%</div></div>' +
         '<div class="form-row"><div class="form-group"><label>Owner-Operator</label><input value="' + driver.first_name + ' ' + driver.last_name + '" readonly style="background:var(--bg-tertiary)"></div><div class="form-group"><label>Email</label><input type="email" id="driverEmail" value="' + (driver.email || '') + '" placeholder="owner@email.com"></div></div>' +
         (modalOptions.lockTripSelection ? '<div style="margin-bottom:10px;font-size:12px;color:#92400e;background:var(--dim-amber);border:1px solid var(--amber);padding:8px 10px;border-radius:8px">Trip selection is locked from Trip Detail.</div>' : '') +
@@ -34492,9 +34658,9 @@
           disabled: modalOptions.lockTripSelection
         })).join('')) +
         '</div></div>' +
-        '<div class="form-row"><div class="form-group"><label>Settlement #</label><input type="number" id="settlementNumber" value="' + (1000 + Math.floor(Math.random() * 9000)) + '"></div><div class="form-group"><label>Check #</label><input type="number" id="checkNumber" value="' + (10000 + Math.floor(Math.random() * 90000)) + '"></div></div>' +
-        '<div class="form-row"><div class="form-group"><label>Period Starting</label><input type="date" id="periodStart" value="' + pStart + '"></div><div class="form-group"><label>Period Ending</label><input type="date" id="periodEnd" value="' + pEnd + '"></div></div>' +
-        '<div class="form-group"><label>Settlement Date</label><input type="date" id="payDate" value="' + new Date().toISOString().split('T')[0] + '"></div>' +
+        '<div class="form-row"><div class="form-group"><label>Settlement #</label><input type="number" id="settlementNumber" value="' + escapeHtml(String(settlementNumberInit)) + '"></div><div class="form-group"><label>Check #</label><input type="number" id="checkNumber" value="' + escapeHtml(String(checkNumberInit)) + '"></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Period Starting</label><input type="date" id="periodStart" value="' + escapeHtml(String(pStart)) + '"></div><div class="form-group"><label>Period Ending</label><input type="date" id="periodEnd" value="' + escapeHtml(String(pEnd)) + '"></div></div>' +
+        '<div class="form-group"><label>Settlement Date</label><input type="date" id="payDate" value="' + escapeHtml(String(payDateInit)) + '"></div>' +
 
         // Deductions Section for Owner-Operators (pre-filled from saved defaults)
         '<div style="background:var(--dim-red);padding:12px;border-radius:8px;margin-top:12px">' +
@@ -34510,12 +34676,20 @@
         '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Advances</label><input type="number" id="settDedAdvances" value="' + dedVal('advances') + '" class="settlement-ded" onchange="updateSettlementTotals()"></div>' +
         '<div class="form-group" style="margin-bottom:8px"><label style="font-size:12px">Other</label><input type="number" id="settDedOther" value="' + dedVal('other') + '" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
         '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #fca5a5"><label style="font-size:11px;color:var(--red);font-weight:600">Custom Deductions:</label></div>' +
-        '<div class="form-row" style="gap:8px;margin-top:4px"><div class="form-group" style="margin-bottom:4px;flex:2"><input type="text" id="settDedCustom1Label" placeholder="Description" style="font-size:12px"></div><div class="form-group" style="margin-bottom:4px;flex:1"><input type="number" id="settDedCustom1" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
-        '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:4px;flex:2"><input type="text" id="settDedCustom2Label" placeholder="Description" style="font-size:12px"></div><div class="form-group" style="margin-bottom:4px;flex:1"><input type="number" id="settDedCustom2" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
-        '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:4px;flex:2"><input type="text" id="settDedCustom3Label" placeholder="Description" style="font-size:12px"></div><div class="form-group" style="margin-bottom:4px;flex:1"><input type="number" id="settDedCustom3" value="0" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
+        '<div class="form-row" style="gap:8px;margin-top:4px"><div class="form-group" style="margin-bottom:4px;flex:2"><input type="text" id="settDedCustom1Label" value="' + escapeHtml(customDedLabel('custom1')) + '" placeholder="Description" style="font-size:12px"></div><div class="form-group" style="margin-bottom:4px;flex:1"><input type="number" id="settDedCustom1" value="' + customDedAmount('custom1') + '" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
+        '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:4px;flex:2"><input type="text" id="settDedCustom2Label" value="' + escapeHtml(customDedLabel('custom2')) + '" placeholder="Description" style="font-size:12px"></div><div class="form-group" style="margin-bottom:4px;flex:1"><input type="number" id="settDedCustom2" value="' + customDedAmount('custom2') + '" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
+        '<div class="form-row" style="gap:8px"><div class="form-group" style="margin-bottom:4px;flex:2"><input type="text" id="settDedCustom3Label" value="' + escapeHtml(customDedLabel('custom3')) + '" placeholder="Description" style="font-size:12px"></div><div class="form-group" style="margin-bottom:4px;flex:1"><input type="number" id="settDedCustom3" value="' + customDedAmount('custom3') + '" class="settlement-ded" onchange="updateSettlementTotals()"></div></div>' +
         '<div style="text-align:right;margin-top:8px;font-weight:600;color:var(--red)">Total Deductions: $<span id="totalSettlementDeductions">0.00</span></div></div>' +
 
-        '</div><div class="modal-footer" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" style="background:var(--amber)" onclick="generateSettlement(' + driverId + ', \'print\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/><path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7z"/></svg>Print</button><button class="btn btn-primary" style="background:var(--green)" onclick="generateSettlement(' + driverId + ', \'email\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>Send Email</button></div></div>';
+        '</div><div class="modal-footer" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>' +
+        // When editing, "Save Changes" persists only — secondary buttons re-enable Print / Send Email if still desired.
+        (isEditing
+          ? '<button class="btn btn-primary" onclick="generateSettlement(' + driverId + ', \'save\')">' + escapeHtml(submitLabel) + '</button>' +
+            '<button class="btn btn-secondary" style="background:var(--amber);color:#fff;border-color:var(--amber)" onclick="generateSettlement(' + driverId + ', \'print\')">Print</button>' +
+            '<button class="btn btn-secondary" style="background:var(--green);color:#fff;border-color:var(--green)" onclick="generateSettlement(' + driverId + ', \'email\')">Send Email</button>'
+          : '<button class="btn btn-primary" style="background:var(--amber)" onclick="generateSettlement(' + driverId + ', \'print\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/><path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7z"/></svg>' + escapeHtml(submitLabel) + '</button>' +
+            '<button class="btn btn-primary" style="background:var(--green)" onclick="generateSettlement(' + driverId + ', \'email\')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right:6px"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>' + escapeHtml(emailLabel) + '</button>') +
+        '</div></div>';
       document.body.appendChild(m);
       updateSettlementTotals();
     }
@@ -34617,15 +34791,20 @@
       const settlementNumber = document.getElementById('settlementNumber')?.value;
       const checkNumber = document.getElementById('checkNumber')?.value;
 
-      // Generate PDF
-      const pdfBlob = await generateSettlementPDF(driver, tripDetails, totalRevenue, totalBrokerFee, totalLocalFee, totalCleanGross, totalDispatchFee, totalCashCollected, totalSettlement, dispatchFeePercent, periodStart, periodEnd, payDate, settlementNumber, checkNumber, deductions, totalDeductions);
+      // Generate PDF only when needed (skipped for 'save' action — Save Changes must not print or email)
+      const shouldPrintSettlement = action === 'print' || action === 'both';
+      const shouldEmailSettlement = action === 'email' || action === 'both';
+      let pdfBlob = null;
+      if (shouldPrintSettlement || shouldEmailSettlement) {
+        pdfBlob = await generateSettlementPDF(driver, tripDetails, totalRevenue, totalBrokerFee, totalLocalFee, totalCleanGross, totalDispatchFee, totalCashCollected, totalSettlement, dispatchFeePercent, periodStart, periodEnd, payDate, settlementNumber, checkNumber, deductions, totalDeductions);
+      }
 
-      if (action === 'print' || action === 'both') {
+      if (shouldPrintSettlement && pdfBlob) {
         const url = URL.createObjectURL(pdfBlob);
         window.open(url, '_blank');
       }
 
-      if (action === 'email' || action === 'both') {
+      if (shouldEmailSettlement) {
         const driverEmail = document.getElementById('driverEmail')?.value;
         if (!driverEmail) {
           showToast('Please enter owner email address', 'error');
@@ -34648,11 +34827,11 @@
             stubNumber: settlementNumber,
             checkNumber,
             payDate,
-            status: (action === 'email' || action === 'both') ? 'emailed' : 'finalized',
+            status: shouldEmailSettlement ? 'emailed' : 'finalized',
             formulaVersion: snapshot.formulaVersion,
             lineItems: snapshot.lineItems,
             totals: snapshot.totals,
-            emailedAt: (action === 'email' || action === 'both') ? new Date().toISOString() : null
+            emailedAt: shouldEmailSettlement ? new Date().toISOString() : null
           });
         await refreshPayrollRecordsStrict();
       } catch (e) {
@@ -34662,6 +34841,9 @@
       }
 
       document.querySelector('.modal-overlay')?.remove();
+      if (action === 'save') {
+        showToast('Settlement saved.', 'success');
+      }
 
       // Refresh payroll view to show the new record in the ledger
       renderPayroll(reRenderCurrentPage());
@@ -35887,7 +36069,7 @@
 </body>
 </html>`;
       
-      // Handle based on action type
+      // Handle based on action type. 'save' skips both print and email — used by "Save Changes" when editing.
       const driverEmail = document.getElementById('driverEmail').value;
       const shouldPrint = action === 'print' || action === 'both';
       const shouldEmail = action === 'email' || action === 'both';
@@ -35984,7 +36166,9 @@
       }
 
       document.querySelector('.modal-overlay').remove();
-      if (shouldPrint && !shouldEmail) {
+      if (action === 'save') {
+        showToast('Paystub saved.', 'success');
+      } else if (shouldPrint && !shouldEmail) {
         showToast('Paystub generated! Print window opened.');
       } else if (!shouldPrint && shouldEmail) {
         // Already showed success message
