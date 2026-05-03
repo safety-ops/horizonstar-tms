@@ -33888,13 +33888,21 @@
     }
 
     // Save a payroll record to database
+    // Per-trip settlements (type='settlement' with exactly one tripId) are deduped by
+    // (driver_id, trip_id, type) where superseded_by IS NULL — enforced by partial unique
+    // index `uniq_active_settlement_per_trip`. Multi-trip paystubs keep period-based dedupe.
     async function savePayrollRecord(driver, type, tripIds, periodRange, gross, cash, reimb, net, deductions, bonuses, extras = {}) {
       try {
+        // A "per-trip settlement" is a record with type='settlement' and exactly one trip
+        const isPerTripSettlement = type === 'settlement' && Array.isArray(tripIds) && tripIds.length === 1;
+        const scalarTripId = isPerTripSettlement ? Number(tripIds[0]) : null;
+
         const recordNumber = extras.recordNumber || extras.stubNumber || ('PR-' + (1000 + Math.floor(Math.random() * 9000)));
         const payDate = extras.payDate || new Date().toISOString().split('T')[0];
-        const record = {
+        const baseRecord = {
           driver_id: driver.id,
           type: type,
+          trip_id: scalarTripId,
           period_start: periodRange.start,
           period_end: periodRange.end,
           pay_date: payDate,
@@ -33919,53 +33927,190 @@
           amount_paid: 0
         };
 
-        // Duplicate detection: check for existing record with same driver + period + type
-        const existing = (appData.payroll_records || []).find(r =>
-          String(r.driver_id) === String(driver.id) &&
-          r.period_start === periodRange.start &&
-          r.period_end === periodRange.end &&
-          r.type === type
-        );
+        // Lookup existing ACTIVE row (superseded_by IS NULL).
+        // Per-trip settlement: dedupe by (driver_id, trip_id, type)
+        // Otherwise (multi-trip / paystubs): dedupe by (driver_id, period_start, period_end, type)
+        const findActiveExisting = () => {
+          const list = appData.payroll_records || [];
+          if (isPerTripSettlement) {
+            return list.find(r =>
+              Number(r.driver_id) === Number(driver.id) &&
+              Number(r.trip_id) === scalarTripId &&
+              r.type === type &&
+              !r.superseded_by
+            );
+          }
+          return list.find(r =>
+            String(r.driver_id) === String(driver.id) &&
+            r.period_start === periodRange.start &&
+            r.period_end === periodRange.end &&
+            r.type === type &&
+            !r.superseded_by
+          );
+        };
 
-        if (existing && String(existing.status || '').toLowerCase() !== 'paid') {
-          // Update existing record instead of creating duplicate
-          const updateData = {
-            pay_date: record.pay_date,
-            stub_number: record.stub_number,
-            record_number: record.record_number,
-            check_number: record.check_number,
-            trip_ids: record.trip_ids,
-            gross_earnings: record.gross_earnings,
-            cash_collected: record.cash_collected,
-            reimbursements: record.reimbursements,
-            net_pay: record.net_pay,
-            deductions: record.deductions,
-            bonuses: record.bonuses,
-            status: record.status,
-            formula_version: record.formula_version,
-            line_items: record.line_items,
-            totals: record.totals,
-            emailed_at: record.emailed_at || existing.emailed_at,
-            pdf_storage_path: record.pdf_storage_path || existing.pdf_storage_path
-          };
-          const updated = await dbUpdate('payroll_records', existing.id, updateData);
+        // Re-fetch the active per-trip settlement from the server when the in-memory
+        // cache is stale and the unique index trips us. Returns the row or null.
+        const refetchActivePerTripSettlement = async () => {
+          if (!isPerTripSettlement) return null;
+          try {
+            const { data, error } = await sb
+              .from('payroll_records')
+              .select('*')
+              .eq('driver_id', driver.id)
+              .eq('trip_id', scalarTripId)
+              .eq('type', type)
+              .is('superseded_by', null)
+              .maybeSingle();
+            if (error) {
+              console.warn('Refetch of active per-trip settlement failed:', error);
+              return null;
+            }
+            if (data) {
+              if (!appData.payroll_records) appData.payroll_records = [];
+              const idx = appData.payroll_records.findIndex(r => Number(r.id) === Number(data.id));
+              if (idx >= 0) appData.payroll_records[idx] = data;
+              else appData.payroll_records.push(data);
+            }
+            return data || null;
+          } catch (e) {
+            console.warn('Refetch of active per-trip settlement threw:', e);
+            return null;
+          }
+        };
+
+        // Build the patch we apply when updating an existing active row in place.
+        const buildUpdatePatch = (existing, auditEntries) => ({
+          trip_id: scalarTripId,
+          pay_date: baseRecord.pay_date,
+          stub_number: baseRecord.stub_number,
+          record_number: baseRecord.record_number,
+          check_number: baseRecord.check_number,
+          trip_ids: baseRecord.trip_ids,
+          gross_earnings: baseRecord.gross_earnings,
+          cash_collected: baseRecord.cash_collected,
+          reimbursements: baseRecord.reimbursements,
+          net_pay: baseRecord.net_pay,
+          deductions: baseRecord.deductions,
+          bonuses: baseRecord.bonuses,
+          status: baseRecord.status,
+          formula_version: baseRecord.formula_version,
+          line_items: baseRecord.line_items,
+          totals: baseRecord.totals,
+          emailed_at: baseRecord.emailed_at || existing.emailed_at,
+          pdf_storage_path: baseRecord.pdf_storage_path || existing.pdf_storage_path,
+          edit_audit: auditEntries
+        });
+
+        const buildAuditEntry = (action, overrides = {}) => ({
+          at: new Date().toISOString(),
+          by_user_id: currentUser?.id || null,
+          by_user_name: currentUser?.full_name || currentUser?.email || 'unknown',
+          action: action,
+          // Diff is intentionally minimal: don't try to deep-diff JSONB blobs here.
+          // Callers that need granular diffs can pre-compute and pass via extras.fieldChanges.
+          field_changes: extras.fieldChanges || null,
+          ...overrides
+        });
+
+        // Branch 2: update existing active, non-paid row in place.
+        const updateInPlace = async (existing) => {
+          const action = extras.editIntent || 'regenerate';
+          const newAudit = [...((existing && existing.edit_audit) || []), buildAuditEntry(action)];
+          const updated = await dbUpdate('payroll_records', existing.id, buildUpdatePatch(existing, newAudit));
           if (updated) {
-            Object.assign(existing, updated);
-            showToast('Existing statement updated (same period).', 'info');
+            // dbUpdate returns an array (no .single()); take first row.
+            // Defensive Array.isArray guard so this still works if dbUpdate is later changed to return an object.
+            Object.assign(existing, Array.isArray(updated) ? updated[0] : updated);
+            showToast('Existing settlement updated.', 'info');
           }
           return existing;
-        }
+        };
 
-        if (existing && String(existing.status || '').toLowerCase() === 'paid') {
-          showToast('A paid record exists for this period — creating new revision.', 'warning');
-        }
-
-        const result = await dbInsert('payroll_records', record);
-        if (result) {
+        // Branch 3: existing row is paid → insert a new revision AND supersede the old one
+        // atomically via RPC. Two-step JS approach is structurally impossible because the
+        // partial unique index `uniq_active_settlement_per_trip` covers any row where
+        // (trip_id IS NOT NULL AND superseded_by IS NULL); a paid row that hasn't been
+        // superseded yet IS in that index, so a separate INSERT (with superseded_by=null)
+        // would briefly create two active rows and trip the constraint.
+        // The RPC `supersede_and_create_settlement_revision` does both writes inside one
+        // CTE, enforces auth + business rules (must be paid, must be per-trip, can't change
+        // driver_id/trip_id/type), and returns the new payroll_records row.
+        const insertSupersedingRevision = async (existing) => {
+          const newRevision = (Number(existing.revision) || 1) + 1;
+          const newRecord = {
+            ...baseRecord,
+            revision: newRevision,
+            superseded_by: null,
+            edit_audit: [buildAuditEntry(extras.editIntent || 'edit', {
+              prior_revision: Number(existing.revision) || 1,
+              prior_record_id: existing.id
+            })]
+          };
+          // The RPC enforces driver_id/trip_id/type/revision/superseded_by server-side,
+          // so caller-supplied values for those keys in newRecord are ignored — safe.
+          const { data, error } = await sb.rpc('supersede_and_create_settlement_revision', {
+            p_old_record_id: existing.id,
+            p_new_record: newRecord
+          });
+          if (error) {
+            console.warn('Supersede RPC failed:', error);
+            throw new Error('Could not create settlement revision: ' + (error.message || 'RPC error'));
+          }
+          // Update local cache: mark old as superseded, push new.
+          existing.superseded_by = data.id;
           if (!appData.payroll_records) appData.payroll_records = [];
-          appData.payroll_records.push(result);
+          appData.payroll_records.push(data);
+          showToast('Paid settlement edited — created revision ' + data.revision + '.', 'warning');
+          return data;
+        };
+
+        // Branch 1: no existing active row → insert fresh record.
+        const insertFresh = async () => {
+          const insertPayload = {
+            ...baseRecord,
+            revision: 1,
+            superseded_by: null,
+            edit_audit: []
+          };
+          const inserted = await dbInsert('payroll_records', insertPayload);
+          if (inserted) {
+            if (!appData.payroll_records) appData.payroll_records = [];
+            appData.payroll_records.push(inserted);
+          }
+          return inserted;
+        };
+
+        // Dispatch.
+        let existing = findActiveExisting();
+        const dispatch = async (existingRow) => {
+          if (!existingRow) return await insertFresh();
+          const status = String(existingRow.status || '').toLowerCase();
+          if (status === 'paid') return await insertSupersedingRevision(existingRow);
+          return await updateInPlace(existingRow);
+        };
+
+        try {
+          return await dispatch(existing);
+        } catch (e) {
+          // Race condition: in-memory cache was stale and the partial unique index
+          // (uniq_active_settlement_per_trip) blocked the insert. Refetch the active
+          // row and retry on the UPDATE branch.
+          const msg = String(e?.message || '');
+          // Supabase JS often surfaces the constraint name in `e.details`/`e.code` rather
+          // than `e.message`. Trust Postgres error code 23505 as authoritative; keep the
+          // message/details checks as defense-in-depth for cases where the code is missing.
+          const isUniqueViolation =
+            e?.code === '23505' ||
+            /duplicate key value/i.test(msg) ||
+            /uniq_active_settlement_per_trip/i.test(String(e?.details || '') + ' ' + msg);
+          if (isUniqueViolation && isPerTripSettlement) {
+            console.warn('Stale cache hit unique-index race; refetching active per-trip settlement and retrying.');
+            const refreshed = await refetchActivePerTripSettlement();
+            if (refreshed) return await dispatch(refreshed);
+          }
+          throw e;
         }
-        return result;
       } catch (e) {
         console.warn('Could not save payroll record:', e);
         throw new Error('Payroll history record could not be saved. ' + (e?.message || 'Unknown database error'));
