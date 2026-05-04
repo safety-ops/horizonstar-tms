@@ -378,7 +378,14 @@ async function handleImportLoad(loadData) {
     load_category: loadData.load_category || null,
     load_subcategory: loadData.load_subcategory || null,
     trip_id: loadData.trip_id || null,
-    vehicle_direction: loadData.vehicle_direction || null
+    vehicle_direction: loadData.vehicle_direction || null,
+    // External inspection platform tags from the scraper (carried through content.js's
+    // formData). Without these passthroughs the background service worker silently
+    // drops them, leaving order_source_platform=NULL even though the importer scraped
+    // and tagged the broker URL correctly.
+    order_source_platform: loadData.order_source_platform || null,
+    external_order_url: loadData.external_order_url || null,
+    external_order_id: loadData.external_order_id || null
   };
 
   // Clean up null/empty values
