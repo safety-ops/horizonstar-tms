@@ -35060,6 +35060,7 @@
             { key: 'ifta',       id: 'dedIFTA',        label: 'IFTA' },
             { key: 'hut2290',    id: 'ded2290',        label: 'Highway Use Tax (2290)' },
             { key: 'regRenewal', id: 'dedRegRenewal',  label: 'Registration Renewal' },
+            { key: 'advances',   id: 'dedAdvances',    label: 'Advances' },
             { key: 'other',      id: 'dedOther',       label: 'Other Deductions' }
           ];
       const customRows = isOwnerOp ? ['custom1', 'custom2', 'custom3'] : [];
@@ -35793,6 +35794,7 @@
         ifta: parseFloat(document.getElementById('dedIFTA')?.value) || 0,
         hut2290: parseFloat(document.getElementById('ded2290')?.value) || 0,
         regRenewal: parseFloat(document.getElementById('dedRegRenewal')?.value) || 0,
+        advances: parseFloat(document.getElementById('dedAdvances')?.value) || 0,
         other: parseFloat(document.getElementById('dedOther')?.value) || 0
       };
       try {
@@ -36399,7 +36401,7 @@
     }
 
     function updatePaystubTotals() {
-      const deductions = ['dedInsurance', 'dedFuel', 'dedFuelDeposit', 'dedELD', 'dedTolls', 'dedIFTA', 'ded2290', 'dedRegRenewal', 'dedOther'];
+      const deductions = ['dedInsurance', 'dedFuel', 'dedFuelDeposit', 'dedELD', 'dedTolls', 'dedIFTA', 'ded2290', 'dedRegRenewal', 'dedAdvances', 'dedOther'];
       const bonuses = ['bonusLevel1', 'bonusLevel2', 'bonusLevel3', 'bonusOther'];
       
       let totalDed = 0;
@@ -36647,6 +36649,7 @@
         ['IFTA', deductions.ifta],
         ['HUT 2290', deductions.hut2290],
         ['Reg Renewal', deductions.regRenewal],
+        ['Advances', deductions.advances],
         ['Other', deductions.other]
       ].filter(d => d[1] > 0);
 
@@ -36798,6 +36801,7 @@
         ifta: parseFloat(document.getElementById('dedIFTA').value) || 0,
         hut2290: parseFloat(document.getElementById('ded2290').value) || 0,
         regRenewal: parseFloat(document.getElementById('dedRegRenewal').value) || 0,
+        advances: parseFloat(document.getElementById('dedAdvances').value) || 0,
         other: parseFloat(document.getElementById('dedOther').value) || 0
       };
       const totalDeductions = Object.values(deductions).reduce((a, b) => a + b, 0);
@@ -37295,6 +37299,7 @@
             ${deductions.ifta > 0 ? `<div class="line-item"><span>IFTA</span><span class="text-red mono">-${formatMoney(deductions.ifta)}</span></div>` : ''}
             ${deductions.hut2290 > 0 ? `<div class="line-item"><span>Highway Use Tax (2290)</span><span class="text-red mono">-${formatMoney(deductions.hut2290)}</span></div>` : ''}
             ${deductions.regRenewal > 0 ? `<div class="line-item"><span>Registration Renewal</span><span class="text-red mono">-${formatMoney(deductions.regRenewal)}</span></div>` : ''}
+            ${deductions.advances > 0 ? `<div class="line-item"><span>Advances</span><span class="text-red mono">-${formatMoney(deductions.advances)}</span></div>` : ''}
             ${deductions.other > 0 ? `<div class="line-item"><span>Other Deductions</span><span class="text-red mono">-${formatMoney(deductions.other)}</span></div>` : ''}
             <div class="line-total red">
               <span>Total Deductions</span>
