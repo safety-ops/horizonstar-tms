@@ -22520,6 +22520,22 @@
     let tripsSearch = '';
     let maintenanceSearch = '';
     
+    // Derive order_source_platform from the broker URL's hostname.
+    // Single source of truth — keeps dispatcher UX to one field (URL),
+    // and matches the same vocabulary the cd-load-importer scrapers emit.
+    function derivePlatformFromUrl(url) {
+      if (!url) return 'direct';
+      try {
+        const host = new URL(url).hostname.toLowerCase();
+        if (host === 'superdispatch.com'   || host.endsWith('.superdispatch.com'))   return 'super_dispatch';
+        if (host === 'ship.cars'           || host.endsWith('.ship.cars'))           return 'ship_cars';
+        if (host === 'centraldispatch.com' || host.endsWith('.centraldispatch.com')) return 'central_dispatch';
+      } catch (e) {
+        // Malformed URL — treat as direct rather than blocking save
+      }
+      return 'direct';
+    }
+
     function getOrderPlatformChipHtml(order) {
       const p = order?.order_source_platform;
       if (!p || p === 'direct') return '';
@@ -22940,16 +22956,10 @@
         '</div>' +
         '<div class="form-group"><label>[[icon:note]] Notes for Dispatchers</label><textarea id="orderNotes" rows="2" placeholder="Internal notes for dispatch team..." style="resize:vertical">' + escapeHtml(o?.dispatcher_notes || '') + '</textarea></div>' +
         '<div class="form-group"><label>[[icon:receipt]] Notes for Driver</label><textarea id="orderDriverNotes" rows="2" placeholder="Driver-facing instructions..." style="resize:vertical">' + escapeHtml(getOrderDriverNotes(o)) + '</textarea></div>' +
-        '<div class="form-row" style="gap:12px">' +
-          '<div class="form-group" style="flex:0 0 200px"><label>Inspection Platform</label>' +
-          '<select id="orderSourcePlatform" onchange="document.getElementById(\'orderExternalUrlRow\').style.display=(this.value===\'direct\'||!this.value)?\'none\':\'block\'">' +
-            '<option value="direct"' + ((!o?.order_source_platform || o.order_source_platform === 'direct') ? ' selected' : '') + '>Direct (in-app)</option>' +
-            '<option value="central_dispatch"' + (o?.order_source_platform === 'central_dispatch' ? ' selected' : '') + '>Central Dispatch</option>' +
-            '<option value="super_dispatch"' + (o?.order_source_platform === 'super_dispatch' ? ' selected' : '') + '>Super Dispatch</option>' +
-            '<option value="ship_cars"' + (o?.order_source_platform === 'ship_cars' ? ' selected' : '') + '>Ship.cars</option>' +
-          '</select></div>' +
-          '<div id="orderExternalUrlRow" class="form-group" style="flex:1;display:' + (o?.order_source_platform && o.order_source_platform !== 'direct' ? 'block' : 'none') + '"><label>External Order URL</label>' +
-          '<input type="url" id="orderExternalUrl" maxlength="500" placeholder="https://..." value="' + (o?.external_order_url ? escapeHtml(o.external_order_url) : '') + '"></div>' +
+        '<div class="form-group">' +
+          '<label>External Inspection URL</label>' +
+          '<input type="url" id="orderExternalUrl" maxlength="500" placeholder="https://carrier.superdispatch.com/... or ship.cars/... or centraldispatch.com/..." value="' + (o?.external_order_url ? escapeHtml(o.external_order_url) : '') + '">' +
+          '<div style="font-size:11px;color:var(--text-muted);margin-top:4px">Paste the broker\'s order URL. Platform (SuperDispatch / Ship.cars / Central Dispatch) is detected automatically.</div>' +
         '</div>' +
         '<div class="form-group"><label>Booked By</label>' +
         (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER'
@@ -23624,6 +23634,7 @@
       });
       const allVehicles = collectOrderModalVehicles();
       const firstVehicle = allVehicles[0] || {};
+      const externalOrderUrl = (document.getElementById('orderExternalUrl')?.value || '').trim() || null;
       const data = {
         order_number: orderNumber,
         trip_id: tripId,
@@ -23670,8 +23681,8 @@
         dispatcher_notes: document.getElementById('orderNotes').value || null,
         notes: document.getElementById('orderDriverNotes')?.value || null,
         dispatcher_id: parseInt(document.getElementById('orderModalDispatcher').value, 10) || null,
-        order_source_platform: document.getElementById('orderSourcePlatform')?.value || 'direct',
-        external_order_url: (document.getElementById('orderExternalUrl')?.value || '').trim() || null
+        external_order_url: externalOrderUrl,
+        order_source_platform: derivePlatformFromUrl(externalOrderUrl)
       };
       try {
         if (id) {
