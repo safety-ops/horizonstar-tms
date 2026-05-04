@@ -35653,12 +35653,22 @@
         mode: 'finalized'
       });
       const tripDetails = (snapshot.lineItems.orders || []).map(order => ({
+        // Identifying fields the canonical renderer reads
+        orderId: order.orderId,
+        orderNumber: order.orderNumber,
+        order_number: order.orderNumber,
+        vehicleDescription: order.vehicleDescription || '',
+        tripId: order.tripId,
+        trip_id: order.tripId,
         tripNumber: order.tripNumber,
         date: (snapshot.lineItems.trips || []).find(trip => trip.tripId === order.tripId)?.tripDate || '',
         orderVehicle: order.orderNumber + (order.vehicleDescription ? ' ' + order.vehicleDescription : ''),
         paymentType: order.paymentType,
+        // Money fields — keep both snake_case and camelCase for renderer compat
         revenue: order.revenue,
+        broker_fee: order.brokerFee,
         brokerFee: order.brokerFee,
+        local_fee: order.localFee,
         localFee: order.localFee,
         cleanGross: order.cleanGross,
         dispatchFee: order.dispatchFee || 0,
@@ -35744,24 +35754,24 @@
     // PDF visually matches the on-screen modal/Hub view by construction.
     // The old jsPDF programmatic-drawing body has been removed.
     async function generateSettlementPDF(driver, tripDetails, totalRevenue, totalBrokerFee, totalLocalFee, totalCleanGross, totalDispatchFee, totalCashCollected, totalSettlement, dispatchFeePercent, periodStart, periodEnd, payDate, settlementNumber, checkNumber, deductions = {}, totalDeductions = 0) {
-      // tripDetails is an array of { trip, orders, totalReimbursableExpenses, ... }
-      // entries from calculateOwnerOpSettlementStatement. Flatten to the orders
-      // list expected by renderSettlementView's per-vehicle table, and pull a
-      // representative trip for the (single-trip) header path.
-      const flatOrders = [];
-      let tripsCount = 0;
-      let firstTrip = null;
-      (tripDetails || []).forEach(td => {
-        if (td && td.trip) {
-          tripsCount += 1;
-          if (!firstTrip) firstTrip = td.trip;
-          (td.orders || []).forEach(o => flatOrders.push(o));
-        }
-      });
-      const reimbursements = (tripDetails || []).reduce(
-        (s, td) => s + (parseFloat(td && td.totalReimbursableExpenses) || 0),
-        0
-      );
+      // tripDetails is a FLAT array of per-order rows produced by generateSettlement
+      // from snapshot.lineItems.orders — one entry per vehicle, NOT a nested
+      // {trip, orders} structure. Each entry already has the fields the canonical
+      // renderer reads (revenue / broker_fee / local_fee / cleanGross / dispatchFee
+      // / cashCollected / tripNumber / vehicleDescription).
+      const flatOrders = Array.isArray(tripDetails) ? tripDetails.slice() : [];
+      const uniqueTripIds = Array.from(new Set(flatOrders.map(o => o && o.tripId).filter(v => v != null)));
+      const tripsCount = uniqueTripIds.length || (flatOrders.length > 0 ? 1 : 0);
+      // Pull a representative trip if there's exactly one; otherwise null and
+      // the multi-trip branch handles header rendering.
+      const firstTrip = uniqueTripIds.length === 1
+        ? (appData.trips || []).find(t => String(t.id) === String(uniqueTripIds[0])) || null
+        : null;
+      // Reimbursements come from the snapshot totals, not from tripDetails entries
+      // (the per-order rows don't carry that field). Caller already passed
+      // totalDeductions; reimbursements default to 0 here and are re-derived
+      // from totals below if needed.
+      const reimbursements = 0;
       const cleanGrossResolved = (totalCleanGross != null)
         ? totalCleanGross
         : ((totalRevenue || 0) - (totalBrokerFee || 0) - (totalLocalFee || 0));
