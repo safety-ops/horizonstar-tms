@@ -2,6 +2,46 @@
 // Injects "Import to TMS" button with pre-import modal
 // Works INDEPENDENTLY - does NOT require Super Dispatch extension
 
+// ============================================================================
+// PAYMENT CONSTANTS — mirror of TMS web app source-of-truth (index.html:10293-10443)
+// Keep these in sync when TMS adds/removes options. DO NOT diverge.
+// ============================================================================
+const PAYMENT_METHOD_OPTIONS = [
+  'CASH','CHECK','ZELLE','CASHIERS_CHECK','MONEY_ORDER','COMCHEK',
+  'ACH','CREDIT_CARD','VENMO','CASHAPP','USHIP','FACTORING'
+];
+const PAYMENT_TERMS_OPTIONS_V2 = [
+  'QUICKPAY','COMCHEK','COP','COD','LOCAL_COD',
+  'NET_5','NET_7','NET_10','NET_15','NET_20','NET_30'
+];
+const PAYMENT_METHOD_LABELS = {
+  CASH:"Cash", CHECK:"Check", ZELLE:"Zelle",
+  CASHIERS_CHECK:"Cashier's Check", MONEY_ORDER:"Money Order",
+  COMCHEK:"Comchek", ACH:"ACH", CREDIT_CARD:"Credit Card",
+  VENMO:"Venmo", CASHAPP:"Cash App", USHIP:"uShip", FACTORING:"Factoring"
+};
+const PAYMENT_TERMS_LABELS = {
+  QUICKPAY:"Quick Pay", COMCHEK:"Comchek",
+  COP:"On Pickup", COD:"On Delivery", LOCAL_COD:"Local COD",
+  NET_5:"Net 5", NET_7:"Net 7", NET_10:"Net 10",
+  NET_15:"Net 15", NET_20:"Net 20", NET_30:"Net 30"
+};
+// Common (method, terms) combos. Anything outside this set renders an amber warning chip.
+const PAYMENT_COMMON_PAIRS = new Set([
+  'CASH|COD','CASH|COP','CASH|LOCAL_COD','CHECK|COD','CHECK|COP',
+  'CASHIERS_CHECK|COP','CASHIERS_CHECK|COD',
+  'MONEY_ORDER|COP','MONEY_ORDER|COD',
+  'ZELLE|COP','ZELLE|COD','ZELLE|QUICKPAY','ZELLE|NET_5','ZELLE|NET_7',
+  'VENMO|COP','VENMO|COD','VENMO|QUICKPAY',
+  'CASHAPP|COP','CASHAPP|COD','CASHAPP|QUICKPAY',
+  'CREDIT_CARD|QUICKPAY','CREDIT_CARD|NET_5',
+  'COMCHEK|COMCHEK','COMCHEK|QUICKPAY',
+  'ACH|NET_5','ACH|NET_7','ACH|NET_10','ACH|NET_15','ACH|NET_20','ACH|NET_30','ACH|QUICKPAY',
+  'USHIP|COD','USHIP|NET_5','USHIP|NET_7','USHIP|NET_30',
+  'FACTORING|NET_30','FACTORING|QUICKPAY','FACTORING|NET_15'
+]);
+// ============================================================================
+
 (function() {
   'use strict';
 
@@ -56,9 +96,6 @@
     { id: 'FL_TO_CA', label: 'FL to CA' },
     { id: 'CA_TO_FL', label: 'CA to FL' }
   ];
-
-  // Payment types
-  const PAYMENT_TYPES = ['BILL', 'COD', 'COP', 'LOCAL_COD', 'CHECK', 'SPLIT'];
 
   // Escape string for use in HTML attributes
   function escapeAttr(str) {
@@ -759,7 +796,7 @@
                   </div>
                 </div>
 
-                <!-- Price/Payment/Broker Fee Row -->
+                <!-- Price / Payment Method / Payment Terms / Fees -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                   <div>
                     <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Price ($)</label>
@@ -773,22 +810,6 @@
                       font-size: 14px;
                       box-sizing: border-box;
                     ">
-                  </div>
-                  <div>
-                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Payment Type</label>
-                    <select id="tms-payment-type" style="
-                      width: 100%;
-                      padding: 8px 12px;
-                      background: #0f172a;
-                      border: 1px solid #334155;
-                      border-radius: 6px;
-                      color: #e2e8f0;
-                      font-size: 14px;
-                      box-sizing: border-box;
-                    ">
-                      <option value="">Select...</option>
-                      ${PAYMENT_TYPES.map(p => `<option value="${p}" ${loadData.payment_type === p ? 'selected' : ''}>${p}</option>`).join('')}
-                    </select>
                   </div>
                   <div>
                     <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Broker Fee ($)</label>
@@ -818,37 +839,11 @@
                   </div>
                 </div>
 
-                <!-- Payment Terms (shown for BILL and SPLIT only) -->
-                <div id="tms-payment-terms-group" style="display: ${loadData.payment_type === 'BILL' || loadData.payment_type === 'SPLIT' ? 'block' : 'none'};">
-                  <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Payment Terms</label>
-                  <select id="tms-payment-terms" style="
-                    width: 100%;
-                    padding: 8px 12px;
-                    background: #0f172a;
-                    border: 1px solid #334155;
-                    border-radius: 6px;
-                    color: #e2e8f0;
-                    font-size: 14px;
-                    box-sizing: border-box;
-                  ">
-                    <option value="QUICKPAY" ${loadData.payment_terms === 'QUICKPAY' ? 'selected' : ''}>Quick Pay (3 days)</option>
-                    <option value="NET_5" ${loadData.payment_terms === 'NET_5' ? 'selected' : ''}>Net 5</option>
-                    <option value="NET_7" ${loadData.payment_terms === 'NET_7' ? 'selected' : ''}>Net 7</option>
-                    <option value="NET_10" ${loadData.payment_terms === 'NET_10' ? 'selected' : ''}>Net 10</option>
-                    <option value="NET_15" ${loadData.payment_terms === 'NET_15' ? 'selected' : ''}>Net 15</option>
-                    <option value="NET_20" ${loadData.payment_terms === 'NET_20' ? 'selected' : ''}>Net 20</option>
-                    <option value="NET_30" ${loadData.payment_terms === 'NET_30' || !loadData.payment_terms ? 'selected' : ''}>Net 30</option>
-                    <option value="COD" ${loadData.payment_terms === 'COD' ? 'selected' : ''}>Collect At Delivery (COD)</option>
-                    <option value="COP" ${loadData.payment_terms === 'COP' ? 'selected' : ''}>Collect At Pick Up (COP)</option>
-                    <option value="COMCHEK" ${loadData.payment_terms === 'COMCHEK' ? 'selected' : ''}>Comchek</option>
-                  </select>
-                </div>
-
-                <!-- Split Payment Section (shown when SPLIT selected) -->
-                <div id="tms-split-section" style="display: ${loadData.payment_type === 'SPLIT' ? 'grid' : 'none'}; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                <!-- Payment Method + Terms (two-dropdown layout) -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                   <div>
-                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">COD/COP Amount ($)</label>
-                    <input type="number" id="tms-split-cod-amount" value="" placeholder="0.00" style="
+                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Payment Method</label>
+                    <select id="tms-payment-method" style="
                       width: 100%;
                       padding: 8px 12px;
                       background: #0f172a;
@@ -858,23 +853,12 @@
                       font-size: 14px;
                       box-sizing: border-box;
                     ">
+                      ${PAYMENT_METHOD_OPTIONS.map(m => `<option value="${m}" ${(loadData.payment_method || 'ACH') === m ? 'selected' : ''}>${PAYMENT_METHOD_LABELS[m]}</option>`).join('')}
+                    </select>
                   </div>
                   <div>
-                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Bill Amount ($)</label>
-                    <input type="number" id="tms-split-bill-amount" value="" placeholder="Auto-calculated" readonly style="
-                      width: 100%;
-                      padding: 8px 12px;
-                      background: #1e293b;
-                      border: 1px solid #334155;
-                      border-radius: 6px;
-                      color: #94a3b8;
-                      font-size: 14px;
-                      box-sizing: border-box;
-                    ">
-                  </div>
-                  <div>
-                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Cash Type</label>
-                    <select id="tms-split-cash-type" style="
+                    <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Payment Terms</label>
+                    <select id="tms-payment-terms" style="
                       width: 100%;
                       padding: 8px 12px;
                       background: #0f172a;
@@ -884,12 +868,12 @@
                       font-size: 14px;
                       box-sizing: border-box;
                     ">
-                      <option value="COD">COD</option>
-                      <option value="COP">COP</option>
-                      <option value="LOCAL_COD">LOCAL_COD</option>
+                      ${PAYMENT_TERMS_OPTIONS_V2.map(t => `<option value="${t}" ${(loadData.payment_terms || 'NET_30') === t ? 'selected' : ''}>${PAYMENT_TERMS_LABELS[t]}</option>`).join('')}
                     </select>
                   </div>
                 </div>
+                <!-- Pair indicator chip — advisory only, never blocks submit -->
+                <div id="tms-payment-pair-chip" class="tms-pair-chip tms-pair-chip--common" style="display: inline-block;">&#10003; Common pair</div>
 
                 <!-- Broker / Pickup Date / Delivery Date Row -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
@@ -1188,38 +1172,25 @@
     futureCarRadio.addEventListener('change', updateOptionVisibility);
     tripRadio.addEventListener('change', updateOptionVisibility);
 
-    // Toggle payment terms and split section visibility based on payment type
-    const paymentTypeSelect = document.getElementById('tms-payment-type');
-    const paymentTermsGroup = document.getElementById('tms-payment-terms-group');
-    const splitSection = document.getElementById('tms-split-section');
-    if (paymentTypeSelect && paymentTermsGroup) {
-      paymentTypeSelect.addEventListener('change', () => {
-        const val = paymentTypeSelect.value;
-        paymentTermsGroup.style.display = (val === 'BILL' || val === 'SPLIT') ? 'block' : 'none';
-        if (splitSection) {
-          splitSection.style.display = val === 'SPLIT' ? 'grid' : 'none';
-        }
-        // Auto-set payment terms for COD/COP (new constraint values)
-        const termsSelect = document.getElementById('tms-payment-terms');
-        if (val === 'COD' && termsSelect) termsSelect.value = 'COD';
-        else if (val === 'COP' && termsSelect) termsSelect.value = 'COP';
-      });
+    // Update the pair chip whenever method or terms changes
+    function updatePaymentPairChip() {
+      const methodEl = document.getElementById('tms-payment-method');
+      const termsEl = document.getElementById('tms-payment-terms');
+      const chipEl = document.getElementById('tms-payment-pair-chip');
+      if (!methodEl || !termsEl || !chipEl) return;
+      const method = methodEl.value;
+      const terms = termsEl.value;
+      const isCommon = PAYMENT_COMMON_PAIRS.has(method + '|' + terms);
+      chipEl.textContent = isCommon ? '✓ Common pair' : '⚠ Unusual combo';
+      chipEl.className = isCommon ? 'tms-pair-chip tms-pair-chip--common' : 'tms-pair-chip tms-pair-chip--unusual';
     }
 
-    // Auto-calculate split bill amount = revenue - cod amount
-    const splitCodInput = document.getElementById('tms-split-cod-amount');
-    const splitBillInput = document.getElementById('tms-split-bill-amount');
-    const revenueInput = document.getElementById('tms-revenue');
-    if (splitCodInput && splitBillInput && revenueInput) {
-      const calcBillAmount = () => {
-        const revenue = parseFloat(revenueInput.value) || 0;
-        const codAmount = parseFloat(splitCodInput.value) || 0;
-        const bill = Math.max(0, revenue - codAmount);
-        splitBillInput.value = bill > 0 ? bill.toFixed(2) : '';
-      };
-      splitCodInput.addEventListener('input', calcBillAmount);
-      revenueInput.addEventListener('input', calcBillAmount);
-    }
+    const paymentMethodSelect = document.getElementById('tms-payment-method');
+    const paymentTermsSelect = document.getElementById('tms-payment-terms');
+    if (paymentMethodSelect) paymentMethodSelect.addEventListener('change', updatePaymentPairChip);
+    if (paymentTermsSelect) paymentTermsSelect.addEventListener('change', updatePaymentPairChip);
+    // Run once on modal open to set initial chip state
+    updatePaymentPairChip();
 
     // Handle category change to show/hide subcategories
     categorySelect.addEventListener('change', () => {
@@ -1302,20 +1273,11 @@
         revenue: parseFloat(document.getElementById('tms-revenue').value) || 0,
         broker_fee: parseFloat(document.getElementById('tms-broker-fee')?.value) || null,
         local_fee: parseFloat(document.getElementById('tms-local-fee')?.value) || null,
-        payment_type: (() => {
-          const pt = document.getElementById('tms-payment-type').value;
-          if (pt === 'SPLIT') return document.getElementById('tms-split-cash-type')?.value || 'COD';
-          return pt;
-        })(),
-        payment_terms: (() => {
-          const pt = document.getElementById('tms-payment-type').value;
-          if (pt === 'COD') return 'COD';
-          if (pt === 'COP') return 'COP';
-          if (pt === 'BILL' || pt === 'SPLIT') return document.getElementById('tms-payment-terms')?.value || null;
-          return null;
-        })(),
-        cod_amount: document.getElementById('tms-payment-type').value === 'SPLIT' ? (parseFloat(document.getElementById('tms-split-cod-amount')?.value) || null) : null,
-        bill_amount: document.getElementById('tms-payment-type').value === 'SPLIT' ? (parseFloat(document.getElementById('tms-split-bill-amount')?.value) || null) : null,
+        // Phase 1 stub: tms-payment-type removed; Phase 2 will dual-write payment_method + payment_terms + legacy payment_type
+        payment_type: null,
+        payment_terms: document.getElementById('tms-payment-terms')?.value || null,
+        cod_amount: null,
+        bill_amount: null,
         broker_name: document.getElementById('tms-broker').value.trim(),
         broker_contact_name: loadData.broker_contact_name || null,
         broker_phone: loadData.broker_phone || null,
