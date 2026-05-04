@@ -16657,6 +16657,23 @@
               </div>
             </div>
 
+            <!-- External Platform Card (only when at least one field is populated) -->
+            ${(order.external_order_id || order.external_inspection_pickup_confirmed_at || order.external_inspection_delivery_confirmed_at) ? `
+            <div class="order-detail-card">
+              <div class="order-detail-card-header">
+                <span>[[icon:link]] External Platform</span>
+                ${order.order_source_platform && order.order_source_platform !== 'direct' ? '<span class="badge ' + ({ central_dispatch: 'badge-platform-cd', super_dispatch: 'badge-platform-sd', ship_cars: 'badge-platform-sc' }[order.order_source_platform] || 'badge-gray') + '">' + escapeHtml({ central_dispatch: 'Central Dispatch', super_dispatch: 'SuperDispatch', ship_cars: 'Ship.cars' }[order.order_source_platform] || order.order_source_platform) + '</span>' : ''}
+              </div>
+              <div class="order-detail-card-body">
+                <div class="sidebar-info-list">
+                  ${order.external_order_id ? '<div class="sidebar-info-row"><span class="sidebar-info-label">External Order ID</span><span class="sidebar-info-value" style="font-family:var(--font-mono);font-size:12px">' + escapeHtml(order.external_order_id) + '</span></div>' : ''}
+                  ${order.external_inspection_pickup_confirmed_at ? '<div class="sidebar-info-row"><span class="sidebar-info-label">Pickup Confirmed</span><span class="sidebar-info-value" style="color:var(--success);font-size:12px">' + escapeHtml(formatDateTime(order.external_inspection_pickup_confirmed_at)) + '</span></div>' : ''}
+                  ${order.external_inspection_delivery_confirmed_at ? '<div class="sidebar-info-row"><span class="sidebar-info-label">Delivery Confirmed</span><span class="sidebar-info-value" style="color:var(--success);font-size:12px">' + escapeHtml(formatDateTime(order.external_inspection_delivery_confirmed_at)) + '</span></div>' : ''}
+                </div>
+              </div>
+            </div>
+            ` : ''}
+
             <!-- Activity Feed (Moved to Sidebar) -->
             <div class="order-detail-card activity-card">
               <div class="order-detail-card-header">
@@ -16727,6 +16744,7 @@
               <div class="header-actions">
                 <button class="btn btn-primary" onclick="sendInvoiceToBroker(${order.id})">Send Invoice</button>
                 <button class="btn btn-secondary" onclick="openOrderModal(${order.id})">Edit Load</button>
+                ${order.external_order_url ? '<a href="' + escapeUrl(order.external_order_url) + '" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">Open in ' + escapeHtml({ central_dispatch: 'Central Dispatch', super_dispatch: 'SuperDispatch', ship_cars: 'Ship.cars' }[order.order_source_platform] || 'Platform') + ' &#x2197;</a>' : ''}
               </div>
             </div>
           </div>
@@ -22502,6 +22520,19 @@
     let tripsSearch = '';
     let maintenanceSearch = '';
     
+    function getOrderPlatformChipHtml(order) {
+      const p = order?.order_source_platform;
+      if (!p || p === 'direct') return '';
+      const map = {
+        central_dispatch: { cls: 'badge-platform-cd', label: 'CD' },
+        super_dispatch:   { cls: 'badge-platform-sd', label: 'SD' },
+        ship_cars:        { cls: 'badge-platform-sc', label: 'SC' }
+      };
+      const m = map[p];
+      if (!m) return '';
+      return '<span class="badge ' + m.cls + '" title="' + escapeHtml(p.replace(/_/g, ' ')) + '">' + m.label + '</span>';
+    }
+
     function renderOrders(c) {
       selectedOrders = [];
 
@@ -22621,12 +22652,13 @@
             const assignBtn = t
               ? '<button class="action-btn" style="padding:2px 8px;font-size:12px;background:var(--dim-red);color:var(--danger)" onclick="unassignOrderFromTrip(' + o.id + ')" title="Unassign">Unlink</button>'
               : '<button class="action-btn" style="padding:2px 8px;font-size:12px;background:var(--dim-blue);color:var(--info)" onclick="openAssignToTrip(' + o.id + ')" title="Assign to trip">Assign</button>';
+            const platformChip = getOrderPlatformChipHtml(o);
             return '<tr>' +
               '<td><input type="checkbox" class="order-checkbox" data-id="' + o.id + '" onchange="toggleOrderSelection(' + o.id + ', event)"></td>' +
               '<td><strong>' + escapeHtml(o.order_number || String(o.id)) + '</strong></td>' +
               '<td>' + escapeHtml(vehicle) + '</td>' +
               '<td style="white-space:nowrap">' + route + '</td>' +
-              '<td><span class="badge ' + dsBadge + '">' + dsLabel + '</span></td>' +
+              '<td><div style="display:flex;align-items:center;gap:4px"><span class="badge ' + dsBadge + '">' + dsLabel + '</span>' + platformChip + '</div></td>' +
               '<td>' + tripNum + '</td>' +
               '<td>' + driverName + '</td>' +
               '<td class="money">' + revenue + '</td>' +
@@ -22662,7 +22694,8 @@
             driver,
             showCheckbox: true,
             checkboxAttributes: ' onchange="toggleOrderSelection(' + o.id + ', event)"',
-            actionsHtml
+            actionsHtml,
+            extraTopBadgesHtml: getOrderPlatformChipHtml(o)
           });
         }).join('') +
         '</div>') +
@@ -22907,6 +22940,17 @@
         '</div>' +
         '<div class="form-group"><label>[[icon:note]] Notes for Dispatchers</label><textarea id="orderNotes" rows="2" placeholder="Internal notes for dispatch team..." style="resize:vertical">' + escapeHtml(o?.dispatcher_notes || '') + '</textarea></div>' +
         '<div class="form-group"><label>[[icon:receipt]] Notes for Driver</label><textarea id="orderDriverNotes" rows="2" placeholder="Driver-facing instructions..." style="resize:vertical">' + escapeHtml(getOrderDriverNotes(o)) + '</textarea></div>' +
+        '<div class="form-row" style="gap:12px">' +
+          '<div class="form-group" style="flex:0 0 200px"><label>Inspection Platform</label>' +
+          '<select id="orderSourcePlatform" onchange="document.getElementById(\'orderExternalUrlRow\').style.display=(this.value===\'direct\'||!this.value)?\'none\':\'block\'">' +
+            '<option value="direct"' + ((!o?.order_source_platform || o.order_source_platform === 'direct') ? ' selected' : '') + '>Direct (in-app)</option>' +
+            '<option value="central_dispatch"' + (o?.order_source_platform === 'central_dispatch' ? ' selected' : '') + '>Central Dispatch</option>' +
+            '<option value="super_dispatch"' + (o?.order_source_platform === 'super_dispatch' ? ' selected' : '') + '>Super Dispatch</option>' +
+            '<option value="ship_cars"' + (o?.order_source_platform === 'ship_cars' ? ' selected' : '') + '>Ship.cars</option>' +
+          '</select></div>' +
+          '<div id="orderExternalUrlRow" class="form-group" style="flex:1;display:' + (o?.order_source_platform && o.order_source_platform !== 'direct' ? 'block' : 'none') + '"><label>External Order URL</label>' +
+          '<input type="url" id="orderExternalUrl" maxlength="500" placeholder="https://..." value="' + (o?.external_order_url ? escapeHtml(o.external_order_url) : '') + '"></div>' +
+        '</div>' +
         '<div class="form-group"><label>Booked By</label>' +
         (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER'
           ? '<select id="orderModalDispatcher"><option value="">Select Dispatcher</option>' + appData.dispatchers.map(d => '<option value="' + d.id + '"' + ((o?.dispatcher_id === d.id || (!o && orderModalDispatcher && orderModalDispatcher.id === d.id)) ? ' selected' : '') + '>' + d.name + '</option>').join('') + '</select>'
@@ -23625,7 +23669,9 @@
         delivery_eta: deliveryEtaVal ? new Date(deliveryEtaVal).toISOString() : null,
         dispatcher_notes: document.getElementById('orderNotes').value || null,
         notes: document.getElementById('orderDriverNotes')?.value || null,
-        dispatcher_id: parseInt(document.getElementById('orderModalDispatcher').value, 10) || null
+        dispatcher_id: parseInt(document.getElementById('orderModalDispatcher').value, 10) || null,
+        order_source_platform: document.getElementById('orderSourcePlatform')?.value || 'direct',
+        external_order_url: (document.getElementById('orderExternalUrl')?.value || '').trim() || null
       };
       try {
         if (id) {
