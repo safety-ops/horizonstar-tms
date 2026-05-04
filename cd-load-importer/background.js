@@ -388,10 +388,7 @@ async function handleImportLoad(loadData) {
     load_category: loadData.load_category || null,
     load_subcategory: loadData.load_subcategory || null,
     trip_id: loadData.trip_id || null,
-    vehicle_direction: loadData.vehicle_direction || null,
-    // SPLIT payment fields
-    cod_amount: loadData.cod_amount || null,
-    bill_amount: loadData.bill_amount || null
+    vehicle_direction: loadData.vehicle_direction || null
   };
 
   // Clean up null/empty values
