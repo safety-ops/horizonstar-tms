@@ -786,10 +786,11 @@ function extractPhone(text) {
       log('Found Notes:', data.notes);
     }
 
-    // Append MC# to dispatcher notes if found
     data.order_source_platform = 'central_dispatch';
     data.external_order_url = window.location.href;
     data.external_order_id = window.location.href.match(/\/dispatch\/([a-f0-9-]+)/i)?.[1] || null;
+
+    // Append MC# to dispatcher notes if found
     data.dispatcher_notes = 'Imported from Central Dispatch';
     if (mcMatch) {
       data.dispatcher_notes += ` | MC# ${mcMatch[1]}`;
