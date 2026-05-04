@@ -76,6 +76,10 @@ function isEmail(s: unknown): s is string {
 }
 function normalizeRecipientList(v: unknown, fieldName: string): { ok: true; list: string[] } | { ok: false; reason: string } {
   if (v === undefined || v === null) return { ok: true, list: [] }
+  // Accept a single string (`to: "user@example.com"`) by lifting it into a
+  // one-element array. Web TMS callers historically pass strings; this is
+  // safe because the per-element isEmail() guard below still validates.
+  if (typeof v === "string") v = [v]
   if (!Array.isArray(v)) return { ok: false, reason: `invalid_${fieldName}_not_array` }
   if (v.length > MAX_RECIPIENTS) return { ok: false, reason: `${fieldName}_too_many` }
   const out: string[] = []
