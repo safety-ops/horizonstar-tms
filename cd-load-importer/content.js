@@ -200,6 +200,32 @@ function extractPhone(text) {
   return null;
 }
 
+// sanitizeOrderNumber — strip concatenated badge/label text from a raw order
+// number capture. Pages frequently render the order number adjacent to a
+// status badge ("Delivered") or label ("Internal Load ID") with no separator;
+// innerText flattens them into "99433DeliveredInternal" and regexes with /i
+// flag greedily capture the whole run. Walks char-by-char accepting only
+// digits/UPPER/hyphen, breaking at the start of a CapitalizedWord
+// (uppercase-then-lowercase, e.g. "Delivered"). Returns null if the result
+// is shorter than 4 chars or has no digit.
+function sanitizeOrderNumber(raw) {
+  if (raw == null) return null;
+  const s = String(raw).trim();
+  if (!s) return null;
+  let result = '';
+  for (let i = 0; i < s.length && i < 30; i++) {
+    const c = s[i];
+    // Stop at start of a CapitalizedWord (e.g. "...3Delivered")
+    if (/[A-Z]/.test(c) && i + 1 < s.length && /[a-z]/.test(s[i + 1])) break;
+    if (/[A-Z0-9\-]/.test(c)) result += c;
+    else break;
+  }
+  // Trim trailing hyphen if any
+  result = result.replace(/-+$/, '');
+  if (result.length >= 4 && /\d/.test(result)) return result.slice(0, 20);
+  return null;
+}
+
 // ============================================================================
 
 (function() {
@@ -505,7 +531,7 @@ function extractPhone(text) {
       const after = cardText.substring(loadIdMatch.index + loadIdMatch[0].length);
       const suffixMatch = after.match(/^\s*\n\s*(-[A-Z0-9]+)\b/i);
       if (suffixMatch) orderNum += suffixMatch[1];
-      data.order_number = orderNum.substring(0, 20);
+      data.order_number = sanitizeOrderNumber(orderNum) || orderNum.substring(0, 20);
       log('Found Load ID:', data.order_number);
     } else {
       const altOrderMatch = cardText.match(/(\d{4}\s+\d{2}\s+\d{2}\s+[^\n]+?)(?:\n|Total|$)/);
@@ -1928,9 +1954,9 @@ function extractPhone(text) {
     // matched string.
     const loadHeading = document.querySelector('[aria-label="Load Number"] h2') || document.querySelector('h2');
     if (loadHeading) {
-      const num = loadHeading.textContent.trim().match(/^[A-Z0-9][A-Z0-9\-]*/i);
-      if (num && /\d/.test(num[0]) && num[0].length >= 4) {
-        data.order_number = num[0].substring(0, 20);
+      const cleanNum = sanitizeOrderNumber(loadHeading.textContent);
+      if (cleanNum && cleanNum.length >= 4) {
+        data.order_number = cleanNum;
       }
     }
 
@@ -2187,8 +2213,11 @@ function extractPhone(text) {
     // lines like "VEHICLE", "PICK-UP", "DELIVERY" don't accidentally
     // match.
     const loadNum = text.match(/^([A-Z0-9][A-Z0-9\-]*)/im);
-    if (loadNum && /\d/.test(loadNum[1]) && loadNum[1].length >= 4) {
-      data.order_number = loadNum[1].substring(0, 20);
+    if (loadNum) {
+      const cleanNum = sanitizeOrderNumber(loadNum[1]);
+      if (cleanNum && cleanNum.length >= 4) {
+        data.order_number = cleanNum;
+      }
     }
 
     // Vehicle line: "2019 Land Rover Range Rover" then "Type: SUV" on next line
@@ -2370,12 +2399,24 @@ function extractPhone(text) {
     const text = document.body.innerText;
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
-    // Order number: "Order #11101192" or "Order #CPRT-48880306".
-    // Allow alphanumeric prefix; require at least one digit so a stray
-    // "Order #VEHICLE" header doesn't match.
+    // Order number — try labeled prefix first ("Order #11101192" / "Order #CPRT-48880306"),
+    // then a heading-element selector fallback for pages where the order number is just
+    // displayed as a bare header ("99433" with an inline "Delivered" badge sibling). All
+    // candidates pass through sanitizeOrderNumber to strip badge/label concatenation.
+    let orderCandidate = null;
     const orderMatch = text.match(/Order\s*#([A-Z0-9][A-Z0-9\-]*)/i);
-    if (orderMatch && /\d/.test(orderMatch[1]) && orderMatch[1].length >= 4) {
-      data.order_number = orderMatch[1].substring(0, 20);
+    if (orderMatch) orderCandidate = orderMatch[1];
+    if (!sanitizeOrderNumber(orderCandidate)) {
+      // Fallback: scan likely heading elements
+      const headings = document.querySelectorAll('h1, h2, [class*="order-number" i], [class*="orderId" i], [data-testid*="order" i]');
+      for (const el of headings) {
+        const t = (el.textContent || '').trim();
+        if (sanitizeOrderNumber(t)) { orderCandidate = t; break; }
+      }
+    }
+    const cleanOrderNum = sanitizeOrderNumber(orderCandidate);
+    if (cleanOrderNum && cleanOrderNum.length >= 4) {
+      data.order_number = cleanOrderNum;
     }
 
     // Vehicle section: "2017 Porsche 911 Cabriolet" then "Sedan" then fields
@@ -2525,10 +2566,13 @@ function extractPhone(text) {
     const text = rowEl.innerText;
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
-    // Order number: first line starting with #
+    // Order number: first line starting with #, sanitized to drop concatenated badges
     for (const line of lines) {
       const m = line.match(/^#([\dA-Za-z-]+)/);
-      if (m) { data.order_number = m[1].substring(0, 20); break; }
+      if (m) {
+        const cleanNum = sanitizeOrderNumber(m[1]);
+        if (cleanNum) { data.order_number = cleanNum; break; }
+      }
     }
 
     // Vehicle: "2017 Porsche 911 Cabriolet"
