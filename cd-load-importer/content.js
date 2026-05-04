@@ -1519,7 +1519,13 @@ function sanitizeOrderNumber(raw) {
           return null;
         })(),
         notes: document.getElementById('tms-notes')?.value.trim() || null,
-        dispatcher_notes: loadData.dispatcher_notes || 'Imported from Central Dispatch'
+        dispatcher_notes: loadData.dispatcher_notes || 'Imported from Central Dispatch',
+        // Carry external-platform tags from the scraper. The modal has no UI for these
+        // (they're auto-detected from the broker URL); without these passthroughs they'd
+        // be silently dropped before reaching Supabase.
+        order_source_platform: loadData.order_source_platform || null,
+        external_order_url: loadData.external_order_url || null,
+        external_order_id: loadData.external_order_id || null
       };
 
       // Add destination-specific fields
