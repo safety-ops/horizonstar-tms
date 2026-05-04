@@ -489,3 +489,76 @@
 .print-preview .btn {
   display: none;
 }
+
+/* ============================================================
+   CANONICAL SETTLEMENT VIEW (Phase 4 Part A)
+   Same DOM as the modal/Hub view; print mode swaps colors and
+   removes interactive chrome via the .no-print class.
+   ============================================================ */
+
+.settlement-canonical {
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.settlement-canonical .settlement-section {
+  page-break-inside: avoid;
+}
+
+.settlement-print {
+  font-size: 11pt;
+  color: #000;
+  background: #fff;
+}
+
+.settlement-print .no-print {
+  display: none !important;
+}
+
+.settlement-print .settlement-section {
+  border-color: #888 !important;
+  background: #fff !important;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.settlement-print input,
+.settlement-print select,
+.settlement-print textarea {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  font-family: 'JetBrains Mono', ui-monospace, monospace !important;
+}
+
+@media print {
+  body.printing-settlement * {
+    visibility: hidden;
+  }
+  body.printing-settlement .settlement-canonical,
+  body.printing-settlement .settlement-canonical * {
+    visibility: visible;
+  }
+  body.printing-settlement .settlement-canonical {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 24px;
+  }
+  .settlement-canonical .no-print {
+    display: none !important;
+  }
+  .settlement-canonical .settlement-section {
+    border: 1px solid #888 !important;
+    background: #fff !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .settlement-canonical input,
+  .settlement-canonical select,
+  .settlement-canonical textarea {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+}
