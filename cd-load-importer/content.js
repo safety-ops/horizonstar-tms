@@ -99,12 +99,18 @@ function parsePaymentText(text) {
   if (/money\s*order/i.test(s)) return ret('MONEY_ORDER', 'COD', '8');
   // Rule 9: Cashier's Check (must precede bare "check")
   if (/cashier'?s?\s*check/i.test(s)) return ret('CASHIERS_CHECK', 'COD', '9');
-  // Rule 10: COP / collect at pickup / on pickup (SD terms-field convention)
-  if (/\bCOP\b|collect at pick.?up|on\s*pickup/i.test(s)) return ret('CASH', 'COP', '10');
+  // Rule 10: COP / collect at pickup
+  if (/\bCOP\b|collect at pick.?up/i.test(s)) return ret('CASH', 'COP', '10');
+  // Rule 10.5: SD terms-field convention "On Pickup" — only when input is essentially
+  // just that phrase (avoids matching "vehicle picked up on Friday" in noisy CD slices)
+  if (/^\s*on\s*pickup\s*$/i.test(s)) return ret('CASH', 'COP', '10.5');
   // Rule 11: Local COD (before bare COD)
   if (/local[\s_-]?cod/i.test(s)) return ret('CASH', 'LOCAL_COD', '11');
-  // Rule 12: COD / cash on delivery / on delivery / certified funds / Cert Funds
-  if (/\bCOD\b|(?:cash\s*)?on\s*delivery|certified funds|cert\.?\s*funds/i.test(s)) return ret('CASH', 'COD', '12');
+  // Rule 12: COD / cash on delivery / certified funds / Cert Funds
+  if (/\bCOD\b|cash on delivery|certified funds|cert\.?\s*funds/i.test(s)) return ret('CASH', 'COD', '12');
+  // Rule 12.4: SD terms-field convention "On Delivery" — only when input is essentially
+  // just that phrase (avoids matching "arriving on delivery dock" in noisy CD slices)
+  if (/^\s*on\s*delivery\s*$/i.test(s)) return ret('CASH', 'COD', '12.4');
   // Rule 12.5: bare "Cash" — typical SD method label that wasn't a specialized cash variant
   if (/\bcash\b/i.test(s)) return ret('CASH', 'COD', '12.5');
   // Rule 13: bare "check" (cashier's check already handled above)
@@ -2175,7 +2181,9 @@ function sanitizeOrderNumber(raw) {
       data.payment_terms  = !sdTermsParsed._fallback  ? sdTermsParsed.terms
                           : !sdMethodParsed._fallback ? sdMethodParsed.terms
                           : 'NET_30';
-      if (sdMethodParsed._fallback && sdTermsParsed._fallback) data.payment_terms_fallback = true;
+      // Surface the chip whenever EITHER half borrowed from the cross-field fallback —
+      // means we silently guessed a value the user should verify.
+      if (sdMethodParsed._fallback || sdTermsParsed._fallback) data.payment_terms_fallback = true;
       data.payment_type = legacyTypeFromMethodTerms(data.payment_method, data.payment_terms);
     }
 
