@@ -22630,7 +22630,7 @@
               '<td>' + tripNum + '</td>' +
               '<td>' + driverName + '</td>' +
               '<td class="money">' + revenue + '</td>' +
-              '<td><div class="actions">' + assignBtn + '<button class="action-btn edit" style="padding:2px 8px;font-size:12px" onclick="openOrderModal(' + o.id + ')">Edit</button>' + (currentUser && currentUser.role === 'ADMIN' ? '<button class="action-btn delete" style="padding:2px 8px;font-size:12px" onclick="deleteOrder(' + o.id + ')">Del</button>' : '') + '</div></td>' +
+              '<td><div class="actions">' + assignBtn + '<button class="action-btn edit" style="padding:2px 8px;font-size:12px" onclick="openOrderModal(' + o.id + ')">Edit</button><button class="action-btn delete" style="padding:2px 8px;font-size:12px" onclick="deleteOrder(' + o.id + ')">Del</button></div></td>' +
               '</tr>';
           }).join('');
           return '<div class="card card-flush" style="overflow-x:auto">' +
@@ -22656,7 +22656,7 @@
             : '<button class="action-btn" style="padding:2px 8px;font-size:12px;background:var(--dim-blue);color:var(--info)" onclick="openAssignToTrip(' + o.id + ')" title="Assign to trip">Assign</button>';
           const actionsHtml = assignBtn +
             (o.dispatcher_notes ? '<button class="action-btn" style="padding:2px 8px;font-size:12px;background:var(--dim-amber);color:var(--warning)" title="' + noteTitle + '">Note</button>' : '') +
-            (currentUser && currentUser.role === 'ADMIN' ? '<button class="action-btn delete" style="padding:2px 8px;font-size:12px" onclick="deleteOrder(' + o.id + ')" title="Delete order">Del</button>' : '');
+            '<button class="action-btn delete" style="padding:2px 8px;font-size:12px" onclick="deleteOrder(' + o.id + ')" title="Delete order">Del</button>';
           return renderOrderPreviewCard(o, {
             trip: t,
             driver,
