@@ -146,15 +146,11 @@ async function handleGetTrips() {
 
   // Exclude completed/cancelled — catches all active statuses (PLANNED, IN_PROGRESS, DISPATCHED, IN_TRANSIT, AT_TERMINAL, etc.)
   const statusFilter = 'status=not.in.(COMPLETED,CANCELLED)';
-  const headers = {
-    'apikey': config.key,
-    'Authorization': 'Bearer ' + (config.accessToken || config.key)
-  };
 
-  // Fetch trips (simple query, no joins — most reliable)
-  const response = await fetch(
-    `${config.url}/rest/v1/trips?${statusFilter}&select=id,trip_number,status,driver_id&order=trip_date.desc`,
-    { headers }
+  // Fetch trips via authedFetch so a stale JWT auto-refreshes on 401
+  const response = await authedFetch(
+    config,
+    `${config.url}/rest/v1/trips?${statusFilter}&select=id,trip_number,status,driver_id&order=trip_date.desc`
   );
 
   if (!response.ok) {
@@ -169,9 +165,9 @@ async function handleGetTrips() {
   // Fetch drivers separately to resolve names (first_name + last_name)
   let driverLookup = {};
   try {
-    const driversResp = await fetch(
-      `${config.url}/rest/v1/drivers?select=id,first_name,last_name`,
-      { headers }
+    const driversResp = await authedFetch(
+      config,
+      `${config.url}/rest/v1/drivers?select=id,first_name,last_name`
     );
     if (driversResp.ok) {
       const drivers = await driversResp.json();
@@ -202,9 +198,9 @@ async function handleGetDispatchers() {
   const config = await getSupabaseConfig();
   if (!config.key) throw new Error('API key not configured');
 
-  const response = await fetch(
-    `${config.url}/rest/v1/dispatchers?select=id,name,code,email,user_id&order=name.asc`,
-    { headers: { 'apikey': config.key, 'Authorization': 'Bearer ' + (config.accessToken || config.key) } }
+  const response = await authedFetch(
+    config,
+    `${config.url}/rest/v1/dispatchers?select=id,name,code,email,user_id&order=name.asc`
   );
 
   if (!response.ok) {
@@ -222,7 +218,6 @@ async function handleGetDispatchers() {
 async function resolveOrCreateBroker(brokerName, brokerDetails, config) {
   if (!brokerName) return { brokerId: null, brokerName: null };
 
-  const headers = { 'apikey': config.key, 'Authorization': 'Bearer ' + (config.accessToken || config.key) };
   const trimmedName = brokerName.trim();
 
   // Helper: enrich existing broker with missing fields
@@ -233,9 +228,9 @@ async function resolveOrCreateBroker(brokerName, brokerDetails, config) {
     if (!existing.email && brokerDetails.email) patchData.email = brokerDetails.email;
     if (Object.keys(patchData).length > 0) {
       log('Enriching broker with missing fields:', patchData);
-      await fetch(`${config.url}/rest/v1/brokers?id=eq.${existing.id}`, {
+      await authedFetch(config, `${config.url}/rest/v1/brokers?id=eq.${existing.id}`, {
         method: 'PATCH',
-        headers: { ...headers, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patchData)
       });
     }
@@ -245,7 +240,7 @@ async function resolveOrCreateBroker(brokerName, brokerDetails, config) {
   try {
     // 1. Exact name match (case-insensitive)
     const exactUrl = `${config.url}/rest/v1/brokers?name=ilike.${encodeURIComponent(trimmedName)}&select=id,name,contact_name,phone,email&limit=1`;
-    const exactResp = await fetch(exactUrl, { headers });
+    const exactResp = await authedFetch(config, exactUrl);
     if (exactResp.ok) {
       const brokers = await exactResp.json();
       if (brokers.length > 0) {
@@ -257,7 +252,7 @@ async function resolveOrCreateBroker(brokerName, brokerDetails, config) {
     // 2. Match by email (more reliable than name)
     if (brokerDetails.email) {
       const emailUrl = `${config.url}/rest/v1/brokers?email=ilike.${encodeURIComponent(brokerDetails.email.trim())}&select=id,name,contact_name,phone,email&limit=1`;
-      const emailResp = await fetch(emailUrl, { headers });
+      const emailResp = await authedFetch(config, emailUrl);
       if (emailResp.ok) {
         const brokers = await emailResp.json();
         if (brokers.length > 0) {
@@ -271,7 +266,7 @@ async function resolveOrCreateBroker(brokerName, brokerDetails, config) {
     const coreName = trimmedName.replace(/[.,\s]+(LLC|INC|CORP|LTD|CO)\.?$/i, '').trim();
     if (coreName.length >= 4) {
       const fuzzyUrl = `${config.url}/rest/v1/brokers?name=ilike.*${encodeURIComponent(coreName)}*&select=id,name,contact_name,phone,email&limit=1`;
-      const fuzzyResp = await fetch(fuzzyUrl, { headers });
+      const fuzzyResp = await authedFetch(config, fuzzyUrl);
       if (fuzzyResp.ok) {
         const brokers = await fuzzyResp.json();
         if (brokers.length > 0) {
@@ -287,14 +282,9 @@ async function resolveOrCreateBroker(brokerName, brokerDetails, config) {
     if (brokerDetails.phone) createBody.phone = brokerDetails.phone;
     if (brokerDetails.email) createBody.email = brokerDetails.email;
 
-    const createResponse = await fetch(`${config.url}/rest/v1/brokers`, {
+    const createResponse = await authedFetch(config, `${config.url}/rest/v1/brokers`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': config.key,
-        'Authorization': 'Bearer ' + (config.accessToken || config.key),
-        'Prefer': 'return=representation'
-      },
+      headers: { 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
       body: JSON.stringify(createBody)
     });
 
@@ -408,12 +398,7 @@ async function handleImportLoad(loadData) {
   // Pre-check for duplicate order number
   if (orderData.order_number) {
     const checkUrl = `${config.url}/rest/v1/orders?order_number=eq.${encodeURIComponent(orderData.order_number)}&select=id&limit=1`;
-    const checkResponse = await fetch(checkUrl, {
-      headers: {
-        'apikey': config.key,
-        'Authorization': 'Bearer ' + (config.accessToken || config.key)
-      }
-    });
+    const checkResponse = await authedFetch(config, checkUrl);
     if (checkResponse.ok) {
       const existing = await checkResponse.json();
       if (existing.length > 0) {
@@ -423,14 +408,9 @@ async function handleImportLoad(loadData) {
   }
 
   // Make Supabase API call
-  const response = await fetch(`${config.url}/rest/v1/orders`, {
+  const response = await authedFetch(config, `${config.url}/rest/v1/orders`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'apikey': config.key,
-      'Authorization': 'Bearer ' + (config.accessToken || config.key),
-      'Prefer': 'return=representation'
-    },
+    headers: { 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
     body: JSON.stringify(orderData)
   });
 
@@ -476,12 +456,7 @@ async function testSupabaseConnection() {
     throw new Error('API key not configured');
   }
 
-  const response = await fetch(`${config.url}/rest/v1/orders?select=id&limit=1`, {
-    headers: {
-      'apikey': config.key,
-      'Authorization': 'Bearer ' + (config.accessToken || config.key)
-    }
-  });
+  const response = await authedFetch(config, `${config.url}/rest/v1/orders?select=id&limit=1`);
 
   if (!response.ok) {
     throw new Error(`Connection failed: ${response.status}`);
