@@ -62,16 +62,22 @@ function legacyTypeFromMethodTerms(method, terms) {
 // Used by all three scrapers (CD, SD, Ship.Cars) to pre-fill the modal.
 // User can override in modal; this is best-guess from free text.
 // ============================================================================
+// File-scope DEBUG flag — flip to true when troubleshooting parser behavior.
+// Gated logging keeps production users' DevTools quiet while preserving the
+// same observability the inline console.log calls had during the bug-hunt.
+const PARSER_DEBUG = false;
+const parserLog = (...args) => PARSER_DEBUG && console.log('[CD Importer parser]', ...args);
+
 function parsePaymentText(text) {
   const s = String(text || '');
-  console.log('[CD Importer parsePaymentText] input:', s.length > 200 ? s.slice(0, 200) + '...' : s);
+  parserLog('parsePaymentText input:', s.length > 200 ? s.slice(0, 200) + '...' : s);
 
   const EXACT_DAYS = [5, 7, 10, 15, 20, 30];
   const termsForDays = (n) => EXACT_DAYS.includes(n) ? ('NET_' + n) : 'NET_30';
   const ret = (method, terms, ruleId, fallback) => {
     const out = { method, terms };
     if (fallback) out._fallback = true;
-    console.log('[CD Importer parsePaymentText] matched rule ' + ruleId + ' →', out);
+    parserLog('matched rule ' + ruleId + ' →', out);
     return out;
   };
 
@@ -116,9 +122,11 @@ function parsePaymentText(text) {
   const netMatch = s.match(/\bnet\s*0?(\d{1,2})\b/i);
   if (netMatch) return ret('ACH', termsForDays(parseInt(netMatch[1], 10)), '15');
 
-  // Rule 15.5: bare "X Days" with payment context (guards against "5 days transit time")
-  const paymentCtx = /\b(?:pay|payment|billing|ach|wire|transfer|carrier\s*pay|\$)/i;
-  if (paymentCtx.test(s)) {
+  // Rule 15.5: bare "X Days" with payment context (guards against "5 days transit time").
+  // Split into word-bounded keywords + a literal $ check (\b\$ never matches because $
+  // is non-word and is typically preceded by another non-word char, killing the boundary).
+  const paymentCtxKeywords = /\b(?:pay|payment|billing|ach|wire|transfer|carrier\s*pay)\b/i;
+  if (paymentCtxKeywords.test(s) || s.includes('$')) {
     const daysOnlyM = s.match(/\b(\d{1,2})\s*days?\b/i);
     if (daysOnlyM) return ret('ACH', termsForDays(parseInt(daysOnlyM[1], 10)), '15.5');
   }
@@ -779,6 +787,9 @@ function extractPhone(text) {
     }
 
     // Append MC# to dispatcher notes if found
+    data.order_source_platform = 'central_dispatch';
+    data.external_order_url = window.location.href;
+    data.external_order_id = window.location.href.match(/\/dispatch\/([a-f0-9-]+)/i)?.[1] || null;
     data.dispatcher_notes = 'Imported from Central Dispatch';
     if (mcMatch) {
       data.dispatcher_notes += ` | MC# ${mcMatch[1]}`;
@@ -2156,6 +2167,9 @@ function extractPhone(text) {
       if (p) data.notes = p.textContent.trim().substring(0, 500);
     }
 
+    data.order_source_platform = 'super_dispatch';
+    data.external_order_url = window.location.href;
+    data.external_order_id = window.location.href.match(/\/loads?\/([a-f0-9-]+)/i)?.[1] || null;
     data.dispatcher_notes = 'Imported from Super Dispatch';
     log('Scraped SD data:', data);
     return data;
@@ -2248,6 +2262,9 @@ function extractPhone(text) {
     const shipperPhone = shipperTexts.match(/Phone:\s*([\d()+-\s]+)/);
     if (shipperPhone) data.broker_phone = shipperPhone[1].trim();
 
+    data.order_source_platform = 'super_dispatch';
+    data.external_order_url = window.location.href;
+    data.external_order_id = window.location.href.match(/\/loads?\/([a-f0-9-]+)/i)?.[1] || null;
     data.dispatcher_notes = 'Imported from Super Dispatch';
     log('Scraped SD list data:', data);
     return data;
@@ -2493,6 +2510,9 @@ function extractPhone(text) {
       if (note) data.notes = note.substring(0, 500);
     }
 
+    data.order_source_platform = 'ship_cars';
+    data.external_order_url = window.location.href;
+    data.external_order_id = window.location.href.match(/\/(?:order|orders|ctms\/orders)\/([a-z0-9-]+)/i)?.[1] || null;
     data.dispatcher_notes = 'Imported from Ship.Cars';
     log('Scraped Ship.Cars data:', data);
     return data;
@@ -2569,6 +2589,9 @@ function extractPhone(text) {
     data.payment_type = legacyTypeFromMethodTerms(scRowParsed.method, scRowParsed.terms);
     if (scRowParsed._fallback) data.payment_terms_fallback = true;
 
+    data.order_source_platform = 'ship_cars';
+    data.external_order_url = window.location.href;
+    data.external_order_id = window.location.href.match(/\/(?:order|orders|ctms\/orders)\/([a-z0-9-]+)/i)?.[1] || null;
     data.dispatcher_notes = 'Imported from Ship.Cars';
     log('Scraped Ship.Cars list data:', data);
     return data;
