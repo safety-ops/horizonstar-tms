@@ -374,19 +374,22 @@
     }
 
     // PAYMENT TERMS (Net XX, Quick Pay detection)
+    // Values match the orders_payment_terms_check constraint added by migration
+    // 20260501130000: QUICKPAY/COMCHEK/COP/COD/NET_5/NET_7/NET_10/NET_15/NET_20/NET_30.
+    // Net 21/45/60 collapse to NET_30 to match the migration's lossy backfill.
     const quickPayMatch = cardText.match(/Quick\s*Pay/i);
     const netTermsMatch = cardText.match(/(?:Net|NET)\s*(\d+)/i);
     if (quickPayMatch) {
-      data.payment_terms = 'QUICK_PAY';
-      log('Found Payment Terms: QUICK_PAY');
+      data.payment_terms = 'QUICKPAY';
+      log('Found Payment Terms: QUICKPAY');
     } else if (netTermsMatch) {
       const days = parseInt(netTermsMatch[1]);
-      const termsMapping = { 5: 'NET5', 7: 'NET7', 10: 'NET10', 15: 'NET15', 21: 'NET21', 30: 'NET30', 45: 'NET45', 60: 'NET60' };
-      data.payment_terms = termsMapping[days] || 'NET30';
+      const termsMapping = { 5: 'NET_5', 7: 'NET_7', 10: 'NET_10', 15: 'NET_15', 20: 'NET_20', 30: 'NET_30', 21: 'NET_30', 45: 'NET_30', 60: 'NET_30' };
+      data.payment_terms = termsMapping[days] || 'NET_30';
       log('Found Payment Terms:', data.payment_terms);
     } else if (data.payment_type === 'BILL' || data.payment_type === 'SPLIT') {
-      data.payment_terms = 'NET30';
-      log('Defaulting Payment Terms to NET30 for BILL/SPLIT type');
+      data.payment_terms = 'NET_30';
+      log('Defaulting Payment Terms to NET_30 for BILL/SPLIT type');
     }
 
     // VEHICLES — find ALL vehicle blocks (CD can have multiple on one load)
@@ -828,17 +831,16 @@
                     font-size: 14px;
                     box-sizing: border-box;
                   ">
-                    <option value="QUICK_PAY" ${loadData.payment_terms === 'QUICK_PAY' ? 'selected' : ''}>Quick Pay (3 days)</option>
-                    <option value="NET5" ${loadData.payment_terms === 'NET5' ? 'selected' : ''}>Net 5</option>
-                    <option value="NET7" ${loadData.payment_terms === 'NET7' ? 'selected' : ''}>Net 7</option>
-                    <option value="NET10" ${loadData.payment_terms === 'NET10' ? 'selected' : ''}>Net 10</option>
-                    <option value="NET15" ${loadData.payment_terms === 'NET15' ? 'selected' : ''}>Net 15</option>
-                    <option value="NET21" ${loadData.payment_terms === 'NET21' ? 'selected' : ''}>Net 21</option>
-                    <option value="NET30" ${loadData.payment_terms === 'NET30' || !loadData.payment_terms ? 'selected' : ''}>Net 30</option>
-                    <option value="NET45" ${loadData.payment_terms === 'NET45' ? 'selected' : ''}>Net 45</option>
-                    <option value="NET60" ${loadData.payment_terms === 'NET60' ? 'selected' : ''}>Net 60</option>
-                    <option value="COLLECT_AT_DELIVERY" ${loadData.payment_terms === 'COLLECT_AT_DELIVERY' ? 'selected' : ''}>Collect At Delivery</option>
-                    <option value="COLLECT_AT_PICKUP" ${loadData.payment_terms === 'COLLECT_AT_PICKUP' ? 'selected' : ''}>Collect At Pick Up</option>
+                    <option value="QUICKPAY" ${loadData.payment_terms === 'QUICKPAY' ? 'selected' : ''}>Quick Pay (3 days)</option>
+                    <option value="NET_5" ${loadData.payment_terms === 'NET_5' ? 'selected' : ''}>Net 5</option>
+                    <option value="NET_7" ${loadData.payment_terms === 'NET_7' ? 'selected' : ''}>Net 7</option>
+                    <option value="NET_10" ${loadData.payment_terms === 'NET_10' ? 'selected' : ''}>Net 10</option>
+                    <option value="NET_15" ${loadData.payment_terms === 'NET_15' ? 'selected' : ''}>Net 15</option>
+                    <option value="NET_20" ${loadData.payment_terms === 'NET_20' ? 'selected' : ''}>Net 20</option>
+                    <option value="NET_30" ${loadData.payment_terms === 'NET_30' || !loadData.payment_terms ? 'selected' : ''}>Net 30</option>
+                    <option value="COD" ${loadData.payment_terms === 'COD' ? 'selected' : ''}>Collect At Delivery (COD)</option>
+                    <option value="COP" ${loadData.payment_terms === 'COP' ? 'selected' : ''}>Collect At Pick Up (COP)</option>
+                    <option value="COMCHEK" ${loadData.payment_terms === 'COMCHEK' ? 'selected' : ''}>Comchek</option>
                   </select>
                 </div>
 
@@ -1197,10 +1199,10 @@
         if (splitSection) {
           splitSection.style.display = val === 'SPLIT' ? 'grid' : 'none';
         }
-        // Auto-set payment terms for COD/COP
+        // Auto-set payment terms for COD/COP (new constraint values)
         const termsSelect = document.getElementById('tms-payment-terms');
-        if (val === 'COD' && termsSelect) termsSelect.value = 'COLLECT_AT_DELIVERY';
-        else if (val === 'COP' && termsSelect) termsSelect.value = 'COLLECT_AT_PICKUP';
+        if (val === 'COD' && termsSelect) termsSelect.value = 'COD';
+        else if (val === 'COP' && termsSelect) termsSelect.value = 'COP';
       });
     }
 
@@ -1307,8 +1309,8 @@
         })(),
         payment_terms: (() => {
           const pt = document.getElementById('tms-payment-type').value;
-          if (pt === 'COD') return 'COLLECT_AT_DELIVERY';
-          if (pt === 'COP') return 'COLLECT_AT_PICKUP';
+          if (pt === 'COD') return 'COD';
+          if (pt === 'COP') return 'COP';
           if (pt === 'BILL' || pt === 'SPLIT') return document.getElementById('tms-payment-terms')?.value || null;
           return null;
         })(),
@@ -1802,18 +1804,21 @@
   }
 
   function parseSDPaymentTerms(terms) {
+    // Output values match orders_payment_terms_check from migration 20260501130000.
+    // 21/45/60 collapse to NET_30 to match the migration's lossy backfill.
     if (!terms) return null;
     const t = terms.toLowerCase();
-    if (t.includes('quick pay')) return 'QUICK_PAY';
+    if (t.includes('quick pay')) return 'QUICKPAY';
     const netMatch = t.match(/(\d+)\s*(?:business\s*)?days?/i);
     if (netMatch) {
       const days = parseInt(netMatch[1], 10);
-      const valid = [5, 7, 10, 15, 21, 30, 45, 60];
-      const closest = valid.reduce((a, b) => Math.abs(b - days) < Math.abs(a - days) ? b : a);
-      return 'NET' + closest;
+      const exact = { 5: 'NET_5', 7: 'NET_7', 10: 'NET_10', 15: 'NET_15', 20: 'NET_20', 30: 'NET_30' };
+      if (exact[days]) return exact[days];
+      // 21/45/60 → NET_30 (lossy, matches DB migration)
+      return 'NET_30';
     }
-    if (t.includes('cash on delivery') || t.includes('cod')) return null;
-    return 'NET30';
+    if (t.includes('cash on delivery') || t.includes('cod')) return 'COD';
+    return 'NET_30';
   }
 
   // Known auto makes for vehicle parsing (used by both detail + list scrapers)
