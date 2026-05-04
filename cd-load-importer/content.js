@@ -118,11 +118,11 @@ function parsePaymentText(text) {
     return { method: 'CHECK', terms: 'COD' };
   }
   // Rule 14: Quick Pay
-  if (/quick\s*pay|^qp\b/i.test(s)) {
+  if (/quick\s*pay|\bqp\b/i.test(s)) {
     return { method: 'ACH', terms: 'QUICKPAY' };
   }
-  // Rule 15: Net N (extract days)
-  const netMatch = s.match(/net\s*0?(\d{1,2})/i);
+  // Rule 15: Net N (extract days). \b on both sides prevents "cabinet 5" / "Net 100" → NET_10 footgun.
+  const netMatch = s.match(/\bnet\s*0?(\d{1,2})\b/i);
   if (netMatch) {
     const days = parseInt(netMatch[1], 10);
     const exactDays = [5, 7, 10, 15, 20, 30];
@@ -131,12 +131,13 @@ function parsePaymentText(text) {
     }
     return { method: 'ACH', terms: 'NET_30' };
   }
-  // Rule 16: ACH / wire
-  if (/\bach\b|wire/i.test(s)) {
+  // Rule 16: ACH / wire transfer. \b on wire prevents "Wireless"/"Wirestone" hits.
+  if (/\bach\b|\bwire\b/i.test(s)) {
     return { method: 'ACH', terms: 'NET_30' };
   }
-  // Rule 17: bill / billing / superpay
-  if (/\bbill(ing)?\b|superpay/i.test(s)) {
+  // Rule 17: bill / billing / superpay. Tightened to avoid broker names like "Bill Smith Trucking".
+  // Matches: "BILL" (standalone uppercase), "billing", "bill me/after/to/out/net", "SuperPay".
+  if (/\bbilling\b|bill\s+(me|after|to|out|net)|superpay/i.test(s) || /\bBILL\b/.test(s)) {
     return { method: 'ACH', terms: 'NET_30' };
   }
   // Rule 18: fallback
@@ -2342,7 +2343,7 @@ function parsePaymentText(text) {
       data.vehicles = [{ year: data.vehicle_year, make: data.vehicle_make, model: data.vehicle_model, vin: data.vehicle_vin, color: data.vehicle_color, body_type: data.vehicle_body_type }];
     }
 
-    // Payment: "Carrier Pay $2200" and "COP/COD" etc
+    // Revenue from "Carrier Pay $2200"
     const payMatch = text.match(/Carrier\s*Pay\s*\$?([\d,]+(?:\.\d{2})?)/i);
     if (payMatch) data.revenue = parseFloat(payMatch[1].replace(/,/g, ''));
     // Detect uShip by URL pattern in page text before calling shared parser
