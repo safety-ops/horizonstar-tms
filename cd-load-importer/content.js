@@ -217,11 +217,15 @@ function sanitizeOrderNumber(raw) {
     const c = s[i];
     // Stop at start of a CapitalizedWord (e.g. "...3Delivered")
     if (/[A-Z]/.test(c) && i + 1 < s.length && /[a-z]/.test(s[i + 1])) break;
+    // Stop at digit→UPPERCASE transition unless separated by hyphen.
+    // Catches all-caps badges with text-transform:uppercase ("99433DELIVERED")
+    // while still allowing real suffix codes ("99433-IX", "1268124-IX").
+    if (/[A-Z]/.test(c) && i > 0 && /\d/.test(s[i - 1])) break;
     if (/[A-Z0-9\-]/.test(c)) result += c;
     else break;
   }
-  // Trim trailing hyphen if any
-  result = result.replace(/-+$/, '');
+  // Trim leading + trailing hyphens
+  result = result.replace(/^-+|-+$/g, '');
   if (result.length >= 4 && /\d/.test(result)) return result.slice(0, 20);
   return null;
 }
@@ -2407,11 +2411,20 @@ function sanitizeOrderNumber(raw) {
     const orderMatch = text.match(/Order\s*#([A-Z0-9][A-Z0-9\-]*)/i);
     if (orderMatch) orderCandidate = orderMatch[1];
     if (!sanitizeOrderNumber(orderCandidate)) {
-      // Fallback: scan likely heading elements
-      const headings = document.querySelectorAll('h1, h2, [class*="order-number" i], [class*="orderId" i], [data-testid*="order" i]');
-      for (const el of headings) {
+      // Fallback: structured selectors first (specific to order-number elements),
+      // then generic h1/h2 only if no structured element matched. Keeps a stray
+      // year heading like "2024 Porsche 911" from winning over a real order ID.
+      const structured = document.querySelectorAll('[class*="order-number" i], [class*="orderId" i], [class*="loadNumber" i], [data-testid*="order" i]');
+      for (const el of structured) {
         const t = (el.textContent || '').trim();
         if (sanitizeOrderNumber(t)) { orderCandidate = t; break; }
+      }
+      if (!sanitizeOrderNumber(orderCandidate)) {
+        const headings = document.querySelectorAll('h1, h2');
+        for (const el of headings) {
+          const t = (el.textContent || '').trim();
+          if (sanitizeOrderNumber(t)) { orderCandidate = t; break; }
+        }
       }
     }
     const cleanOrderNum = sanitizeOrderNumber(orderCandidate);
