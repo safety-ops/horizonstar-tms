@@ -2,6 +2,15 @@
 
 Import loads from Central Dispatch directly to Horizon Star TMS.
 
+## What's New
+
+### v2.4.0 (2026-05-04)
+
+- Two-dropdown Method+Terms payment UI matching TMS web app
+- Dual-writes `payment_method` + `payment_terms` + legacy `payment_type`
+- All scrapers (CD/SD/Ship.Cars) auto-detect uShip, Zelle, CashApp, Venmo, Factoring, etc.
+- Popup footer now displays installed version for support/debugging
+
 ## Installation
 
 1. Open Chrome and go to `chrome://extensions/`

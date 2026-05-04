@@ -332,6 +332,19 @@
       color: #fff;
       box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
     }
+
+    /* === VERSION FOOTER === */
+    .version-footer {
+      position: fixed;
+      bottom: 6px;
+      right: 8px;
+      font-size: 10px;
+      color: var(--muted, #64748b);
+      opacity: 0.6;
+      font-family: ui-monospace, monospace;
+      pointer-events: none;
+      z-index: 1;
+    }
   </style>
 </head>
 <body>
@@ -441,6 +454,8 @@
   </div>
 
   <div class="toast" id="toast"></div>
+
+  <div class="version-footer">v<span id="ext-version"></span></div>
 
   <script src="popup.js"></script>
 </body>

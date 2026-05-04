@@ -431,5 +431,8 @@ if (signOutBtn) signOutBtn.addEventListener('click', signOut);
 if (advancedToggleBtn) advancedToggleBtn.addEventListener('click', toggleAdvancedSection);
 
 // Initialize
+const versionEl = document.getElementById('ext-version');
+if (versionEl) versionEl.textContent = chrome.runtime.getManifest().version;
+
 loadSettings();
 loadRecentImports();
