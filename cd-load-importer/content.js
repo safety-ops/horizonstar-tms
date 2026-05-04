@@ -43,6 +43,19 @@ const PAYMENT_COMMON_PAIRS = new Set([
   'USHIP|COD','USHIP|NET_5','USHIP|NET_7','USHIP|NET_30',
   'FACTORING|NET_30','FACTORING|QUICKPAY','FACTORING|NET_15'
 ]);
+
+// Verbatim port of legacyTypeFromMethodTerms() from index.html:10409.
+// Derives the back-compat payment_type value from (method, terms).
+// Keep in sync with TMS source.
+function legacyTypeFromMethodTerms(method, terms) {
+  const m = String(method || '').toUpperCase();
+  const t = String(terms || '').toUpperCase();
+  if (m === 'CASH'  && t === 'COD') return 'COD';
+  if (m === 'CASH'  && t === 'COP') return 'COP';
+  if (m === 'CHECK' && (t === 'COD' || t === 'COP')) return 'CHECK';
+  if (t === 'COD' || t === 'COP') return t;
+  return 'BILL';
+}
 // ============================================================================
 
 (function() {
@@ -876,7 +889,7 @@ const PAYMENT_COMMON_PAIRS = new Set([
                   </div>
                 </div>
                 <!-- Pair indicator chip — advisory only, never blocks submit -->
-                <div id="tms-payment-pair-chip" class="tms-pair-chip tms-pair-chip--common" style="display: inline-block;">&#10003; Common pair</div>
+                <div id="tms-payment-pair-chip" class="tms-pair-chip tms-pair-chip--common">&#10003; Common pair</div>
 
                 <!-- Broker / Pickup Date / Delivery Date Row -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
@@ -1276,11 +1289,13 @@ const PAYMENT_COMMON_PAIRS = new Set([
         revenue: parseFloat(document.getElementById('tms-revenue').value) || 0,
         broker_fee: parseFloat(document.getElementById('tms-broker-fee')?.value) || null,
         local_fee: parseFloat(document.getElementById('tms-local-fee')?.value) || null,
-        // Phase 1 stub: tms-payment-type removed; Phase 2 will dual-write payment_method + payment_terms + legacy payment_type
-        payment_type: null,
-        payment_terms: document.getElementById('tms-payment-terms')?.value || null,
-        cod_amount: null,
-        bill_amount: null,
+        // Phase 2 dual-write: new method+terms columns + legacy payment_type for back-compat.
+        payment_method: document.getElementById('tms-payment-method')?.value || 'ACH',
+        payment_terms: document.getElementById('tms-payment-terms')?.value || 'NET_30',
+        payment_type: legacyTypeFromMethodTerms(
+          document.getElementById('tms-payment-method')?.value || 'ACH',
+          document.getElementById('tms-payment-terms')?.value || 'NET_30'
+        ),
         broker_name: document.getElementById('tms-broker').value.trim(),
         broker_contact_name: loadData.broker_contact_name || null,
         broker_phone: loadData.broker_phone || null,

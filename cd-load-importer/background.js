@@ -348,6 +348,7 @@ async function handleImportLoad(loadData) {
     revenue: loadData.revenue || null,
     broker_fee: loadData.broker_fee || null,
     local_fee: loadData.local_fee || null,
+    payment_method: loadData.payment_method || null,
     payment_type: loadData.payment_type || null,
     payment_terms: loadData.payment_terms || null,
     vehicle_year: loadData.vehicle_year || null,
