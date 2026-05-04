@@ -10295,7 +10295,7 @@
       'ACH','CREDIT_CARD','VENMO','CASHAPP','USHIP','FACTORING'
     ];
     const PAYMENT_TERMS_OPTIONS_V2 = [
-      'QUICKPAY','COMCHEK','COP','COD',
+      'QUICKPAY','COMCHEK','COP','COD','LOCAL_COD',
       'NET_5','NET_7','NET_10','NET_15','NET_20','NET_30'
     ];
 
@@ -10307,7 +10307,7 @@
     };
     const PAYMENT_TERMS_LABELS = {
       QUICKPAY:"Quick Pay", COMCHEK:"Comchek",
-      COP:"On Pickup", COD:"On Delivery",
+      COP:"On Pickup", COD:"On Delivery", LOCAL_COD:"Local COD",
       NET_5:"Net 5", NET_7:"Net 7", NET_10:"Net 10",
       NET_15:"Net 15", NET_20:"Net 20", NET_30:"Net 30"
     };
@@ -10317,7 +10317,7 @@
 
     // Common (method, terms) combos. Anything outside this set renders a yellow warning chip.
     const PAYMENT_COMMON_PAIRS = new Set([
-      'CASH|COD','CASH|COP','CHECK|COD','CHECK|COP',
+      'CASH|COD','CASH|COP','CASH|LOCAL_COD','CHECK|COD','CHECK|COP',
       'CASHIERS_CHECK|COP','CASHIERS_CHECK|COD',
       'MONEY_ORDER|COP','MONEY_ORDER|COD',
       'ZELLE|COP','ZELLE|COD','ZELLE|QUICKPAY','ZELLE|NET_5','ZELLE|NET_7',
@@ -10340,7 +10340,7 @@
         case 'BILL': case 'BILLING': method = 'ACH';   if (!terms) terms = 'NET_30'; break;
         case 'COD':                  method = 'CASH';  terms = 'COD'; break;
         case 'COP':                  method = 'CASH';  terms = 'COP'; break;
-        case 'LOCAL_COD':            method = 'CASH';  terms = 'COD'; break;
+        case 'LOCAL_COD':            method = 'CASH';  terms = 'LOCAL_COD'; break;
         case 'CHECK':                method = 'CHECK'; terms = 'COD'; break;
         case 'SPLIT':                method = 'CASH';  terms = 'COD'; break;
       }
@@ -10419,7 +10419,7 @@
     // True if the driver collects money on this order — replaces legacy `['COD','COP','SPLIT'].includes(...)` checks.
     function paymentInvolvesCash(order) {
       const t = getEffectivePaymentTerms(order);
-      if (t === 'COP' || t === 'COD') return true;
+      if (t === 'COP' || t === 'COD' || t === 'LOCAL_COD') return true;
       // Split orders: cod_amount > 0 AND bill_amount > 0
       const cod = Number(order?.cod_amount || 0);
       const bill = Number(order?.bill_amount || 0);
