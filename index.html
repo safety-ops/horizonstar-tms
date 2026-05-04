@@ -33619,6 +33619,9 @@
         const dateStr   = dateVal ? formatDate(dateVal) : '—';
         const gross     = toMoneyNumber((r.totals && r.totals.grossEarnings) || r.gross_earnings || 0);
         const net       = toMoneyNumber((r.totals && r.totals.netPay) || r.net_pay || 0);
+        const paidAmt   = toMoneyNumber(r.amount_paid);
+        const dueAmt    = Math.max(0, net - paidAmt);
+        const isFullyPaid = String(r.status || '').toLowerCase() === 'paid' || dueAmt <= 0;
         const statusBadge = renderSettlementStatusBadge(r);
         const isSuperseded = !!r.superseded_by;
         const revText   = (r.revision && r.revision > 1)
@@ -33629,12 +33632,25 @@
               ? '<span style="color:var(--text-muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">superseded</span>'
               : '');
 
+        // Paid / Due cells
+        const paidCell = paidAmt > 0
+          ? '<td class="money" style="font-size:12px;color:var(--success);font-weight:600">' + formatMoney(paidAmt) + '</td>'
+          : '<td class="money" style="font-size:12px;color:var(--text-muted)">—</td>';
+        const dueCell = isFullyPaid
+          ? '<td class="money" style="font-size:12px;color:var(--success);font-weight:600">Paid</td>'
+          : '<td class="money" style="font-size:12px;color:var(--danger);font-weight:600">' + formatMoney(dueAmt) + '</td>';
+
         // Action buttons
-        const isOwnerOpRecord = (r.type || 'settlement') === 'settlement';
         const viewBtn = '<button class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px" ' +
           'onclick="openPayrollRecordPreview(' + r.id + ')">View</button>';
         const printBtn = '<button class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px" ' +
           'onclick="reprintPayrollRecord(' + r.id + ')">Print</button>';
+        const canRecordPayment = dueAmt > 0 && String(r.status || '').toLowerCase() !== 'draft' && !isSuperseded;
+        const recordPaymentBtn = canRecordPayment
+          ? '<button class="btn btn-primary btn-sm" style="font-size:11px;padding:3px 8px" ' +
+            'onclick="openRecordPaymentModalForRecord(' + r.id + ')" ' +
+            'aria-label="Record payment for settlement ' + stmtNum + '">Record Payment</button>'
+          : '';
 
         rowsHTML +=
           '<tr style="cursor:default' + (isSuperseded ? ';opacity:0.55' : '') + '" onmouseenter="this.style.background=\'var(--dim-blue)\'" onmouseleave="this.style.background=\'\'">' +
@@ -33645,9 +33661,11 @@
             '<td style="font-size:12px">' + dateStr + '</td>' +
             '<td class="money" style="font-size:12px">' + formatMoney(gross) + '</td>' +
             '<td class="money" style="font-size:12px;font-weight:600;color:' + (net >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + formatMoney(net) + '</td>' +
+            paidCell +
+            dueCell +
             '<td>' + statusBadge + '</td>' +
             '<td>' + revText + '</td>' +
-            '<td><div style="display:flex;gap:4px">' + viewBtn + printBtn + '</div></td>' +
+            '<td><div style="display:flex;gap:4px;flex-wrap:wrap">' + viewBtn + printBtn + recordPaymentBtn + '</div></td>' +
           '</tr>';
       });
 
@@ -33660,7 +33678,7 @@
         settlementFilterSearch.trim();
 
       const emptyHTML = filtered.length === 0
-        ? '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted)">' +
+        ? '<tr><td colspan="12" style="text-align:center;padding:40px;color:var(--text-muted)">' +
             '<h3 style="font-size:15px;font-weight:600;color:var(--text-primary);margin:0 0 8px 0">No settlements match your filters</h3>' +
             '<div style="font-size:13px;margin-bottom:16px">' + (allRecords.length === 0 ? 'No settlement records have been generated yet.' : 'Adjust the filters above to see records.') + '</div>' +
             (hasActiveFilters ? '<button class="btn btn-secondary btn-sm" onclick="_settlementClearFilters()">Clear Filters</button>' : '') +
@@ -33688,6 +33706,8 @@
               _thSort('date',   'Date') +
               _thSort('gross',  'Gross') +
               _thSort('net',    'Net') +
+              '<th class="text-right">Paid</th>' +
+              '<th class="text-right">Due</th>' +
               _thSort('status', 'Status') +
               '<th>Revision</th>' +
               '<th>Actions</th>' +
@@ -33805,7 +33825,7 @@
       // ── Ledger rows (reuse same column structure as Tab 1) ────────────────
       let ledgerRowsHTML = '';
       if (driverRecords.length === 0) {
-        ledgerRowsHTML = '<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--text-muted)">' +
+        ledgerRowsHTML = '<tr><td colspan="11" style="text-align:center;padding:32px;color:var(--text-muted)">' +
           '<div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px">No statements generated yet</div>' +
           '<div style="font-size:12px">Use Batch Generate or the Trip Detail view to create a statement for this driver.</div>' +
           '</td></tr>';
@@ -33832,6 +33852,9 @@
           const dateStr = (r.pay_date || r.created_at) ? formatDate(r.pay_date || r.created_at) : '—';
           const gross = toMoneyNumber((r.totals && r.totals.grossEarnings) || r.gross_earnings || 0);
           const net   = toMoneyNumber((r.totals && r.totals.netPay) || r.net_pay || 0);
+          const paidAmt = toMoneyNumber(r.amount_paid);
+          const dueAmt  = Math.max(0, net - paidAmt);
+          const isFullyPaid = String(r.status || '').toLowerCase() === 'paid' || dueAmt <= 0;
           const statusBadge = renderSettlementStatusBadge(r);
           const isSupersededRow = !!r.superseded_by;
           const revText = (r.revision && r.revision > 1)
@@ -33841,8 +33864,18 @@
             : (isSupersededRow
                 ? '<span style="color:var(--text-muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">superseded</span>'
                 : '');
+          const paidCell = paidAmt > 0
+            ? '<td class="money" style="font-size:12px;color:var(--success);font-weight:600">' + formatMoney(paidAmt) + '</td>'
+            : '<td class="money" style="font-size:12px;color:var(--text-muted)">—</td>';
+          const dueCell = isFullyPaid
+            ? '<td class="money" style="font-size:12px;color:var(--success);font-weight:600">Paid</td>'
+            : '<td class="money" style="font-size:12px;color:var(--danger);font-weight:600">' + formatMoney(dueAmt) + '</td>';
           const viewBtn  = '<button class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px" onclick="openPayrollRecordPreview(' + r.id + ')">View</button>';
           const printBtn = '<button class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px" onclick="reprintPayrollRecord(' + r.id + ')">Print</button>';
+          const canRecordPaymentRow = dueAmt > 0 && String(r.status || '').toLowerCase() !== 'draft' && !isSupersededRow;
+          const recordPaymentBtn = canRecordPaymentRow
+            ? '<button class="btn btn-primary btn-sm" style="font-size:11px;padding:3px 8px" onclick="openRecordPaymentModalForRecord(' + r.id + ')" aria-label="Record payment for settlement ' + stmtNum + '">Record Payment</button>'
+            : '';
 
           ledgerRowsHTML +=
             '<tr style="' + (isSupersededRow ? 'opacity:0.55' : '') + '" onmouseenter="this.style.background=\'var(--dim-blue)\'" onmouseleave="this.style.background=\'\'">' +
@@ -33852,9 +33885,11 @@
               '<td style="font-size:12px">' + dateStr + '</td>' +
               '<td class="money" style="font-size:12px">' + formatMoney(gross) + '</td>' +
               '<td class="money" style="font-size:12px;font-weight:600;color:' + (net >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + formatMoney(net) + '</td>' +
+              paidCell +
+              dueCell +
               '<td>' + statusBadge + '</td>' +
               '<td>' + revText + '</td>' +
-              '<td><div style="display:flex;gap:4px">' + viewBtn + printBtn + '</div></td>' +
+              '<td><div style="display:flex;gap:4px;flex-wrap:wrap">' + viewBtn + printBtn + recordPaymentBtn + '</div></td>' +
             '</tr>';
         });
       }
@@ -33898,6 +33933,8 @@
               '<th>Date</th>' +
               '<th>Gross</th>' +
               '<th>Net</th>' +
+              '<th class="text-right">Paid</th>' +
+              '<th class="text-right">Due</th>' +
               '<th>Status</th>' +
               '<th>Revision</th>' +
               '<th>Actions</th>' +
@@ -34012,6 +34049,18 @@
     }
 
     // Record payment modal (supports partial payments)
+    // Thin wrapper: open the per-driver payment modal pre-resolved from a record id.
+    // The user clicks "Record Payment" on a single Settlements row; we look up the
+    // record's driver and reuse the existing per-driver modal which already shows
+    // all unpaid records for that driver (including the one they clicked).
+    function openRecordPaymentModalForRecord(recordId) {
+      const record = (appData.payroll_records || []).find(r => Number(r.id) === Number(recordId));
+      if (!record) { showToast('Record not found.', 'error'); return; }
+      // Close any currently-open modal first to avoid stacking
+      document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
+      openRecordPaymentModal(record.driver_id);
+    }
+
     function openRecordPaymentModal(driverId) {
       const driver = (appData.drivers || []).find(d => String(d.id) === String(driverId));
       if (!driver) { showToast('Driver not found.', 'error'); return; }
@@ -34689,16 +34738,21 @@
     function renderSettlementStatusBadge(record) {
       if (!record) return '';
       const status = String(record.status || 'finalized').toLowerCase();
-      const labelMap = { draft: 'DRAFT', finalized: 'FINALIZED', emailed: 'EMAILED', paid: 'PAID' };
+      const netPay = toMoneyNumber((record.totals && record.totals.netPay) || record.net_pay);
+      const paid = toMoneyNumber(record.amount_paid);
+      const isPartial = paid > 0 && paid < netPay && status !== 'paid';
+      const labelMap = { draft: 'DRAFT', finalized: 'FINALIZED', emailed: 'EMAILED', paid: 'PAID', partial: 'PARTIAL' };
       const colorMap = {
         draft:     { bg: 'var(--bg-secondary)',  fg: 'var(--text-secondary)' },
         finalized: { bg: 'var(--dim-blue)',      fg: 'var(--info, #3b82f6)' },
         emailed:   { bg: 'var(--dim-amber)',     fg: 'var(--warning)' },
-        paid:      { bg: 'var(--dim-green)',     fg: 'var(--success)' }
+        paid:      { bg: 'var(--dim-green)',     fg: 'var(--success)' },
+        partial:   { bg: 'var(--dim-amber)',     fg: 'var(--warning)' }
       };
-      const c = colorMap[status] || colorMap.finalized;
+      const effectiveStatus = isPartial ? 'partial' : status;
+      const c = colorMap[effectiveStatus] || colorMap.finalized;
       const revisionPart = (record.revision && record.revision > 1) ? ' • rev ' + record.revision : '';
-      return '<span class="badge" style="margin-left:8px;padding:3px 8px;font-size:11px;font-weight:600;background:' + c.bg + ';color:' + c.fg + '">' + (labelMap[status] || status.toUpperCase()) + revisionPart + '</span>';
+      return '<span class="badge" style="margin-left:8px;padding:3px 8px;font-size:11px;font-weight:600;background:' + c.bg + ';color:' + c.fg + '">' + (labelMap[effectiveStatus] || effectiveStatus.toUpperCase()) + revisionPart + '</span>';
     }
 
     // ============================================================
@@ -34869,6 +34923,26 @@
           '<div class="settlement-doc-banner-value">' + escapeHtml(m(netPay)) + '</div>' +
         '</div>';
 
+      // ── PAYMENT STATUS STRIP (only when there's payment activity) ─────────
+      const paidAmount = parseFloat((record && record.amount_paid) || 0) || 0;
+      const dueAmount  = Math.max(0, netPay - paidAmount);
+      const recordStatus = String((record && record.status) || '').toLowerCase();
+      const isFullyPaid = recordStatus === 'paid' || (paidAmount > 0 && dueAmount <= 0);
+      const showPaymentStrip = paidAmount > 0 || recordStatus === 'paid';
+      const paymentStripHTML = showPaymentStrip
+        ? (isFullyPaid
+            ? '<div style="background:#dcfce7;border-bottom:1px solid #bbf7d0;padding:14px 32px;display:flex;justify-content:space-between;align-items:center;color:#047857;font-weight:600">' +
+                '<span style="font-size:13px;text-transform:uppercase;letter-spacing:0.05em">&#10003; Paid In Full</span>' +
+                '<span style="font-size:14px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace">' + escapeHtml(m(paidAmount)) + '</span>' +
+              '</div>'
+            : '<div style="background:#fef3c7;border-bottom:1px solid #fde68a;padding:14px 32px;display:flex;justify-content:space-between;align-items:center;gap:24px">' +
+                '<div style="display:flex;flex-direction:column"><span style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:#92400e;font-weight:600">Paid So Far</span>' +
+                '<span style="font-size:16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#047857;font-weight:700">' + escapeHtml(m(paidAmount)) + '</span></div>' +
+                '<div style="display:flex;flex-direction:column;text-align:right"><span style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:#92400e;font-weight:600">Due</span>' +
+                '<span style="font-size:16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#b91c1c;font-weight:700">' + escapeHtml(m(dueAmount)) + '</span></div>' +
+              '</div>')
+        : '';
+
       // ── DRIVER section (name + 3 stats) ───────────────────────────────────
       const driverHTML =
         '<div class="settlement-doc-driver">' +
@@ -34883,7 +34957,7 @@
           '</div>' +
         '</div>';
 
-      // ── 4-CARD SUMMARY (Gross / Cash / Reimb / Total Revenue) ─────────────
+      // ── 5-CARD SUMMARY (Gross / Cash / Reimb / Clean Gross / Total Revenue)
       const summaryHTML =
         '<div class="settlement-doc-summary">' +
           '<div class="settlement-doc-summary-card is-highlight">' +
@@ -34897,6 +34971,10 @@
           '<div class="settlement-doc-summary-card">' +
             '<div class="settlement-doc-summary-amount">+' + escapeHtml(m(reimb)) + '</div>' +
             '<div class="settlement-doc-summary-label">Reimbursements</div>' +
+          '</div>' +
+          '<div class="settlement-doc-summary-card">' +
+            '<div class="settlement-doc-summary-amount">' + escapeHtml(m(cleanGross)) + '</div>' +
+            '<div class="settlement-doc-summary-label">Clean Gross</div>' +
           '</div>' +
           '<div class="settlement-doc-summary-card">' +
             '<div class="settlement-doc-summary-amount">' + escapeHtml(m(totalRevenue)) + '</div>' +
@@ -35160,6 +35238,7 @@
         '<div class="page">' +
           headerHTML +
           bannerHTML +
+          paymentStripHTML +
           viewHintHTML +
           '<div class="settlement-doc-content">' +
             tripSelectorHTML +
@@ -35251,6 +35330,16 @@
         '<div class="modal-footer no-print">' +
           '<button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Close</button>' +
           '<button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove();reprintPayrollRecord(' + record.id + ')">Print</button>' +
+          (function() {
+            const recNet = toMoneyNumber((record.totals && record.totals.netPay) || record.net_pay);
+            const recPaid = toMoneyNumber(record.amount_paid);
+            const recDue = Math.max(0, recNet - recPaid);
+            const recStatus = String(record.status || '').toLowerCase();
+            const canPay = recDue > 0 && recStatus !== 'draft' && !record.superseded_by;
+            return canPay
+              ? '<button class="btn btn-primary" onclick="openRecordPaymentModalForRecord(' + record.id + ')">Record Payment</button>'
+              : '';
+          })() +
           (driver ? '<button class="btn btn-primary" onclick="this.closest(\'.modal-overlay\').remove();' + editFn + '(' + driver.id + ', ' + editPayload + ')">Edit</button>' : '') +
         '</div>' +
         '</div>';
