@@ -99,16 +99,27 @@ function parsePaymentText(text) {
   if (/money\s*order/i.test(s)) return ret('MONEY_ORDER', 'COD', '8');
   // Rule 9: Cashier's Check (must precede bare "check")
   if (/cashier'?s?\s*check/i.test(s)) return ret('CASHIERS_CHECK', 'COD', '9');
-  // Rule 10: COP / collect at pickup
-  if (/\bCOP\b|collect at pick.?up/i.test(s)) return ret('CASH', 'COP', '10');
+  // Rule 10: COP / collect at pickup / on pickup (SD terms-field convention)
+  if (/\bCOP\b|collect at pick.?up|on\s*pickup/i.test(s)) return ret('CASH', 'COP', '10');
   // Rule 11: Local COD (before bare COD)
   if (/local[\s_-]?cod/i.test(s)) return ret('CASH', 'LOCAL_COD', '11');
-  // Rule 12: COD / cash on delivery / certified funds (incl. abbreviated "Cert Funds")
-  if (/\bCOD\b|cash on delivery|certified funds|cert\.?\s*funds/i.test(s)) return ret('CASH', 'COD', '12');
+  // Rule 12: COD / cash on delivery / on delivery / certified funds / Cert Funds
+  if (/\bCOD\b|(?:cash\s*)?on\s*delivery|certified funds|cert\.?\s*funds/i.test(s)) return ret('CASH', 'COD', '12');
+  // Rule 12.5: bare "Cash" — typical SD method label that wasn't a specialized cash variant
+  if (/\bcash\b/i.test(s)) return ret('CASH', 'COD', '12.5');
   // Rule 13: bare "check" (cashier's check already handled above)
   if (/\bcheck\b/i.test(s)) return ret('CHECK', 'COD', '13');
   // Rule 14: Quick Pay
   if (/quick\s*pay|\bqp\b/i.test(s)) return ret('ACH', 'QUICKPAY', '14');
+
+  // Rule 14.5d: "X Business Days" / "X Biz Days" — Super Dispatch terms-field convention.
+  // 2-3 days is fast payment treated as QuickPay; 5+ days maps to Net X via existing days table.
+  const bizM = s.match(/(\d{1,2})\s*(?:business|biz)\s*days?\b/i);
+  if (bizM) {
+    const days = parseInt(bizM[1], 10);
+    if (days <= 3) return ret('ACH', 'QUICKPAY', '14.5d');
+    return ret('ACH', termsForDays(days), '14.5d');
+  }
 
   // Rule 14.5a: "X Day Pay" / "X Day Payment" — CD/SD common format without literal "Net"
   const dayPayM = s.match(/\b(\d{1,2})\s*day\s*pay(?:ment)?\b/i);
@@ -2152,12 +2163,20 @@ function sanitizeOrderNumber(raw) {
           if (bf) data.broker_fee = parseFloat(bf[1].replace(/,/g, ''));
         }
       }
-      const sdPaymentText = method + ' ' + terms;
-      const sdParsed = parsePaymentText(sdPaymentText);
-      data.payment_method = sdParsed.method;
-      data.payment_terms = sdParsed.terms;
-      if (sdParsed._fallback) data.payment_terms_fallback = true;
-      data.payment_type = legacyTypeFromMethodTerms(sdParsed.method, sdParsed.terms);
+      // SD provides method and terms as separately-labeled fields. Parse each
+      // independently — concatenating lets a method's bare-name rule (e.g. "check")
+      // hijack the terms decision (so "Check" + "2 Business Days" no longer
+      // collapses to {CHECK, COD}; it stays as {CHECK, QUICKPAY}).
+      const sdMethodParsed = parsePaymentText(method);
+      const sdTermsParsed = parsePaymentText(terms);
+      data.payment_method = !sdMethodParsed._fallback ? sdMethodParsed.method
+                          : !sdTermsParsed._fallback  ? sdTermsParsed.method
+                          : 'ACH';
+      data.payment_terms  = !sdTermsParsed._fallback  ? sdTermsParsed.terms
+                          : !sdMethodParsed._fallback ? sdMethodParsed.terms
+                          : 'NET_30';
+      if (sdMethodParsed._fallback && sdTermsParsed._fallback) data.payment_terms_fallback = true;
+      data.payment_type = legacyTypeFromMethodTerms(data.payment_method, data.payment_terms);
     }
 
     // === CUSTOMER / BROKER (aria-label="Customer Details") ===
