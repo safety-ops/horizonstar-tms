@@ -64,85 +64,134 @@ function legacyTypeFromMethodTerms(method, terms) {
 // ============================================================================
 function parsePaymentText(text) {
   const s = String(text || '');
+  console.log('[CD Importer parsePaymentText] input:', s.length > 200 ? s.slice(0, 200) + '...' : s);
+
+  const EXACT_DAYS = [5, 7, 10, 15, 20, 30];
+  const termsForDays = (n) => EXACT_DAYS.includes(n) ? ('NET_' + n) : 'NET_30';
+  const ret = (method, terms, ruleId, fallback) => {
+    const out = { method, terms };
+    if (fallback) out._fallback = true;
+    console.log('[CD Importer parsePaymentText] matched rule ' + ruleId + ' →', out);
+    return out;
+  };
 
   // Rule 1: uShip (keyword or URL pattern)
-  if (/uShip/i.test(s) || /uship\.com/i.test(s)) {
-    return { method: 'USHIP', terms: 'NET_30' };
-  }
+  if (/uShip/i.test(s) || /uship\.com/i.test(s)) return ret('USHIP', 'NET_30', '1');
   // Rule 2: Factoring
-  if (/factoring/i.test(s)) {
-    return { method: 'FACTORING', terms: 'NET_30' };
-  }
+  if (/factoring/i.test(s)) return ret('FACTORING', 'NET_30', '2');
   // Rule 3: Comchek
-  if (/comchek/i.test(s)) {
-    return { method: 'COMCHEK', terms: 'COMCHEK' };
-  }
+  if (/comchek/i.test(s)) return ret('COMCHEK', 'COMCHEK', '3');
   // Rule 4: Zelle
-  if (/zelle/i.test(s)) {
-    return { method: 'ZELLE', terms: 'QUICKPAY' };
-  }
+  if (/zelle/i.test(s)) return ret('ZELLE', 'QUICKPAY', '4');
   // Rule 5: Cash App (before bare "cash" matches)
-  if (/cashapp|cash[\s_-]?app/i.test(s)) {
-    return { method: 'CASHAPP', terms: 'QUICKPAY' };
-  }
+  if (/cashapp|cash[\s_-]?app/i.test(s)) return ret('CASHAPP', 'QUICKPAY', '5');
   // Rule 6: Venmo
-  if (/venmo/i.test(s)) {
-    return { method: 'VENMO', terms: 'QUICKPAY' };
-  }
+  if (/venmo/i.test(s)) return ret('VENMO', 'QUICKPAY', '6');
   // Rule 7: Credit Card
-  if (/credit\s*card|\bcc\b/i.test(s)) {
-    return { method: 'CREDIT_CARD', terms: 'QUICKPAY' };
-  }
+  if (/credit\s*card|\bcc\b/i.test(s)) return ret('CREDIT_CARD', 'QUICKPAY', '7');
   // Rule 8: Money Order
-  if (/money\s*order/i.test(s)) {
-    return { method: 'MONEY_ORDER', terms: 'COD' };
-  }
+  if (/money\s*order/i.test(s)) return ret('MONEY_ORDER', 'COD', '8');
   // Rule 9: Cashier's Check (must precede bare "check")
-  if (/cashier'?s?\s*check/i.test(s)) {
-    return { method: 'CASHIERS_CHECK', terms: 'COD' };
-  }
+  if (/cashier'?s?\s*check/i.test(s)) return ret('CASHIERS_CHECK', 'COD', '9');
   // Rule 10: COP / collect at pickup
-  if (/\bCOP\b|collect at pick.?up/i.test(s)) {
-    return { method: 'CASH', terms: 'COP' };
-  }
+  if (/\bCOP\b|collect at pick.?up/i.test(s)) return ret('CASH', 'COP', '10');
   // Rule 11: Local COD (before bare COD)
-  if (/local[\s_-]?cod/i.test(s)) {
-    return { method: 'CASH', terms: 'LOCAL_COD' };
-  }
-  // Rule 12: COD / cash on delivery / certified funds
-  if (/\bCOD\b|cash on delivery|certified funds/i.test(s)) {
-    return { method: 'CASH', terms: 'COD' };
-  }
+  if (/local[\s_-]?cod/i.test(s)) return ret('CASH', 'LOCAL_COD', '11');
+  // Rule 12: COD / cash on delivery / certified funds (incl. abbreviated "Cert Funds")
+  if (/\bCOD\b|cash on delivery|certified funds|cert\.?\s*funds/i.test(s)) return ret('CASH', 'COD', '12');
   // Rule 13: bare "check" (cashier's check already handled above)
-  if (/\bcheck\b/i.test(s)) {
-    return { method: 'CHECK', terms: 'COD' };
-  }
+  if (/\bcheck\b/i.test(s)) return ret('CHECK', 'COD', '13');
   // Rule 14: Quick Pay
-  if (/quick\s*pay|\bqp\b/i.test(s)) {
-    return { method: 'ACH', terms: 'QUICKPAY' };
-  }
+  if (/quick\s*pay|\bqp\b/i.test(s)) return ret('ACH', 'QUICKPAY', '14');
+
+  // Rule 14.5a: "X Day Pay" / "X Day Payment" — CD/SD common format without literal "Net"
+  const dayPayM = s.match(/\b(\d{1,2})\s*day\s*pay(?:ment)?\b/i);
+  if (dayPayM) return ret('ACH', termsForDays(parseInt(dayPayM[1], 10)), '14.5a');
+
+  // Rule 14.5b: discount notation "1% / 5 Days" — extract net-day count
+  const discM = s.match(/\d+%\s*\/\s*(\d{1,2})\s*days?\b/i);
+  if (discM) return ret('ACH', termsForDays(parseInt(discM[1], 10)), '14.5b');
+
   // Rule 15: Net N (extract days). \b on both sides prevents "cabinet 5" / "Net 100" → NET_10 footgun.
   const netMatch = s.match(/\bnet\s*0?(\d{1,2})\b/i);
-  if (netMatch) {
-    const days = parseInt(netMatch[1], 10);
-    const exactDays = [5, 7, 10, 15, 20, 30];
-    if (exactDays.includes(days)) {
-      return { method: 'ACH', terms: 'NET_' + days };
+  if (netMatch) return ret('ACH', termsForDays(parseInt(netMatch[1], 10)), '15');
+
+  // Rule 15.5: bare "X Days" with payment context (guards against "5 days transit time")
+  const paymentCtx = /\b(?:pay|payment|billing|ach|wire|transfer|carrier\s*pay|\$)/i;
+  if (paymentCtx.test(s)) {
+    const daysOnlyM = s.match(/\b(\d{1,2})\s*days?\b/i);
+    if (daysOnlyM) return ret('ACH', termsForDays(parseInt(daysOnlyM[1], 10)), '15.5');
+  }
+
+  // Rule 16: ACH / wire transfer / direct deposit. Extract adjacent days if present.
+  const achWireM = s.match(/\bach\b|\bwire\b|direct\s*deposit/i);
+  if (achWireM) {
+    const start = Math.max(0, achWireM.index - 5);
+    const end = Math.min(s.length, achWireM.index + achWireM[0].length + 15);
+    const adjDayM = s.slice(start, end).match(/\b(\d{1,2})\b/);
+    if (adjDayM) {
+      const d = parseInt(adjDayM[1], 10);
+      if (EXACT_DAYS.includes(d)) return ret('ACH', 'NET_' + d, '16');
     }
-    return { method: 'ACH', terms: 'NET_30' };
+    return ret('ACH', 'NET_30', '16');
   }
-  // Rule 16: ACH / wire transfer. \b on wire prevents "Wireless"/"Wirestone" hits.
-  if (/\bach\b|\bwire\b/i.test(s)) {
-    return { method: 'ACH', terms: 'NET_30' };
-  }
+
   // Rule 17: bill / billing / superpay. Tightened to avoid broker names like "Bill Smith Trucking".
   // Matches: "BILL" (standalone uppercase), "billing", "bill me/after/to/out/net", "SuperPay".
   if (/\bbilling\b|bill\s+(me|after|to|out|net)|superpay/i.test(s) || /\bBILL\b/.test(s)) {
-    return { method: 'ACH', terms: 'NET_30' };
+    const billDayM = s.match(/\b(\d{1,2})\s*days?\b/i);
+    if (billDayM) {
+      const d = parseInt(billDayM[1], 10);
+      if (EXACT_DAYS.includes(d)) return ret('ACH', 'NET_' + d, '17');
+    }
+    return ret('ACH', 'NET_30', '17');
   }
-  // Rule 18: fallback
-  return { method: 'ACH', terms: 'NET_30' };
+
+  // Rule 18: fallback (flag so caller can hint to user that auto-detect failed)
+  return ret('ACH', 'NET_30', '18 (fallback)', true);
 }
+
+// extractPaymentText — narrow a card's full text to the payment-relevant slice
+// before parsePaymentText runs. Three-tier strategy: section header → keyword
+// anchor → bounded last-resort. Reduces noise (broker names, vehicle text).
+function extractPaymentText(cardText) {
+  const s = String(cardText || '');
+  // Tier 1: section header (Payment Terms / Method / Method and Terms / Payment / Pays)
+  const headerRe = /(?:Payment\s*(?:Method\s*and\s*Terms|Method|Terms)|\bPays\b|\bPayment\b)([\s\S]{0,1500}?)(?=(?:\n\s*\n|Vehicle|Load\s*ID|Pickup|Delivery|Origin|Destination|Notes|Broker|$))/i;
+  const m = s.match(headerRe);
+  if (m && m[1] && m[1].trim().length > 0) return m[1].trim();
+  // Tier 2: keyword anchor — find first payment-relevant keyword, take ~500-char window
+  const kwRe = /(?:net\s*\d|quick\s*pay|\bcod\b|\bcop\b|\bach\b|\bwire\b|cert(?:ified)?\.?\s*funds|comchek|zelle|cashapp|venmo|factoring|uship|\bday\s*pay\b)/i;
+  const kw = s.match(kwRe);
+  if (kw) {
+    const start = Math.max(0, kw.index - 100);
+    const end = Math.min(s.length, kw.index + 400);
+    return s.slice(start, end);
+  }
+  // Tier 3: bounded card text (limit noise vs full 3KB+ dump)
+  return s.slice(0, 800);
+}
+
+// extractPhone — normalize multiple phone formats to "(NNN) NNN-NNNN".
+// Accepts: (555) 555-5555, 555-555-5555, 555.555.5555, 5555555555, +1 555 555 5555.
+function extractPhone(text) {
+  const s = String(text || '');
+  const patterns = [
+    /\+?1?[\s.()-]*(\d{3})[\s.()-]+(\d{3})[\s.-]+(\d{4})\b/,
+    /\b(\d{10})\b/
+  ];
+  for (const re of patterns) {
+    const m = s.match(re);
+    if (m) {
+      const digits = m[0].replace(/\D/g, '').replace(/^1/, '');
+      if (digits.length === 10) {
+        return '(' + digits.slice(0, 3) + ') ' + digits.slice(3, 6) + '-' + digits.slice(6);
+      }
+    }
+  }
+  return null;
+}
+
 // ============================================================================
 
 (function() {
@@ -501,15 +550,15 @@ function parsePaymentText(text) {
       log('Found Broker Fee:', data.broker_fee);
     }
 
-    // PAYMENT — extract raw text from Payment Terms section, then classify
-    // with the shared parsePaymentText() helper.
-    const paymentRawMatch = cardText.match(/Payment\s*Terms([\s\S]{0,200}?)(?:\n{2,}|Vehicle|Load\s*ID|$)/i);
-    const paymentText = paymentRawMatch ? paymentRawMatch[1] : cardText;
-    const { method: pmMethod, terms: pmTerms } = parsePaymentText(paymentText);
-    data.payment_method = pmMethod;
-    data.payment_terms = pmTerms;
-    data.payment_type = legacyTypeFromMethodTerms(pmMethod, pmTerms);
-    log('Found Payment — method:', pmMethod, 'terms:', pmTerms, 'legacy type:', data.payment_type);
+    // PAYMENT — narrow card text via extractPaymentText (multi-header + keyword
+    // anchor, ~1500-char window) before classifying with parsePaymentText().
+    const paymentText = extractPaymentText(cardText);
+    const cdParsed = parsePaymentText(paymentText);
+    data.payment_method = cdParsed.method;
+    data.payment_terms = cdParsed.terms;
+    data.payment_type = legacyTypeFromMethodTerms(cdParsed.method, cdParsed.terms);
+    if (cdParsed._fallback) data.payment_terms_fallback = true;
+    log('Found Payment — method:', cdParsed.method, 'terms:', cdParsed.terms, 'legacy type:', data.payment_type, cdParsed._fallback ? '(auto-defaulted)' : '');
 
     // VEHICLES — find ALL vehicle blocks (CD can have multiple on one load)
     const allVehicles = [];
@@ -518,7 +567,16 @@ function parsePaymentText(text) {
     if (vehicleBlocks.length > 0) {
       vehicleBlocks.forEach(block => {
         const v = {};
-        const ymm = block.match(/^\s*\n?\s*(\d{4})\s+([A-Za-z]+)\s+(.+?)(?:\n|$)/);
+        // Primary: year at start of block
+        let ymm = block.match(/^\s*\n?\s*(\d{4})\s+([A-Za-z]+)\s+(.+?)(?:\n|$)/);
+        // Fallback: tolerate a leading word/article before the year ("A 2018 Toyota...")
+        if (!ymm) {
+          const yearM = block.slice(0, 200).match(/\b(\d{4})\s+([A-Za-z]+)\s+(.+?)(?:\n|$)/);
+          if (yearM) {
+            const y = parseInt(yearM[1], 10);
+            if (y >= 1900 && y <= new Date().getFullYear() + 2) ymm = yearM;
+          }
+        }
         if (ymm) {
           v.year = parseInt(ymm[1]);
           v.make = ymm[2].trim();
@@ -956,6 +1014,7 @@ function parsePaymentText(text) {
                 </div>
                 <!-- Pair indicator chip — advisory only, never blocks submit -->
                 <div id="tms-payment-pair-chip" class="tms-pair-chip tms-pair-chip--common">&#10003; Common pair</div>
+                ${loadData.payment_terms_fallback ? '<div class="tms-pair-chip tms-pair-chip--unusual" style="margin-left:6px;">&#9888; Auto-defaulted &mdash; verify Method+Terms</div>' : ''}
 
                 <!-- Broker / Pickup Date / Delivery Date Row -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
@@ -2055,6 +2114,7 @@ function parsePaymentText(text) {
       const sdParsed = parsePaymentText(sdPaymentText);
       data.payment_method = sdParsed.method;
       data.payment_terms = sdParsed.terms;
+      if (sdParsed._fallback) data.payment_terms_fallback = true;
       data.payment_type = legacyTypeFromMethodTerms(sdParsed.method, sdParsed.terms);
     }
 
@@ -2154,6 +2214,7 @@ function parsePaymentText(text) {
     data.payment_method = sdListParsed.method;
     data.payment_terms = sdListParsed.terms;
     data.payment_type = legacyTypeFromMethodTerms(sdListParsed.method, sdListParsed.terms);
+    if (sdListParsed._fallback) data.payment_terms_fallback = true;
 
     // Origin section
     const originBlock = card.querySelector('[class*="origin"], div');
@@ -2352,6 +2413,7 @@ function parsePaymentText(text) {
     data.payment_method = scDetailParsed.method;
     data.payment_terms = scDetailParsed.terms;
     data.payment_type = legacyTypeFromMethodTerms(scDetailParsed.method, scDetailParsed.terms);
+    if (scDetailParsed._fallback) data.payment_terms_fallback = true;
 
     // Pickup & Delivery
     const pickupIdx = lines.findIndex(l => l === 'PICKUP');
@@ -2368,7 +2430,8 @@ function parsePaymentText(text) {
           data.pickup_zip = parsed.zip || '';
           if (parsed.city && parsed.state) data.origin = parsed.city + ', ' + parsed.state;
         }
-        if (/^\(\d{3}\)\s*\d{3}-\d{4}$/.test(line) && !data.pickup_phone) { data.pickup_phone = line; data.pickup_contact_phone = line; }
+        const pPh = extractPhone(line);
+        if (pPh && !data.pickup_phone) { data.pickup_phone = pPh; data.pickup_contact_phone = pPh; }
       }
       // Contact name: line before phone that looks like a name
       for (let i = 0; i < pLines.length; i++) {
@@ -2389,7 +2452,8 @@ function parsePaymentText(text) {
           data.delivery_zip = parsed.zip || '';
           if (parsed.city && parsed.state) data.destination = parsed.city + ', ' + parsed.state;
         }
-        if (/^\(\d{3}\)\s*\d{3}-\d{4}$/.test(line) && !data.delivery_phone) { data.delivery_phone = line; data.delivery_contact_phone = line; }
+        const dPh = extractPhone(line);
+        if (dPh && !data.delivery_phone) { data.delivery_phone = dPh; data.delivery_contact_phone = dPh; }
       }
       for (let i = 0; i < dLines.length; i++) {
         if (dLines[i] === data.delivery_phone && i > 0 && /[a-zA-Z]/.test(dLines[i-1]) && !/\d{5}/.test(dLines[i-1])) {
@@ -2415,7 +2479,8 @@ function parsePaymentText(text) {
           continue;
         }
         if (/[A-Z]{2},?\s*\d{5}/.test(line) && !data.broker_address) { /* skip broker address */ continue; }
-        if (/^\(\d{3}\)\s*\d{3}-\d{4}$/.test(line) && !data.broker_phone) { data.broker_phone = line; continue; }
+        const bPh = extractPhone(line);
+        if (bPh && !data.broker_phone) { data.broker_phone = bPh; continue; }
         if (/@/.test(line) && !data.broker_email) { data.broker_email = line; continue; }
       }
     }
@@ -2502,6 +2567,7 @@ function parsePaymentText(text) {
     data.payment_method = scRowParsed.method;
     data.payment_terms = scRowParsed.terms;
     data.payment_type = legacyTypeFromMethodTerms(scRowParsed.method, scRowParsed.terms);
+    if (scRowParsed._fallback) data.payment_terms_fallback = true;
 
     data.dispatcher_notes = 'Imported from Ship.Cars';
     log('Scraped Ship.Cars list data:', data);
