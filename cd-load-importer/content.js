@@ -26,6 +26,9 @@ const PAYMENT_TERMS_LABELS = {
   NET_5:"Net 5", NET_7:"Net 7", NET_10:"Net 10",
   NET_15:"Net 15", NET_20:"Net 20", NET_30:"Net 30"
 };
+// Marketplace methods where terms shouldn't appear in the display label
+const PAYMENT_METHOD_HIDES_TERMS = new Set(['USHIP']);
+
 // Common (method, terms) combos. Anything outside this set renders an amber warning chip.
 const PAYMENT_COMMON_PAIRS = new Set([
   'CASH|COD','CASH|COP','CASH|LOCAL_COD','CHECK|COD','CHECK|COP',
