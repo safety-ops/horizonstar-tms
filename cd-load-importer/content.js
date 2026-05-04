@@ -56,6 +56,92 @@ function legacyTypeFromMethodTerms(method, terms) {
   if (t === 'COD' || t === 'COP') return t;
   return 'BILL';
 }
+
+// ============================================================================
+// parsePaymentText — derive {method, terms} defaults from scraped board text.
+// Used by all three scrapers (CD, SD, Ship.Cars) to pre-fill the modal.
+// User can override in modal; this is best-guess from free text.
+// ============================================================================
+function parsePaymentText(text) {
+  const s = String(text || '');
+
+  // Rule 1: uShip (keyword or URL pattern)
+  if (/uShip/i.test(s) || /uship\.com/i.test(s)) {
+    return { method: 'USHIP', terms: 'NET_30' };
+  }
+  // Rule 2: Factoring
+  if (/factoring/i.test(s)) {
+    return { method: 'FACTORING', terms: 'NET_30' };
+  }
+  // Rule 3: Comchek
+  if (/comchek/i.test(s)) {
+    return { method: 'COMCHEK', terms: 'COMCHEK' };
+  }
+  // Rule 4: Zelle
+  if (/zelle/i.test(s)) {
+    return { method: 'ZELLE', terms: 'QUICKPAY' };
+  }
+  // Rule 5: Cash App (before bare "cash" matches)
+  if (/cashapp|cash[\s_-]?app/i.test(s)) {
+    return { method: 'CASHAPP', terms: 'QUICKPAY' };
+  }
+  // Rule 6: Venmo
+  if (/venmo/i.test(s)) {
+    return { method: 'VENMO', terms: 'QUICKPAY' };
+  }
+  // Rule 7: Credit Card
+  if (/credit\s*card|\bcc\b/i.test(s)) {
+    return { method: 'CREDIT_CARD', terms: 'QUICKPAY' };
+  }
+  // Rule 8: Money Order
+  if (/money\s*order/i.test(s)) {
+    return { method: 'MONEY_ORDER', terms: 'COD' };
+  }
+  // Rule 9: Cashier's Check (must precede bare "check")
+  if (/cashier'?s?\s*check/i.test(s)) {
+    return { method: 'CASHIERS_CHECK', terms: 'COD' };
+  }
+  // Rule 10: COP / collect at pickup
+  if (/\bCOP\b|collect at pick.?up/i.test(s)) {
+    return { method: 'CASH', terms: 'COP' };
+  }
+  // Rule 11: Local COD (before bare COD)
+  if (/local[\s_-]?cod/i.test(s)) {
+    return { method: 'CASH', terms: 'LOCAL_COD' };
+  }
+  // Rule 12: COD / cash on delivery / certified funds
+  if (/\bCOD\b|cash on delivery|certified funds/i.test(s)) {
+    return { method: 'CASH', terms: 'COD' };
+  }
+  // Rule 13: bare "check" (cashier's check already handled above)
+  if (/\bcheck\b/i.test(s)) {
+    return { method: 'CHECK', terms: 'COD' };
+  }
+  // Rule 14: Quick Pay
+  if (/quick\s*pay|^qp\b/i.test(s)) {
+    return { method: 'ACH', terms: 'QUICKPAY' };
+  }
+  // Rule 15: Net N (extract days)
+  const netMatch = s.match(/net\s*0?(\d{1,2})/i);
+  if (netMatch) {
+    const days = parseInt(netMatch[1], 10);
+    const exactDays = [5, 7, 10, 15, 20, 30];
+    if (exactDays.includes(days)) {
+      return { method: 'ACH', terms: 'NET_' + days };
+    }
+    return { method: 'ACH', terms: 'NET_30' };
+  }
+  // Rule 16: ACH / wire
+  if (/\bach\b|wire/i.test(s)) {
+    return { method: 'ACH', terms: 'NET_30' };
+  }
+  // Rule 17: bill / billing / superpay
+  if (/\bbill(ing)?\b|superpay/i.test(s)) {
+    return { method: 'ACH', terms: 'NET_30' };
+  }
+  // Rule 18: fallback
+  return { method: 'ACH', terms: 'NET_30' };
+}
 // ============================================================================
 
 (function() {
@@ -312,6 +398,8 @@ function legacyTypeFromMethodTerms(method, terms) {
       broker_email: '',
       revenue: 0,
       broker_fee: 0,
+      payment_method: '',
+      payment_terms: '',
       payment_type: '',
       vehicle_year: null,
       vehicle_make: '',
@@ -412,38 +500,15 @@ function legacyTypeFromMethodTerms(method, terms) {
       log('Found Broker Fee:', data.broker_fee);
     }
 
-    // PAYMENT TYPE
-    const paymentTermsMatch = cardText.match(/Payment\s*Terms[\s\S]*?(Cash|Certified\s*Funds|COD|COP|BILL|CHECK|ACH)/i);
-    if (paymentTermsMatch) {
-      const term = paymentTermsMatch[1].toUpperCase();
-      if (term.includes('CASH') || term.includes('CERTIFIED')) {
-        data.payment_type = 'COD';
-      } else if (term === 'ACH') {
-        data.payment_type = 'BILL'; // ACH → BILL in TMS
-      } else {
-        data.payment_type = term;
-      }
-      log('Found Payment Type:', data.payment_type);
-    }
-
-    // PAYMENT TERMS (Net XX, Quick Pay detection)
-    // Values match the orders_payment_terms_check constraint added by migration
-    // 20260501130000: QUICKPAY/COMCHEK/COP/COD/NET_5/NET_7/NET_10/NET_15/NET_20/NET_30.
-    // Net 21/45/60 collapse to NET_30 to match the migration's lossy backfill.
-    const quickPayMatch = cardText.match(/Quick\s*Pay/i);
-    const netTermsMatch = cardText.match(/(?:Net|NET)\s*(\d+)/i);
-    if (quickPayMatch) {
-      data.payment_terms = 'QUICKPAY';
-      log('Found Payment Terms: QUICKPAY');
-    } else if (netTermsMatch) {
-      const days = parseInt(netTermsMatch[1]);
-      const termsMapping = { 5: 'NET_5', 7: 'NET_7', 10: 'NET_10', 15: 'NET_15', 20: 'NET_20', 30: 'NET_30', 21: 'NET_30', 45: 'NET_30', 60: 'NET_30' };
-      data.payment_terms = termsMapping[days] || 'NET_30';
-      log('Found Payment Terms:', data.payment_terms);
-    } else if (data.payment_type === 'BILL' || data.payment_type === 'SPLIT') {
-      data.payment_terms = 'NET_30';
-      log('Defaulting Payment Terms to NET_30 for BILL/SPLIT type');
-    }
+    // PAYMENT — extract raw text from Payment Terms section, then classify
+    // with the shared parsePaymentText() helper.
+    const paymentRawMatch = cardText.match(/Payment\s*Terms([\s\S]{0,200}?)(?:\n{2,}|Vehicle|Load\s*ID|$)/i);
+    const paymentText = paymentRawMatch ? paymentRawMatch[1] : cardText;
+    const { method: pmMethod, terms: pmTerms } = parsePaymentText(paymentText);
+    data.payment_method = pmMethod;
+    data.payment_terms = pmTerms;
+    data.payment_type = legacyTypeFromMethodTerms(pmMethod, pmTerms);
+    log('Found Payment — method:', pmMethod, 'terms:', pmTerms, 'legacy type:', data.payment_type);
 
     // VEHICLES — find ALL vehicle blocks (CD can have multiple on one load)
     const allVehicles = [];
@@ -1774,39 +1839,12 @@ function legacyTypeFromMethodTerms(method, terms) {
     return { street: '', city: fullAddr, state: '', zip: '' };
   }
 
-  function parseSDPaymentType(method, terms) {
-    const m = (method || '').toLowerCase();
-    const t = (terms || '').toLowerCase();
-    if (m.includes('cash') || t.includes('cash on delivery') || m === 'cod') return 'COD';
-    if (m.includes('certified') || m === 'cop') return 'COP';
-    if (m.includes('zelle')) return 'COD';
-    return 'BILL';
-  }
-
-  function parseSDPaymentTerms(terms) {
-    // Output values match orders_payment_terms_check from migration 20260501130000.
-    // 21/45/60 collapse to NET_30 to match the migration's lossy backfill.
-    if (!terms) return null;
-    const t = terms.toLowerCase();
-    if (t.includes('quick pay')) return 'QUICKPAY';
-    const netMatch = t.match(/(\d+)\s*(?:business\s*)?days?/i);
-    if (netMatch) {
-      const days = parseInt(netMatch[1], 10);
-      const exact = { 5: 'NET_5', 7: 'NET_7', 10: 'NET_10', 15: 'NET_15', 20: 'NET_20', 30: 'NET_30' };
-      if (exact[days]) return exact[days];
-      // 21/45/60 → NET_30 (lossy, matches DB migration)
-      return 'NET_30';
-    }
-    if (t.includes('cash on delivery') || t.includes('cod')) return 'COD';
-    return 'NET_30';
-  }
-
   // Known auto makes for vehicle parsing (used by both detail + list scrapers)
   const KNOWN_MAKES = ['Acura','Alfa Romeo','Aston Martin','Audi','Bentley','BMW','Buick','Cadillac','Chevrolet','Chrysler','Dodge','Ferrari','Fiat','Ford','Genesis','GMC','Honda','Hyundai','Infiniti','Jaguar','Jeep','Kia','Lamborghini','Land Rover','Lexus','Lincoln','Lucid','Maserati','Mazda','McLaren','Mercedes','Mercedes-Benz','Mini','Mitsubishi','Nissan','Polestar','Porsche','Ram','Rivian','Rolls-Royce','Rolls Royce','Saab','Saturn','Scion','Smart','Subaru','Tesla','Toyota','Volkswagen','Volvo'];
 
   function scrapeSDLoadDetail() {
     log('Scraping Super Dispatch load detail page...');
-    const data = {};
+    const data = { payment_method: '', payment_terms: '' };
 
     // Helper: parse section text into lines
     const getLines = (el) => el ? el.innerText.split('\n').map(l => l.trim()).filter(Boolean) : [];
@@ -2012,8 +2050,11 @@ function legacyTypeFromMethodTerms(method, terms) {
           if (bf) data.broker_fee = parseFloat(bf[1].replace(/,/g, ''));
         }
       }
-      data.payment_type = parseSDPaymentType(method, terms);
-      data.payment_terms = parseSDPaymentTerms(terms);
+      const sdPaymentText = method + ' ' + terms;
+      const sdParsed = parsePaymentText(sdPaymentText);
+      data.payment_method = sdParsed.method;
+      data.payment_terms = sdParsed.terms;
+      data.payment_type = legacyTypeFromMethodTerms(sdParsed.method, sdParsed.terms);
     }
 
     // === CUSTOMER / BROKER (aria-label="Customer Details") ===
@@ -2061,7 +2102,7 @@ function legacyTypeFromMethodTerms(method, terms) {
 
   function scrapeSDLoadFromListCard(card) {
     log('Scraping SD list card...');
-    const data = {};
+    const data = { payment_method: '', payment_terms: '' };
     const text = card.innerText;
 
     // Load number — first line that looks like an order ID. Allow
@@ -2107,11 +2148,11 @@ function legacyTypeFromMethodTerms(method, terms) {
     const priceMatch = text.match(/\$([\d,]+(?:\.\d{2})?)/);
     if (priceMatch) data.revenue = parseFloat(priceMatch[1].replace(/,/g, ''));
 
-    // Payment type from text
-    if (/Cash/i.test(text)) data.payment_type = 'COD';
-    else if (/Zelle/i.test(text)) data.payment_type = 'COD';
-    else if (/SuperPay/i.test(text)) data.payment_type = 'BILL';
-    else data.payment_type = 'BILL';
+    // Payment — classify raw card text with shared helper
+    const sdListParsed = parsePaymentText(text);
+    data.payment_method = sdListParsed.method;
+    data.payment_terms = sdListParsed.terms;
+    data.payment_type = legacyTypeFromMethodTerms(sdListParsed.method, sdListParsed.terms);
 
     // Origin section
     const originBlock = card.querySelector('[class*="origin"], div');
@@ -2245,7 +2286,7 @@ function legacyTypeFromMethodTerms(method, terms) {
 
   function scrapeShipCarsDetail() {
     log('Scraping Ship.Cars order detail page...');
-    const data = {};
+    const data = { payment_method: '', payment_terms: '' };
     const text = document.body.innerText;
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
@@ -2304,11 +2345,12 @@ function legacyTypeFromMethodTerms(method, terms) {
     // Payment: "Carrier Pay $2200" and "COP/COD" etc
     const payMatch = text.match(/Carrier\s*Pay\s*\$?([\d,]+(?:\.\d{2})?)/i);
     if (payMatch) data.revenue = parseFloat(payMatch[1].replace(/,/g, ''));
-    // Payment type
-    if (/\bCOP\b/.test(text)) data.payment_type = 'COP';
-    else if (/\bCOD\b/.test(text)) data.payment_type = 'COD';
-    else if (/\bBill\b/i.test(text) && /Carrier Pay/i.test(text)) data.payment_type = 'BILL';
-    else data.payment_type = 'BILL';
+    // Detect uShip by URL pattern in page text before calling shared parser
+    const scRawPayText = /app\.uship\.com|uship\.com/i.test(text) ? 'uShip ' + text : text;
+    const scDetailParsed = parsePaymentText(scRawPayText);
+    data.payment_method = scDetailParsed.method;
+    data.payment_terms = scDetailParsed.terms;
+    data.payment_type = legacyTypeFromMethodTerms(scDetailParsed.method, scDetailParsed.terms);
 
     // Pickup & Delivery
     const pickupIdx = lines.findIndex(l => l === 'PICKUP');
@@ -2392,7 +2434,7 @@ function legacyTypeFromMethodTerms(method, terms) {
 
   function scrapeShipCarsListRow(rowEl) {
     log('Scraping Ship.Cars list row...');
-    const data = {};
+    const data = { payment_method: '', payment_terms: '' };
     const text = rowEl.innerText;
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
@@ -2452,6 +2494,13 @@ function legacyTypeFromMethodTerms(method, terms) {
     // Price: "$2,200"
     const priceMatch = text.match(/\$([\d,]+(?:\.\d{2})?)/);
     if (priceMatch) data.revenue = parseFloat(priceMatch[1].replace(/,/g, ''));
+
+    // Payment — parse whatever text the list row exposes
+    const scRowRawText = /app\.uship\.com|uship\.com/i.test(text) ? 'uShip ' + text : text;
+    const scRowParsed = parsePaymentText(scRowRawText);
+    data.payment_method = scRowParsed.method;
+    data.payment_terms = scRowParsed.terms;
+    data.payment_type = legacyTypeFromMethodTerms(scRowParsed.method, scRowParsed.terms);
 
     data.dispatcher_notes = 'Imported from Ship.Cars';
     log('Scraped Ship.Cars list data:', data);
