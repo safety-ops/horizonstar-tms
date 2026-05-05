@@ -16662,7 +16662,7 @@
             <div class="order-detail-card">
               <div class="order-detail-card-header">
                 <span>[[icon:link]] External Platform</span>
-                ${order.order_source_platform && order.order_source_platform !== 'direct' ? '<span class="badge ' + ({ carsarrive: 'badge-platform-ca', central_dispatch: 'badge-platform-cd', ship_cars: 'badge-platform-sc', super_dispatch: 'badge-platform-sd', vinlocity: 'badge-platform-vc' }[order.order_source_platform] || 'badge-gray') + '">' + escapeHtml({ carsarrive: 'CarsArrive', central_dispatch: 'Central Dispatch', ship_cars: 'Ship.cars', super_dispatch: 'SuperDispatch', vinlocity: 'Vinlocity' }[order.order_source_platform] || order.order_source_platform) + '</span>' : ''}
+                ${order.order_source_platform && order.order_source_platform !== 'direct' ? '<span class="badge ' + (PLATFORM_CHIP_CLASS[order.order_source_platform] || 'badge-gray') + '">' + escapeHtml(PLATFORM_DISPLAY_NAMES[order.order_source_platform] || order.order_source_platform) + '</span>' : ''}
               </div>
               <div class="order-detail-card-body">
                 <div class="sidebar-info-list">
@@ -16744,7 +16744,7 @@
               <div class="header-actions">
                 <button class="btn btn-primary" onclick="sendInvoiceToBroker(${order.id})">Send Invoice</button>
                 <button class="btn btn-secondary" onclick="openOrderModal(${order.id})">Edit Load</button>
-                ${order.external_order_url ? '<a href="' + escapeUrl(order.external_order_url) + '" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">Open in ' + escapeHtml({ carsarrive: 'CarsArrive', central_dispatch: 'Central Dispatch', ship_cars: 'Ship.cars', super_dispatch: 'SuperDispatch', vinlocity: 'Vinlocity' }[order.order_source_platform] || 'Platform') + ' &#x2197;</a>' : ''}
+                ${order.external_order_url ? '<a href="' + escapeUrl(order.external_order_url) + '" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">Open in ' + escapeHtml(PLATFORM_DISPLAY_NAMES[order.order_source_platform] || (order.order_source_platform ? order.order_source_platform.replace(/_/g, ' ') : 'Platform')) + ' &#x2197;</a>' : ''}
               </div>
             </div>
           </div>
@@ -22538,19 +22538,41 @@
       return 'direct';
     }
 
+    // Platform display names (rendered in chips, badges, "Open in" buttons).
+    // Single source of truth — every dispatcher-facing surface that names
+    // a broker should look up here, not inline a duplicate map.
+    const PLATFORM_DISPLAY_NAMES = {
+      carsarrive:       'CarsArrive',
+      central_dispatch: 'Central Dispatch',
+      ship_cars:        'Ship.cars',
+      super_dispatch:   'SuperDispatch',
+      vinlocity:        'Vinlocity'
+    };
+
+    // Chip CSS class per platform (defined in assets/css/base.css).
+    const PLATFORM_CHIP_CLASS = {
+      carsarrive:       'badge-platform-ca',
+      central_dispatch: 'badge-platform-cd',
+      ship_cars:        'badge-platform-sc',
+      super_dispatch:   'badge-platform-sd',
+      vinlocity:        'badge-platform-vc'
+    };
+
+    const PLATFORM_CHIP_LABEL = {
+      carsarrive:       'CA',
+      central_dispatch: 'CD',
+      ship_cars:        'SC',
+      super_dispatch:   'SD',
+      vinlocity:        'VC'
+    };
+
     function getOrderPlatformChipHtml(order) {
       const p = order?.order_source_platform;
       if (!p || p === 'direct') return '';
-      const map = {
-        carsarrive:       { cls: 'badge-platform-ca', label: 'CA' },
-        central_dispatch: { cls: 'badge-platform-cd', label: 'CD' },
-        ship_cars:        { cls: 'badge-platform-sc', label: 'SC' },
-        super_dispatch:   { cls: 'badge-platform-sd', label: 'SD' },
-        vinlocity:        { cls: 'badge-platform-vc', label: 'VC' }
-      };
-      const m = map[p];
-      if (!m) return '';
-      return '<span class="badge ' + m.cls + '" title="' + escapeHtml(p.replace(/_/g, ' ')) + '">' + m.label + '</span>';
+      const cls = PLATFORM_CHIP_CLASS[p];
+      const label = PLATFORM_CHIP_LABEL[p];
+      if (!cls || !label) return '';
+      return '<span class="badge ' + cls + '" title="' + escapeHtml(PLATFORM_DISPLAY_NAMES[p] || p.replace(/_/g, ' ')) + '">' + label + '</span>';
     }
 
     function renderOrders(c) {

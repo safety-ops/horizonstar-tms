@@ -57,6 +57,22 @@ function legacyTypeFromMethodTerms(method, terms) {
   return 'BILL';
 }
 
+// Build the iOS Universal Link form for a broker order URL by extracting
+// the order ID from the dispatcher URL via `regex`, then concatenating
+// `prefix + id + suffix`. Returns { id, url } where `url` falls back to
+// the original href when extraction fails (Universal Link won't fire but
+// at least a URL is saved). Centralizes the AASA-aware URL construction
+// across all broker scrapers — see Phase 6/7 commits be8584c (Ship.cars
+// short URL form) and 3424664 (SD /launch-app/ form) for the original
+// 4-site per-platform versions.
+function buildBrokerDeepLink(href, regex, prefix, suffix) {
+  const id = href.match(regex)?.[1] || null;
+  return {
+    id: id,
+    url: id ? (prefix + id + (suffix || '')) : href
+  };
+}
+
 // ============================================================================
 // parsePaymentText — derive {method, terms} defaults from scraped board text.
 // Used by all three scrapers (CD, SD, Ship.Cars) to pre-fill the modal.
@@ -2232,20 +2248,14 @@ function sanitizeOrderNumber(raw) {
     }
 
     data.order_source_platform = 'super_dispatch';
-    // Save SD's /launch-app/ Universal Link form. Their AASA at
-    // https://carrier.superdispatch.com/.well-known/apple-app-site-association
-    // claims /launch-app/*/ for app com.mysuperdispatch.ios — this URL fires the iOS
-    // Universal Link and opens SD app directly (no App Store detour). The dispatcher
-    // URL /tms/loads/<guid> is NOT in the AASA so it'd fall back to the alert path.
-    // Trailing slash matters: AASA glob is /launch-app/*/ (note the */).
-    const _sdLoadId = window.location.href.match(/\/loads?\/([a-f0-9-]+)/i)?.[1] || null;
-    data.external_order_id  = _sdLoadId;
-    // AASA glob is /launch-app/*/ — Apple's `*` matches a single path segment, so
-    // /launch-app/<id>/ (one segment after /launch-app/) is the form that matches.
-    // /launch-app/order/<id>/ (two segments) would NOT match and would fall through.
-    data.external_order_url = _sdLoadId
-        ? ('https://carrier.superdispatch.com/launch-app/' + _sdLoadId + '/')
-        : window.location.href;
+    // SD's /launch-app/*/ AASA glob requires a single-segment ID after /launch-app/
+    // (Apple's * doesn't cross /), with trailing slash. See buildBrokerDeepLink.
+    const sd = buildBrokerDeepLink(window.location.href,
+                                    /\/loads?\/([a-f0-9-]+)/i,
+                                    'https://carrier.superdispatch.com/launch-app/',
+                                    '/');
+    data.external_order_id  = sd.id;
+    data.external_order_url = sd.url;
     data.dispatcher_notes = 'Imported from Super Dispatch';
     log('Scraped SD data:', data);
     return data;
@@ -2342,20 +2352,14 @@ function sanitizeOrderNumber(raw) {
     if (shipperPhone) data.broker_phone = shipperPhone[1].trim();
 
     data.order_source_platform = 'super_dispatch';
-    // Save SD's /launch-app/ Universal Link form. Their AASA at
-    // https://carrier.superdispatch.com/.well-known/apple-app-site-association
-    // claims /launch-app/*/ for app com.mysuperdispatch.ios — this URL fires the iOS
-    // Universal Link and opens SD app directly (no App Store detour). The dispatcher
-    // URL /tms/loads/<guid> is NOT in the AASA so it'd fall back to the alert path.
-    // Trailing slash matters: AASA glob is /launch-app/*/ (note the */).
-    const _sdLoadId = window.location.href.match(/\/loads?\/([a-f0-9-]+)/i)?.[1] || null;
-    data.external_order_id  = _sdLoadId;
-    // AASA glob is /launch-app/*/ — Apple's `*` matches a single path segment, so
-    // /launch-app/<id>/ (one segment after /launch-app/) is the form that matches.
-    // /launch-app/order/<id>/ (two segments) would NOT match and would fall through.
-    data.external_order_url = _sdLoadId
-        ? ('https://carrier.superdispatch.com/launch-app/' + _sdLoadId + '/')
-        : window.location.href;
+    // SD's /launch-app/*/ AASA glob requires a single-segment ID after /launch-app/
+    // (Apple's * doesn't cross /), with trailing slash. See buildBrokerDeepLink.
+    const sd = buildBrokerDeepLink(window.location.href,
+                                    /\/loads?\/([a-f0-9-]+)/i,
+                                    'https://carrier.superdispatch.com/launch-app/',
+                                    '/');
+    data.external_order_id  = sd.id;
+    data.external_order_url = sd.url;
     data.dispatcher_notes = 'Imported from Super Dispatch';
     log('Scraped SD list data:', data);
     return data;
@@ -2623,15 +2627,14 @@ function sanitizeOrderNumber(raw) {
     }
 
     data.order_source_platform = 'ship_cars';
-    // Save the SHORT Ship.cars URL form (https://ship.cars/order/<id>) when we can
-    // extract an ID. Their AASA at https://ship.cars/.well-known/apple-app-site-association
-    // claims /order/* for the iOS app cars.ship.ios.epod, so this URL fires the iOS
-    // Universal Link and opens the app at the right order. The full dispatcher URL
-    // (https://ship.cars/app/ctms/orders/<id>) does NOT match the AASA pattern and would
-    // fall back to Safari. Fall back to window.location.href if we couldn't extract an ID.
-    const _scOrderId = window.location.href.match(/\/(?:order|orders|ctms\/orders)\/([a-z0-9-]+)/i)?.[1] || null;
-    data.external_order_id  = _scOrderId;
-    data.external_order_url = _scOrderId ? ('https://ship.cars/order/' + _scOrderId) : window.location.href;
+    // Ship.cars AASA claims /order/* — short URL form fires the iOS Universal Link.
+    // The dispatcher /app/ctms/orders/<id> path does NOT match. See buildBrokerDeepLink.
+    const sc = buildBrokerDeepLink(window.location.href,
+                                    /\/(?:order|orders|ctms\/orders)\/([a-z0-9-]+)/i,
+                                    'https://ship.cars/order/',
+                                    '');
+    data.external_order_id  = sc.id;
+    data.external_order_url = sc.url;
     data.dispatcher_notes = 'Imported from Ship.Cars';
     log('Scraped Ship.Cars data:', data);
     return data;
@@ -2712,15 +2715,14 @@ function sanitizeOrderNumber(raw) {
     if (scRowParsed._fallback) data.payment_terms_fallback = true;
 
     data.order_source_platform = 'ship_cars';
-    // Save the SHORT Ship.cars URL form (https://ship.cars/order/<id>) when we can
-    // extract an ID. Their AASA at https://ship.cars/.well-known/apple-app-site-association
-    // claims /order/* for the iOS app cars.ship.ios.epod, so this URL fires the iOS
-    // Universal Link and opens the app at the right order. The full dispatcher URL
-    // (https://ship.cars/app/ctms/orders/<id>) does NOT match the AASA pattern and would
-    // fall back to Safari. Fall back to window.location.href if we couldn't extract an ID.
-    const _scOrderId = window.location.href.match(/\/(?:order|orders|ctms\/orders)\/([a-z0-9-]+)/i)?.[1] || null;
-    data.external_order_id  = _scOrderId;
-    data.external_order_url = _scOrderId ? ('https://ship.cars/order/' + _scOrderId) : window.location.href;
+    // Ship.cars AASA claims /order/* — short URL form fires the iOS Universal Link.
+    // The dispatcher /app/ctms/orders/<id> path does NOT match. See buildBrokerDeepLink.
+    const sc = buildBrokerDeepLink(window.location.href,
+                                    /\/(?:order|orders|ctms\/orders)\/([a-z0-9-]+)/i,
+                                    'https://ship.cars/order/',
+                                    '');
+    data.external_order_id  = sc.id;
+    data.external_order_url = sc.url;
     data.dispatcher_notes = 'Imported from Ship.Cars';
     log('Scraped Ship.Cars list data:', data);
     return data;
