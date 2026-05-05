@@ -2599,8 +2599,15 @@ function sanitizeOrderNumber(raw) {
     }
 
     data.order_source_platform = 'ship_cars';
-    data.external_order_url = window.location.href;
-    data.external_order_id = window.location.href.match(/\/(?:order|orders|ctms\/orders)\/([a-z0-9-]+)/i)?.[1] || null;
+    // Save the SHORT Ship.cars URL form (https://ship.cars/order/<id>) when we can
+    // extract an ID. Their AASA at https://ship.cars/.well-known/apple-app-site-association
+    // claims /order/* for the iOS app cars.ship.ios.epod, so this URL fires the iOS
+    // Universal Link and opens the app at the right order. The full dispatcher URL
+    // (https://ship.cars/app/ctms/orders/<id>) does NOT match the AASA pattern and would
+    // fall back to Safari. Fall back to window.location.href if we couldn't extract an ID.
+    const _scOrderId = window.location.href.match(/\/(?:order|orders|ctms\/orders)\/([a-z0-9-]+)/i)?.[1] || null;
+    data.external_order_id  = _scOrderId;
+    data.external_order_url = _scOrderId ? ('https://ship.cars/order/' + _scOrderId) : window.location.href;
     data.dispatcher_notes = 'Imported from Ship.Cars';
     log('Scraped Ship.Cars data:', data);
     return data;
@@ -2681,8 +2688,15 @@ function sanitizeOrderNumber(raw) {
     if (scRowParsed._fallback) data.payment_terms_fallback = true;
 
     data.order_source_platform = 'ship_cars';
-    data.external_order_url = window.location.href;
-    data.external_order_id = window.location.href.match(/\/(?:order|orders|ctms\/orders)\/([a-z0-9-]+)/i)?.[1] || null;
+    // Save the SHORT Ship.cars URL form (https://ship.cars/order/<id>) when we can
+    // extract an ID. Their AASA at https://ship.cars/.well-known/apple-app-site-association
+    // claims /order/* for the iOS app cars.ship.ios.epod, so this URL fires the iOS
+    // Universal Link and opens the app at the right order. The full dispatcher URL
+    // (https://ship.cars/app/ctms/orders/<id>) does NOT match the AASA pattern and would
+    // fall back to Safari. Fall back to window.location.href if we couldn't extract an ID.
+    const _scOrderId = window.location.href.match(/\/(?:order|orders|ctms\/orders)\/([a-z0-9-]+)/i)?.[1] || null;
+    data.external_order_id  = _scOrderId;
+    data.external_order_url = _scOrderId ? ('https://ship.cars/order/' + _scOrderId) : window.location.href;
     data.dispatcher_notes = 'Imported from Ship.Cars';
     log('Scraped Ship.Cars list data:', data);
     return data;
