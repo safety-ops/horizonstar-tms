@@ -2232,8 +2232,20 @@ function sanitizeOrderNumber(raw) {
     }
 
     data.order_source_platform = 'super_dispatch';
-    data.external_order_url = window.location.href;
-    data.external_order_id = window.location.href.match(/\/loads?\/([a-f0-9-]+)/i)?.[1] || null;
+    // Save SD's /launch-app/ Universal Link form. Their AASA at
+    // https://carrier.superdispatch.com/.well-known/apple-app-site-association
+    // claims /launch-app/*/ for app com.mysuperdispatch.ios — this URL fires the iOS
+    // Universal Link and opens SD app directly (no App Store detour). The dispatcher
+    // URL /tms/loads/<guid> is NOT in the AASA so it'd fall back to the alert path.
+    // Trailing slash matters: AASA glob is /launch-app/*/ (note the */).
+    const _sdLoadId = window.location.href.match(/\/loads?\/([a-f0-9-]+)/i)?.[1] || null;
+    data.external_order_id  = _sdLoadId;
+    // AASA glob is /launch-app/*/ — Apple's `*` matches a single path segment, so
+    // /launch-app/<id>/ (one segment after /launch-app/) is the form that matches.
+    // /launch-app/order/<id>/ (two segments) would NOT match and would fall through.
+    data.external_order_url = _sdLoadId
+        ? ('https://carrier.superdispatch.com/launch-app/' + _sdLoadId + '/')
+        : window.location.href;
     data.dispatcher_notes = 'Imported from Super Dispatch';
     log('Scraped SD data:', data);
     return data;
@@ -2330,8 +2342,20 @@ function sanitizeOrderNumber(raw) {
     if (shipperPhone) data.broker_phone = shipperPhone[1].trim();
 
     data.order_source_platform = 'super_dispatch';
-    data.external_order_url = window.location.href;
-    data.external_order_id = window.location.href.match(/\/loads?\/([a-f0-9-]+)/i)?.[1] || null;
+    // Save SD's /launch-app/ Universal Link form. Their AASA at
+    // https://carrier.superdispatch.com/.well-known/apple-app-site-association
+    // claims /launch-app/*/ for app com.mysuperdispatch.ios — this URL fires the iOS
+    // Universal Link and opens SD app directly (no App Store detour). The dispatcher
+    // URL /tms/loads/<guid> is NOT in the AASA so it'd fall back to the alert path.
+    // Trailing slash matters: AASA glob is /launch-app/*/ (note the */).
+    const _sdLoadId = window.location.href.match(/\/loads?\/([a-f0-9-]+)/i)?.[1] || null;
+    data.external_order_id  = _sdLoadId;
+    // AASA glob is /launch-app/*/ — Apple's `*` matches a single path segment, so
+    // /launch-app/<id>/ (one segment after /launch-app/) is the form that matches.
+    // /launch-app/order/<id>/ (two segments) would NOT match and would fall through.
+    data.external_order_url = _sdLoadId
+        ? ('https://carrier.superdispatch.com/launch-app/' + _sdLoadId + '/')
+        : window.location.href;
     data.dispatcher_notes = 'Imported from Super Dispatch';
     log('Scraped SD list data:', data);
     return data;
