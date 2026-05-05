@@ -1959,6 +1959,8 @@ h4 { font-size: var(--text-lg); }
 
 /* ─── Inspection Platform Chips ────────────────────────────────────────────── */
 /* Used in order grid rows and order detail to indicate broker platform source  */
+.badge-platform-ca  { background: var(--red-dim);    color: var(--red);    }
 .badge-platform-cd  { background: var(--amber-dim); color: var(--amber); }
-.badge-platform-sd  { background: var(--blue-dim);  color: var(--blue);  }
 .badge-platform-sc  { background: var(--purple-dim); color: var(--purple); }
+.badge-platform-sd  { background: var(--blue-dim);  color: var(--blue);  }
+.badge-platform-vc  { background: var(--green-dim); color: var(--green); }

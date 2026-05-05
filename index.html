@@ -16662,7 +16662,7 @@
             <div class="order-detail-card">
               <div class="order-detail-card-header">
                 <span>[[icon:link]] External Platform</span>
-                ${order.order_source_platform && order.order_source_platform !== 'direct' ? '<span class="badge ' + ({ central_dispatch: 'badge-platform-cd', super_dispatch: 'badge-platform-sd', ship_cars: 'badge-platform-sc' }[order.order_source_platform] || 'badge-gray') + '">' + escapeHtml({ central_dispatch: 'Central Dispatch', super_dispatch: 'SuperDispatch', ship_cars: 'Ship.cars' }[order.order_source_platform] || order.order_source_platform) + '</span>' : ''}
+                ${order.order_source_platform && order.order_source_platform !== 'direct' ? '<span class="badge ' + ({ carsarrive: 'badge-platform-ca', central_dispatch: 'badge-platform-cd', ship_cars: 'badge-platform-sc', super_dispatch: 'badge-platform-sd', vinlocity: 'badge-platform-vc' }[order.order_source_platform] || 'badge-gray') + '">' + escapeHtml({ carsarrive: 'CarsArrive', central_dispatch: 'Central Dispatch', ship_cars: 'Ship.cars', super_dispatch: 'SuperDispatch', vinlocity: 'Vinlocity' }[order.order_source_platform] || order.order_source_platform) + '</span>' : ''}
               </div>
               <div class="order-detail-card-body">
                 <div class="sidebar-info-list">
@@ -16744,7 +16744,7 @@
               <div class="header-actions">
                 <button class="btn btn-primary" onclick="sendInvoiceToBroker(${order.id})">Send Invoice</button>
                 <button class="btn btn-secondary" onclick="openOrderModal(${order.id})">Edit Load</button>
-                ${order.external_order_url ? '<a href="' + escapeUrl(order.external_order_url) + '" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">Open in ' + escapeHtml({ central_dispatch: 'Central Dispatch', super_dispatch: 'SuperDispatch', ship_cars: 'Ship.cars' }[order.order_source_platform] || 'Platform') + ' &#x2197;</a>' : ''}
+                ${order.external_order_url ? '<a href="' + escapeUrl(order.external_order_url) + '" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">Open in ' + escapeHtml({ carsarrive: 'CarsArrive', central_dispatch: 'Central Dispatch', ship_cars: 'Ship.cars', super_dispatch: 'SuperDispatch', vinlocity: 'Vinlocity' }[order.order_source_platform] || 'Platform') + ' &#x2197;</a>' : ''}
               </div>
             </div>
           </div>
@@ -22527,9 +22527,11 @@
       if (!url) return 'direct';
       try {
         const host = new URL(url).hostname.toLowerCase();
-        if (host === 'superdispatch.com'   || host.endsWith('.superdispatch.com'))   return 'super_dispatch';
-        if (host === 'ship.cars'           || host.endsWith('.ship.cars'))           return 'ship_cars';
+        if (host === 'carsarrive.com'       || host.endsWith('.carsarrive.com'))      return 'carsarrive';
         if (host === 'centraldispatch.com' || host.endsWith('.centraldispatch.com')) return 'central_dispatch';
+        if (host === 'ship.cars'           || host.endsWith('.ship.cars'))           return 'ship_cars';
+        if (host === 'superdispatch.com'   || host.endsWith('.superdispatch.com'))   return 'super_dispatch';
+        if (host === 'vinlocity.com'       || host.endsWith('.vinlocity.com'))       return 'vinlocity';
       } catch (e) {
         // Malformed URL — treat as direct rather than blocking save
       }
@@ -22540,9 +22542,11 @@
       const p = order?.order_source_platform;
       if (!p || p === 'direct') return '';
       const map = {
+        carsarrive:       { cls: 'badge-platform-ca', label: 'CA' },
         central_dispatch: { cls: 'badge-platform-cd', label: 'CD' },
+        ship_cars:        { cls: 'badge-platform-sc', label: 'SC' },
         super_dispatch:   { cls: 'badge-platform-sd', label: 'SD' },
-        ship_cars:        { cls: 'badge-platform-sc', label: 'SC' }
+        vinlocity:        { cls: 'badge-platform-vc', label: 'VC' }
       };
       const m = map[p];
       if (!m) return '';
