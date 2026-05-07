@@ -18857,7 +18857,7 @@
       importReviewHandoff = handoff || null;
       openImportLoad();
     }
-    function applyImportReviewHandoffIfPresent() {
+    async function applyImportReviewHandoffIfPresent() {
       const handoff = importReviewHandoff;
       if (!handoff) return;
       importReviewHandoff = null;
@@ -18871,7 +18871,7 @@
       }
       if (!handoff.extracted) return;
       const extracted = normalizeExtractedPayment(handoff.extracted);
-      populateImportFormFromExtraction(extracted);
+      await populateImportFormFromExtraction(extracted);
       const template = resolveBrokerImportTemplate(extracted, handoff.formatProfile || formatSelect?.value || 'central_dispatch', handoff.rateText || '');
       const assessment = handoff.assessment || buildBrokerTemplateAssessment(extracted, template);
       lastImportTemplateAssessment = assessment;
@@ -19201,9 +19201,18 @@
       }
       return result;
     }
-    function populateImportFormFromExtraction(extracted) {
+    async function populateImportFormFromExtraction(extracted) {
       const normalized = normalizeExtractedPayment(extracted || {});
-      const orderNumber = normalized.order_number || 'ORD-' + Date.now().toString().slice(-4);
+      let orderNumber = normalized.order_number;
+      if (!orderNumber) {
+        const { data: rpcOrderNum, error: rpcErr } = await sb.rpc('next_order_number', { p_prefix: 'IMP' });
+        if (rpcErr || !rpcOrderNum) {
+          logActivity('IMPORT_ORDER_NUMBER_FAILED', { error: rpcErr?.message || 'no result', source: normalized.source });
+          showToast('Could not generate order number: ' + (rpcErr?.message || 'unknown'), 'error');
+          return;
+        }
+        orderNumber = rpcOrderNum;
+      }
       document.getElementById('importOrderNum').value = orderNumber;
       document.getElementById('importBrokerInput').value = normalized.broker_name || '';
       document.getElementById('importBrokerId').value = '';
@@ -19391,7 +19400,7 @@
         wirePaymentPairValidation('importPaymentMethod', 'importPaymentTerms', 'importPaymentPairChip');
       }
       toggleImportSubcategory();
-      applyImportReviewHandoffIfPresent();
+      applyImportReviewHandoffIfPresent().catch(e => console.error('Import review handoff failed:', e));
     }
 
     function toggleImportSplitPayment() {
@@ -19479,7 +19488,7 @@
         const templatedExtracted = applyBrokerTemplateDefaults(mergedExtracted, detectedTemplate);
         const assessment = buildBrokerTemplateAssessment(templatedExtracted, detectedTemplate);
         lastImportTemplateAssessment = assessment;
-        populateImportFormFromExtraction(templatedExtracted);
+        await populateImportFormFromExtraction(templatedExtracted);
         updateImportTemplateAssessmentUI(assessment);
         
         // Show step 2
@@ -19498,7 +19507,7 @@
             const fallbackExtracted = applyBrokerTemplateDefaults(profileParsed, fallbackTemplate);
             const fallbackAssessment = buildBrokerTemplateAssessment(fallbackExtracted, fallbackTemplate);
             lastImportTemplateAssessment = fallbackAssessment;
-            populateImportFormFromExtraction(fallbackExtracted);
+            await populateImportFormFromExtraction(fallbackExtracted);
             updateImportTemplateAssessmentUI(fallbackAssessment);
             document.getElementById('importStep1').style.display = 'none';
             document.getElementById('importStep2').style.display = 'block';
@@ -19598,8 +19607,17 @@
         zip: document.getElementById('importDeliveryZip')?.value || ''
       });
 
+      let importOrderNumber = document.getElementById('importOrderNum').value;
+      if (!importOrderNumber) {
+        const { data: rpcOrderNum, error: rpcErr } = await sb.rpc('next_order_number', { p_prefix: 'IMP' });
+        if (rpcErr || !rpcOrderNum) {
+          showToast('Could not generate order number: ' + (rpcErr?.message || 'unknown'), 'error');
+          return;
+        }
+        importOrderNumber = rpcOrderNum;
+      }
       const orderData = {
-        order_number: document.getElementById('importOrderNum').value || 'ORD-' + Date.now().toString().slice(-4),
+        order_number: importOrderNumber,
         broker_id: brokerId,
         broker_name: brokerName || document.getElementById('importBrokerInput')?.value || null,
         vehicle_year: parseInt(document.getElementById('importYear').value, 10) || new Date().getFullYear(),
@@ -23456,8 +23474,15 @@
           var wizPaymentTermsOut = d.split_payment
             ? (d.split_cash_type === 'COP' ? 'COP' : 'COD')
             : (d.payment_terms || methodTermsFromLegacy(d.payment_type || '', d.payment_terms || '').terms || 'NET_30');
+          const { data: wizOrderNumber, error: wizOrderNumErr } = await sb.rpc('next_order_number', { p_prefix: 'ORD' });
+          if (wizOrderNumErr || !wizOrderNumber) {
+            showToast('Could not generate order number: ' + (wizOrderNumErr?.message || 'unknown'), 'error');
+            createBtn.disabled = false;
+            createBtn.textContent = 'Create Order';
+            return;
+          }
           var orderData = Object.assign({
-            order_number:           'ORD-' + Date.now().toString().slice(-4),
+            order_number:           wizOrderNumber,
             trip_id:                null,
             driver_id:              null,
             broker_id:              brokerId,
@@ -50390,7 +50415,14 @@ function jsonResponse(data, status = 200) {
     async function submitDealerOrder(orderData) {
       if (!currentDealerProfile) await loadDealerProfile();
       if (!currentDealerProfile) throw new Error('Dealer profile not found. Please contact support.');
-      var orderNumber = 'DLR-' + currentDealerProfile.dealer_code + '-' + Date.now().toString().slice(-6);
+      const { data: orderNumber, error: orderNumErr } = await sb.rpc('next_order_number', {
+        p_prefix: 'DLR',
+        p_dealer_code: currentDealerProfile.dealer_code
+      });
+      if (orderNumErr || !orderNumber) {
+        showToast('Could not generate order number: ' + (orderNumErr?.message || 'unknown'), 'error');
+        return;
+      }
       var order = await dbInsert('orders', {
         order_number: orderNumber,
         dealer_id: currentDealerProfile.id,
