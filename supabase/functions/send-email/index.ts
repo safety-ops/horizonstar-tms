@@ -276,9 +276,12 @@ serve(async (req) => {
     })
 
     const { data: tmsUser } = await service
-      .from("users").select("id, is_active")
+      .from("users").select("id, is_active, role")
       .eq("auth_id", caller.id).eq("is_active", true)
       .limit(1).maybeSingle()
+
+    const STAFF_ROLES = new Set(["ADMIN", "MANAGER", "DISPATCHER"])
+    const isStaff = !!tmsUser && STAFF_ROLES.has(String(tmsUser.role ?? "").toUpperCase())
 
     const { data: driver } = await service
       .from("drivers").select("id, status")
@@ -286,14 +289,14 @@ serve(async (req) => {
       .limit(1).maybeSingle()
 
     const isDriverActive = !!driver && String(driver.status ?? "ACTIVE").toUpperCase() !== "INACTIVE"
-    if (!tmsUser && !isDriverActive) return json(403, { error: "Caller is not authorized to send email." }, requestOrigin)
+    if (!isStaff && !isDriverActive) return json(403, { error: "Caller is not authorized to send email." }, requestOrigin)
 
     // 5. Parse + validate body.
     const body = (await req.json()) as EmailRequestBody
 
     const requestedKind = String(body.kind ?? "").trim().toLowerCase()
     if (!ALLOWED_KINDS.has(requestedKind)) return json(400, { error: "Invalid or missing email kind." }, requestOrigin)
-    if (!tmsUser && isDriverActive && !DRIVER_ALLOWED_KINDS.has(requestedKind)) {
+    if (!isStaff && isDriverActive && !DRIVER_ALLOWED_KINDS.has(requestedKind)) {
       return json(403, { error: "Driver is not authorized for this email kind." }, requestOrigin)
     }
 
@@ -305,7 +308,7 @@ serve(async (req) => {
     if (toR.list.length === 0) return json(400, { error: "Missing required field: to." }, requestOrigin)
 
     // Driver-allowed kinds: single to, no cc/bcc.
-    if (!tmsUser && isDriverActive && (toR.list.length !== 1 || ccR.list.length || bcR.list.length)) {
+    if (!isStaff && isDriverActive && (toR.list.length !== 1 || ccR.list.length || bcR.list.length)) {
       return json(403, { error: "Driver may only send to a single recipient." }, requestOrigin)
     }
 

@@ -162,6 +162,11 @@ serve(async (req) => {
       return json(403, { error: "Caller account is inactive." })
     }
 
+    const ALLOWED_PROVISIONER_ROLES = new Set(["ADMIN", "MANAGER"])
+    if (!ALLOWED_PROVISIONER_ROLES.has(String(tmsUser.role ?? "").toUpperCase())) {
+      return json(403, { error: "Caller role is not authorized to provision driver auth." })
+    }
+
     const body = (await req.json()) as JsonRecord
     const driverId = parsePositiveInt(body.driver_id)
     const localDriverId = parsePositiveInt(body.local_driver_id)
