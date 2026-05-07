@@ -11248,6 +11248,7 @@
       if (str === '') return '#';
       if (str.startsWith('/') || str.startsWith('#')) return str;
       if (/^data:image\//i.test(str)) return str;
+      if (/^data:application\/pdf(;|,)/i.test(str)) return str;
       if (/^https:\/\//i.test(str)) return str;
       if (/^http:\/\//i.test(str)) return str;
       if (/^mailto:/i.test(str)) return str;
@@ -24944,7 +24945,7 @@
         pendingLocalPickup.map(o => {
           const confirm = getLocalConfirmationDisplay(o.local_confirmation_status || 'pending');
           const noteBtn = o.local_notes ?
-            '<button class="action-btn btn-secondary" style="padding:5px 9px;font-size:12px" onclick="openLocalNote(' + o.id + ')" title="' + o.local_notes.replace(/"/g, '&quot;').replace(/\n/g, ' ') + '">Note</button>' :
+            '<button class="action-btn btn-secondary" style="padding:5px 9px;font-size:12px" onclick="openLocalNote(' + o.id + ')" title="' + escapeHtml((o.local_notes || '').replace(/\n/g, ' ')) + '">Note</button>' :
             '<button class="action-btn btn-ghost" style="padding:5px 9px;font-size:12px" onclick="openLocalNote(' + o.id + ')" title="Add note">Note</button>';
           const actionsHtml = noteBtn +
             '<button class="action-btn btn-secondary" style="padding:5px 9px;font-size:12px" onclick="openAssignLocalDriver(' + o.id + ',\'pickup\')">Assign</button>' +
@@ -24980,7 +24981,7 @@
           const trip = appData.trips.find(t => t.id === o.trip_id);
           const confirm = getLocalConfirmationDisplay(o.local_confirmation_status || 'pending');
           const noteBtn = o.local_notes ?
-            '<button class="action-btn btn-secondary" style="padding:5px 9px;font-size:12px" onclick="openLocalNote(' + o.id + ')" title="' + o.local_notes.replace(/"/g, '&quot;').replace(/\n/g, ' ') + '">Note</button>' :
+            '<button class="action-btn btn-secondary" style="padding:5px 9px;font-size:12px" onclick="openLocalNote(' + o.id + ')" title="' + escapeHtml((o.local_notes || '').replace(/\n/g, ' ')) + '">Note</button>' :
             '<button class="action-btn btn-ghost" style="padding:5px 9px;font-size:12px" onclick="openLocalNote(' + o.id + ')" title="Add note">Note</button>';
           const actionsHtml = noteBtn +
             '<button class="action-btn btn-secondary" style="padding:5px 9px;font-size:12px" onclick="openAssignLocalDriver(' + o.id + ',\'delivery\')">Assign</button>' +
@@ -25425,7 +25426,7 @@
               ? '<span class="badge badge-gray">Delivery</span>'
               : '<span class="badge badge-gray">-</span>';
           const noteBtn = o.local_notes ?
-            '<button class="action-btn btn-secondary" style="padding:5px 9px;font-size:12px" onclick="openLocalNoteFromDriver(' + o.id + ',' + localDriverId + ')" title="' + o.local_notes.replace(/"/g, '&quot;').replace(/\n/g, ' ') + '">Note</button>' :
+            '<button class="action-btn btn-secondary" style="padding:5px 9px;font-size:12px" onclick="openLocalNoteFromDriver(' + o.id + ',' + localDriverId + ')" title="' + escapeHtml((o.local_notes || '').replace(/\n/g, ' ')) + '">Note</button>' :
             '<button class="action-btn btn-ghost" style="padding:5px 9px;font-size:12px" onclick="openLocalNoteFromDriver(' + o.id + ',' + localDriverId + ')" title="Add note">Note</button>';
           const actionsHtml = noteBtn +
             (o.local_delivery_status !== 'DELIVERED' && o.local_delivery_status !== 'UNASSIGNED'
@@ -29172,12 +29173,39 @@
         showToast('File not found', 'error');
         return;
       }
-      
-      const win = window.open();
+
+      const win = window.open('', '_blank');
+      if (!win) return;
+      const safeUrl = escapeUrl(file.file_data);
+      if (safeUrl === '#') {
+        showToast('Unsupported file URL', 'error');
+        win.close();
+        return;
+      }
+      win.document.title = file.file_name || 'File';
       if (file.file_data.startsWith('data:application/pdf') || file.file_data.startsWith('data:image')) {
-        win.document.write('<iframe src="' + file.file_data + '" style="width:100%;height:100%;border:none"></iframe>');
+        const iframe = win.document.createElement('iframe');
+        iframe.src = safeUrl;
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        win.document.body.style.margin = '0';
+        win.document.body.appendChild(iframe);
       } else {
-        win.document.write('<html><body><h2>' + file.file_name + '</h2><p>File type: ' + file.file_type.replace(/_/g, ' ') + '</p><p>Notes: ' + (file.notes || 'None') + '</p><a href="' + file.file_data + '" download="' + file.file_name + '">Download File</a></body></html>');
+        const heading = win.document.createElement('h2');
+        heading.textContent = file.file_name || '';
+        const typeP = win.document.createElement('p');
+        typeP.textContent = 'File type: ' + String(file.file_type || '').replace(/_/g, ' ');
+        const notesP = win.document.createElement('p');
+        notesP.textContent = 'Notes: ' + (file.notes || 'None');
+        const dlLink = win.document.createElement('a');
+        dlLink.href = safeUrl;
+        dlLink.download = file.file_name || 'download';
+        dlLink.textContent = 'Download File';
+        win.document.body.appendChild(heading);
+        win.document.body.appendChild(typeP);
+        win.document.body.appendChild(notesP);
+        win.document.body.appendChild(dlLink);
       }
     }
 
@@ -29536,12 +29564,34 @@
         showToast('Invoice not found', 'error');
         return;
       }
-      
-      const win = window.open();
+
+      const win = window.open('', '_blank');
+      if (!win) return;
+      const safeUrl = escapeUrl(record.invoice_file);
+      if (safeUrl === '#') {
+        showToast('Unsupported file URL', 'error');
+        win.close();
+        return;
+      }
+      const title = record.invoice_filename || 'Invoice';
+      win.document.title = title;
       if (record.invoice_file.startsWith('data:application/pdf') || record.invoice_file.startsWith('data:image')) {
-        win.document.write('<iframe src="' + record.invoice_file + '" style="width:100%;height:100%;border:none"></iframe>');
+        const iframe = win.document.createElement('iframe');
+        iframe.src = safeUrl;
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        win.document.body.style.margin = '0';
+        win.document.body.appendChild(iframe);
       } else {
-        win.document.write('<html><body><h2>' + (record.invoice_filename || 'Invoice') + '</h2><a href="' + record.invoice_file + '" download="' + (record.invoice_filename || 'invoice') + '">Download File</a></body></html>');
+        const heading = win.document.createElement('h2');
+        heading.textContent = title;
+        const dlLink = win.document.createElement('a');
+        dlLink.href = safeUrl;
+        dlLink.download = record.invoice_filename || 'invoice';
+        dlLink.textContent = 'Download File';
+        win.document.body.appendChild(heading);
+        win.document.body.appendChild(dlLink);
       }
     }
 
