@@ -10371,6 +10371,26 @@
       return methodTermsFromLegacy(order.payment_type, order.payment_terms).terms;
     }
 
+    // Single source of truth for "this delivered order has an unpaid invoice".
+    // Used by the dashboard count, billing-page list, and any future surface.
+    //   • Must be invoice-eligible (NET_*/BILLING/BILL effective payment terms)
+    //   • Must be delivered (only delivered orders are invoiced)
+    //   • Must not be marked PAID (invoice_status case-insensitive)
+    function isUnpaidInvoice(order) {
+      if (!order) return false;
+      const invoiceStatus = String(order.invoice_status || '').toUpperCase();
+      if (invoiceStatus === 'PAID') return false;
+      const eff = getEffectivePaymentTerms(order);
+      const isBilling =
+        (typeof eff === 'string' && eff.startsWith('NET_')) ||
+        order.payment_type === 'BILLING' ||
+        order.payment_type === 'BILL';
+      if (!isBilling) return false;
+      const delivery = String(order.delivery_status || '').toLowerCase();
+      const status = String(order.status || '').toUpperCase();
+      return delivery === 'delivered' || status === 'DELIVERED';
+    }
+
     // Composes the display label following the locked rules.
     function composePaymentLabel(method, terms) {
       const m = String(method || '').toUpperCase();
@@ -17794,12 +17814,9 @@
       const unassignedOrdersCount = (appData.orders || []).filter(o => !o.trip_id).length;
       const activeTripsCount = (appData.trips || []).filter(t => t.status !== 'COMPLETED').length;
       const pendingTasksCount = (appData.tasks || []).filter(t => t.status !== 'COMPLETED').length;
-      // Phase 3: NET_* terms = invoiceable; legacy BILLING type also counted
-      const unpaidInvoicesCount = (appData.orders || []).filter(o => {
-        if (o.invoice_status === 'PAID') return false;
-        const eff = getEffectivePaymentTerms(o);
-        return (typeof eff === 'string' && eff.startsWith('NET_')) || o.payment_type === 'BILLING' || o.payment_type === 'BILL';
-      }).length;
+      // Phase 3: NET_* terms = invoiceable; legacy BILLING type also counted.
+      // Uses shared isUnpaidInvoice() helper — same predicate as billing page (P2-A5).
+      const unpaidInvoicesCount = (appData.orders || []).filter(isUnpaidInvoice).length;
 
       // ── Needs Action list (max 8) ────────────────────────────────────────
       const needsActionItems = [];
@@ -30721,12 +30738,10 @@
     }
 
     function getUnpaidBillOrders(periodCtx = billingPeriod) {
+      // Uses shared isUnpaidInvoice() helper — same predicate as dashboard count (P2-A5).
+      // Period-scope and invoice-amount filters preserved.
       return getBillingScopedOrders(periodCtx)
-        .filter(o =>
-          getOrderInvoiceAmount(o) > 0 &&
-          o.payment_status !== 'paid' &&
-          (o.delivery_status === 'delivered' || o.status === 'DELIVERED')
-        )
+        .filter(o => getOrderInvoiceAmount(o) > 0 && isUnpaidInvoice(o))
         .map(o => ({ ...o, ...calculateOrderAging(o) }))
         .sort((a, b) => b.daysOverdue - a.daysOverdue);
     }
