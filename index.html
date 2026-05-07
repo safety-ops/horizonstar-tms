@@ -9558,11 +9558,9 @@
     // Session Timeout Management
     const SESSION_TIMEOUT_MINUTES = 60; // 1 hour
     let sessionTimeoutId = null;
-    let lastActivityTime = Date.now();
-    
+
     function updateLastActivity() {
-      lastActivityTime = Date.now();
-      localStorage.setItem('last_activity', lastActivityTime.toString());
+      localStorage.setItem('last_activity', Date.now().toString());
     }
     
     function checkSessionTimeout() {
@@ -9583,6 +9581,15 @@
     }
     
     function sessionExpired() {
+      try {
+        if (sb && sb.auth && typeof sb.auth.signOut === 'function') {
+          Promise.resolve(sb.auth.signOut()).catch((e) => {
+            console.warn('[session] sb.auth.signOut failed (continuing logout)', e);
+          });
+        }
+      } catch (e) {
+        console.warn('[session] sb.auth.signOut threw synchronously (continuing logout)', e);
+      }
       currentUser = null;
       localStorage.removeItem('horizonstar_user');
       localStorage.removeItem('last_activity');
@@ -10409,6 +10416,7 @@
     function legacyTypeFromMethodTerms(method, terms) {
       const m = String(method || '').toUpperCase();
       const t = String(terms || '').toUpperCase();
+      if (m === 'CASH'  && t === 'LOCAL_COD') return 'LOCAL_COD';
       if (m === 'CASH'  && t === 'COD') return 'COD';
       if (m === 'CASH'  && t === 'COP') return 'COP';
       if (m === 'CHECK' && (t === 'COD' || t === 'COP')) return 'CHECK';
@@ -12071,9 +12079,10 @@
       return breakdown.cashGross;
     }
 
-    // TODO Phase 5: route through paymentInvolvesCash(order)
     function isTripManualCashEligible(order) {
-      return ['COD', 'COP', 'SPLIT'].includes(String(order?.payment_type || '').toUpperCase()) && getOrderCashCollectedAmount(order) > 0;
+      if (!paymentInvolvesCash(order)) return false;
+      if (String(getEffectivePaymentTerms(order) || '').toUpperCase() === 'LOCAL_COD') return false;
+      return getOrderCashCollectedAmount(order) > 0;
     }
 
     function getTripCashCollectionMethod(order) {
@@ -13631,12 +13640,12 @@
               <div style="font-size:32px">${rec.icon}</div>
               <div style="flex:1">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-                  <span style="font-weight:600;color:var(--text-primary)">${rec.title}</span>
-                  <span class="badge badge-${rec.color}" style="font-size:10px">${rec.priority}</span>
+                  <span style="font-weight:600;color:var(--text-primary)">${escapeHtml(rec.title)}</span>
+                  <span class="badge badge-${rec.color}" style="font-size:10px">${escapeHtml(rec.priority)}</span>
                 </div>
-                <div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">${rec.description}</div>
-                <div style="font-size:13px;color:var(--text-primary)"><strong>Action:</strong> ${rec.action}</div>
-                <div style="font-size:13px;color:var(--${rec.color});font-weight:500;margin-top:4px">[[icon:lightbulb]] ${rec.impact}</div>
+                <div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">${escapeHtml(rec.description)}</div>
+                <div style="font-size:13px;color:var(--text-primary)"><strong>Action:</strong> ${escapeHtml(rec.action)}</div>
+                <div style="font-size:13px;color:var(--${rec.color});font-weight:500;margin-top:4px">[[icon:lightbulb]] ${escapeHtml(rec.impact)}</div>
               </div>
             </div>
           `).join('')}
@@ -14144,11 +14153,11 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
             <div class="form-group">
               <label>First Name *</label>
-              <input type="text" name="first_name" value="${applicationData.first_name}" required>
+              <input type="text" name="first_name" value="${escapeHtml(applicationData.first_name)}" required>
             </div>
             <div class="form-group">
               <label>Last Name *</label>
-              <input type="text" name="last_name" value="${applicationData.last_name}" required>
+              <input type="text" name="last_name" value="${escapeHtml(applicationData.last_name)}" required>
             </div>
           </div>
 
@@ -14156,11 +14165,11 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
             <div class="form-group">
               <label>Date of Birth *</label>
-              <input type="date" name="date_of_birth" value="${applicationData.date_of_birth}" required>
+              <input type="date" name="date_of_birth" value="${escapeHtml(applicationData.date_of_birth)}" required>
             </div>
             <div class="form-group">
               <label>Social Security Number *</label>
-              <input type="text" name="ssn" value="${applicationData.ssn}" placeholder="XXX-XX-XXXX" required>
+              <input type="text" name="ssn" value="${escapeHtml(applicationData.ssn)}" placeholder="XXX-XX-XXXX" required>
             </div>
           </div>
 
@@ -14168,23 +14177,23 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
             <div class="form-group">
               <label>Phone *</label>
-              <input type="tel" name="phone" value="${applicationData.phone}" required>
+              <input type="tel" name="phone" value="${escapeHtml(applicationData.phone)}" required>
             </div>
             <div class="form-group">
               <label>Email *</label>
-              <input type="email" name="email" value="${applicationData.email}" required>
+              <input type="email" name="email" value="${escapeHtml(applicationData.email)}" required>
             </div>
           </div>
 
           <!-- Address -->
           <div class="form-group" style="margin-bottom:16px">
             <label>Address *</label>
-            <input type="text" name="address" value="${applicationData.address}" placeholder="Street Address" required>
+            <input type="text" name="address" value="${escapeHtml(applicationData.address)}" placeholder="Street Address" required>
           </div>
           <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:16px;margin-bottom:20px">
             <div class="form-group">
               <label>City *</label>
-              <input type="text" name="city" value="${applicationData.city}" required>
+              <input type="text" name="city" value="${escapeHtml(applicationData.city)}" required>
             </div>
             <div class="form-group">
               <label>State *</label>
@@ -14192,7 +14201,7 @@
             </div>
             <div class="form-group">
               <label>Zip Code *</label>
-              <input type="text" name="zip" value="${applicationData.zip}" required>
+              <input type="text" name="zip" value="${escapeHtml(applicationData.zip)}" required>
             </div>
           </div>
 
@@ -14913,7 +14922,7 @@
               <div style="font-size:64px;margin-bottom:24px">[[icon:check_circle]]</div>
               <h1 style="color:var(--text-primary);margin-bottom:16px">Application Submitted!</h1>
               <p style="color:var(--text-secondary);margin-bottom:24px">Thank you for applying to HORIZON STAR LLC. We have received your application and will review it shortly.</p>
-              <p style="color:var(--text-secondary);font-size:14px;margin-bottom:32px">A confirmation email will be sent to <strong>${applicationData.email}</strong></p>
+              <p style="color:var(--text-secondary);font-size:14px;margin-bottom:32px">A confirmation email will be sent to <strong>${escapeHtml(applicationData.email)}</strong></p>
               <button class="btn btn-primary" onclick="renderLogin()">Return to Home</button>
             </div>
           </div>
@@ -15326,7 +15335,7 @@
       // Top bar like Lovable
       const topBar = '<div class="topbar">' +
         '<div class="topbar-left">' +
-        '<span class="welcome-text">' + 'Welcome back,' + ' <span class="welcome-name">' + currentUser.first_name + '</span></span>' +
+        '<span class="welcome-text">' + 'Welcome back,' + ' <span class="welcome-name">' + escapeHtml(currentUser.first_name) + '</span></span>' +
         '</div>' +
         '<div class="topbar-center" id="worldClocks">' +
         '<div class="world-clock"><span class="clock-city">' + renderUIIcon('city', { size: 12 }) + ' NY</span><span class="clock-time" id="clockNY">--:--</span></div>' +
@@ -15346,11 +15355,11 @@
         '<div class="topbar-user-wrapper">' +
         '<div class="topbar-user" onclick="toggleUserDropdown()">' +
         '<div class="topbar-avatar">' + userInitials + '</div>' +
-        '<div class="topbar-user-info"><div class="topbar-user-name">' + currentUser.first_name + ' ' + currentUser.last_name + '</div><div class="topbar-user-role">' + currentUser.role + '</div></div>' +
+        '<div class="topbar-user-info"><div class="topbar-user-name">' + escapeHtml(currentUser.first_name) + ' ' + escapeHtml(currentUser.last_name) + '</div><div class="topbar-user-role">' + escapeHtml(currentUser.role) + '</div></div>' +
         '<span class="topbar-user-arrow">▼</span>' +
         '</div>' +
         '<div class="topbar-dropdown" id="userDropdown">' +
-        '<div class="topbar-dropdown-header"><div class="topbar-dropdown-avatar">' + userInitials + '</div><div><div class="topbar-dropdown-name">' + currentUser.first_name + ' ' + currentUser.last_name + '</div><div class="topbar-dropdown-email">' + (currentUser.email || currentUser.role) + '</div></div></div>' +
+        '<div class="topbar-dropdown-header"><div class="topbar-dropdown-avatar">' + userInitials + '</div><div><div class="topbar-dropdown-name">' + escapeHtml(currentUser.first_name) + ' ' + escapeHtml(currentUser.last_name) + '</div><div class="topbar-dropdown-email">' + escapeHtml(currentUser.email || currentUser.role) + '</div></div></div>' +
         '<div class="topbar-dropdown-divider"></div>' +
         '<button class="topbar-dropdown-item logout" onclick="logout()"><span class="ui-icon-inline">' + renderUIIcon('logout', { size: 14 }) + '</span> ' + t('logout') + '</button>' +
         '</div>' +
@@ -16727,13 +16736,13 @@
               </button>
               <div class="header-title-group">
                 <div class="header-title-row">
-                  <h2>${order.order_number}</h2>
+                  <h2>${escapeHtml(order.order_number)}</h2>
                   <div class="header-badges">
                     ${statusBadge}
-                    ${trip ? '<span class="badge badge-purple">' + trip.trip_number + '</span>' : '<span class="badge badge-gray">Unassigned</span>'}
+                    ${trip ? '<span class="badge badge-purple">' + escapeHtml(trip.trip_number) + '</span>' : '<span class="badge badge-gray">Unassigned</span>'}
                   </div>
                 </div>
-                <div class="header-subtitle">${vehicleTitle}</div>
+                <div class="header-subtitle">${escapeHtml(vehicleTitle)}</div>
               </div>
             </div>
             <div class="header-right">
@@ -16889,7 +16898,7 @@
             ` : ''}
             ${inspection.customer_name ? `
               <div class="inspection-signer">
-                <span>[[icon:signature]] Signed by: <strong>${inspection.customer_name}</strong></span>
+                <span>[[icon:signature]] Signed by: <strong>${escapeHtml(inspection.customer_name)}</strong></span>
                 ${inspection.customer_signed_at ? '<span class="signer-date">' + formatDate(inspection.customer_signed_at) + '</span>' : ''}
               </div>
             ` : ''}
@@ -17046,9 +17055,9 @@
         <div class="activity-feed-sidebar">
           ${events.map(e => `
             <div class="activity-feed-item">
-              <div class="activity-feed-text">${e.text}</div>
+              <div class="activity-feed-text">${escapeHtml(e.text)}</div>
               <div class="activity-feed-meta">
-                ${e.user ? '<span class="activity-feed-user">' + e.user + '</span>' : ''}
+                ${e.user ? '<span class="activity-feed-user">' + escapeHtml(e.user) + '</span>' : ''}
                 <span class="activity-feed-date">${formatDateTime(e.date)}</span>
               </div>
             </div>
@@ -18224,10 +18233,10 @@
             return '<div style="display:flex;align-items:center;gap:12px;padding:12px;background:' + bgColor + ';border:1px solid ' + borderColor + ';border-radius:8px;margin-bottom:8px">' +
               '<input type="checkbox" style="width:18px;height:18px;cursor:pointer" onchange="quickCompleteTask(' + t.id + ',this.checked)" title="Mark as completed">' +
               '<div style="flex:1">' +
-              '<div style="font-weight:600;display:flex;align-items:center;gap:8px">' + getPriorityIcon(t.priority) + t.title + 
+              '<div style="font-weight:600;display:flex;align-items:center;gap:8px">' + getPriorityIcon(t.priority) + escapeHtml(t.title) +
               (isOverdue(t.due_date) ? ' <span style="color:var(--danger);font-size:12px;font-weight:400">(OVERDUE)</span>' : '') +
               '</div>' +
-              '<div style="font-size:12px;color:#64748b">[[icon:calendar]] ' + formatDate(t.due_date) + (assignee ? ' • [[icon:user]] ' + assignee.name : '') + '</div>' +
+              '<div style="font-size:12px;color:#64748b">[[icon:calendar]] ' + formatDate(t.due_date) + (assignee ? ' • [[icon:user]] ' + escapeHtml(assignee.name) : '') + '</div>' +
               '</div>' +
               '<button class="action-btn edit" onclick="openTaskModal(' + t.id + ')">Edit</button>' +
               '</div>';
@@ -18303,7 +18312,7 @@
         // Stats
         '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px">' +
         '<div class="stat-flat" style="flex:0 0 auto;min-width:120px"><div class="stat-card-label">Total Unassigned</div><div class="stat-card-value">' + unassignedOrders.length + '</div></div>' +
-        '<div class="stat-flat" style="flex:0 0 auto;min-width:120px"><div class="stat-card-label">In ' + currentCat.name + '</div><div class="stat-card-value">' + categoryCounts[currentCat.id] + '</div></div>' +
+        '<div class="stat-flat" style="flex:0 0 auto;min-width:120px"><div class="stat-card-label">In ' + escapeHtml(currentCat.name) + '</div><div class="stat-card-value">' + categoryCounts[currentCat.id] + '</div></div>' +
         '<div class="stat-flat" style="flex:0 0 auto;min-width:140px"><div class="stat-card-label">Revenue (Displayed)</div><div class="stat-card-value" style="font-family:var(--font-mono)">' + formatMoney(totalRevenue) + '</div></div>' +
         '</div>' +
 
@@ -18311,7 +18320,7 @@
         '<div class="segmented-control" style="margin-bottom:var(--space-4);flex-wrap:wrap">' +
         loadBoardCategories.map(cat => {
           const isActive = cat.id === selectedLoadCategory;
-          return '<button class="segmented-control-btn' + (isActive ? ' active' : '') + '" onclick="selectedLoadCategory=\'' + cat.id + '\';selectedLoadSub=null;renderLoadBoard(reRenderCurrentPage())">' + cat.name + ' (' + categoryCounts[cat.id] + ')</button>';
+          return '<button class="segmented-control-btn' + (isActive ? ' active' : '') + '" onclick="selectedLoadCategory=\'' + cat.id + '\';selectedLoadSub=null;renderLoadBoard(reRenderCurrentPage())">' + escapeHtml(cat.name) + ' (' + categoryCounts[cat.id] + ')</button>';
         }).join('') +
         '</div>' +
 
@@ -18320,12 +18329,12 @@
         '<button class="segmented-control-btn' + (!selectedLoadSub ? ' active' : '') + '" onclick="selectedLoadSub=null;renderLoadBoard(reRenderCurrentPage())">All</button>' +
         currentCat.subs.map(sub => {
           const isActive = sub.id === selectedLoadSub;
-          return '<button class="segmented-control-btn' + (isActive ? ' active' : '') + '" onclick="selectedLoadSub=\'' + sub.id + '\';renderLoadBoard(reRenderCurrentPage())">' + sub.name + ' (' + categoryCounts[sub.id] + ')</button>';
+          return '<button class="segmented-control-btn' + (isActive ? ' active' : '') + '" onclick="selectedLoadSub=\'' + sub.id + '\';renderLoadBoard(reRenderCurrentPage())">' + escapeHtml(sub.name) + ' (' + categoryCounts[sub.id] + ')</button>';
         }).join('') +
         '</div>' : '') +
 
         // Orders cards
-        '<div class="card"><div style="padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--border)"><h3 style="margin:0;font-size:15px;font-weight:600;color:var(--text-primary)">' + currentCat.name + (selectedLoadSub ? ' → ' + currentCat.subs.find(s => s.id === selectedLoadSub)?.name : '') + '</h3></div>' +
+        '<div class="card"><div style="padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--border)"><h3 style="margin:0;font-size:15px;font-weight:600;color:var(--text-primary)">' + escapeHtml(currentCat.name) + (selectedLoadSub ? ' → ' + escapeHtml(currentCat.subs.find(s => s.id === selectedLoadSub)?.name || '') : '') + '</h3></div>' +
         (displayOrders.length === 0 ? renderEmptyState('clipboard', 'No vehicles', 'No unassigned vehicles in this category', '+ Add Vehicle', 'openLoadBoardOrder()') :
         '<div style="padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-2-5)">' +
         displayOrders.map(o => {
@@ -18377,8 +18386,8 @@
       m.className = 'modal-overlay';
       m.onclick = e => { if (e.target === m) m.remove(); };
       m.innerHTML = '<div class="modal" style="max-width:760px;max-height:90vh;display:flex;flex-direction:column"><div class="modal-header"><h3>' + (o ? 'Edit' : 'Add') + ' Vehicle to Future Cars</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
-        '<div class="form-row"><div class="form-group"><label>Category *</label><select id="lbCategory" onchange="toggleLoadBoardSub()" style="border:2px solid #22c55e;font-weight:600">' + loadBoardCategories.map(cat => '<option value="' + cat.id + '"' + (o?.load_category === cat.id ? ' selected' : '') + '>' + cat.name + '</option>').join('') + '</select></div><div class="form-group" id="lbSubGroup" style="display:none"><label>Sub-Category</label><select id="lbSubCategory"></select></div></div>' +
-        '<div class="form-row"><div class="form-group"><label>Order #</label><input id="lbOrderNum" value="' + (o?.order_number || 'ORD-' + Date.now().toString().slice(-4)) + '"></div><div class="form-group" style="position:relative"><label>Broker</label><input type="text" id="lbBrokerInput" placeholder="Start typing broker..." value="' + (o?.broker_name || '') + '" autocomplete="off"><input type="hidden" id="lbBrokerId" value="' + (o?.broker_id || '') + '"></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Category *</label><select id="lbCategory" onchange="toggleLoadBoardSub()" style="border:2px solid #22c55e;font-weight:600">' + loadBoardCategories.map(cat => '<option value="' + cat.id + '"' + (o?.load_category === cat.id ? ' selected' : '') + '>' + escapeHtml(cat.name) + '</option>').join('') + '</select></div><div class="form-group" id="lbSubGroup" style="display:none"><label>Sub-Category</label><select id="lbSubCategory"></select></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Order #</label><input id="lbOrderNum" value="' + escapeHtml(o?.order_number || 'ORD-' + Date.now().toString().slice(-4)) + '"></div><div class="form-group" style="position:relative"><label>Broker</label><input type="text" id="lbBrokerInput" placeholder="Start typing broker..." value="' + escapeHtml(o?.broker_name || '') + '" autocomplete="off"><input type="hidden" id="lbBrokerId" value="' + escapeHtml(o?.broker_id || '') + '"></div></div>' +
         '<div id="lbNewBrokerSection" style="display:none;background:#f0fdf4;padding:12px;border-radius:8px;margin-bottom:12px;border:1px solid #bbf7d0"><div class="form-group" style="margin-bottom:0"><label>New Broker Name *</label><input id="lbNewBrokerName" placeholder="Enter broker name"></div></div>' +
         '<div style="background:var(--surface-elevated);padding:12px;border-radius:8px;margin-bottom:12px">' +
         '<label style="font-weight:600;display:block;margin-bottom:8px">[[icon:building]] Broker Details</label>' +
@@ -18390,9 +18399,9 @@
         '<div style="background:var(--surface-card);padding:12px;border-radius:8px;margin-bottom:12px">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><label style="font-weight:600;margin:0">[[icon:car]] Vehicle Info</label></div>' +
         '<div class="form-row" style="gap:12px;align-items:flex-end">' +
-        '<div class="form-group" style="margin-bottom:0;flex:0 0 100px;position:relative"><label>Year</label><input type="text" id="lbYear" value="' + (o?.vehicle_year || new Date().getFullYear()) + '" placeholder="Year" autocomplete="off"></div>' +
-        '<div class="form-group" style="margin-bottom:0;flex:1;position:relative"><label>Make</label><input type="text" id="lbMake" value="' + (o?.vehicle_make || '') + '" placeholder="Start typing make..." autocomplete="off"></div>' +
-        '<div class="form-group" style="margin-bottom:0;flex:1;position:relative"><label>Model</label><input type="text" id="lbModel" value="' + (o?.vehicle_model || '') + '" placeholder="Start typing model..." autocomplete="off"></div>' +
+        '<div class="form-group" style="margin-bottom:0;flex:0 0 100px;position:relative"><label>Year</label><input type="text" id="lbYear" value="' + escapeHtml(o?.vehicle_year || new Date().getFullYear()) + '" placeholder="Year" autocomplete="off"></div>' +
+        '<div class="form-group" style="margin-bottom:0;flex:1;position:relative"><label>Make</label><input type="text" id="lbMake" value="' + escapeHtml(o?.vehicle_make || '') + '" placeholder="Start typing make..." autocomplete="off"></div>' +
+        '<div class="form-group" style="margin-bottom:0;flex:1;position:relative"><label>Model</label><input type="text" id="lbModel" value="' + escapeHtml(o?.vehicle_model || '') + '" placeholder="Start typing model..." autocomplete="off"></div>' +
         (!o ? '<button type="button" class="btn btn-secondary" onclick="addAnotherVehicleLB()" style="height:42px;white-space:nowrap">+ Add Another</button>' : '') + '</div>' +
         '<div class="form-row" style="gap:12px;margin-top:8px"><div class="form-group" style="margin-bottom:0"><label>Body Type</label><select id="lbBodyType">' + getVehicleBodyTypeOptionsHtml(o?.vehicle_body_type || '') + '</select></div><div class="form-group" style="margin-bottom:0"><label>Lot #</label><input id="lbLotNumber" value="' + (o?.vehicle_lot_number || '') + '"></div><div class="form-group" style="margin-bottom:0"><label>Buyer #</label><input id="lbBuyerNumber" value="' + (o?.vehicle_buyer_number || '') + '"></div></div>' +
         (!o ? '<div id="lbVehicleListSection" style="margin-top:12px;display:none"><div id="lbVehicleListItems"></div></div>' : '') + '</div>' +
@@ -18424,8 +18433,8 @@
         '<div class="form-group"><label>[[icon:receipt]] Notes for Driver</label><textarea id="lbDriverNotes" rows="2" placeholder="Driver-facing instructions..." style="resize:vertical">' + escapeHtml(getOrderDriverNotes(o)) + '</textarea></div>' +
         '<div class="form-group"><label>Booked By</label>' +
         (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER'
-          ? '<select id="lbDispatcher"><option value="">Select Dispatcher</option>' + appData.dispatchers.map(d => '<option value="' + d.id + '"' + ((o?.dispatcher_id === d.id || (!o && userDispatcher && userDispatcher.id === d.id)) ? ' selected' : '') + '>' + d.name + '</option>').join('') + '</select>'
-          : '<input type="text" id="lbDispatcherName" value="' + (userDispatcher ? userDispatcher.name : currentUser.first_name + ' ' + currentUser.last_name) + '" readonly style="background:var(--surface-elevated);cursor:not-allowed"><input type="hidden" id="lbDispatcher" value="' + (userDispatcher ? userDispatcher.id : '') + '">') +
+          ? '<select id="lbDispatcher"><option value="">Select Dispatcher</option>' + appData.dispatchers.map(d => '<option value="' + d.id + '"' + ((o?.dispatcher_id === d.id || (!o && userDispatcher && userDispatcher.id === d.id)) ? ' selected' : '') + '>' + escapeHtml(d.name) + '</option>').join('') + '</select>'
+          : '<input type="text" id="lbDispatcherName" value="' + escapeHtml(userDispatcher ? userDispatcher.name : currentUser.first_name + ' ' + currentUser.last_name) + '" readonly style="background:var(--surface-elevated);cursor:not-allowed"><input type="hidden" id="lbDispatcher" value="' + (userDispatcher ? userDispatcher.id : '') + '">') +
         '</div>' +
         '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveLoadBoardOrder(' + id + ')">' + (o ? 'Update' : 'Save') + '</button></div></div>';
       document.body.appendChild(m);
@@ -18607,7 +18616,7 @@
         local_fee: parseFloat(document.getElementById('lbLocalFee').value) || 0,
         // Phase 3 dual-write: new method+terms + legacy payment_type for ~90d back-compat
         payment_method: (lbSplitChecked ? 'CASH' : lbMethod) || null,
-        payment_terms: lbSplitChecked ? (splitState.cashType === 'COP' ? 'COP' : 'COD') : lbTerms,
+        payment_terms: lbSplitChecked ? splitState.cashType : lbTerms,
         payment_type: splitPayload.payment_type,
         cod_amount: splitPayload.cod_amount,
         bill_amount: splitPayload.bill_amount,
@@ -19626,7 +19635,7 @@
         revenue: totalRevenue,
         // Phase 3 dual-write: new method+terms + legacy payment_type
         payment_method: (importSplitChecked ? 'CASH' : importMethod) || null,
-        payment_terms: importSplitChecked ? (splitState.cashType === 'COP' ? 'COP' : 'COD') : importTerms,
+        payment_terms: importSplitChecked ? splitState.cashType : importTerms,
         payment_type: splitPayload.payment_type,
         cod_amount: splitPayload.cod_amount,
         bill_amount: splitPayload.bill_amount,
@@ -21525,8 +21534,8 @@
         '<div class="form-group"><label>[[icon:receipt]] Notes for Driver</label><textarea id="orderDriverNotes" rows="2" placeholder="Driver-facing instructions..." style="resize:vertical"></textarea></div>' +
         '<div class="form-row"><div class="form-group"><label>Status</label><select id="orderStatus"><option value="PENDING">NEW</option><option value="IN_TRANSIT">IN_TRANSIT</option><option value="DELIVERED">DELIVERED</option></select></div><div class="form-group"><label>Booked By</label>' +
         (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER' ?
-          '<select id="orderDispatcher"><option value="">Select Dispatcher</option>' + appData.dispatchers.map(d => '<option value="' + d.id + '"' + (userDispatcher && userDispatcher.id === d.id ? ' selected' : '') + '>' + d.name + '</option>').join('') + '</select>' :
-          '<input type="text" value="' + (userDispatcher ? userDispatcher.name : currentUser.first_name + ' ' + currentUser.last_name) + '" readonly style="background:var(--surface-elevated);cursor:not-allowed"><input type="hidden" id="orderDispatcher" value="' + (userDispatcher ? userDispatcher.id : '') + '">'
+          '<select id="orderDispatcher"><option value="">Select Dispatcher</option>' + appData.dispatchers.map(d => '<option value="' + d.id + '"' + (userDispatcher && userDispatcher.id === d.id ? ' selected' : '') + '>' + escapeHtml(d.name) + '</option>').join('') + '</select>' :
+          '<input type="text" value="' + escapeHtml(userDispatcher ? userDispatcher.name : currentUser.first_name + ' ' + currentUser.last_name) + '" readonly style="background:var(--surface-elevated);cursor:not-allowed"><input type="hidden" id="orderDispatcher" value="' + (userDispatcher ? userDispatcher.id : '') + '">'
         ) + '</div></div>' +
         '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveVehicle(' + tripId + ')">Save</button></div></div>';
       document.body.appendChild(m);
@@ -22101,7 +22110,7 @@
 
       if (sv_methodEl) {
         // V2 path
-        paymentTerms = sv_splitChecked ? (splitState.cashType === 'COP' ? 'COP' : 'COD') : sv_terms;
+        paymentTerms = sv_splitChecked ? splitState.cashType : sv_terms;
         dueDate = document.getElementById('orderDueDate')?.value || null;
         if (paymentTerms === 'CUSTOM') {
           customTermsDays = parseInt(document.getElementById('orderCustomDays')?.value) || null;
@@ -22223,7 +22232,7 @@
 
     function openEditVehicle(orderId, tripId) {
       const o = appData.orders.find(x => x.id === orderId);
-      const brokerOptions = (appData.brokers || []).map(b => '<option value="' + b.id + '"' + (o.broker_id === b.id ? ' selected' : '') + '>' + b.name + '</option>').join('');
+      const brokerOptions = (appData.brokers || []).map(b => '<option value="' + b.id + '"' + (o.broker_id === b.id ? ' selected' : '') + '>' + escapeHtml(b.name) + '</option>').join('');
       const directionOptions = vehicleDirections.map(d => '<option value="' + d.id + '"' + (o.vehicle_direction === d.id ? ' selected' : '') + '>' + d.label + '</option>').join('');
       const existingBroker = o.broker_id ? (appData.brokers || []).find(b => String(b.id) === String(o.broker_id)) : null;
       const pickupAddress = hydrateOrderAddressParts(o, 'pickup');
@@ -22238,11 +22247,11 @@
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
       const currentDispatcher = appData.dispatchers.find(d => d.id === o.dispatcher_id);
       const dispatcherField = (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER') ?
-        '<select id="editOrderDispatcher"><option value="">Select Dispatcher</option>' + appData.dispatchers.map(d => '<option value="' + d.id + '"' + (o.dispatcher_id === d.id ? ' selected' : '') + '>' + d.name + '</option>').join('') + '</select>' :
-        '<input type="text" value="' + (currentDispatcher ? currentDispatcher.name : '-') + '" readonly style="background:var(--surface-elevated);cursor:not-allowed"><input type="hidden" id="editOrderDispatcher" value="' + (o.dispatcher_id || '') + '">';
+        '<select id="editOrderDispatcher"><option value="">Select Dispatcher</option>' + appData.dispatchers.map(d => '<option value="' + d.id + '"' + (o.dispatcher_id === d.id ? ' selected' : '') + '>' + escapeHtml(d.name) + '</option>').join('') + '</select>' :
+        '<input type="text" value="' + escapeHtml(currentDispatcher ? currentDispatcher.name : '-') + '" readonly style="background:var(--surface-elevated);cursor:not-allowed"><input type="hidden" id="editOrderDispatcher" value="' + (o.dispatcher_id || '') + '">';
       m.innerHTML = '<div class="modal" style="max-width:700px;max-height:90vh;display:flex;flex-direction:column"><div class="modal-header"><h3>Edit Vehicle</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
         '<div class="form-group"><label>Vehicle Direction *</label><select id="editOrderDirection" style="border:2px solid #6366f1;font-weight:600">' + directionOptions + '</select></div>' +
-        '<div class="form-row"><div class="form-group"><label>Order #</label><input id="editOrderNum" value="' + o.order_number + '"></div><div class="form-group"><label>Broker</label><select id="editOrderBroker"><option value="">Select Broker</option>' + brokerOptions + '<option value="__NEW__">+ Add New Broker</option></select></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Order #</label><input id="editOrderNum" value="' + escapeHtml(o.order_number) + '"></div><div class="form-group"><label>Broker</label><select id="editOrderBroker"><option value="">Select Broker</option>' + brokerOptions + '<option value="__NEW__">+ Add New Broker</option></select></div></div>' +
         '<div id="editNewBrokerSection" style="display:none;background:#f0fdf4;padding:12px;border-radius:8px;margin-bottom:12px;border:1px solid #bbf7d0"><div class="form-group" style="margin-bottom:0"><label>New Broker Name *</label><input id="editNewBrokerName" placeholder="Enter broker name"></div></div>' +
         '<div style="background:var(--surface-elevated);padding:12px;border-radius:8px;margin-bottom:12px">' +
         '<label style="font-weight:600;display:block;margin-bottom:8px">[[icon:building]] Broker Details</label>' +
@@ -22394,7 +22403,7 @@
         local_fee: parseFloat(document.getElementById('editOrderFee').value) || 0,
         // Phase 3 dual-write: new method+terms + legacy payment_type
         payment_method: (editSplitChecked ? 'CASH' : editMethod) || null,
-        payment_terms: editSplitChecked ? (splitState.cashType === 'COP' ? 'COP' : 'COD') : editTerms,
+        payment_terms: editSplitChecked ? splitState.cashType : editTerms,
         payment_type: splitPayload.payment_type,
         cod_amount: splitPayload.cod_amount,
         bill_amount: splitPayload.bill_amount,
@@ -22411,10 +22420,48 @@
         pickup_eta: document.getElementById('editPickupEta')?.value ? new Date(document.getElementById('editPickupEta').value).toISOString() : null,
         delivery_eta: document.getElementById('editDeliveryEta')?.value ? new Date(document.getElementById('editDeliveryEta').value).toISOString() : null
       };
-      try { 
-        await dbUpdate('orders', orderId, data); 
+      try {
+        console.group('[PAYMENT-DIAG] updateVehicle save');
+        console.log('[PAYMENT-DIAG] SENT', {
+          id: orderId,
+          payment_method: data.payment_method,
+          payment_terms: data.payment_terms,
+          payment_type: data.payment_type,
+          cod_amount: data.cod_amount,
+          bill_amount: data.bill_amount
+        });
+        const updRes = await dbUpdate('orders', orderId, data);
+        const returned = Array.isArray(updRes) ? updRes[0] : updRes;
+        if (updRes === null) {
+          console.log('[PAYMENT-DIAG] save cancelled (conflict overwrite declined)');
+          console.groupEnd();
+          return;
+        }
+        console.log('[PAYMENT-DIAG] RETURNED', returned ? {
+          payment_method: returned.payment_method,
+          payment_terms: returned.payment_terms,
+          payment_type: returned.payment_type
+        } : '(no row)');
+        const normalize = v => {
+          if (v === null || v === undefined) return null;
+          const s = String(v).trim();
+          return s === '' ? null : s;
+        };
+        const driftFields = ['payment_method','payment_terms','payment_type'].filter(k => normalize(returned?.[k]) !== normalize(data[k]));
+        console.log('[PAYMENT-DIAG] DIFF_FIELDS', driftFields);
+        console.groupEnd();
+        const paymentDriftDetected = driftFields.length > 0;
         await logActivity('VEHICLE_UPDATED', { order_id: orderId, trip_id: tripId, vehicle: data.vehicle_year + ' ' + data.vehicle_make + ' ' + data.vehicle_model, revenue: data.revenue, status: data.status });
-        document.querySelector('.modal-overlay').remove(); showToast('Vehicle updated'); await loadAllData(true); viewTrip(tripId); 
+        document.querySelector('.modal-overlay').remove();
+        await loadAllData(true);
+        const cached = appData.orders.find(o => o.id === orderId);
+        console.log('[PAYMENT-DIAG] POST_LOADALL_CACHE', cached ? {
+          payment_method: cached.payment_method,
+          payment_terms: cached.payment_terms,
+          payment_type: cached.payment_type
+        } : '(missing)');
+        showToast(paymentDriftDetected ? `Saved, but payment fields did not persist (${driftFields.join(', ')}) — see console` : 'Vehicle updated', paymentDriftDetected ? 'warning' : 'success');
+        viewTrip(tripId);
       } catch (e) { showToast('Update failed: ' + e.message, 'error'); console.error(e); }
     }
 
@@ -22635,10 +22682,10 @@
 
       // Get unique brokers for filter
       const uniqueBrokers = [...new Set(yearFilteredOrders.map(o => o.broker_name).filter(b => b))];
-      const brokerOptions = uniqueBrokers.map(b => '<option value="' + b + '"' + (ordersFilter.broker === b ? ' selected' : '') + '>' + b + '</option>').join('');
+      const brokerOptions = uniqueBrokers.map(b => '<option value="' + escapeHtml(b) + '"' + (ordersFilter.broker === b ? ' selected' : '') + '>' + escapeHtml(b) + '</option>').join('');
 
       // Get dispatchers for filter
-      const dispatcherOptions = appData.dispatchers.map(d => '<option value="' + d.id + '"' + (ordersFilter.dispatcher === String(d.id) ? ' selected' : '') + '>' + d.name + '</option>').join('');
+      const dispatcherOptions = appData.dispatchers.map(d => '<option value="' + d.id + '"' + (ordersFilter.dispatcher === String(d.id) ? ' selected' : '') + '>' + escapeHtml(d.name) + '</option>').join('');
 
       // Get drivers with orders for filter
       const driversWithOrders = [...new Set(yearFilteredOrders.filter(o => o.trip_id).map(o => {
@@ -22647,7 +22694,7 @@
       }).filter(Boolean))];
       const driverOptions = driversWithOrders.map(dId => {
         const d = appData.drivers.find(dr => dr.id === dId);
-        return d ? '<option value="' + d.id + '"' + (ordersFilter.driver === String(d.id) ? ' selected' : '') + '>' + d.first_name + ' ' + d.last_name + '</option>' : '';
+        return d ? '<option value="' + d.id + '"' + (ordersFilter.driver === String(d.id) ? ' selected' : '') + '>' + escapeHtml(d.first_name) + ' ' + escapeHtml(d.last_name) + '</option>' : '';
       }).join('');
 
       // Year selector options for Orders page
@@ -22934,8 +22981,8 @@
       m.className = 'modal-overlay';
       m.onclick = e => { if (e.target === m) { clearEditing('orders', id); m.remove(); } };
       m.innerHTML = '<div class="modal" style="max-width:780px;max-height:90vh;display:flex;flex-direction:column"><div class="modal-header"><h3>' + (o ? 'Edit' : 'New') + ' Order</h3><button class="modal-close" onclick="clearEditing(\'orders\',' + id + ');this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body" style="overflow-y:auto;flex:1">' +
-        '<div class="form-row"><div class="form-group"><label>Order #</label><input id="orderNum" value="' + (o?.order_number || 'ORD-' + Date.now().toString().slice(-4)) + '"></div><div class="form-group"><label>Trip</label><select id="orderTrip"><option value="">Unassigned</option>' + appData.trips.map(t => '<option value="' + t.id + '"' + (o?.trip_id === t.id ? ' selected' : '') + '>' + t.trip_number + '</option>').join('') + '</select></div></div>' +
-        '<div class="form-row"><div class="form-group"><label>Driver</label><select id="orderDriver"><option value="">Unassigned</option>' + appData.drivers.filter(d => d.status === 'ACTIVE').map(d => '<option value="' + d.id + '"' + (o?.driver_id === d.id ? ' selected' : '') + '>' + d.first_name + ' ' + d.last_name + '</option>').join('') + '</select></div><div class="form-group" style="position:relative"><label>Broker</label><input type="text" id="orderBrokerInput" value="' + (o?.broker_name || '') + '" placeholder="Start typing broker..." autocomplete="off"><input type="hidden" id="orderBrokerId" value="' + (o?.broker_id || '') + '"></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Order #</label><input id="orderNum" value="' + escapeHtml(o?.order_number || 'ORD-' + Date.now().toString().slice(-4)) + '"></div><div class="form-group"><label>Trip</label><select id="orderTrip"><option value="">Unassigned</option>' + appData.trips.map(t => '<option value="' + t.id + '"' + (o?.trip_id === t.id ? ' selected' : '') + '>' + escapeHtml(t.trip_number) + '</option>').join('') + '</select></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Driver</label><select id="orderDriver"><option value="">Unassigned</option>' + appData.drivers.filter(d => d.status === 'ACTIVE').map(d => '<option value="' + d.id + '"' + (o?.driver_id === d.id ? ' selected' : '') + '>' + escapeHtml(d.first_name) + ' ' + escapeHtml(d.last_name) + '</option>').join('') + '</select></div><div class="form-group" style="position:relative"><label>Broker</label><input type="text" id="orderBrokerInput" value="' + escapeHtml(o?.broker_name || '') + '" placeholder="Start typing broker..." autocomplete="off"><input type="hidden" id="orderBrokerId" value="' + escapeHtml(o?.broker_id || '') + '"></div></div>' +
         '<div id="newBrokerSection" style="display:none;background:var(--bg-tertiary);padding:var(--space-3);border-radius:var(--radius-md);margin-bottom:var(--space-3);border:1px solid var(--border-primary)"><div class="form-group" style="margin-bottom:0"><label>New Broker Name *</label><input id="newBrokerName" placeholder="Enter broker name"></div></div>' +
         '<div style="background:var(--surface-elevated);padding:12px;border-radius:8px;margin-bottom:12px">' +
         '<label style="font-weight:600;display:block;margin-bottom:8px">[[icon:building]] Broker Details</label>' +
@@ -22989,8 +23036,8 @@
         '</div>' +
         '<div class="form-group"><label>Booked By</label>' +
         (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER'
-          ? '<select id="orderModalDispatcher"><option value="">Select Dispatcher</option>' + appData.dispatchers.map(d => '<option value="' + d.id + '"' + ((o?.dispatcher_id === d.id || (!o && orderModalDispatcher && orderModalDispatcher.id === d.id)) ? ' selected' : '') + '>' + d.name + '</option>').join('') + '</select>'
-          : '<input type="text" value="' + (orderModalDispatcher ? orderModalDispatcher.name : currentUser.first_name + ' ' + currentUser.last_name) + '" readonly style="background:var(--surface-elevated);cursor:not-allowed"><input type="hidden" id="orderModalDispatcher" value="' + (orderModalDispatcher ? orderModalDispatcher.id : '') + '">') +
+          ? '<select id="orderModalDispatcher"><option value="">Select Dispatcher</option>' + appData.dispatchers.map(d => '<option value="' + d.id + '"' + ((o?.dispatcher_id === d.id || (!o && orderModalDispatcher && orderModalDispatcher.id === d.id)) ? ' selected' : '') + '>' + escapeHtml(d.name) + '</option>').join('') + '</select>'
+          : '<input type="text" value="' + escapeHtml(orderModalDispatcher ? orderModalDispatcher.name : currentUser.first_name + ' ' + currentUser.last_name) + '" readonly style="background:var(--surface-elevated);cursor:not-allowed"><input type="hidden" id="orderModalDispatcher" value="' + (orderModalDispatcher ? orderModalDispatcher.id : '') + '">') +
         '</div>' +
         '</div><div class="modal-footer"><button class="btn btn-secondary" onclick="clearEditing(\'orders\',' + id + ');this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveOrder(' + id + ')">Save</button></div></div>';
       document.body.appendChild(m);
@@ -23691,7 +23738,7 @@
           ? ((orderSplitChecked ? 'CASH' : orderMethod) || null)
           : null,
         payment_terms: orderMethodEl
-          ? (orderSplitChecked ? (splitState.cashType === 'COP' ? 'COP' : 'COD') : orderTerms)
+          ? (orderSplitChecked ? splitState.cashType : orderTerms)
           : (document.getElementById('orderBrokerTerms')?.value || null),
         payment_type: splitPayload.payment_type,
         cod_amount: splitPayload.cod_amount,
@@ -23711,8 +23758,39 @@
         order_source_platform: derivePlatformFromUrl(externalOrderUrl)
       };
       try {
+        let paymentDriftDetected = false;
+        let driftFields = [];
         if (id) {
-          await dbUpdate('orders', id, data);
+          console.group('[PAYMENT-DIAG] saveOrder save');
+          console.log('[PAYMENT-DIAG] SENT', {
+            id: id,
+            payment_method: data.payment_method,
+            payment_terms: data.payment_terms,
+            payment_type: data.payment_type,
+            cod_amount: data.cod_amount,
+            bill_amount: data.bill_amount
+          });
+          const updRes = await dbUpdate('orders', id, data);
+          const returned = Array.isArray(updRes) ? updRes[0] : updRes;
+          if (updRes === null) {
+            console.log('[PAYMENT-DIAG] save cancelled (conflict overwrite declined)');
+            console.groupEnd();
+            return;
+          }
+          console.log('[PAYMENT-DIAG] RETURNED', returned ? {
+            payment_method: returned.payment_method,
+            payment_terms: returned.payment_terms,
+            payment_type: returned.payment_type
+          } : '(no row)');
+          const normalize = v => {
+            if (v === null || v === undefined) return null;
+            const s = String(v).trim();
+            return s === '' ? null : s;
+          };
+          driftFields = ['payment_method','payment_terms','payment_type'].filter(k => normalize(returned?.[k]) !== normalize(data[k]));
+          console.log('[PAYMENT-DIAG] DIFF_FIELDS', driftFields);
+          console.groupEnd();
+          paymentDriftDetected = driftFields.length > 0;
           await logActivity('ORDER_UPDATED', {
             order_id: id,
             order_number: data.order_number,
@@ -23729,8 +23807,16 @@
           });
         }
         document.querySelector('.modal-overlay').remove();
-        showToast('Saved!');
         await loadAllData(true);
+        if (id) {
+          const cached = appData.orders.find(o => o.id === id);
+          console.log('[PAYMENT-DIAG] POST_LOADALL_CACHE', cached ? {
+            payment_method: cached.payment_method,
+            payment_terms: cached.payment_terms,
+            payment_type: cached.payment_type
+          } : '(missing)');
+        }
+        showToast(paymentDriftDetected ? `Saved, but payment fields did not persist (${driftFields.join(', ')}) — see console` : 'Saved!', paymentDriftDetected ? 'warning' : 'success');
         renderOrders(reRenderCurrentPage());
       } catch (e) { showToast(e.message, 'error'); }
     }
@@ -23804,8 +23890,8 @@
         const typeBadge = isOwnerOp ? '<span class="badge badge-amber" style="font-size:10px;margin-left:8px">Owner-OP</span>' : '';
         return '<div class="driver-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px">' +
           '<div style="display:flex;align-items:center;gap:10px">' +
-            '<div class="driver-avatar" style="width:32px;height:32px;font-size:12px;flex-shrink:0">' + d.first_name[0] + d.last_name[0] + '</div>' +
-            '<div style="flex:1;min-width:0"><h4 style="margin:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + d.first_name + ' ' + d.last_name + typeBadge + '</h4><p style="color:var(--text-muted);font-size:12px;margin:2px 0 0">' + percentLabel + ' · ' + (d.phone || 'No phone') + '</p></div>' +
+            '<div class="driver-avatar" style="width:32px;height:32px;font-size:12px;flex-shrink:0">' + escapeHtml((d.first_name || '')[0] || '') + escapeHtml((d.last_name || '')[0] || '') + '</div>' +
+            '<div style="flex:1;min-width:0"><h4 style="margin:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeHtml(d.first_name) + ' ' + escapeHtml(d.last_name) + typeBadge + '</h4><p style="color:var(--text-muted);font-size:12px;margin:2px 0 0">' + percentLabel + ' · ' + escapeHtml(d.phone || 'No phone') + '</p></div>' +
             '<span class="badge ' + getBadge(d.status) + '" style="font-size:10px;padding:2px 6px;flex-shrink:0">' + d.status + '</span>' +
           '</div>' +
           '<div style="border-top:1px solid var(--border)"></div>' +
@@ -23881,7 +23967,7 @@
       };
       
       const c = reRenderCurrentPage();
-      c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px"><button class="btn btn-secondary" onclick="renderDrivers(reRenderCurrentPage())">← Back</button><div class="driver-avatar" style="width:50px;height:50px;font-size:20px">' + d.first_name[0] + d.last_name[0] + '</div><div><h2 style="margin:0;font-size:18px;font-weight:600">' + d.first_name + ' ' + d.last_name + '</h2><p style="margin:0;color:var(--text-secondary)">' + d.phone + (d.email ? ' | ' + d.email : '') + '</p></div><span class="badge ' + getBadge(d.status) + '">' + d.status + '</span></div><button class="btn btn-primary" onclick="openDriverModal(' + driverId + ')">Edit Driver</button></div>' +
+      c.innerHTML = '<div class="header"><div style="display:flex;align-items:center;gap:16px"><button class="btn btn-secondary" onclick="renderDrivers(reRenderCurrentPage())">← Back</button><div class="driver-avatar" style="width:50px;height:50px;font-size:20px">' + escapeHtml((d.first_name || '')[0] || '') + escapeHtml((d.last_name || '')[0] || '') + '</div><div><h2 style="margin:0;font-size:18px;font-weight:600">' + escapeHtml(d.first_name) + ' ' + escapeHtml(d.last_name) + '</h2><p style="margin:0;color:var(--text-secondary)">' + escapeHtml(d.phone || '') + (d.email ? ' | ' + escapeHtml(d.email) : '') + '</p></div><span class="badge ' + getBadge(d.status) + '">' + escapeHtml(d.status) + '</span></div><button class="btn btn-primary" onclick="openDriverModal(' + driverId + ')">Edit Driver</button></div>' +
         
         // Stats
         '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px">' + (d.driver_type === 'OWNER_OP'
@@ -23913,7 +23999,7 @@
           const folderFiles = customFiles.filter(f => (f.folder_name || 'Uncategorized') === folder);
           return '<div style="margin-bottom:16px;border:1px solid var(--border);border-radius:8px"><div style="background:var(--bg-secondary);padding:12px 16px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><strong>' + folder + ' (' + folderFiles.length + ' files)</strong><button class="action-btn edit" onclick="openCustomFileUpload(' + driverId + ',\'' + folder.replace(/'/g, "\\'") + '\',\'driver\')">+ Add File</button></div>' +
             '<div class="table-wrapper"><table class="data-table"><thead><tr><th>File Name</th><th>Type</th><th>Uploaded</th><th>Notes</th><th>Actions</th></tr></thead><tbody>' +
-            folderFiles.map(f => '<tr><td>' + f.file_name + '</td><td>' + (f.file_type || '-') + '</td><td>' + formatDate(f.created_at) + '</td><td>' + (f.notes || '-') + '</td><td><div class="actions"><button class="action-btn view" onclick="viewFile(' + f.id + ')">View</button><button class="action-btn delete" onclick="deleteDriverFile(' + f.id + ',' + driverId + ')">Del</button></div></td></tr>').join('') +
+            folderFiles.map(f => '<tr><td>' + escapeHtml(f.file_name) + '</td><td>' + escapeHtml(f.file_type || '-') + '</td><td>' + formatDate(f.created_at) + '</td><td>' + escapeHtml(f.notes || '-') + '</td><td><div class="actions"><button class="action-btn view" onclick="viewFile(' + f.id + ')">View</button><button class="action-btn delete" onclick="deleteDriverFile(' + f.id + ',' + driverId + ')">Del</button></div></td></tr>').join('') +
             '</tbody></table></div></div>';
         }).join('') +
         '</div>') +
@@ -24050,14 +24136,39 @@
         showToast('File not found', 'error');
         return;
       }
-      
-      // Open file in new tab
+
       const win = window.open();
+      if (!win) return;
+      const safeUrl = escapeUrl(file.file_data);
+      if (safeUrl === '#') {
+        showToast('Unsupported file URL', 'error');
+        win.close();
+        return;
+      }
+      win.document.title = file.file_name || 'File';
       if (file.file_data.startsWith('data:application/pdf') || file.file_data.startsWith('data:image')) {
-        win.document.write('<iframe src="' + file.file_data + '" style="width:100%;height:100%;border:none"></iframe>');
+        const iframe = win.document.createElement('iframe');
+        iframe.src = safeUrl;
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        win.document.body.style.margin = '0';
+        win.document.body.appendChild(iframe);
       } else {
-        // For other files, create download link
-        win.document.write('<html><body><h2>' + file.file_name + '</h2><p>File type: ' + file.file_type.replace(/_/g, ' ') + '</p><p>Notes: ' + (file.notes || 'None') + '</p><a href="' + file.file_data + '" download="' + file.file_name + '">Download File</a></body></html>');
+        const heading = win.document.createElement('h2');
+        heading.textContent = file.file_name || '';
+        const typeP = win.document.createElement('p');
+        typeP.textContent = 'File type: ' + String(file.file_type || '').replace(/_/g, ' ');
+        const notesP = win.document.createElement('p');
+        notesP.textContent = 'Notes: ' + (file.notes || 'None');
+        const dlLink = win.document.createElement('a');
+        dlLink.href = safeUrl;
+        dlLink.download = file.file_name || 'download';
+        dlLink.textContent = 'Download File';
+        win.document.body.appendChild(heading);
+        win.document.body.appendChild(typeP);
+        win.document.body.appendChild(notesP);
+        win.document.body.appendChild(dlLink);
       }
     }
 
@@ -25175,8 +25286,8 @@
       m.onclick = e => { if (e.target === m) m.remove(); };
       m.innerHTML = '<div class="modal" style="max-width:500px"><div class="modal-header"><h3 style="margin:0">Local Note</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body">' +
         '<div style="background:var(--dim-purple);padding:12px;border-radius:8px;margin-bottom:16px">' +
-        '<strong>' + o.order_number + '</strong> - ' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model +
-        '<br><span style="color:var(--purple)">' + (o.origin || '-') + ' → ' + (o.destination || '-') + '</span></div>' +
+        '<strong>' + escapeHtml(o.order_number) + '</strong> - ' + escapeHtml(o.vehicle_year) + ' ' + escapeHtml(o.vehicle_make) + ' ' + escapeHtml(o.vehicle_model) +
+        '<br><span style="color:var(--purple)">' + escapeHtml(o.origin || '-') + ' → ' + escapeHtml(o.destination || '-') + '</span></div>' +
         '<div class="form-group"><label>Note</label><textarea id="localNoteText" rows="4" placeholder="Add note about this vehicle..." style="resize:vertical;width:100%">' + escapeHtml(o.local_notes || '') + '</textarea></div>' +
         '</div><div class="modal-footer">' +
         (o.local_notes ? '<button class="btn btn-danger" style="margin-right:auto" onclick="clearLocalNote(' + orderId + ')">Clear Note</button>' : '') +
@@ -25305,9 +25416,9 @@
         
         // Driver Info
         '<div class="card" style="margin-bottom:24px;padding:20px"><div style="display:flex;gap:24px;flex-wrap:wrap">' +
-        '<div><span style="color:var(--text-secondary)">Phone:</span> <strong>' + (ld.phone || '-') + '</strong></div>' +
-        '<div><span style="color:var(--text-secondary)">Service Area:</span> <strong>' + (ld.service_area || '-') + '</strong></div>' +
-        (ld.notes ? '<div style="width:100%"><span style="color:var(--text-secondary)">Notes:</span> ' + ld.notes + '</div>' : '') +
+        '<div><span style="color:var(--text-secondary)">Phone:</span> <strong>' + escapeHtml(ld.phone || '-') + '</strong></div>' +
+        '<div><span style="color:var(--text-secondary)">Service Area:</span> <strong>' + escapeHtml(ld.service_area || '-') + '</strong></div>' +
+        (ld.notes ? '<div style="width:100%"><span style="color:var(--text-secondary)">Notes:</span> ' + escapeHtml(ld.notes || '') + '</div>' : '') +
         '</div></div>' +
         
         // Assigned Orders
@@ -25415,8 +25526,8 @@
       m.onclick = e => { if (e.target === m) m.remove(); };
       m.innerHTML = '<div class="modal" style="max-width:500px"><div class="modal-header"><h3 style="margin:0">Local Note</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body">' +
         '<div style="background:var(--dim-purple);padding:12px;border-radius:8px;margin-bottom:16px">' +
-        '<strong>' + o.order_number + '</strong> - ' + o.vehicle_year + ' ' + o.vehicle_make + ' ' + o.vehicle_model +
-        '<br><span style="color:var(--purple)">' + (o.origin || '-') + ' → ' + (o.destination || '-') + '</span></div>' +
+        '<strong>' + escapeHtml(o.order_number) + '</strong> - ' + escapeHtml(o.vehicle_year) + ' ' + escapeHtml(o.vehicle_make) + ' ' + escapeHtml(o.vehicle_model) +
+        '<br><span style="color:var(--purple)">' + escapeHtml(o.origin || '-') + ' → ' + escapeHtml(o.destination || '-') + '</span></div>' +
         '<div class="form-group"><label>Note</label><textarea id="localNoteText" rows="4" placeholder="Add note about this vehicle..." style="resize:vertical;width:100%">' + escapeHtml(o.local_notes || '') + '</textarea></div>' +
         '</div><div class="modal-footer">' +
         (o.local_notes ? '<button class="btn btn-danger" style="margin-right:auto" onclick="clearLocalNoteFromDriver(' + orderId + ',' + localDriverId + ')">Clear Note</button>' : '') +
@@ -25815,7 +25926,7 @@
     function openDispModal(id = null) {
       const d = id ? appData.dispatchers.find(x => x.id === id) : null;
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
-      m.innerHTML = '<div class="modal" style="max-width:400px"><div class="modal-header"><h3>' + (d ? 'Edit' : 'New') + ' Dispatcher</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body"><div class="form-group"><label>Code</label><input id="dispCode" value="' + (d?.code || 'D' + (appData.dispatchers.length + 1)) + '"></div><div class="form-group"><label>Name</label><input id="dispName" value="' + (d?.name || '') + '"></div><div class="form-group"><label>Link to User Account</label><select id="dispUser"><option value="">No User Account</option>' + appData.users.map(u => '<option value="' + u.id + '"' + (d?.user_id === u.id ? ' selected' : '') + '>' + u.first_name + ' ' + u.last_name + ' (' + u.email + ')</option>').join('') + '</select></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveDisp(' + id + ')">Save</button></div></div>';
+      m.innerHTML = '<div class="modal" style="max-width:400px"><div class="modal-header"><h3>' + (d ? 'Edit' : 'New') + ' Dispatcher</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body"><div class="form-group"><label>Code</label><input id="dispCode" value="' + escapeHtml(d?.code || 'D' + (appData.dispatchers.length + 1)) + '"></div><div class="form-group"><label>Name</label><input id="dispName" value="' + escapeHtml(d?.name || '') + '"></div><div class="form-group"><label>Link to User Account</label><select id="dispUser"><option value="">No User Account</option>' + appData.users.map(u => '<option value="' + u.id + '"' + (d?.user_id === u.id ? ' selected' : '') + '>' + escapeHtml(u.first_name) + ' ' + escapeHtml(u.last_name) + ' (' + escapeHtml(u.email) + ')</option>').join('') + '</select></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveDisp(' + id + ')">Save</button></div></div>';
       document.body.appendChild(m);
     }
 
@@ -26069,7 +26180,7 @@
       return items.map(item =>
         '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">' +
         '<span style="font-size:16px;width:30px">' + getMedal(item.rank) + '</span>' +
-        '<div style="flex:1"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:600">' + item.name + '</span><span style="color:var(--text-secondary)">' + item.label + '</span></div>' +
+        '<div style="flex:1"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:600">' + escapeHtml(item.name) + '</span><span style="color:var(--text-secondary)">' + item.label + '</span></div>' +
         '<div style="background:var(--bg-tertiary);border-radius:4px;height:8px"><div style="background:' + item.color + ';height:100%;border-radius:4px;width:' + item.percent + '%"></div></div></div></div>'
       ).join('');
     }
@@ -27921,15 +28032,15 @@
             '<div style="flex:1">' +
             '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">' +
             (t.status !== 'COMPLETED' ? '<input type="checkbox" style="width:20px;height:20px;cursor:pointer" onchange="toggleTaskComplete(' + t.id + ',this.checked)" title="Mark as completed">' : '<span style="color:var(--green);font-size:20px">[[icon:check]]</span>') +
-            '<span style="font-size:16px;font-weight:600;' + (t.status === 'COMPLETED' ? 'text-decoration:line-through;color:var(--text-muted)' : '') + '">' + t.title + '</span>' +
+            '<span style="font-size:16px;font-weight:600;' + (t.status === 'COMPLETED' ? 'text-decoration:line-through;color:var(--text-muted)' : '') + '">' + escapeHtml(t.title) + '</span>' +
             getPriorityBadge(t.priority) +
             getStatusBadge(t.status) +
             '</div>' +
             (t.description ? '<p style="color:var(--text-secondary);margin:0 0 8px 32px;font-size:14px">' + escapeHtml(t.description) + '</p>' : '') +
             '<div style="display:flex;gap:16px;margin-left:32px;font-size:13px;color:var(--text-secondary)">' +
             '<span>[[icon:calendar]] ' + (isOverdue(t.due_date, t.status) ? '<span style="color:var(--red);font-weight:600">OVERDUE: </span>' : '') + formatDate(t.due_date) + '</span>' +
-            (assignee ? '<span>[[icon:user]] ' + assignee.name + '</span>' : '') +
-            (creator ? '<span>Created by: ' + (creator.first_name || creator.email) + '</span>' : '') +
+            (assignee ? '<span>[[icon:user]] ' + escapeHtml(assignee.name) + '</span>' : '') +
+            (creator ? '<span>Created by: ' + escapeHtml(creator.first_name || creator.email) + '</span>' : '') +
             '</div>' +
             '</div>' +
             '<div class="actions">' +
@@ -27946,7 +28057,7 @@
       const t = id ? (appData.tasks || []).find(x => x.id === id) : null;
       const today = new Date().toISOString().split('T')[0];
       
-      const dispatcherOptions = appData.dispatchers.map(d => '<option value="' + d.id + '"' + (t?.assigned_to === d.id ? ' selected' : '') + '>' + d.name + '</option>').join('');
+      const dispatcherOptions = appData.dispatchers.map(d => '<option value="' + d.id + '"' + (t?.assigned_to === d.id ? ' selected' : '') + '>' + escapeHtml(d.name) + '</option>').join('');
       
       const m = document.createElement('div'); m.className = 'modal-overlay'; m.onclick = e => { if (e.target === m) m.remove(); };
       m.innerHTML = '<div class="modal" style="max-width:500px"><div class="modal-header"><h3>' + (t ? 'Edit Task' : 'New Task') + '</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div><div class="modal-body">' +
@@ -28380,12 +28491,12 @@
           const expDate = new Date(f.expiration_date);
           const daysUntil = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
           if (daysUntil <= 7) {
-            alerts.push({ name: d.first_name + ' ' + d.last_name, doc: f.file_type.replace(/_/g, ' '), days: daysUntil });
+            alerts.push({ name: (d.first_name || '') + ' ' + (d.last_name || ''), doc: String(f.file_type || '').replace(/_/g, ' '), days: daysUntil });
           }
         });
       });
       
-      const alertsHtml = alerts.length > 0 ? '<div style="background:var(--red-dim);border-left:3px solid var(--red);border-radius:6px;padding:14px 16px;margin-bottom:24px"><strong style="color:var(--red)">[[icon:alert]] Expiring Soon (' + alerts.length + ')</strong><div style="margin-top:8px">' + alerts.slice(0, 5).map(a => '<span class="badge ' + (a.days < 0 ? 'badge-red' : 'badge-amber') + '" style="margin:4px">' + a.name + ' - ' + a.doc + ' (' + (a.days < 0 ? 'EXPIRED' : a.days + 'd') + ')</span>').join('') + '</div></div>' : '';
+      const alertsHtml = alerts.length > 0 ? '<div style="background:var(--red-dim);border-left:3px solid var(--red);border-radius:6px;padding:14px 16px;margin-bottom:24px"><strong style="color:var(--red)">[[icon:alert]] Expiring Soon (' + alerts.length + ')</strong><div style="margin-top:8px">' + alerts.slice(0, 5).map(a => '<span class="badge ' + (a.days < 0 ? 'badge-red' : 'badge-amber') + '" style="margin:4px">' + escapeHtml(a.name) + ' - ' + escapeHtml(a.doc) + ' (' + (a.days < 0 ? 'EXPIRED' : a.days + 'd') + ')</span>').join('') + '</div></div>' : '';
 
       c.innerHTML = alertsHtml +
         '<div class="card card-flush"><div class="section-header"><span class="section-header-title">[[icon:user]] Driver Files</span></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Driver</th><th>CDL</th><th>Medical Card</th><th>MVR</th><th>PSP Report</th><th>Other</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
@@ -28503,7 +28614,7 @@
         '<div class="table-wrapper"><table class="data-table"><thead><tr><th>Document</th><th>Status</th><th>Expires</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
         COMPANY_FILE_TYPES.map(ft => {
           const status = getFileStatus(ft);
-          return '<tr><td><strong>' + ft.label + '</strong></td><td>' + status.status + '</td><td>' + status.expires + '</td><td class="sticky-col">' +
+          return '<tr><td><strong>' + escapeHtml(ft.label) + '</strong></td><td>' + status.status + '</td><td>' + status.expires + '</td><td class="sticky-col">' +
             (status.hasFile ?
               '<div class="actions"><button class="action-btn view" onclick="viewCompanyFile(' + status.fileId + ')">View</button><button class="action-btn delete" onclick="deleteCompanyFile(' + status.fileId + ')">Del</button></div>' :
               '<button class="action-btn edit" onclick="openCompanyFileUploadModal(\'' + ft.key + '\', ' + ft.hasExpiry + ')">Upload</button>') +
@@ -28517,7 +28628,7 @@
         (customFolders.length === 0 ? '<div style="text-align:center;color:var(--text-muted);padding:20px">No custom folders. Click "+ New Folder" to create one.</div>' :
         customFolders.map(folder => {
           const folderFiles = customFiles.filter(f => f.folder_name === folder);
-          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--bg-secondary);border-radius:8px;margin-bottom:8px"><div><strong>[[icon:folder]] ' + folder + '</strong><span style="margin-left:8px;font-size:12px;color:var(--text-muted)">(' + folderFiles.length + ' file' + (folderFiles.length !== 1 ? 's' : '') + ')</span></div><div class="actions"><button class="action-btn view" onclick="viewCompanyFolder(\'' + folder.replace(/'/g, "\\'") + '\')">Manage</button></div></div>';
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--bg-secondary);border-radius:8px;margin-bottom:8px"><div><strong>[[icon:folder]] ' + escapeHtml(folder) + '</strong><span style="margin-left:8px;font-size:12px;color:var(--text-muted)">(' + folderFiles.length + ' file' + (folderFiles.length !== 1 ? 's' : '') + ')</span></div><div class="actions"><button class="action-btn view" onclick="viewCompanyFolder(\'' + folder.replace(/'/g, "\\'") + '\')">Manage</button></div></div>';
         }).join('')) +
         '</div></div>';
     }
@@ -28528,12 +28639,58 @@
       if (!file) { showToast('File not found', 'error'); return; }
 
       const w = window.open('', '_blank');
-      if (file.file_data.startsWith('data:application/pdf') || file.file_data.startsWith('data:image')) {
-        w.document.write('<html><head><title>' + file.file_name + '</title></head><body style="margin:0"><iframe src="' + file.file_data + '" style="width:100%;height:100vh;border:none"></iframe></body></html>');
-      } else {
-        w.document.write('<html><head><title>' + file.file_name + '</title><style>body{font-family:system-ui;padding:40px;max-width:600px;margin:0 auto}</style></head><body><h2>' + file.file_name + '</h2><p><strong>Type:</strong> ' + file.file_type.replace(/_/g, ' ') + '</p>' + (file.notes ? '<p><strong>Notes:</strong> ' + file.notes + '</p>' : '') + (file.expiration_date ? '<p><strong>Expires:</strong> ' + formatDate(file.expiration_date) + '</p>' : '') + '<a href="' + file.file_data + '" download="' + file.file_name + '" style="display:inline-block;padding:10px 20px;background:var(--blue);color:white;text-decoration:none;border-radius:6px;margin-top:20px">Download File</a></body></html>');
+      if (!w) return;
+      const safeUrl = escapeUrl(file.file_data);
+      if (safeUrl === '#') {
+        showToast('Unsupported file URL', 'error');
+        w.close();
+        return;
       }
-      w.document.close();
+      w.document.title = file.file_name || 'File';
+      if (file.file_data.startsWith('data:application/pdf') || file.file_data.startsWith('data:image')) {
+        w.document.body.style.margin = '0';
+        const iframe = w.document.createElement('iframe');
+        iframe.src = safeUrl;
+        iframe.style.width = '100%';
+        iframe.style.height = '100vh';
+        iframe.style.border = 'none';
+        w.document.body.appendChild(iframe);
+      } else {
+        const style = w.document.createElement('style');
+        style.textContent = 'body{font-family:system-ui;padding:40px;max-width:600px;margin:0 auto}';
+        w.document.head.appendChild(style);
+        const heading = w.document.createElement('h2');
+        heading.textContent = file.file_name || '';
+        w.document.body.appendChild(heading);
+        const typeP = w.document.createElement('p');
+        const typeStrong = w.document.createElement('strong');
+        typeStrong.textContent = 'Type: ';
+        typeP.appendChild(typeStrong);
+        typeP.appendChild(w.document.createTextNode(String(file.file_type || '').replace(/_/g, ' ')));
+        w.document.body.appendChild(typeP);
+        if (file.notes) {
+          const notesP = w.document.createElement('p');
+          const notesStrong = w.document.createElement('strong');
+          notesStrong.textContent = 'Notes: ';
+          notesP.appendChild(notesStrong);
+          notesP.appendChild(w.document.createTextNode(file.notes));
+          w.document.body.appendChild(notesP);
+        }
+        if (file.expiration_date) {
+          const expP = w.document.createElement('p');
+          const expStrong = w.document.createElement('strong');
+          expStrong.textContent = 'Expires: ';
+          expP.appendChild(expStrong);
+          expP.appendChild(w.document.createTextNode(formatDate(file.expiration_date)));
+          w.document.body.appendChild(expP);
+        }
+        const dlLink = w.document.createElement('a');
+        dlLink.href = safeUrl;
+        dlLink.download = file.file_name || 'download';
+        dlLink.textContent = 'Download File';
+        dlLink.style.cssText = 'display:inline-block;padding:10px 20px;background:var(--blue);color:white;text-decoration:none;border-radius:6px;margin-top:20px';
+        w.document.body.appendChild(dlLink);
+      }
     }
 
     // Delete a company file
@@ -36120,7 +36277,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Earnings Statement - ${driver.first_name} ${driver.last_name}</title>
+  <title>Earnings Statement - ${escapeHtml(driver.first_name)} ${escapeHtml(driver.last_name)}</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -38123,7 +38280,7 @@
                     '<tr><td style="padding: 8px 0; color: var(--text-secondary); font-size: 14px;">Route</td>' +
                     '<td style="padding: 8px 0; color: #1e293b; font-weight: 600; text-align: right;">' + (order.origin || order.pickup_state || 'Origin') + ' → ' + (order.destination || order.delivery_state || 'Destination') + '</td></tr>' +
                     (driver ? '<tr><td style="padding: 8px 0; color: var(--text-secondary); font-size: 14px;">Driver</td>' +
-                    '<td style="padding: 8px 0; color: #1e293b; font-weight: 600; text-align: right;">' + driver.first_name + ' ' + driver.last_name + '</td></tr>' : '') +
+                    '<td style="padding: 8px 0; color: #1e293b; font-weight: 600; text-align: right;">' + escapeHtml(driver.first_name) + ' ' + escapeHtml(driver.last_name) + '</td></tr>' : '') +
                   '</table>' +
                 '</div>' +
                 '<div style="text-align: center; margin: 24px 0;">' +
@@ -38133,7 +38290,7 @@
               '</div>' +
               '<div style="background: #1e293b; padding: 20px; text-align: center;">' +
                 '<p style="color: var(--text-muted); font-size: 13px; margin: 0 0 8px;">Questions? Contact our dispatch team</p>' +
-                '<p style="color: white; font-size: 14px; margin: 0;"><strong>' + cp.phone + '</strong> | ' + cp.email_dispatch + '</p>' +
+                '<p style="color: white; font-size: 14px; margin: 0;"><strong>' + escapeHtml(cp.phone) + '</strong> | ' + escapeHtml(cp.email_dispatch) + '</p>' +
               '</div>' +
             '</div>'
           })
@@ -38599,7 +38756,7 @@
           </style>
 
           <div class="tracking-header">
-            <div class="tracking-logo">${cp.name.toUpperCase()}</div>
+            <div class="tracking-logo">${escapeHtml(String(cp.name || '').toUpperCase())}</div>
             <div style="text-align:right;font-size:13px;color:var(--text-muted);">
               Tracking Portal
             </div>
@@ -38611,12 +38768,12 @@
                 <div class="tracking-not-found-icon">[[icon:search]]</div>
                 <h2>Order Not Found</h2>
                 <p>The tracking link may be invalid or the order no longer exists.</p>
-                <p style="margin-top:16px;">Questions? Contact <strong>${cp.phone}</strong></p>
+                <p style="margin-top:16px;">Questions? Contact <strong>${escapeHtml(cp.phone)}</strong></p>
               </div>
             ` : `
               <div class="tracking-title">
                 <h1>Vehicle Tracking</h1>
-                <span class="tracking-id-badge">Order #${order.order_number || order.id}</span>
+                <span class="tracking-id-badge">Order #${escapeHtml(order.order_number || order.id)}</span>
               </div>
 
               <div class="tracking-refresh-note">
@@ -38644,11 +38801,11 @@
                 <div class="tracking-card-title">[[icon:car]] Vehicle</div>
                 <div class="tracking-vehicle-card">
                   <div class="tracking-vehicle-info">
-                    <h3>${[order.vehicle_year, order.vehicle_make, order.vehicle_model].filter(Boolean).join(' ') || 'Vehicle'}</h3>
-                    <p>${order.vehicle_vin ? 'VIN: ' + order.vehicle_vin.substring(0, 8) + '...' + order.vehicle_vin.slice(-4) : 'VIN not available'}${order.vehicle_color ? ' • ' + order.vehicle_color : ''}</p>
+                    <h3>${escapeHtml([order.vehicle_year, order.vehicle_make, order.vehicle_model].filter(Boolean).join(' ') || 'Vehicle')}</h3>
+                    <p>${order.vehicle_vin ? 'VIN: ' + escapeHtml(String(order.vehicle_vin).substring(0, 8)) + '...' + escapeHtml(String(order.vehicle_vin).slice(-4)) : 'VIN not available'}${order.vehicle_color ? ' • ' + escapeHtml(order.vehicle_color) : ''}</p>
                   </div>
                   <div>
-                    <span class="tracking-badge">${statusLabel}</span>
+                    <span class="tracking-badge">${escapeHtml(statusLabel)}</span>
                   </div>
                 </div>
               </div>
@@ -38659,14 +38816,14 @@
                   <div style="flex:1;min-width:120px;">
                     <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">PICKUP</div>
                     <div style="font-weight:600;color:var(--text-primary);">
-                      ${order.pickup_city && order.pickup_state ? order.pickup_city + ', ' + order.pickup_state : order.origin || 'Origin'}
+                      ${escapeHtml(order.pickup_city && order.pickup_state ? order.pickup_city + ', ' + order.pickup_state : order.origin || 'Origin')}
                     </div>
                   </div>
                   <div style="font-size:24px;color:var(--text-muted);">→</div>
                   <div style="flex:1;min-width:120px;">
                     <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">DELIVERY</div>
                     <div style="font-weight:600;color:var(--text-primary);">
-                      ${order.delivery_city && order.delivery_state ? order.delivery_city + ', ' + order.delivery_state : order.destination || 'Destination'}
+                      ${escapeHtml(order.delivery_city && order.delivery_state ? order.delivery_city + ', ' + order.delivery_state : order.destination || 'Destination')}
                     </div>
                   </div>
                 </div>
@@ -38679,10 +38836,10 @@
                     <div class="tracking-timeline-item">
                       <div class="tracking-timeline-dot ${item.completed ? (item.current ? 'current' : 'completed') : ''}"></div>
                       <div class="tracking-timeline-content">
-                        <div class="tracking-timeline-title">${item.label}</div>
-                        <div class="tracking-timeline-detail">${item.detail}</div>
-                        ${item.date ? '<div class="tracking-timeline-date">' + item.date + '</div>' : ''}
-                        ${item.eta ? '<div class="tracking-timeline-eta">' + item.eta + '</div>' : ''}
+                        <div class="tracking-timeline-title">${escapeHtml(item.label)}</div>
+                        <div class="tracking-timeline-detail">${escapeHtml(item.detail)}</div>
+                        ${item.date ? '<div class="tracking-timeline-date">' + escapeHtml(item.date) + '</div>' : ''}
+                        ${item.eta ? '<div class="tracking-timeline-eta">' + escapeHtml(item.eta) + '</div>' : ''}
                       </div>
                     </div>
                   `).join('')}
@@ -38694,21 +38851,21 @@
                 <div class="tracking-contact-grid">
                   <div class="tracking-contact-item">
                     <div class="tracking-contact-label">Dispatch</div>
-                    <div class="tracking-contact-value">${cp.phone}</div>
+                    <div class="tracking-contact-value">${escapeHtml(cp.phone)}</div>
                   </div>
                   <div class="tracking-contact-item">
                     <div class="tracking-contact-label">Email</div>
-                    <div class="tracking-contact-value">${cp.email_dispatch}</div>
+                    <div class="tracking-contact-value">${escapeHtml(cp.email_dispatch)}</div>
                   </div>
                   ${driver ? `
                     <div class="tracking-contact-item">
                       <div class="tracking-contact-label">Driver</div>
-                      <div class="tracking-contact-value">${driver.first_name} ${driver.last_name}${driver.phone ? ' • ' + driver.phone : ''}</div>
+                      <div class="tracking-contact-value">${escapeHtml(driver.first_name)} ${escapeHtml(driver.last_name)}${driver.phone ? ' • ' + escapeHtml(driver.phone) : ''}</div>
                     </div>
                   ` : ''}
                   <div class="tracking-contact-item">
                     <div class="tracking-contact-label">24/7 Emergency</div>
-                    <div class="tracking-contact-value">${cp.phone}</div>
+                    <div class="tracking-contact-value">${escapeHtml(cp.phone)}</div>
                   </div>
                 </div>
               </div>
@@ -38761,7 +38918,7 @@
         <div class="modal-overlay" onclick="if(event.target===this)this.remove()">
           <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
-              <h3>[[icon:paperclip]] Attachments - Order ${order.order_number}</h3>
+              <h3>[[icon:paperclip]] Attachments - Order ${escapeHtml(order.order_number)}</h3>
               <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
             </div>
             <div class="modal-body">
@@ -38793,7 +38950,7 @@
                         <div class="attachment-info">
                           <span class="attachment-icon">${getFileIcon(a.file_type || a.file_name)}</span>
                           <div style="flex: 1; min-width: 0;">
-                            <div style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${a.file_name}</div>
+                            <div style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(a.file_name)}</div>
                             <div style="font-size: 11px; color: var(--text-muted);">
                               ${formatDate(a.uploaded_at)} ${a.file_size ? '• ' + formatFileSize(a.file_size) : ''}
                             </div>
@@ -38801,10 +38958,10 @@
                         </div>
                         <div class="attachment-actions">
                           ${a.__resolved_url ? `
-                            <button class="btn btn-sm" style="background: var(--bg-lighter);" onclick="window.open('${a.__resolved_url}', '_blank')">
+                            <button class="btn btn-sm" style="background: var(--bg-lighter);" data-url="${escapeHtml(escapeUrl(a.__resolved_url))}" onclick="window.open(this.dataset.url, '_blank')">
                               [[icon:eye]] View
                             </button>
-                            <a href="${a.__resolved_url}" download="${a.file_name}" class="btn btn-sm" style="background: var(--bg-lighter);">
+                            <a href="${escapeHtml(escapeUrl(a.__resolved_url))}" download="${escapeHtml(a.file_name)}" class="btn btn-sm" style="background: var(--bg-lighter);">
                               [[icon:download]] Download
                             </a>
                           ` : `
@@ -39381,8 +39538,8 @@
         var borderColor = a.severity === 'red' ? 'var(--red)' : 'var(--amber)';
         var bgColor = a.severity === 'red' ? 'var(--red-dim, rgba(239,68,68,0.06))' : 'var(--amber-dim, rgba(234,179,8,0.06))';
         html += '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:var(--radius-sm);background:' + bgColor + ';border-left:3px solid ' + borderColor + '">';
-        html += '<div style="flex:1"><span style="font-weight:600;color:' + borderColor + ';font-size:13px">' + a.title + '</span>';
-        html += '<span style="color:var(--text-secondary);font-size:12px;margin-left:8px">' + a.msg + '</span></div>';
+        html += '<div style="flex:1"><span style="font-weight:600;color:' + borderColor + ';font-size:13px">' + escapeHtml(a.title) + '</span>';
+        html += '<span style="color:var(--text-secondary);font-size:12px;margin-left:8px">' + escapeHtml(a.msg) + '</span></div>';
         if (a.link) html += '<button class="btn btn-secondary" style="font-size:11px;padding:4px 10px;white-space:nowrap" onclick="' + a.link + '">View</button>';
         html += '</div>';
       });
@@ -39786,7 +39943,7 @@
       const rows = driverList.length === 0
         ? '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-secondary)">No driver data yet</td></tr>'
         : driverList.map(d => `<tr>
-            <td><strong>${d.name}</strong></td>
+            <td><strong>${escapeHtml(d.name)}</strong></td>
             <td>${d.trips}</td>
             <td>${d.cars}</td>
             <td style="font-family:var(--font-mono)">${d.miles.toLocaleString()}</td>
@@ -39860,7 +40017,7 @@
       const rows = brokerList.length === 0
         ? '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-secondary)">No broker data yet</td></tr>'
         : brokerList.map(b => `<tr>
-            <td><strong>${b.name}</strong></td>
+            <td><strong>${escapeHtml(b.name)}</strong></td>
             <td>${b.trips}</td>
             <td>${b.cars}</td>
             <td class="money" style="font-family:var(--font-mono)">${formatMoney(b.revenue)}</td>
@@ -45524,12 +45681,11 @@ function jsonResponse(data, status = 200) {
             const resolvedUrl = file.__resolved_url || file.url || null;
             if (!resolvedUrl) return;
             const isImage = file.type && file.type.startsWith('image/');
-            const safeUrl = escapeHtml(resolvedUrl);
-            const safeJsUrl = String(resolvedUrl).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            const safeUrl = escapeHtml(escapeUrl(resolvedUrl));
             const safeName = escapeHtml(file.name || 'Attachment');
             const sizeLabel = formatFileSize(file.size || 0);
             if (isImage) {
-              attachmentsHtml += '<a class="chat-attachment-card is-image" href="' + safeUrl + '" target="_blank" onclick="openImageViewer(\'' + safeJsUrl + '\');event.preventDefault()">' +
+              attachmentsHtml += '<a class="chat-attachment-card is-image" href="' + safeUrl + '" target="_blank" data-url="' + safeUrl + '" onclick="openImageViewer(this.dataset.url);event.preventDefault()">' +
                 '<img src="' + safeUrl + '" alt="' + safeName + '">' +
                 '<span class="chat-attachment-image-meta"><strong>' + safeName + '</strong><span>' + sizeLabel + '</span></span>' +
                 '</a>';
@@ -45587,13 +45743,7 @@ function jsonResponse(data, status = 200) {
       const colors = ['#6366f1', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
       return colors[userId % colors.length];
     }
-    
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-    
+
     function formatMessageWithMentions(text, isOwnMessage) {
       // First escape HTML
       let html = escapeHtml(text);
@@ -47235,8 +47385,8 @@ function jsonResponse(data, status = 200) {
         return '<div style="margin-bottom:8px;' + (isOwn ? 'text-align:right' : '') + '">' +
           '<div style="display:inline-block;max-width:80%;padding:8px 12px;border-radius:12px;' + 
           (isOwn ? 'background:var(--primary);color:white' : 'background:var(--bg-tertiary)') + '">' +
-          (!isOwn ? '<div style="font-size:11px;font-weight:600;margin-bottom:2px">' + (msg.user_name || 'Unknown') + '</div>' : '') +
-          '<div style="font-size:13px">' + (msg.message || '').replace(/\n/g, '<br>') + '</div>' +
+          (!isOwn ? '<div style="font-size:11px;font-weight:600;margin-bottom:2px">' + escapeHtml(msg.user_name || 'Unknown') + '</div>' : '') +
+          '<div style="font-size:13px">' + escapeHtml(msg.message || '').replace(/\n/g, '<br>') + '</div>' +
           '</div>' +
           '<div style="font-size:10px;color:var(--text-muted);margin-top:2px">' + time + '</div>' +
           '</div>';
@@ -47523,10 +47673,11 @@ function jsonResponse(data, status = 200) {
       
       container.innerHTML = recentMessages.map(msg => {
         const isOwnMessage = msg.user_id === currentUser.id;
-        const initials = msg.user_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        const safeName = String(msg.user_name || '');
+        const initials = safeName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
         const color = getAvatarColor(msg.user_id);
         const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
+
         // Parse file attachments
         let attachmentsHtml = '';
         const files = msg.__attachments || parseChatAttachments(msg.file_attachments);
@@ -47535,20 +47686,21 @@ function jsonResponse(data, status = 200) {
           files.forEach(file => {
             const resolvedUrl = file.__resolved_url || file.url || null;
             if (!resolvedUrl) return;
+            const safeUrl = escapeHtml(escapeUrl(resolvedUrl));
             const isImage = file.type && file.type.startsWith('image/');
             if (isImage) {
-              attachmentsHtml += '<a href="' + resolvedUrl + '" target="_blank"><img src="' + resolvedUrl + '" style="max-width:150px;max-height:100px;border-radius:6px;margin-top:4px;display:block" onclick="openImageViewer(\'' + resolvedUrl + '\');event.preventDefault()"></a>';
+              attachmentsHtml += '<a href="' + safeUrl + '" target="_blank" data-url="' + safeUrl + '" onclick="openImageViewer(this.dataset.url);event.preventDefault()"><img src="' + safeUrl + '" style="max-width:150px;max-height:100px;border-radius:6px;margin-top:4px;display:block"></a>';
             } else {
-              attachmentsHtml += '<a href="' + resolvedUrl + '" target="_blank" download style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:rgba(0,0,0,0.05);border-radius:6px;text-decoration:none;color:inherit;font-size:11px;margin-top:4px">[[icon:paperclip]] ' + escapeHtml(file.name) + '</a>';
+              attachmentsHtml += '<a href="' + safeUrl + '" target="_blank" download style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:rgba(0,0,0,0.05);border-radius:6px;text-decoration:none;color:inherit;font-size:11px;margin-top:4px">[[icon:paperclip]] ' + escapeHtml(file.name) + '</a>';
             }
           });
           attachmentsHtml += '</div>';
         }
-        
+
         return '<div style="display:flex;gap:8px;' + (isOwnMessage ? 'flex-direction:row-reverse' : '') + '">' +
-          '<div style="width:32px;height:32px;border-radius:50%;background:' + color + ';color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">' + initials + '</div>' +
+          '<div style="width:32px;height:32px;border-radius:50%;background:' + color + ';color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">' + escapeHtml(initials) + '</div>' +
           '<div style="max-width:70%">' +
-          '<div style="font-size:11px;color:' + textMuted + ';margin-bottom:2px;' + (isOwnMessage ? 'text-align:right' : '') + '">' + msg.user_name + '</div>' +
+          '<div style="font-size:11px;color:' + textMuted + ';margin-bottom:2px;' + (isOwnMessage ? 'text-align:right' : '') + '">' + escapeHtml(safeName) + '</div>' +
           '<div style="background:' + (isOwnMessage ? 'var(--bg-tertiary)' : otherMsgBg) + ';color:' + (isOwnMessage ? 'var(--text-primary)' : otherMsgColor) + ';padding:8px 12px;border-radius:12px;font-size:13px;box-shadow:' + (isOwnMessage ? 'none' : otherMsgShadow) + ';border:' + (isOwnMessage ? '1px solid var(--border)' : otherMsgBorder) + '">' +
           (msg.message ? formatMessageWithMentions(msg.message, isOwnMessage) : '') +
           attachmentsHtml +
@@ -48020,9 +48172,11 @@ function jsonResponse(data, status = 200) {
     // ============ ACTIVITY LOG SECTION ============
     let activityLogData = [];
     let activityLogFilter = 'all';
-    
+
     let activityDateFrom = '';
     let activityDateTo = '';
+
+    let activityDetailIndex = {};
     
     async function renderActivityLog(c) {
       // Fetch activity log from database
@@ -48100,8 +48254,8 @@ function jsonResponse(data, status = 200) {
         '<div style="display:flex;gap:8px;align-items:center"><label style="color:var(--text-secondary);font-size:13px;font-weight:500">Filter:</label>' +
         '<select class="select" onchange="activityLogFilter=this.value;pagination.activity_log.page=1;renderActivityLog(reRenderCurrentPage())">' +
         '<option value="all"' + (activityLogFilter === 'all' ? ' selected' : '') + '>All Activities</option>' +
-        '<optgroup label="By Action">' + actionTypes.map(a => '<option value="' + a + '"' + (activityLogFilter === a ? ' selected' : '') + '>' + a.replace(/_/g, ' ') + '</option>').join('') + '</optgroup>' +
-        '<optgroup label="By User">' + userEmails.map(e => '<option value="' + e + '"' + (activityLogFilter === e ? ' selected' : '') + '>' + e + '</option>').join('') + '</optgroup>' +
+        '<optgroup label="By Action">' + actionTypes.map(a => '<option value="' + escapeHtml(a) + '"' + (activityLogFilter === a ? ' selected' : '') + '>' + escapeHtml(a.replace(/_/g, ' ')) + '</option>').join('') + '</optgroup>' +
+        '<optgroup label="By User">' + userEmails.map(e => '<option value="' + escapeHtml(e) + '"' + (activityLogFilter === e ? ' selected' : '') + '>' + escapeHtml(e) + '</option>').join('') + '</optgroup>' +
         '</select></div>' +
         '<div style="display:flex;gap:8px;align-items:center"><label style="color:var(--text-secondary);font-size:13px;font-weight:500">From:</label>' +
         '<input class="input" type="date" value="' + activityDateFrom + '" onchange="activityDateFrom=this.value;pagination.activity_log.page=1;renderActivityLog(reRenderCurrentPage())"></div>' +
@@ -48116,51 +48270,64 @@ function jsonResponse(data, status = 200) {
         '<tbody>' +
         (paginatedData.data.length === 0
           ? '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted)">No activity logs found</td></tr>'
-          : paginatedData.data.map(a => {
-              const badgeClass = getActionBadgeClass(a.action);
-              const icon = getActionIcon(a.action);
-              let details = '';
-              try {
-                const d = typeof a.details === 'string' ? JSON.parse(a.details || '{}') : (a.details || {});
-                details = Object.entries(d).map(([k, v]) => '<span style="background:var(--bg-tertiary);padding:2px 6px;border-radius:4px;margin-right:4px;margin-bottom:2px;display:inline-block;font-size:11px"><strong>' + k.replace(/_/g, ' ') + ':</strong> ' + (v || '-') + '</span>').join('');
-              } catch (e) { details = a.details || '-'; }
+          : (() => {
+              // Reset and repopulate index for this render cycle
+              activityDetailIndex = {};
+              return paginatedData.data.map(a => {
+                const badgeClass = getActionBadgeClass(a.action);
+                const icon = getActionIcon(a.action);
+                let details = '';
+                try {
+                  const d = typeof a.details === 'string' ? JSON.parse(a.details || '{}') : (a.details || {});
+                  details = Object.entries(d).map(([k, v]) => '<span style="background:var(--bg-tertiary);padding:2px 6px;border-radius:4px;margin-right:4px;margin-bottom:2px;display:inline-block;font-size:11px"><strong>' + escapeHtml(k.replace(/_/g, ' ')) + ':</strong> ' + escapeHtml(v == null ? '-' : v) + '</span>').join('');
+                } catch (e) { details = escapeHtml(a.details || '-'); }
 
-              // Display user name if available, otherwise fall back to email
-              const displayName = a.user_name || a.user_email || 'System';
-              return '<tr style="cursor:pointer" onclick="showActivityDetail(' + JSON.stringify(a).replace(/"/g, '&quot;') + ')">' +
-                '<td style="font-size:20px;text-align:center">' + icon + '</td>' +
-                '<td style="font-size:13px;white-space:nowrap">' + formatDateTime(a.created_at) + '</td>' +
-                '<td style="font-weight:500">' + displayName + '</td>' +
-                '<td><span class="badge ' + badgeClass + '">' + a.action.replace(/_/g, ' ') + '</span></td>' +
-                '<td style="font-size:12px">' + details + '</td>' +
-                '</tr>';
-            }).join('')) +
+                // Display user name if available, otherwise fall back to email
+                const displayName = a.user_name || a.user_email || 'System';
+                const rowKey = String(a.id != null ? a.id : ('idx_' + a.created_at + '_' + (a.user_email || '')));
+                activityDetailIndex[rowKey] = a;
+                return '<tr style="cursor:pointer" onclick="showActivityDetail(\'' + escapeHtml(rowKey) + '\')">' +
+                  '<td style="font-size:20px;text-align:center">' + icon + '</td>' +
+                  '<td style="font-size:13px;white-space:nowrap">' + formatDateTime(a.created_at) + '</td>' +
+                  '<td style="font-weight:500">' + escapeHtml(displayName) + '</td>' +
+                  '<td><span class="badge ' + badgeClass + '">' + escapeHtml(a.action.replace(/_/g, ' ')) + '</span></td>' +
+                  '<td style="font-size:12px">' + details + '</td>' +
+                  '</tr>';
+              }).join('');
+            })()) +
         '</tbody></table></div>' +
         renderPaginationControls('activity_log') +
         '</div>';
     }
     
-    function showActivityDetail(activity) {
+    function showActivityDetail(rowKey) {
+      // Caller passes either an activity object (legacy path) or a row key.
+      // The current renderer always passes a string key.
+      const activity = (typeof rowKey === 'string')
+        ? (activityDetailIndex[rowKey] || null)
+        : rowKey;
+      if (!activity) return;
+
       let detailsHtml = '';
       try {
         const d = typeof activity.details === 'string' ? JSON.parse(activity.details || '{}') : (activity.details || {});
         detailsHtml = '<div style="display:grid;gap:12px">' +
-          Object.entries(d).map(([k, v]) => 
+          Object.entries(d).map(([k, v]) =>
             '<div style="display:flex;justify-content:space-between;padding:12px;background:var(--bg-tertiary);border-radius:8px">' +
-            '<span style="font-weight:500;color:var(--text-muted)">' + k.replace(/_/g, ' ').toUpperCase() + '</span>' +
-            '<span style="font-weight:600">' + (v || '-') + '</span></div>'
+            '<span style="font-weight:500;color:var(--text-muted)">' + escapeHtml(k.replace(/_/g, ' ').toUpperCase()) + '</span>' +
+            '<span style="font-weight:600">' + escapeHtml(v == null ? '-' : v) + '</span></div>'
           ).join('') + '</div>';
       } catch (e) {
-        detailsHtml = '<p>' + (activity.details || 'No details') + '</p>';
+        detailsHtml = '<p>' + escapeHtml(activity.details || 'No details') + '</p>';
       }
-      
+
       showModal('activity-detail-modal', '[[icon:clipboard]] ' + 'Activity Details',
         '<div style="margin-bottom:20px">' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">' +
         '<div><label style="color:var(--text-muted);font-size:12px">' + 'Date/Time' + '</label><div style="font-weight:600">' + formatDateTime(activity.created_at) + '</div></div>' +
-        '<div><label style="color:var(--text-muted);font-size:12px">' + 'User' + '</label><div style="font-weight:600">' + (activity.user_email || 'System') + '</div></div>' +
-        '<div><label style="color:var(--text-muted);font-size:12px">' + 'Action' + '</label><div style="font-weight:600">' + activity.action.replace(/_/g, ' ') + '</div></div>' +
-        '<div><label style="color:var(--text-muted);font-size:12px">IP</label><div style="font-weight:600">' + (activity.ip_address || '-') + '</div></div>' +
+        '<div><label style="color:var(--text-muted);font-size:12px">' + 'User' + '</label><div style="font-weight:600">' + escapeHtml(activity.user_email || 'System') + '</div></div>' +
+        '<div><label style="color:var(--text-muted);font-size:12px">' + 'Action' + '</label><div style="font-weight:600">' + escapeHtml(String(activity.action || '').replace(/_/g, ' ')) + '</div></div>' +
+        '<div><label style="color:var(--text-muted);font-size:12px">IP</label><div style="font-weight:600">' + escapeHtml(activity.ip_address || '-') + '</div></div>' +
         '</div>' +
         '<label style="color:var(--text-muted);font-size:12px;display:block;margin-bottom:8px">' + 'Details' + '</label>' +
         detailsHtml +
@@ -49456,7 +49623,7 @@ function jsonResponse(data, status = 200) {
           <div class="card">
             <div class="card-header"><h3>[[icon:alert]] Risk Analysis</h3></div>
             <div style="padding:16px">
-              ${risks.length === 0 ? '<div style="background:var(--dim-green);padding:16px;border-radius:8px;text-align:center"><div style="font-size:24px">[[icon:check_circle]]</div><div style="color:#166534;font-weight:600">No major risks</div></div>' : risks.map(r => '<div style="display:flex;gap:12px;padding:12px;background:' + (r.high?'#fee2e2':'#fef3c7') + ';border-radius:8px;margin-bottom:8px"><span style="font-size:20px">' + (r.high?'[[icon:siren]]':'[[icon:alert]]') + '</span><div><div style="font-weight:600;color:' + (r.high?'#991b1b':'#92400e') + '">' + r.title + '</div><div style="font-size:12px;color:' + (r.high?'#b91c1c':'#a16207') + '">' + r.desc + '</div></div></div>').join('')}
+              ${risks.length === 0 ? '<div style="background:var(--dim-green);padding:16px;border-radius:8px;text-align:center"><div style="font-size:24px">[[icon:check_circle]]</div><div style="color:#166534;font-weight:600">No major risks</div></div>' : risks.map(r => '<div style="display:flex;gap:12px;padding:12px;background:' + (r.high?'#fee2e2':'#fef3c7') + ';border-radius:8px;margin-bottom:8px"><span style="font-size:20px">' + (r.high?'[[icon:siren]]':'[[icon:alert]]') + '</span><div><div style="font-weight:600;color:' + (r.high?'#991b1b':'#92400e') + '">' + escapeHtml(r.title) + '</div><div style="font-size:12px;color:' + (r.high?'#b91c1c':'#a16207') + '">' + escapeHtml(r.desc) + '</div></div></div>').join('')}
             </div>
           </div>
         </div>
@@ -52370,7 +52537,7 @@ function jsonResponse(data, status = 200) {
         renderDealerOrderDetail(reRenderCurrentPage());
       } catch (e) {
         console.error('Failed to update order:', e);
-        showToast('Failed to update order: ' + e.message, 'error');
+        showToast('Save failed: ' + (e?.message || 'unknown error'), 'error');
       }
     }
 
@@ -52390,7 +52557,7 @@ function jsonResponse(data, status = 200) {
         navigate('dealer_orders');
       } catch (e) {
         console.error('Failed to cancel order:', e);
-        showToast('Failed to cancel order: ' + e.message, 'error');
+        showToast('Cancel failed: ' + (e?.message || 'unknown error'), 'error');
       }
     }
 
