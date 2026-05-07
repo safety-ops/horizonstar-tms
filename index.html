@@ -9717,6 +9717,7 @@
             try {
               currentUser = null;
               authSession = null;
+              currentDealerProfile = null;
               localStorage.removeItem('horizonstar_user');
               localStorage.removeItem('horizonstar_session');
               localStorage.removeItem('last_activity');
@@ -9772,6 +9773,7 @@
       }
       currentUser = null;
       authSession = null;
+      currentDealerProfile = null;
       localStorage.removeItem('horizonstar_user');
       localStorage.removeItem('horizonstar_session');
       localStorage.removeItem('last_activity');
@@ -15527,10 +15529,11 @@
       // Clear user data and session
       currentUser = null;
       authSession = null;
+      currentDealerProfile = null;
       localStorage.removeItem('horizonstar_user');
-      localStorage.removeItem('horizonstar_session'); 
+      localStorage.removeItem('horizonstar_session');
       localStorage.removeItem('last_activity');
-      protectedAccessGranted = false; 
+      protectedAccessGranted = false;
       
       // Redirect after 2.5 seconds
       setTimeout(() => {
@@ -48818,6 +48821,7 @@ function jsonResponse(data, status = 200) {
         } else if (event === 'SIGNED_OUT') {
           currentUser = null;
           authSession = null;
+          currentDealerProfile = null;
           localStorage.removeItem('horizonstar_user');
           localStorage.removeItem('horizonstar_session');
           // P0-1 B-C: cross-tab logout — let sibling tabs drop to login too.
@@ -50687,46 +50691,20 @@ function jsonResponse(data, status = 200) {
     }
 
     async function submitDealerOrder(orderData) {
+      // Server-side SECURITY DEFINER RPC handles: dealer_id force-set (anti-spoof),
+      // status='PENDING', delivery_status='pending', order_source_platform='dealer',
+      // order_number minting via next_order_number('DLR', dealer_code), the INSERT,
+      // and the DEALER_ORDER_SUBMITTED audit row via log_activity. Client just
+      // forwards the form payload — orderData keys map 1:1 to the RPC's JSONB schema.
       if (!currentDealerProfile) await loadDealerProfile();
       if (!currentDealerProfile) throw new Error('Dealer profile not found. Please contact support.');
-      const { data: orderNumber, error: orderNumErr } = await sb.rpc('next_order_number', {
-        p_prefix: 'DLR',
-        p_dealer_code: currentDealerProfile.dealer_code
-      });
-      if (orderNumErr || !orderNumber) {
-        showToast('Could not generate order number: ' + (orderNumErr?.message || 'unknown'), 'error');
-        return;
+      const { data: newOrderId, error } = await sb.rpc('submit_dealer_order', { p_payload: orderData });
+      if (error || !newOrderId) {
+        const msg = (error && error.message) ? error.message : 'unknown error';
+        showToast('Failed to submit order: ' + msg, 'error');
+        throw new Error(msg);
       }
-      var order = await dbInsert('orders', {
-        order_number: orderNumber,
-        dealer_id: currentDealerProfile.id,
-        vehicle_year: orderData.vehicle_year,
-        vehicle_make: orderData.vehicle_make,
-        vehicle_model: orderData.vehicle_model,
-        vehicle_vin: orderData.vehicle_vin,
-        vehicle_color: orderData.vehicle_color,
-        vehicles: [{
-          year: orderData.vehicle_year || null,
-          make: orderData.vehicle_make || '',
-          model: orderData.vehicle_model || '',
-          vin: orderData.vehicle_vin || null,
-          color: orderData.vehicle_color || null
-        }],
-        origin: orderData.pickup_location,
-        destination: orderData.delivery_location,
-        pickup_date: orderData.pickup_date,
-        dropoff_date: orderData.delivery_date,
-        delivery_status: 'pending',
-        status: 'PENDING',
-        dispatcher_notes: orderData.notes || ''
-      });
-      await logActivity('DEALER_ORDER_SUBMITTED', {
-        dealer_id: currentDealerProfile.id,
-        dealer_name: currentDealerProfile.company_name,
-        order_id: order.id,
-        order_number: orderNumber
-      });
-      return order;
+      return { id: newOrderId };
     }
 
     function generateDealerCode(companyName) {
