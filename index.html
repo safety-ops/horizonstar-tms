@@ -9289,7 +9289,32 @@
       try {
         // Authenticate with Supabase
         const { data: authData, error: authError } = await sb.auth.signInWithPassword({ email, password });
-        if (authError) throw new Error(authError.message);
+
+        // P0-1 B-B: record outcome via server-side RPC. Fire even on success
+        // (flips audit row to confirmed-success) and on failure.
+        let rateLimitState = null;
+        try {
+          const rl = await sb.rpc('record_login_attempt', {
+            p_email: email,
+            p_succeeded: !authError,
+            p_user_agent: (typeof navigator !== 'undefined' ? navigator.userAgent : null)
+          });
+          if (rl && rl.error) {
+            console.warn('record_login_attempt RPC error:', rl.error);
+          } else if (rl && rl.data) {
+            rateLimitState = rl.data;
+          }
+        } catch (rpcEx) {
+          console.warn('record_login_attempt threw:', rpcEx);
+        }
+
+        if (authError) {
+          if (rateLimitState && rateLimitState.locked) {
+            const minutes = Math.ceil((rateLimitState.retry_after_seconds || 900) / 60);
+            throw new Error(`Too many failed attempts. Try again in about ${minutes} minute(s).`);
+          }
+          throw new Error(authError.message);
+        }
 
         // Get user from users table
         const { data: users, error: userError } = await sb.from('users').select('*').eq('email', email).limit(1);
@@ -9326,7 +9351,11 @@
           localStorage.setItem('horizonstar_session', JSON.stringify(sessionToPersist));
         } catch (e) { console.warn('Failed to persist session:', e); }
         localStorage.setItem('horizonstar_user', JSON.stringify(user));
-        localStorage.setItem('last_activity', Date.now().toString());
+        // Broadcast fresh-login activity to other tabs (P0-1 B-C).
+        try {
+          if (typeof broadcastActivity === 'function') broadcastActivity();
+          else localStorage.setItem('last_activity', Date.now().toString());
+        } catch (_) { localStorage.setItem('last_activity', Date.now().toString()); }
 
         // Close modal and render dealer dashboard
         document.querySelector('.modal-overlay')?.remove();
@@ -9671,8 +9700,40 @@
     const SESSION_TIMEOUT_MINUTES = 60; // 1 hour
     let sessionTimeoutId = null;
 
+    // P0-1 B-C: Cross-tab activity broadcast. When the user types/clicks in
+    // tab A, tab B also resets its idle clock — preventing the "I left tab B
+    // open in the background and got logged out even though tab A was active"
+    // UX papercut. The same channel is also used for cross-tab logout.
+    let __hsActivityChannel = null;
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        __hsActivityChannel = new BroadcastChannel('horizonstar_activity');
+        __hsActivityChannel.onmessage = (e) => {
+          if (!e || !e.data) return;
+          if (typeof e.data.ts === 'number') {
+            try { localStorage.setItem('last_activity', String(e.data.ts)); } catch (_) {}
+          }
+          if (e.data.kind === 'logout') {
+            try {
+              currentUser = null;
+              authSession = null;
+              localStorage.removeItem('horizonstar_user');
+              localStorage.removeItem('horizonstar_session');
+              localStorage.removeItem('last_activity');
+              if (typeof renderLogin === 'function') renderLogin();
+            } catch (_) {}
+          }
+        };
+      }
+    } catch (_) {}
+    function broadcastActivity() {
+      const now = Date.now();
+      try { localStorage.setItem('last_activity', String(now)); } catch (_) {}
+      try { if (__hsActivityChannel) __hsActivityChannel.postMessage({ ts: now }); } catch (_) {}
+    }
+
     function updateLastActivity() {
-      localStorage.setItem('last_activity', Date.now().toString());
+      broadcastActivity();
     }
     
     function checkSessionTimeout() {
@@ -9692,12 +9753,19 @@
       return false;
     }
     
-    function sessionExpired() {
+    async function sessionExpired() {
+      // P0-1 B-C: await signOut with a 5-second timeout so the server has a
+      // chance to revoke the refresh token before we throw away the local
+      // copy. If signOut hangs, we still proceed — we never want a broken
+      // network to leave the user in a half-logged-out state.
       try {
         if (sb && sb.auth && typeof sb.auth.signOut === 'function') {
-          Promise.resolve(sb.auth.signOut()).catch((e) => {
-            console.warn('[session] sb.auth.signOut failed (continuing logout)', e);
-          });
+          await Promise.race([
+            Promise.resolve(sb.auth.signOut()).catch((e) => {
+              console.warn('[session] sb.auth.signOut failed (continuing logout)', e);
+            }),
+            new Promise((resolve) => setTimeout(resolve, 5000))
+          ]);
         }
       } catch (e) {
         console.warn('[session] sb.auth.signOut threw synchronously (continuing logout)', e);
@@ -9707,6 +9775,8 @@
       localStorage.removeItem('horizonstar_user');
       localStorage.removeItem('horizonstar_session');
       localStorage.removeItem('last_activity');
+      // Broadcast logout to other tabs (P0-1 B-C).
+      try { if (__hsActivityChannel) __hsActivityChannel.postMessage({ kind: 'logout' }); } catch (_) {}
       // Clear upload-issues polling
       if (window._stuckUploadsInterval) {
         clearInterval(window._stuckUploadsInterval);
@@ -9923,24 +9993,32 @@
       renderRealtimePendingChip();
     }
     
-    // Activity Logging
-    async function logActivity(action, details = {}) {
+    // Activity Logging — C1 wire-up: call SECURITY DEFINER `log_activity` RPC.
+    // The RPC derives user_id / user_email / user_name / ip_address /
+    // created_at server-side, enforces a 50-char action cap (RAISE 22001),
+    // and a 10KB cap on p_details::text. Old direct dbInsert path is gone;
+    // a follow-up migration (#15) will drop the public INSERT policy on
+    // activity_log once this is verified in production.
+    async function logActivity(action, details) {
+      if (!action) return;
+      // Coerce details to a plain object: callers used to pass either an
+      // object OR a stringified JSON. The new server-side RPC takes a JSONB
+      // parameter and PostgREST serializes objects natively, so re-string-
+      // ifying here would double-encode.
+      let payload = details;
+      if (typeof details === 'string') {
+        try { payload = JSON.parse(details); } catch (_) { payload = { raw: details }; }
+      } else if (details === undefined) {
+        payload = null;
+      }
       try {
-        // Get user's full name
-        const userName = currentUser ? (currentUser.first_name + ' ' + currentUser.last_name).trim() : null;
-
-        await dbInsert('activity_log', {
-          user_id: currentUser?.id || null,
-          user_email: currentUser?.email || details.email || 'unknown',
-          user_name: userName || details.user_name || 'System',
-          action: action,
-          details: JSON.stringify(details),
-          ip_address: 'client', // Can't get real IP from client
-          created_at: new Date().toISOString()
+        const { error } = await sb.rpc('log_activity', {
+          p_action: String(action).slice(0, 50),
+          p_details: payload
         });
+        if (error) console.warn('logActivity RPC error:', error);
       } catch (e) {
-        // Activity log table may not exist, fail silently
-        console.log('Activity log:', action, details);
+        console.warn('logActivity threw:', e);
       }
     }
     
@@ -15103,28 +15181,55 @@
       const errorEl = document.getElementById('login-error');
       const btnEl = document.getElementById('login-btn');
       
-      // Check if account is locked
+      // Client-side lockout cache — UX hint only (immediate feedback while
+      // the server-authoritative record_login_attempt RPC round-trips).
+      // Security gate is the RPC + audit table, not this check.
       const lockStatus = isAccountLocked(email);
       if (lockStatus.locked) {
         errorEl.textContent = `Account locked. Try again in ${lockStatus.remainingMinutes} minutes.`;
         errorEl.style.display = 'block';
         return;
       }
-      
+
       btnEl.textContent = 'Signing in...';
       btnEl.disabled = true;
-      
+
       try {
+        // P0-1 B-B: Auth FIRST, then record outcome via RPC. The RPC's
+        // returned `locked` flag drives the lockout UX; if the RPC itself
+        // errors, we fall through to the existing wrong-password path —
+        // the rate limiter must never cause login failure due to its own bug.
         const { data: authData, error: authError } = await sb.auth.signInWithPassword({
           email: email,
           password: password
         });
 
+        let rateLimitState = null;
+        try {
+          const rl = await sb.rpc('record_login_attempt', {
+            p_email: email,
+            p_succeeded: !authError,
+            p_user_agent: (typeof navigator !== 'undefined' ? navigator.userAgent : null)
+          });
+          if (rl && rl.error) {
+            console.warn('record_login_attempt RPC error:', rl.error);
+          } else if (rl && rl.data) {
+            rateLimitState = rl.data;
+          }
+        } catch (rpcEx) {
+          console.warn('record_login_attempt threw:', rpcEx);
+        }
+
         if (authError || !authData?.session || !authData?.user) {
           recordLoginAttempt(email, false);
-          const attempts = getLoginAttempts(email);
-          const remaining = Math.max(0, LOGIN_ATTEMPT_LIMIT - attempts.count);
-          errorEl.textContent = authError?.message || `Invalid credentials. ${remaining} attempts remaining.`;
+          if (rateLimitState && rateLimitState.locked) {
+            const minutes = Math.ceil((rateLimitState.retry_after_seconds || 900) / 60);
+            errorEl.textContent = `Too many failed attempts. Try again in about ${minutes} minute(s).`;
+          } else {
+            const attempts = getLoginAttempts(email);
+            const remaining = Math.max(0, LOGIN_ATTEMPT_LIMIT - attempts.count);
+            errorEl.textContent = authError?.message || `Invalid credentials. ${remaining} attempts remaining.`;
+          }
           errorEl.style.display = 'block';
           btnEl.textContent = 'Sign In';
           btnEl.disabled = false;
@@ -48715,6 +48820,8 @@ function jsonResponse(data, status = 200) {
           authSession = null;
           localStorage.removeItem('horizonstar_user');
           localStorage.removeItem('horizonstar_session');
+          // P0-1 B-C: cross-tab logout — let sibling tabs drop to login too.
+          try { if (typeof __hsActivityChannel !== 'undefined' && __hsActivityChannel) __hsActivityChannel.postMessage({ kind: 'logout' }); } catch (_) {}
           renderLogin();
         }
       });
