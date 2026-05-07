@@ -16577,21 +16577,22 @@
                 <span class="payment-status-badge ${order.payment_status === 'paid' ? 'paid' : ''}">${order.payment_status === 'paid' ? 'Paid' : 'Unpaid'}</span>
               </div>
               <div class="order-detail-card-body">
-                <div class="payment-amount">${formatMoney(order.revenue || 0)}</div>
+                <div class="payment-amount">${Number.isFinite(order.revenue) ? formatMoney(order.revenue) : '—'}</div>
                 <div class="payment-details">
                   ${splitMethodHtml}
                   ${ushipCodeHtml}
                   <div class="payment-row">
                     <span>Broker Fee</span>
-                    <span class="negative">-${formatMoney(order.broker_fee || 0)}</span>
+                    <span class="negative">${Number.isFinite(order.broker_fee) ? '-' + formatMoney(order.broker_fee) : '—'}</span>
                   </div>
                   <div class="payment-row">
                     <span>Local Fee</span>
-                    <span class="negative">-${formatMoney(order.local_fee || 0)}</span>
+                    <span class="negative">${Number.isFinite(order.local_fee) ? '-' + formatMoney(order.local_fee) : '—'}</span>
                   </div>
                   <div class="payment-row net">
                     <span>Net Revenue</span>
-                    <span>${formatMoney((order.revenue || 0) - (order.broker_fee || 0) - (order.local_fee || 0))}</span>
+                    <!-- Number.isFinite (not ?? 0) so NaN operands don't propagate to the formatter as $NaN. -->
+                    <span>${formatMoney((Number.isFinite(order.revenue) ? order.revenue : 0) - (Number.isFinite(order.broker_fee) ? order.broker_fee : 0) - (Number.isFinite(order.local_fee) ? order.local_fee : 0))}</span>
                   </div>
                 </div>
                 ${order.payment_status !== 'paid' ? '<button class="btn btn-primary btn-sm" style="width:100%;margin-top:12px" onclick="markOrderPaid(' + order.id + ')">Mark as Paid</button>' : ''}
