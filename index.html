@@ -8782,9 +8782,115 @@
     // Current auth session
     let authSession = null;
 
+    // ============ SESSION PERSISTENCE (P0-1 sub-phase B-A) ============
+    // Restore the auth session from localStorage as early as possible so that
+    // the first synchronous render path (which may call requireAuthToken) sees
+    // a populated session. The Supabase JS client's own session is hydrated in
+    // the background via sb.auth.setSession() — that promise is fire-and-forget
+    // because top-level await isn't available in this inline script. The bearer
+    // token is what callers actually need synchronously and that's already on
+    // `authSession.access_token` after this block.
+    try {
+      const persisted = JSON.parse(localStorage.getItem('horizonstar_session') || 'null');
+      if (persisted && persisted.access_token && persisted.refresh_token) {
+        authSession = persisted;
+        sb.auth.setSession({
+          access_token: persisted.access_token,
+          refresh_token: persisted.refresh_token
+        }).catch(e => console.warn('setSession on load failed:', e));
+      }
+    } catch (e) { console.warn('Failed to restore session:', e); }
+
+    // Refresh the access token using the stored refresh token.
+    // - Default mode (force=false): a no-op if the token still has >60s left;
+    //   only actually rotates when the token is expired or about to expire.
+    //   Used by withAuthRetry on 401 and by the on-load fast-path.
+    // - Force mode (force=true): rotates unconditionally. Used by the periodic
+    //   timer to stay ahead of the 1h TTL even while the page is open.
+    // Single-flight gate: with refresh-token rotation enabled, two concurrent
+    // refresh calls would race — first wins, second sees a rotated-out token
+    // and can trigger Supabase's reuse detection, invalidating the chain.
+    // Coalesce all callers onto one in-flight promise.
+    let __hsRefreshInFlight = null;
+    async function refreshSessionFromStorage(force = false) {
+      if (!authSession || !authSession.refresh_token) return false;
+      if (!force) {
+        const nowSec = Math.floor(Date.now() / 1000);
+        const expiresAt = authSession.expires_at || 0;
+        if (expiresAt > nowSec + 60) return true; // not yet expiring
+      }
+      if (__hsRefreshInFlight) return __hsRefreshInFlight;
+      __hsRefreshInFlight = (async () => {
+        try {
+          const { data, error } = await sb.auth.refreshSession({ refresh_token: authSession.refresh_token });
+          if (error || !data || !data.session) return false;
+          authSession = {
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+            expires_at: data.session.expires_at,
+            token_type: data.session.token_type || 'bearer'
+          };
+          try { localStorage.setItem('horizonstar_session', JSON.stringify(authSession)); } catch (_) {}
+          return true;
+        } catch (e) { console.warn('refreshSession failed:', e); return false; }
+        finally { __hsRefreshInFlight = null; }
+      })();
+      return __hsRefreshInFlight;
+    }
+
+    // Wrap a Supabase call with a one-shot retry if the response is a 401 /
+    // JWT-expired error. Caller must pass a thunk returning a {data, error}
+    // shaped result so we can both inspect the error and rerun the call.
+    async function withAuthRetry(fn) {
+      const result = await fn();
+      if (!result || !result.error) return result;
+      const err = result.error;
+      const isAuthErr = err.status === 401
+        || err.code === 'PGRST301'
+        || (typeof err.message === 'string' && /jwt|expired|invalid token/i.test(err.message));
+      if (!isAuthErr) return result;
+      const refreshed = await refreshSessionFromStorage();
+      if (!refreshed) {
+        // Refresh failed — terminal auth error. Log the user out cleanly
+        // rather than letting the per-call UI surface a confusing JWT error.
+        try { if (typeof sessionExpired === 'function') sessionExpired(); } catch (_) {}
+        return result;
+      }
+      const retry = await fn();
+      // Second attempt still 401 → refresh succeeded but the new token still
+      // isn't accepted (e.g. user was deactivated server-side). Force logout.
+      if (retry && retry.error) {
+        const r = retry.error;
+        const stillAuth = r.status === 401
+          || r.code === 'PGRST301'
+          || (typeof r.message === 'string' && /jwt|expired|invalid token/i.test(r.message));
+        if (stillAuth) {
+          try { if (typeof sessionExpired === 'function') sessionExpired(); } catch (_) {}
+        }
+      }
+      return retry;
+    }
+
+    // Periodic refresh: Supabase access tokens default to a 1h TTL. Refreshing
+    // every 25 min keeps us comfortably ahead of expiry without hammering the
+    // auth endpoint. refreshSessionFromStorage() is idempotent so calling it
+    // when the token is still fresh is a cheap no-op.
+    if (typeof window !== 'undefined' && !window.__hsSessionRefreshInterval) {
+      window.__hsSessionRefreshInterval = setInterval(() => {
+        try {
+          if (authSession && authSession.refresh_token) {
+            refreshSessionFromStorage(true).catch(e => console.warn('periodic refresh err:', e));
+          }
+        } catch (e) { console.warn('periodic refresh threw:', e); }
+      }, 25 * 60 * 1000);
+    }
+    // Kick a refresh on load (fire-and-forget) in case the persisted token is
+    // already expired — this lets queries that fire shortly after load succeed.
+    refreshSessionFromStorage().catch(e => console.warn('initial refresh err:', e));
+
     // Current dealer profile (for dealer portal users)
     let currentDealerProfile = null;
-    
+
     // Get current access token for API calls (session token only).
     function getAccessToken() {
       return authSession?.access_token || null;
@@ -9209,6 +9315,16 @@
         // Set current user and session
         currentUser = user;
         authSession = authData.session;
+        // Persist auth tokens for cross-reload session restoration (P0-1 B-A).
+        try {
+          const sessionToPersist = {
+            access_token: authData.session.access_token,
+            refresh_token: authData.session.refresh_token,
+            expires_at: authData.session.expires_at,
+            token_type: authData.session.token_type || 'bearer'
+          };
+          localStorage.setItem('horizonstar_session', JSON.stringify(sessionToPersist));
+        } catch (e) { console.warn('Failed to persist session:', e); }
         localStorage.setItem('horizonstar_user', JSON.stringify(user));
         localStorage.setItem('last_activity', Date.now().toString());
 
@@ -9292,52 +9408,59 @@
 
     async function dbFetch(table, options = {}) {
       requireTableAuth(table, options);
-      let query = sb.from(table).select(options.select || '*');
-      
-      if (options.filter) {
-        Object.entries(options.filter).forEach(([key, value]) => {
-          // Parse filter like "email=eq.test@example.com"
-          if (value.startsWith('eq.')) {
-            query = query.eq(key, value.substring(3));
-          } else if (value.startsWith('neq.')) {
-            query = query.neq(key, value.substring(4));
-          } else if (value.startsWith('gt.')) {
-            query = query.gt(key, value.substring(3));
-          } else if (value.startsWith('gte.')) {
-            query = query.gte(key, value.substring(4));
-          } else if (value.startsWith('lt.')) {
-            query = query.lt(key, value.substring(3));
-          } else if (value.startsWith('lte.')) {
-            query = query.lte(key, value.substring(4));
-          } else if (value.startsWith('like.')) {
-            query = query.like(key, value.substring(5));
-          } else if (value.startsWith('ilike.')) {
-            query = query.ilike(key, value.substring(6));
-          } else if (value.startsWith('in.(')) {
-            // Handle in.(...) operator - extract values from in.(1,2,3) format
-            const values = value.substring(4, value.length - 1).split(',').map(v => {
-              const trimmed = v.trim();
-              // Try to parse as number, otherwise keep as string
-              const num = parseInt(trimmed);
-              return isNaN(num) ? trimmed : num;
-            });
-            query = query.in(key, values);
-          } else {
-            query = query.eq(key, value);
-          }
-        });
-      }
-      
-      if (options.order) {
-        const [column, direction] = options.order.split('.');
-        query = query.order(column, { ascending: direction !== 'desc' });
-      }
+      // Build the query inside a thunk so withAuthRetry can re-run it after
+      // a 401 → refresh. PostgREST thenables are single-shot (consumed on
+      // first await), so the builder must be re-instantiated for the retry.
+      const buildAndExec = () => {
+        let query = sb.from(table).select(options.select || '*');
 
-      if (options.range) {
-        query = query.range(options.range[0], options.range[1]);
-      }
+        if (options.filter) {
+          Object.entries(options.filter).forEach(([key, value]) => {
+            // Parse filter like "email=eq.test@example.com"
+            if (value.startsWith('eq.')) {
+              query = query.eq(key, value.substring(3));
+            } else if (value.startsWith('neq.')) {
+              query = query.neq(key, value.substring(4));
+            } else if (value.startsWith('gt.')) {
+              query = query.gt(key, value.substring(3));
+            } else if (value.startsWith('gte.')) {
+              query = query.gte(key, value.substring(4));
+            } else if (value.startsWith('lt.')) {
+              query = query.lt(key, value.substring(3));
+            } else if (value.startsWith('lte.')) {
+              query = query.lte(key, value.substring(4));
+            } else if (value.startsWith('like.')) {
+              query = query.like(key, value.substring(5));
+            } else if (value.startsWith('ilike.')) {
+              query = query.ilike(key, value.substring(6));
+            } else if (value.startsWith('in.(')) {
+              // Handle in.(...) operator - extract values from in.(1,2,3) format
+              const values = value.substring(4, value.length - 1).split(',').map(v => {
+                const trimmed = v.trim();
+                // Try to parse as number, otherwise keep as string
+                const num = parseInt(trimmed);
+                return isNaN(num) ? trimmed : num;
+              });
+              query = query.in(key, values);
+            } else {
+              query = query.eq(key, value);
+            }
+          });
+        }
 
-      const { data, error } = await query;
+        if (options.order) {
+          const [column, direction] = options.order.split('.');
+          query = query.order(column, { ascending: direction !== 'desc' });
+        }
+
+        if (options.range) {
+          query = query.range(options.range[0], options.range[1]);
+        }
+
+        return query;
+      };
+
+      const { data, error } = await withAuthRetry(() => buildAndExec());
       if (error) throw error;
       return data || [];
     }
@@ -9367,12 +9490,12 @@
       const insertPayload = (table === 'orders')
         ? normalizeOrderLocationForWrite(data, null, 'insert')
         : data;
-      const { data: result, error } = await sb
+      const { data: result, error } = await withAuthRetry(() => sb
         .from(table)
         .insert(insertPayload)
         .select()
-        .single();
-      
+        .single());
+
       if (error) throw new Error(error.message || 'Insert failed');
       
       // Track that we just made a change (for realtime sync)
@@ -9407,7 +9530,7 @@
         if (originalTimestamp) {
           // Fetch current record to check if it was modified
           try {
-            const { data: current, error } = await sb.from(table).select('updated_at').eq('id', id).single();
+            const { data: current, error } = await withAuthRetry(() => sb.from(table).select('updated_at').eq('id', id).single());
             // Only check conflict if we successfully got data with updated_at column
             if (!error && current && current.updated_at && current.updated_at !== originalTimestamp) {
               const confirmOverwrite = confirm(
@@ -9432,11 +9555,11 @@
       if (table === 'orders') {
         let existingOrder = null;
         try {
-          const { data: currentOrder, error: currentErr } = await sb
+          const { data: currentOrder, error: currentErr } = await withAuthRetry(() => sb
             .from('orders')
             .select('origin,destination,pickup_city,pickup_state,delivery_city,delivery_state')
             .eq('id', id)
-            .single();
+            .single());
           if (!currentErr && currentOrder) existingOrder = currentOrder;
         } catch (lookupErr) {
           console.warn('Order location fallback lookup skipped:', lookupErr.message);
@@ -9444,11 +9567,11 @@
         updatePayload = normalizeOrderLocationForWrite(data, existingOrder, 'update');
       }
 
-      const { data: result, error } = await sb
+      const { data: result, error } = await withAuthRetry(() => sb
         .from(table)
         .update(updatePayload)
         .eq('id', id)
-        .select();
+        .select());
       
       if (error) throw new Error(error.message || 'Update failed');
       
@@ -9466,11 +9589,11 @@
 
     async function dbDelete(table, id) {
       requireTableAuth(table);
-      const { data, error } = await sb
+      const { data, error } = await withAuthRetry(() => sb
         .from(table)
         .delete()
         .eq('id', id)
-        .select();
+        .select());
 
       if (error) throw new Error(error.message || 'Delete failed');
       if (!data || data.length === 0) {
@@ -9580,7 +9703,9 @@
         console.warn('[session] sb.auth.signOut threw synchronously (continuing logout)', e);
       }
       currentUser = null;
+      authSession = null;
       localStorage.removeItem('horizonstar_user');
+      localStorage.removeItem('horizonstar_session');
       localStorage.removeItem('last_activity');
       // Clear upload-issues polling
       if (window._stuckUploadsInterval) {
@@ -15007,6 +15132,16 @@
         }
 
         authSession = authData.session;
+        // Persist auth tokens for cross-reload session restoration (P0-1 B-A).
+        try {
+          const sessionToPersist = {
+            access_token: authData.session.access_token,
+            refresh_token: authData.session.refresh_token,
+            expires_at: authData.session.expires_at,
+            token_type: authData.session.token_type || 'bearer'
+          };
+          localStorage.setItem('horizonstar_session', JSON.stringify(sessionToPersist));
+        } catch (e) { console.warn('Failed to persist session:', e); }
 
         const users = await dbFetch('users', { filter: { email: 'eq.' + email } });
         if (!users.length) {
@@ -15285,9 +15420,10 @@
       }
       
       // Clear user data and session
-      currentUser = null; 
+      currentUser = null;
       authSession = null;
-      localStorage.removeItem('horizonstar_user'); 
+      localStorage.removeItem('horizonstar_user');
+      localStorage.removeItem('horizonstar_session'); 
       localStorage.removeItem('last_activity');
       protectedAccessGranted = false; 
       
@@ -48558,12 +48694,27 @@ function jsonResponse(data, status = 200) {
       // Listen for auth state changes
       sb.auth.onAuthStateChange((event, session) => {
         authSession = session;
+        // Keep persisted session in sync whenever Supabase JS rotates the token
+        // internally (e.g. on TOKEN_REFRESHED, SIGNED_IN). Don't touch the row
+        // when SIGNED_OUT — that branch below clears it explicitly.
+        if (session && session.access_token && session.refresh_token && event !== 'SIGNED_OUT') {
+          try {
+            localStorage.setItem('horizonstar_session', JSON.stringify({
+              access_token: session.access_token,
+              refresh_token: session.refresh_token,
+              expires_at: session.expires_at,
+              token_type: session.token_type || 'bearer'
+            }));
+          } catch (e) { console.warn('Failed to sync persisted session:', e); }
+        }
         if (event === 'PASSWORD_RECOVERY') {
           // User clicked a password reset link — show new password form
           showPasswordResetForm(session);
         } else if (event === 'SIGNED_OUT') {
           currentUser = null;
+          authSession = null;
           localStorage.removeItem('horizonstar_user');
+          localStorage.removeItem('horizonstar_session');
           renderLogin();
         }
       });
