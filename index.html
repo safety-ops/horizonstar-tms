@@ -29103,7 +29103,7 @@
           const folderFiles = customFiles.filter(f => (f.folder_name || 'Uncategorized') === folder);
           return '<div style="margin-bottom:16px;border:1px solid var(--border);border-radius:8px"><div style="background:var(--bg-secondary);padding:12px 16px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><strong>[[icon:folder]] ' + folder + ' (' + folderFiles.length + ' files)</strong><button class="action-btn edit" onclick="openCustomFileUpload(' + truckId + ',\'' + folder.replace(/'/g, "\\'") + '\',\'truck\')">+ Add File</button></div>' +
             '<div class="table-wrapper"><table class="data-table"><thead><tr><th>File Name</th><th>Type</th><th>Uploaded</th><th>Notes</th><th>Actions</th></tr></thead><tbody>' +
-            folderFiles.map(f => '<tr><td>' + f.file_name + '</td><td>' + (f.file_type || '-') + '</td><td>' + formatDate(f.created_at) + '</td><td>' + (f.notes || '-') + '</td><td><div class="actions"><button class="action-btn view" onclick="viewTruckFile(' + f.id + ')">View</button><button class="action-btn delete" onclick="deleteTruckFile(' + f.id + ',' + truckId + ')">Del</button></div></td></tr>').join('') +
+            folderFiles.map(f => '<tr><td>' + escapeHtml(f.file_name || '') + '</td><td>' + escapeHtml(f.file_type || '-') + '</td><td>' + formatDate(f.created_at) + '</td><td>' + escapeHtml(f.notes || '-') + '</td><td><div class="actions"><button class="action-btn view" onclick="viewTruckFile(' + f.id + ')">View</button><button class="action-btn delete" onclick="deleteTruckFile(' + f.id + ',' + truckId + ')">Del</button></div></td></tr>').join('') +
             '</tbody></table></div></div>';
         }).join('') +
         '</div>') +
@@ -29113,7 +29113,7 @@
         '<div class="card"><div class="card-header" style="background:var(--green);color:white;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">[[icon:wrench]] Maintenance Records</h3><button class="btn" style="background:white;color:var(--green);padding:8px 16px" onclick="openMaintenanceModal(' + truckId + ')">+ Add Service Record</button></div>' +
         (maintenanceRecords.length === 0 ? '<div style="padding:40px;text-align:center;color:var(--text-secondary)">No maintenance records yet. Add a service record or upload an invoice.</div>' :
         '<div class="table-wrapper"><table><thead><tr><th>Date</th><th>Service Type</th><th>Shop</th><th>Description</th><th>Odometer</th><th>Cost</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
-        maintenanceRecords.map(m => '<tr><td>' + formatDate(m.service_date) + '</td><td><span class="badge badge-blue">' + (m.service_type || '-') + '</span></td><td>' + (m.shop_name || '-') + '</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (m.description || '-') + '</td><td>' + (m.odometer ? m.odometer.toLocaleString() + ' mi' : '-') + '</td><td class="money">' + formatMoney(m.total_cost || m.cost || 0) + '</td><td class="sticky-col"><div class="actions">' + (m.invoice_file ? '<button class="action-btn view" onclick="viewMaintenanceInvoice(' + m.id + ')">Invoice</button>' : '') + '<button class="action-btn edit" onclick="openMaintenanceModal(' + truckId + ',' + m.id + ')">Edit</button><button class="action-btn delete" onclick="deleteMaintenanceRecord(' + m.id + ',' + truckId + ')">Del</button></div></td></tr>').join('') +
+        maintenanceRecords.map(m => '<tr><td>' + formatDate(m.service_date) + '</td><td><span class="badge badge-blue">' + (m.service_type || '-') + '</span></td><td>' + escapeHtml(m.shop_name || '-') + '</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(m.description || '-') + '</td><td>' + (m.odometer ? m.odometer.toLocaleString() + ' mi' : '-') + '</td><td class="money">' + formatMoney(m.total_cost || m.cost || 0) + '</td><td class="sticky-col"><div class="actions">' + (m.invoice_file ? '<button class="action-btn view" onclick="viewMaintenanceInvoice(' + m.id + ')">Invoice</button>' : '') + '<button class="action-btn edit" onclick="openMaintenanceModal(' + truckId + ',' + m.id + ')">Edit</button><button class="action-btn delete" onclick="deleteMaintenanceRecord(' + m.id + ',' + truckId + ')">Del</button></div></td></tr>').join('') +
         '</tbody></table></div>') +
         '</div>';
     }
@@ -36631,14 +36631,14 @@
         <div class="doc-type">Earnings Statement</div>
         <div class="doc-meta">
           <div class="doc-meta-row">
-            <span><span class="doc-meta-label">Stub No.</span> <span class="doc-meta-value">${stubNumber}</span></span>
-            <span><span class="doc-meta-label">Check No.</span> <span class="doc-meta-value">${checkNumber}</span></span>
+            <span><span class="doc-meta-label">Stub No.</span> <span class="doc-meta-value">${escapeHtml(String(stubNumber || ''))}</span></span>
+            <span><span class="doc-meta-label">Check No.</span> <span class="doc-meta-value">${escapeHtml(String(checkNumber || ''))}</span></span>
           </div>
           <div class="doc-meta-row">
-            <span><span class="doc-meta-label">Period</span> <span class="doc-meta-value">${formatDate(periodStart)} - ${formatDate(periodEnd)}</span></span>
+            <span><span class="doc-meta-label">Period</span> <span class="doc-meta-value">${escapeHtml(formatDate(periodStart))} - ${escapeHtml(formatDate(periodEnd))}</span></span>
           </div>
           <div class="doc-meta-row">
-            <span><span class="doc-meta-label">Pay Date</span> <span class="doc-meta-value">${formatDate(payDate)}</span></span>
+            <span><span class="doc-meta-label">Pay Date</span> <span class="doc-meta-value">${escapeHtml(formatDate(payDate))}</span></span>
           </div>
         </div>
       </div>
@@ -36654,7 +36654,7 @@
       <!-- Driver Section -->
       <div class="driver-section">
         <div class="driver-info">
-          <h2>${driver.first_name.toUpperCase()} ${driver.last_name.toUpperCase()}</h2>
+          <h2>${escapeHtml(String(driver.first_name || '').toUpperCase())} ${escapeHtml(String(driver.last_name || '').toUpperCase())}</h2>
           <div class="driver-detail">Driver | ${earnings.length > 0 ? earnings[0].cutPercent : driver.cut_percent}% Commission Rate</div>
         </div>
         <div class="driver-stats">
@@ -36713,7 +36713,7 @@
           ${earnings.map(e => `
             <tr>
               <td class="mono">${formatDate(e.date)}</td>
-              <td><span class="trip-badge">${e.tripNumber}</span></td>
+              <td><span class="trip-badge">${escapeHtml(String(e.tripNumber || ''))}</span></td>
               <td class="text-right mono">${formatMoney(e.revenue)}</td>
               <td class="text-right mono text-red">${e.brokerFee > 0 ? '-' + formatMoney(e.brokerFee) : '<span class="text-muted">—</span>'}</td>
               <td class="text-right mono text-red">${e.localFee > 0 ? '-' + formatMoney(e.localFee) : '<span class="text-muted">—</span>'}</td>
@@ -36789,14 +36789,14 @@
             ${escapeHtml(cp.phone)}
           </div>
           <div class="check-numbers">
-            Check No. <strong>${checkNumber}</strong><br>
-            Date: ${formatDate(payDate)}
+            Check No. <strong>${escapeHtml(String(checkNumber || ''))}</strong><br>
+            Date: ${escapeHtml(formatDate(payDate))}
           </div>
         </div>
         <div class="check-body">
           <div>
             <div class="pay-to-label">Pay to the order of</div>
-            <div class="pay-to-name">${driver.first_name.toUpperCase()} ${driver.last_name.toUpperCase()}</div>
+            <div class="pay-to-name">${escapeHtml(String(driver.first_name || '').toUpperCase())} ${escapeHtml(String(driver.last_name || '').toUpperCase())}</div>
           </div>
           <div class="check-amount-box">
             <div class="check-amount-value">${formatMoney(netPay)}</div>
@@ -42498,8 +42498,8 @@
           row: '<tr><td><strong>#' + (truck ? truck.truck_number : '-') + '</strong></td>' +
             '<td>' + (m.service_date ? formatDate(m.service_date) : '-') + '</td>' +
             '<td><span class="badge badge-blue">' + (m.service_type || '-') + '</span></td>' +
-            '<td>' + (m.shop_name || '-') + '</td>' +
-            '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (m.description || '-') + '</td>' +
+            '<td>' + escapeHtml(m.shop_name || '-') + '</td>' +
+            '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(m.description || '-') + '</td>' +
             '<td class="money">' + costValue + '</td>' +
             '<td class="sticky-col"><div class="actions">' + invoiceButton + '<button class="action-btn edit" onclick="openMaintenanceModal(null,' + m.id + ')">Edit</button><button class="action-btn delete" onclick="deleteMaintenanceRecord(' + m.id + ',' + m.truck_id + ')">Del</button></div></td></tr>',
           card: '<div class="mobile-data-card">' +
