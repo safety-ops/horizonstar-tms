@@ -1,0 +1,27 @@
+-- ============================================================
+-- Migration: 20260507204300_drop_activity_log_public_insert.sql
+-- Purpose:   Drop the public INSERT policy on activity_log.
+--
+-- Pre-conditions (verified before this migration was authored):
+--   1. log_activity SECURITY DEFINER RPC is live (20260507202900 +
+--      20260507203000 + 20260507203100 — all applied to remote).
+--   2. The 10 KB p_details cap is in place (20260507203100).
+--   3. All client-side writers to activity_log have been migrated to
+--      sb.rpc('log_activity', …) — verified by:
+--        grep -nE "(dbInsert\(['\"]activity_log|sb\.from\(['\"]activity_log['\"].*\.insert)" \
+--             index.html supabase/functions/**/*.ts
+--      returning 0 rows (2026-05-07).
+--
+-- Effect: closes the activity_log spoofing hole. Direct INSERTs from
+--   anon (or any non-RPC route) now raise an RLS violation. The
+--   SECURITY DEFINER RPC bypasses RLS as the function owner and
+--   continues to write rows on behalf of authenticated callers, but
+--   only after deriving user_id / user_email / user_name from
+--   auth.uid() — so no spoofing is possible.
+--
+-- Rollback: supabase/rollbacks/20260507204300_drop_activity_log_public_insert.down.sql
+--   Re-creates the original `activity_log_insert` policy. Run only if
+--   the RPC path needs to be temporarily bypassed (e.g. for debugging).
+-- ============================================================
+
+DROP POLICY IF EXISTS activity_log_insert ON public.activity_log;
