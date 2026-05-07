@@ -3,17 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <!--
-    CSP rollout in REPORT-ONLY mode first — captures violations in browser console
-    (DevTools → Console → "Refused to load…") without blocking. After a day or two
-    of monitoring with no false positives, flip the http-equiv attribute from
-    `Content-Security-Policy-Report-Only` to `Content-Security-Policy` to enforce.
-    Origins below were audited from the codebase: Supabase, Google Fonts, jsDelivr,
-    cdnjs (jsPDF), unpkg (Leaflet), OSM/Carto tiles (live map), Anthropic API
-    (AI Advisor), Samsara API (telematics). 'unsafe-inline' for scripts is
-    required by existing inline `onclick=` handlers; removing those is P2 work.
-  -->
-  <meta http-equiv="Content-Security-Policy-Report-Only" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://*.supabase.co; worker-src 'self' blob: https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://api.samsara.com https://maps.googleapis.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none';">
   <title>HORIZON STAR TMS</title>
   
   <!-- PWA Support -->
@@ -9641,7 +9630,7 @@
         .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_messages' }, handleChatRealtimeChange)
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
-            console.log('[[icon:check_circle]] Real-time sync active');
+            console.log('Real-time sync active');
           }
         });
     }
@@ -47807,9 +47796,10 @@ function jsonResponse(data, status = 200) {
     
     async function loadNotifications() {
       try {
+        if (!currentUser?.id) { notifications = []; return; }
         const previousCount = notifications.filter(n => !n.is_read).length;
-        
-        notifications = await dbFetch('notifications', { 
+
+        notifications = await dbFetch('notifications', {
           filter: { user_id: 'eq.' + currentUser.id },
           order: 'created_at.desc',
           limit: 50 
@@ -47823,7 +47813,7 @@ function jsonResponse(data, status = 200) {
           // Show toast for new notification
           const newest = notifications.find(n => !n.is_read);
           if (newest) {
-            showToast('[[icon:bell]] ' + (newest.title || 'New notification'), 'info');
+            showToast(newest.title || 'New notification', 'info');
           }
         }
         

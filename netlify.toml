@@ -1,0 +1,54 @@
+# Netlify configuration for luckycabbagetms.com
+#
+# This file exists ONLY to set HTTP response security headers. The site has no
+# build step (per CLAUDE.md: "Open `index.html` directly in a browser") so we
+# intentionally omit [build], [redirects], and [dev] blocks — Netlify's defaults
+# already serve the repo root, which is what we want.
+#
+# Why headers instead of <meta http-equiv>?
+#   The previous CSP lived in a <meta> tag inside index.html and was being
+#   silently ignored because it included `frame-ancestors 'none'` — a directive
+#   browsers only honor in actual HTTP response headers, not meta tags. Moving
+#   to Netlify-injected response headers makes the policy enforceable.
+#
+# Policy mode: ENFORCE (Content-Security-Policy), not Report-Only.
+#   Project owner is rollback-tolerant — preferring real protection over a
+#   monitoring window. If a legitimate dependency gets blocked, revert this
+#   file or add the host to the appropriate directive.
+#
+# CSP source allowlist origins (audited from index.html third-party deps):
+#   - cdn.jsdelivr.net, cdnjs.cloudflare.com, unpkg.com  → JS/CSS/font CDNs
+#   - *.supabase.co (https + wss)                        → backend + realtime
+#   - fonts.googleapis.com, fonts.gstatic.com            → Google Fonts
+#   - *.tile.openstreetmap.org, *.basemaps.cartocdn.com  → map tiles
+#   - api.anthropic.com                                  → AI assistant calls
+#   - api.samsara.com                                    → telematics
+#   - maps.googleapis.com                                → maps API
+#
+# Other security headers and rationale:
+#   X-Content-Type-Options: nosniff
+#     Prevents the browser from MIME-sniffing a response away from the declared
+#     Content-Type — defense against script smuggling via mistyped uploads.
+#   X-Frame-Options: DENY
+#     Legacy clickjacking backstop alongside CSP `frame-ancestors 'none'` for
+#     older browsers that don't honor the CSP directive.
+#   Referrer-Policy: strict-origin-when-cross-origin
+#     Sends only the origin (not the path/query) on cross-origin requests, full
+#     referrer same-origin. Protects internal route names from leaking.
+#   Permissions-Policy: camera=(), microphone=(), geolocation=(self), interest-cohort=()
+#     Disables camera/mic for the whole site; geolocation kept self-allowed
+#     because the dispatcher map and driver flows may use it; opts out of FLoC.
+#   Strict-Transport-Security: max-age=31536000; includeSubDomains
+#     One-year HSTS with subdomain coverage. Site is HTTPS-only so this is safe.
+#     `preload` is intentionally omitted — submitting to the preload list is
+#     irreversible and should be done deliberately, not as part of this commit.
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://*.supabase.co; worker-src 'self' blob: https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://api.samsara.com https://maps.googleapis.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(self), interest-cohort=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
