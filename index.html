@@ -10596,6 +10596,23 @@
       return delivery === 'delivered' || status === 'DELIVERED';
     }
 
+    // Companion of isUnpaidInvoice: a billing-eligible delivered order whose
+    // invoice has been paid. Same delivery/billing gate, opposite paid-flag.
+    function isPaidInvoice(order) {
+      if (!order) return false;
+      const invoiceStatus = String(order.invoice_status || '').toUpperCase();
+      if (invoiceStatus !== 'PAID') return false;
+      const eff = getEffectivePaymentTerms(order);
+      const isBilling =
+        (typeof eff === 'string' && eff.startsWith('NET_')) ||
+        order.payment_type === 'BILLING' ||
+        order.payment_type === 'BILL';
+      if (!isBilling) return false;
+      const delivery = String(order.delivery_status || '').toLowerCase();
+      const status = String(order.status || '').toUpperCase();
+      return delivery === 'delivered' || status === 'DELIVERED';
+    }
+
     // Composes the display label following the locked rules.
     function composePaymentLabel(method, terms) {
       const m = String(method || '').toUpperCase();
@@ -16839,7 +16856,7 @@
                     <span>${formatMoney((Number.isFinite(order.revenue) ? order.revenue : 0) - (Number.isFinite(order.broker_fee) ? order.broker_fee : 0) - (Number.isFinite(order.local_fee) ? order.local_fee : 0))}</span>
                   </div>
                 </div>
-                ${order.payment_status !== 'paid' ? '<button class="btn btn-primary btn-sm" style="width:100%;margin-top:12px" onclick="markOrderPaid(' + order.id + ')">Mark as Paid</button>' : ''}
+                ${isUnpaidInvoice(order) ? '<button class="btn btn-primary btn-sm" style="width:100%;margin-top:12px" onclick="markOrderPaid(' + order.id + ')">Mark as Paid</button>' : ''}
               </div>
             </div>
 
@@ -17485,8 +17502,15 @@
       if (!order) return;
 
       const newStatus = order.payment_status === 'paid' ? 'pending' : 'paid';
+      // Write payment_status (legacy) AND invoice_status (canonical truth read
+      // by isUnpaidInvoice + dashboard). Without invoice_status the dashboard
+      // count and Mark-as-Paid button visibility went stale. Also mirror
+      // batchMarkPaid by stamping payment_date on transition to paid.
+      const patch = newStatus === 'paid'
+        ? { payment_status: 'paid', invoice_status: 'PAID', payment_date: new Date().toISOString() }
+        : { payment_status: 'pending' };
       try {
-        await dbUpdate('orders', orderId, { payment_status: newStatus });
+        await dbUpdate('orders', orderId, patch);
         showToast(newStatus === 'paid' ? 'Order marked as paid' : 'Order marked as unpaid');
         await loadAllData(true);
         openOrderDetailPage(orderId);
@@ -29400,7 +29424,7 @@
         '<div class="card"><div class="card-header" style="background:var(--green);color:white;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">[[icon:wrench]] Maintenance Records</h3><button class="btn" style="background:white;color:var(--green);padding:8px 16px" onclick="openMaintenanceModal(' + truckId + ')">+ Add Service Record</button></div>' +
         (maintenanceRecords.length === 0 ? '<div style="padding:40px;text-align:center;color:var(--text-secondary)">No maintenance records yet. Add a service record or upload an invoice.</div>' :
         '<div class="table-wrapper"><table><thead><tr><th>Date</th><th>Service Type</th><th>Shop</th><th>Description</th><th>Odometer</th><th>Cost</th><th class="sticky-col">Actions</th></tr></thead><tbody>' +
-        maintenanceRecords.map(m => '<tr><td>' + formatDate(m.service_date) + '</td><td><span class="badge badge-blue">' + (m.service_type || '-') + '</span></td><td>' + escapeHtml(m.shop_name || '-') + '</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(m.description || '-') + '</td><td>' + (m.odometer ? m.odometer.toLocaleString() + ' mi' : '-') + '</td><td class="money">' + formatMoney(m.total_cost || m.cost || 0) + '</td><td class="sticky-col"><div class="actions">' + (m.invoice_file ? '<button class="action-btn view" onclick="viewMaintenanceInvoice(' + m.id + ')">Invoice</button>' : '') + '<button class="action-btn edit" onclick="openMaintenanceModal(' + truckId + ',' + m.id + ')">Edit</button><button class="action-btn delete" onclick="deleteMaintenanceRecord(' + m.id + ',' + truckId + ')">Del</button></div></td></tr>').join('') +
+        maintenanceRecords.map(m => '<tr><td>' + formatDate(m.service_date) + '</td><td><span class="badge badge-blue">' + escapeHtml(m.service_type || '-') + '</span></td><td>' + escapeHtml(m.shop_name || '-') + '</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(m.description || '-') + '</td><td>' + (m.odometer ? m.odometer.toLocaleString() + ' mi' : '-') + '</td><td class="money">' + formatMoney(m.total_cost || m.cost || 0) + '</td><td class="sticky-col"><div class="actions">' + (m.invoice_file ? '<button class="action-btn view" onclick="viewMaintenanceInvoice(' + m.id + ')">Invoice</button>' : '') + '<button class="action-btn edit" onclick="openMaintenanceModal(' + truckId + ',' + m.id + ')">Edit</button><button class="action-btn delete" onclick="deleteMaintenanceRecord(' + m.id + ',' + truckId + ')">Del</button></div></td></tr>').join('') +
         '</tbody></table></div>') +
         '</div>';
     }
@@ -30155,7 +30179,7 @@
         (files.length === 0 ? '<p style="color:var(--text-muted)">No files attached</p>' :
         '<div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">' +
         files.map(f => '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg-darker);border-radius:6px">' +
-          '<div><strong>' + f.file_name + '</strong><div style="font-size:11px;color:var(--text-muted)">' + formatDate(f.uploaded_at) + '</div></div>' +
+          '<div><strong>' + escapeHtml(f.file_name || '') + '</strong><div style="font-size:11px;color:var(--text-muted)">' + formatDate(f.uploaded_at) + '</div></div>' +
           '<div class="actions"><a href="' + f.file_url + '" target="_blank" class="action-btn view">View</a><button class="action-btn delete" onclick="deleteClaimFile(' + f.id + ',' + claimId + ')">Del</button></div></div>'
         ).join('') + '</div>') +
         '</div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Close</button></div></div>';
@@ -30452,7 +30476,7 @@
         (files.length === 0 ? '<p style="color:var(--text-muted)">No files attached</p>' :
         '<div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">' +
         files.map(f => '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg-darker);border-radius:6px">' +
-          '<div><strong>' + f.file_name + '</strong><div style="font-size:11px;color:var(--text-muted)">' + formatDate(f.uploaded_at) + '</div></div>' +
+          '<div><strong>' + escapeHtml(f.file_name || '') + '</strong><div style="font-size:11px;color:var(--text-muted)">' + formatDate(f.uploaded_at) + '</div></div>' +
           '<div class="actions"><a href="' + f.file_url + '" target="_blank" class="action-btn view">View</a><button class="action-btn delete" onclick="deleteTicketFile(' + f.id + ',' + ticketId + ')">Del</button></div></div>'
         ).join('') + '</div>') +
         '</div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Close</button></div></div>';
@@ -30502,7 +30526,7 @@
         (files.length === 0 ? '<p style="color:var(--text-muted)">No files attached</p>' :
         '<div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">' +
         files.map(f => '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg-darker);border-radius:6px">' +
-          '<div><strong>' + f.file_name + '</strong><div style="font-size:11px;color:var(--text-muted)">' + formatDate(f.uploaded_at) + '</div></div>' +
+          '<div><strong>' + escapeHtml(f.file_name || '') + '</strong><div style="font-size:11px;color:var(--text-muted)">' + formatDate(f.uploaded_at) + '</div></div>' +
           '<div class="actions"><a href="' + f.file_url + '" target="_blank" class="action-btn view">View</a><button class="action-btn delete" onclick="deleteViolationFile(' + f.id + ',' + violationId + ')">Del</button></div></div>'
         ).join('') + '</div>') +
         '</div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="this.closest(\'.modal-overlay\').remove()">Close</button></div></div>';
@@ -30718,11 +30742,11 @@
         
         (trip ? '<div style="padding:12px;background:var(--blue-dim);border-radius:8px"><strong>Related Trip:</strong> ' + trip.trip_number + '</div>' : '') +
         
-        '<div style="padding:12px;background:var(--bg-tertiary);border-radius:8px"><strong>Description</strong><br>' + (claim.description || '-') + '</div>' +
-        
-        (claim.incident_location ? '<div style="padding:12px;background:var(--bg-tertiary);border-radius:8px"><strong>Incident Location</strong><br>' + claim.incident_location + '</div>' : '') +
-        
-        (claim.insurance_claim_number ? '<div style="padding:12px;background:var(--amber-dim);border-radius:8px"><strong>Insurance Claim #</strong><br>' + claim.insurance_claim_number + '</div>' : '') +
+        '<div style="padding:12px;background:var(--bg-tertiary);border-radius:8px"><strong>Description</strong><br>' + escapeHtml(claim.description || '-') + '</div>' +
+
+        (claim.incident_location ? '<div style="padding:12px;background:var(--bg-tertiary);border-radius:8px"><strong>Incident Location</strong><br>' + escapeHtml(claim.incident_location) + '</div>' : '') +
+
+        (claim.insurance_claim_number ? '<div style="padding:12px;background:var(--amber-dim);border-radius:8px"><strong>Insurance Claim #</strong><br>' + escapeHtml(claim.insurance_claim_number) + '</div>' : '') +
         
         (claim.settlement_amount ? '<div style="padding:12px;background:var(--green-dim);border-radius:8px"><strong>Settlement Amount</strong><br><span style="font-size:20px;color:#047857">' + formatMoney(claim.settlement_amount) + '</span></div>' : '') +
         
@@ -30993,11 +31017,7 @@
 
     function getPaidBillOrders(periodCtx = billingPeriod) {
       return getBillingScopedOrders(periodCtx)
-        .filter(o =>
-          getOrderInvoiceAmount(o) > 0 &&
-          o.payment_status === 'paid' &&
-          (o.delivery_status === 'delivered' || o.status === 'DELIVERED')
-        )
+        .filter(o => getOrderInvoiceAmount(o) > 0 && isPaidInvoice(o))
         .map(o => ({ ...o, billAmount: getOrderInvoiceAmount(o) }));
     }
 
@@ -31006,8 +31026,7 @@
       return getBillingScopedOrders(periodCtx)
         .filter(o =>
           getOrderInvoiceAmount(o) > 0 &&
-          o.payment_status !== 'paid' &&
-          (o.delivery_status === 'delivered' || o.status === 'DELIVERED') &&
+          isUnpaidInvoice(o) &&
           !o.invoiced_at
         )
         .map(o => ({ ...o, ...calculateOrderAging(o) }))
@@ -31926,7 +31945,7 @@
     async function batchMarkInvoiced() {
       const needsInvoice = billingSelectedOrders.filter(id => {
         const o = appData.orders.find(ord => ord.id === id);
-        return o && !o.invoiced_at && o.payment_status !== 'paid';
+        return o && isUnpaidInvoice(o) && !o.invoiced_at;
       });
       if (needsInvoice.length === 0) {
         showToast('No selected orders need invoicing', 'warning');
@@ -31962,7 +31981,7 @@
 
       const needsInvoice = billingSelectedOrders.filter(id => {
         const o = appData.orders.find(ord => ord.id === id);
-        return o && !o.invoiced_at && o.payment_status !== 'paid';
+        return o && isUnpaidInvoice(o) && !o.invoiced_at;
       });
 
       let successCount = 0;
@@ -31987,7 +32006,7 @@
     async function batchMarkPaid() {
       const unpaid = billingSelectedOrders.filter(id => {
         const o = appData.orders.find(ord => ord.id === id);
-        return o && o.payment_status !== 'paid';
+        return o && isUnpaidInvoice(o);
       });
       if (unpaid.length === 0) {
         showToast('No selected orders are unpaid', 'warning');
@@ -32026,15 +32045,15 @@
 
       const unpaid = billingSelectedOrders.filter(id => {
         const o = appData.orders.find(ord => ord.id === id);
-        return o && o.payment_status !== 'paid';
+        return o && isUnpaidInvoice(o);
       });
 
       let successCount = 0;
       for (const id of unpaid) {
         const order = appData.orders.find(o => o.id === id);
         try {
-          await dbUpdate('orders', id, { payment_status: 'paid', payment_date: new Date(paymentDate).toISOString() });
-          if (order) { order.payment_status = 'paid'; order.payment_date = new Date(paymentDate).toISOString(); }
+          await dbUpdate('orders', id, { payment_status: 'paid', invoice_status: 'PAID', payment_date: new Date(paymentDate).toISOString() });
+          if (order) { order.payment_status = 'paid'; order.invoice_status = 'PAID'; order.payment_date = new Date(paymentDate).toISOString(); }
           await logBillingEvent(id, order?.broker_id, 'payment_marked', 'ui', 'Batch marked paid', { amount: getOrderInvoiceAmount(order), batch: true });
           successCount++;
         } catch(e) { /* continue */ }
@@ -42782,7 +42801,7 @@
         return {
           row: '<tr><td><strong>#' + (truck ? truck.truck_number : '-') + '</strong></td>' +
             '<td>' + (m.service_date ? formatDate(m.service_date) : '-') + '</td>' +
-            '<td><span class="badge badge-blue">' + (m.service_type || '-') + '</span></td>' +
+            '<td><span class="badge badge-blue">' + escapeHtml(m.service_type || '-') + '</span></td>' +
             '<td>' + escapeHtml(m.shop_name || '-') + '</td>' +
             '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(m.description || '-') + '</td>' +
             '<td class="money">' + costValue + '</td>' +
@@ -50704,7 +50723,16 @@ function jsonResponse(data, status = 200) {
         showToast('Failed to submit order: ' + msg, 'error');
         throw new Error(msg);
       }
-      return { id: newOrderId };
+      // Fetch the order_number for downstream UX (the bulk-upload results table
+      // reads this to display the minted order number; without it the row falls
+      // back to the literal 'Created' string).
+      let orderNumber = null;
+      try {
+        // dbFetch ignores `limit` (no such option), but `id eq.` returns 1 row.
+        const fetched = await dbFetch('orders', { filter: { id: 'eq.' + newOrderId }, select: 'id,order_number' });
+        if (Array.isArray(fetched) && fetched.length > 0) orderNumber = fetched[0].order_number;
+      } catch (_) { /* non-fatal — id alone is enough */ }
+      return { id: newOrderId, order_number: orderNumber };
     }
 
     function generateDealerCode(companyName) {
