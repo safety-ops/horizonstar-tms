@@ -26,6 +26,27 @@ const PAYMENT_TERMS_LABELS = {
   NET_5:"Net 5", NET_7:"Net 7", NET_10:"Net 10",
   NET_15:"Net 15", NET_20:"Net 20", NET_30:"Net 30"
 };
+
+// Inspection platform vocabulary — must match Postgres CHECK constraint on
+// orders.order_source_platform exactly. Drives the import-modal override
+// dropdown so dispatchers can re-target an order's deep-link UX away from
+// the auto-detected page (e.g., import a CD load but require SD inspection).
+const SOURCE_PLATFORM_OPTIONS = [
+  'central_dispatch',
+  'super_dispatch',
+  'ship_cars',
+  'vinlocity',
+  'carsarrive',
+  'direct'
+];
+const SOURCE_PLATFORM_LABELS = {
+  central_dispatch: 'Central Dispatch',
+  super_dispatch:   'SuperDispatch',
+  ship_cars:        'Ship.cars',
+  vinlocity:        'Vinlocity',
+  carsarrive:       'CarsArrive',
+  direct:           'Direct (in-app inspection)'
+};
 // Marketplace methods where terms shouldn't appear in the display label
 const PAYMENT_METHOD_HIDES_TERMS = new Set(['USHIP']);
 
@@ -940,6 +961,26 @@ function sanitizeOrderNumber(raw) {
                   ">
                 </div>
 
+                <!-- Inspection Platform (auto-detected from page; dispatcher can override) -->
+                <div>
+                  <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">
+                    Inspection Platform
+                    <span style="color:#64748b;font-weight:400;font-size:11px"> (driver app deep-link target)</span>
+                  </label>
+                  <select id="tms-source-platform" style="
+                    width: 100%;
+                    padding: 8px 12px;
+                    background: #0f172a;
+                    border: 1px solid #334155;
+                    border-radius: 6px;
+                    color: #e2e8f0;
+                    font-size: 14px;
+                    box-sizing: border-box;
+                  ">
+                    ${SOURCE_PLATFORM_OPTIONS.map(p => `<option value="${p}" ${(loadData.order_source_platform || 'direct') === p ? 'selected' : ''}>${SOURCE_PLATFORM_LABELS[p]}</option>`).join('')}
+                  </select>
+                </div>
+
                 <!-- Vehicle Cards (one per vehicle) -->
                 <div id="tms-vehicles-container">
                 ${(() => {
@@ -1539,7 +1580,11 @@ function sanitizeOrderNumber(raw) {
         // Carry external-platform tags from the scraper. The modal has no UI for these
         // (they're auto-detected from the broker URL); without these passthroughs they'd
         // be silently dropped before reaching Supabase.
-        order_source_platform: loadData.order_source_platform || null,
+        // Read from the modal dropdown — dispatcher may have overridden the
+        // auto-detected platform. Falls back to scraper's auto-detect if DOM
+        // somehow isn't ready, then to null. See SOURCE_PLATFORM_OPTIONS at
+        // top of file for the closed vocabulary (matches DB CHECK constraint).
+        order_source_platform: document.getElementById('tms-source-platform')?.value || loadData.order_source_platform || null,
         external_order_url: loadData.external_order_url || null,
         external_order_id: loadData.external_order_id || null
       };
