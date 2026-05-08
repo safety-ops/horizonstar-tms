@@ -39462,7 +39462,7 @@
         const uploaderId = currentUser?.id ? String(currentUser.id) : 'tms';
         const filePath = uploaderId + '/order_' + orderId + '/' + fileName;
 
-        const { data: uploadData, error: uploadError } = await supabaseClient
+        const { data: uploadData, error: uploadError } = await sb
           .storage
           .from('order-attachments')
           .upload(filePath, file);
@@ -39473,7 +39473,7 @@
         const fileUrl = buildStorageObjectUrl('order-attachments', filePath);
 
         // Save to database
-        const { data: attachment, error: dbError } = await supabaseClient
+        const { data: attachment, error: dbError } = await sb
           .from('order_attachments')
           .insert({
             order_id: orderId,
@@ -39515,11 +39515,11 @@
         // Delete from storage using canonical storage path when available.
         const storagePath = attachment.storage_path || extractStoragePathFromUrl(attachment.file_url, 'order-attachments');
         if (storagePath) {
-          await supabaseClient.storage.from('order-attachments').remove([decodeURIComponent(storagePath)]);
+          await sb.storage.from('order-attachments').remove([decodeURIComponent(storagePath)]);
         }
 
         // Delete from database
-        const { error } = await supabaseClient
+        const { error } = await sb
           .from('order_attachments')
           .delete()
           .eq('id', attachmentId);
