@@ -17,9 +17,9 @@
   --surface-elevated: #e2e8f0;
 
   --text-primary-app: #0f172a;
-  --text-secondary-app: #64748b;
-  --text-muted-app: #94a3b8;
-  --border-app: #e2e8f0;
+  --text-secondary-app: #334155;   /* readability v2: darker mid-tier */
+  --text-muted-app: #475569;       /* readability v2: muted bumped to old-secondary level */
+  --border-app: #cbd5e1;           /* readability v2: stronger card edges */
 
   /* Semantic dim backgrounds used by chips/pills */
   --dim-green: #dcfce7;
@@ -60,9 +60,9 @@
   --surface-elevated: #334155;
 
   --text-primary-app: #f1f5f9;
-  --text-secondary-app: #94a3b8;
-  --text-muted-app: #64748b;
-  --border-app: #334155;
+  --text-secondary-app: #e2e8f0;   /* readability v2: closer to primary, very legible */
+  --text-muted-app: #cbd5e1;       /* readability v2: bumped — no longer faint on dark slate */
+  --border-app: #475569;           /* readability v2: stronger card edges in dark */
 
   --dim-green: rgba(22,163,74,0.2);
   --dim-blue: rgba(37,99,235,0.2);

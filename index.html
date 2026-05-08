@@ -9061,7 +9061,7 @@
                    style="width:100%;padding:14px 18px;font-size:16px;border:2px solid var(--primary);border-radius:var(--radius);background:var(--bg-secondary);color:var(--text-primary)"
                    autocomplete="off">
             <div id="quickSearchResults" style="margin-top:16px;max-height:300px;overflow-y:auto"></div>
-            <div style="margin-top:12px;font-size:12px;color:var(--text-muted);display:flex;gap:16px">
+            <div style="margin-top:12px;font-size:12px;color:var(--text-secondary);display:flex;gap:16px">
               <span>↑↓ Navigate</span>
               <span>↵ Select</span>
               <span>Esc Close</span>
@@ -9084,7 +9084,7 @@
       const results = document.getElementById('quickSearchResults');
 
       if (!query) {
-        results.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:20px">Start typing to search...</div>';
+        results.innerHTML = '<div style="color:var(--text-secondary);text-align:center;padding:20px">Start typing to search...</div>';
         return;
       }
 
@@ -10315,9 +10315,9 @@
     function renderEmptyState(iconKey, title, subtitle, ctaText, ctaAction) {
       var iconHtml = '';
       if (iconKey && typeof renderUIIcon === 'function') {
-        iconHtml = '<div style="width:60px;height:60px;margin:0 auto 16px;color:var(--text-muted);opacity:0.4">' + renderUIIcon(iconKey, { size: 60 }) + '</div>';
+        iconHtml = '<div style="width:60px;height:60px;margin:0 auto 16px;color:var(--text-secondary)">' + renderUIIcon(iconKey, { size: 60 }) + '</div>';
       } else if (iconKey) {
-        iconHtml = '<div style="font-size:48px;margin-bottom:16px;opacity:0.4">' + iconKey + '</div>';
+        iconHtml = '<div style="font-size:48px;margin-bottom:16px;color:var(--text-secondary)">' + iconKey + '</div>';
       }
       var ctaHtml = '';
       if (ctaText && ctaAction) {
@@ -10641,6 +10641,49 @@
     // Convenience for callers that have an order
     function getPaymentDisplayLabel(order) {
       return composePaymentLabel(getEffectivePaymentMethod(order), getEffectivePaymentTerms(order));
+    }
+
+    // Bucketize a date relative to today: overdue | today | soon (1-7d) | future (>7d) | done (already completed).
+    function getDateBucket(dateStr, isCompleted) {
+      if (isCompleted) return 'done';
+      if (!dateStr) return 'future';
+      const d = new Date(dateStr);
+      if (isNaN(d)) return 'future';
+      const today = new Date(); today.setHours(0,0,0,0);
+      const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const days = Math.round((target - today) / 86400000);
+      if (days < 0)  return 'overdue';
+      if (days === 0) return 'today';
+      if (days <= 7)  return 'soon';
+      return 'future';
+    }
+
+    // Pickup date class: completed if the order has left pickup (picked up / in transit / delivered).
+    function getPickupDateClass(order) {
+      const status = String(order?.delivery_status || '').toLowerCase();
+      const isPickedUp = status === 'picked_up' || status === 'in_transit' || status === 'delivered';
+      return 'date-cue date-cue-' + getDateBucket(order?.pickup_date, isPickedUp);
+    }
+
+    // Delivery date class: completed only when delivered.
+    function getDeliveryDateClass(order) {
+      const status = String(order?.delivery_status || '').toLowerCase();
+      return 'date-cue date-cue-' + getDateBucket(order?.dropoff_date, status === 'delivered');
+    }
+
+    // Maps an order's payment terms to a color-coded pill class for at-a-glance scanning.
+    //   cash       → driver collects on pickup/delivery (COD/COP/LOCAL_COD)
+    //   quick      → fast money (QUICKPAY, COMCHEK, NET_5, NET_7)
+    //   standard   → typical net terms (NET_10, NET_15, NET_20)
+    //   slow       → extended terms (NET_30 and longer)
+    //   default    → unknown / unset
+    function getPaymentPillClass(order) {
+      const t = String(getEffectivePaymentTerms(order) || '').toUpperCase();
+      if (t === 'COD' || t === 'COP' || t === 'LOCAL_COD') return 'pay-pill pay-pill-cash';
+      if (t === 'QUICKPAY' || t === 'COMCHEK' || t === 'NET_5' || t === 'NET_7') return 'pay-pill pay-pill-quick';
+      if (t === 'NET_10' || t === 'NET_15' || t === 'NET_20') return 'pay-pill pay-pill-standard';
+      if (t === 'NET_30' || /^NET_(\d+)$/.test(t) && parseInt(t.slice(4)) >= 30) return 'pay-pill pay-pill-slow';
+      return 'pay-pill pay-pill-default';
     }
 
     // Maps new (method, terms) → legacy payment_type for dual-write back-compat during the 90d window.
@@ -11137,6 +11180,9 @@
       const tripLabel = options.tripLabel !== undefined ? options.tripLabel : (trip?.trip_number || 'Unassigned');
       const driverLabel = options.driverLabel !== undefined ? options.driverLabel : (driver ? ((driver.first_name || '') + ' ' + (driver.last_name || '')).trim() : 'Unassigned');
       const paymentLabel = options.paymentLabel !== undefined ? options.paymentLabel : getPaymentDisplayLabel(order);
+      const paymentPillClass = options.paymentPillClass !== undefined ? options.paymentPillClass : getPaymentPillClass(order);
+      const pickupDateClass = options.pickupDateClass !== undefined ? options.pickupDateClass : getPickupDateClass(order);
+      const deliveryDateClass = options.deliveryDateClass !== undefined ? options.deliveryDateClass : getDeliveryDateClass(order);
       const revenueValue = options.revenueValue !== undefined ? options.revenueValue : parseFloat(order.revenue || 0);
       const deliveryStatus = order.delivery_status || 'pending';
       const deliveryStatusMap = {
@@ -11198,12 +11244,9 @@
             : '');
 
       const cardClasses = 'order-list-item' + (options.cardClass ? ' ' + options.cardClass : '');
-      let cardStyle = 'border:1px solid var(--border-primary);background:var(--bg-primary);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);cursor:pointer;transition:background 0.15s ease';
-      if (options.cardStyle) {
-        cardStyle += ';' + options.cardStyle;
-      }
+      const cardStyleAttr = options.cardStyle ? ' style="' + options.cardStyle + '"' : '';
 
-      return '<div class="' + cardClasses + '" style="' + cardStyle + '" onclick="openOrderDetailPage(' + order.id + ')" role="button" tabindex="0">' +
+      return '<div class="' + cardClasses + '"' + cardStyleAttr + ' onclick="openOrderDetailPage(' + order.id + ')" role="button" tabindex="0">' +
         // Row 1: Header
         '<div class="order-card-top">' +
           '<div class="order-card-main">' +
@@ -11213,26 +11256,26 @@
             : '<span class="order-card-link" style="cursor:default;text-decoration:none">' + escapeHtml(orderLabel) + '</span>') +
           '<span class="badge ' + statusBadgeClass + '" style="padding:2px 6px;font-size:10px">' + escapeHtml(statusLabel) + '</span>' +
           extraTopBadgesHtml +
-          '<span class="order-card-muted" style="font-weight:600">' + escapeHtml(paymentLabel) + '</span>' +
+          '<span class="' + escapeHtml(paymentPillClass) + '">' + escapeHtml(paymentLabel) + '</span>' +
           '<span class="order-card-secondary">Trip: <strong style="color:var(--text-primary)">' + escapeHtml(tripLabel) + '</strong></span>' +
           extraMetaHtml +
           '</div>' +
-          '<span class="money positive order-card-amount" style="font-family:var(--font-mono)">' + formatMoney(revenueValue) + '</span>' +
+          '<span class="money positive order-card-amount">' + formatMoney(revenueValue) + '</span>' +
         '</div>' +
         // Row 2: Vehicle + Driver
-        '<div class="order-card-row" style="margin-top:6px">' +
+        '<div class="order-card-row">' +
           '<span class="order-card-vehicle">' + escapeHtml(vehicleLabel) + '</span>' +
           '<span class="order-card-secondary">' + escapeHtml(driverLabel || 'Unassigned') + '</span>' +
         '</div>' +
         // Row 3: Route + Pickup date
-        '<div class="order-card-row" style="margin-top:4px">' +
+        '<div class="order-card-row">' +
           '<span class="order-card-secondary">' + escapeHtml(originLabel) + ' → ' + escapeHtml(destinationLabel) + '</span>' +
-          '<span class="order-card-muted">Pick: ' + escapeHtml(pickupDateLabel) + '</span>' +
+          '<span class="' + escapeHtml(pickupDateClass) + '">Pick: ' + escapeHtml(pickupDateLabel) + '</span>' +
         '</div>' +
         // Row 4: Broker + Delivery date
-        '<div class="order-card-row" style="margin-top:4px">' +
+        '<div class="order-card-row">' +
           '<span class="order-card-muted">' + escapeHtml(brokerLabel) + '</span>' +
-          '<span class="order-card-muted">Drop: ' + escapeHtml(deliveryDateLabel) + '</span>' +
+          '<span class="' + escapeHtml(deliveryDateClass) + '">Drop: ' + escapeHtml(deliveryDateLabel) + '</span>' +
         '</div>' +
         // Actions row (if any)
         (actionsHtml ? '<div class="order-card-actions" onclick="event.stopPropagation()">' + actionsHtml + '</div>' : '') +
@@ -14653,7 +14696,7 @@
         <div class="employment-item" style="border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;background:#fafafa">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
             <strong style="color:var(--text-primary)">Employer ${index + 1}</strong>
-            ${index > 0 ? `<button type="button" onclick="removeEmploymentItem(${index})" style="background:var(--dim-red);color:#dc2626;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px">Remove</button>` : ''}
+            ${index > 0 ? `<button type="button" onclick="removeEmploymentItem(${index})" style="background:var(--dim-red);color:var(--text-danger);border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px">Remove</button>` : ''}
           </div>
           <div style="display:grid;grid-template-columns:2fr 1fr 1fr 2fr;gap:12px;margin-bottom:12px">
             <div class="form-group"><label>Employer Name</label><input type="text" name="emp_${index}_name" value="${emp.employer_name || ''}"></div>
@@ -14823,7 +14866,7 @@
             </div>
           </div>
 
-          <div style="background:var(--dim-amber);padding:20px;border-radius:8px;margin-bottom:24px;font-size:13px;color:#92400e;line-height:1.6">
+          <div style="background:var(--dim-amber);padding:20px;border-radius:8px;margin-bottom:24px;font-size:13px;color:var(--text-warning);line-height:1.6">
             <p>I understand that, as required by the Federal Motor Carrier Safety Regulations and Company policy, all drivers must submit to alcohol and controlled substance testing as a condition of employment. I also understand that any offer of employment will be contingent upon the results of an alcohol and controlled substance test. Therefore, I agree to submit to the following alcohol and controlled substance tests in accordance and as defined by the Federal Motor Carrier Safety Regulation and this Company's policies:</p>
             <ul style="margin-top:8px;padding-left:20px">
               <li>Pre-Employment, to determine employment eligibility</li>

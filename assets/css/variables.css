@@ -38,6 +38,8 @@
   --bg-secondary: #ffffff;
   --bg-tertiary: #e2e8f0;
   --bg-card: #ffffff;
+  --bg-card-tinted: #f1f5f9;        /* primary card surfaces (orders, trips, stats) — slate panel look */
+  --bg-card-tinted-hover: #e2e8f0;
   --bg-card-hover: #f8fafc;
   --bg-hover: #f1f5f9;
   --bg-darker: #e2e8f0;
@@ -47,11 +49,11 @@
 
   /* Text — Slate */
   --text-primary: #0f172a;
-  --text-secondary: #64748b;
-  --text-muted: #94a3b8;
+  --text-secondary: #334155;   /* readability v2: darker mid-tier (~10:1 on white) */
+  --text-muted:     #475569;   /* readability v2: muted bumped to old-secondary level (~7.5:1) */
 
   /* Borders — Solid, visible */
-  --border: #e2e8f0;
+  --border: #cbd5e1;          /* readability v2: was #e2e8f0 — stronger card/section edges */
   --border-light: #f1f5f9;
   --border-strong: #94a3b8;
   --border-active: #1d4ed8;
@@ -126,16 +128,19 @@
   --weight-medium: 500;
   --weight-semibold: 600;
   --weight-bold: 700;
-  --weight-heavy: 700;
+  --weight-heavy: 800;  /* reserve for hero numerics */
 
   --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 
   --leading-tight: 1.2;
+  --leading-snug: 1.4;     /* card body rows, table cells */
   --leading-normal: 1.5;
   --leading-relaxed: 1.6;
 
   --tracking-wide: 0.05em;
+  --tracking-label: 0.03em;  /* small uppercase labels — readable, not loose */
+  --tracking-caps:  0.06em;  /* large hero caps */
 
   /* Animation */
   --transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, color 150ms ease;
@@ -159,6 +164,10 @@
 
   /* Icon defaults */
   --icon-default: var(--text-secondary);
+
+  /* Semantic text colors */
+  --text-warning: #b45309;
+  --text-danger:  #b91c1c;
 }
 
 /* ============================================================
@@ -174,6 +183,8 @@
   --bg-secondary: #1e293b;
   --bg-tertiary: #334155;
   --bg-card: #1e293b;
+  --bg-card-tinted: #1e293b;        /* primary card surfaces in dark — kept distinct from page bg */
+  --bg-card-tinted-hover: #334155;
   --bg-card-hover: #334155;
   --bg-hover: #334155;
   --bg-darker: #0f172a;
@@ -182,12 +193,12 @@
   --bg-app: var(--bg-primary);
 
   --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-secondary: #e2e8f0;   /* readability v2: closer to primary, very legible */
+  --text-muted:     #cbd5e1;   /* readability v2: bumped — no longer faint on dark slate */
 
-  --border: #334155;
+  --border: #475569;          /* readability v2: was #334155 — stronger card/section edges */
   --border-light: #1e293b;
-  --border-strong: #475569;
+  --border-strong: #64748b;   /* readability v2: was #475569 — for hover/dividers */
   --border-active: #3b82f6;
 
   --shadow-xs: 0 1px 2px rgba(0,0,0,0.2);
@@ -217,4 +228,8 @@
   --accent-gradient: #3b82f6;
   --gradient-primary: #3b82f6;
   --gradient-primary-hover: #2563eb;
+
+  /* Semantic text colors */
+  --text-warning: #fbbf24;
+  --text-danger:  #f87171;
 }
