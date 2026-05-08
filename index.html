@@ -16761,6 +16761,14 @@
               </div>
             </div>
 
+            <!-- INOP Banner -->
+            ${order.has_inoperable_vehicle ? `
+            <div style="margin:14px 0;padding:12px 16px;background:linear-gradient(135deg,#7f1d1d 0%,#991b1b 100%);border:1px solid #b91c1c;border-radius:8px;color:#fecaca;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px;">
+              <span style="font-size:18px;">⚠️</span>
+              <span>INOPERABLE — winch/ramps required</span>
+            </div>
+            ` : ''}
+
             <!-- Vehicle Section -->
             ${(() => {
               const vehicles = getOrderVehicles(order);
@@ -23047,7 +23055,7 @@
             return '<tr>' +
               '<td><input type="checkbox" class="order-checkbox" data-id="' + o.id + '" onchange="toggleOrderSelection(' + o.id + ', event)"></td>' +
               '<td><strong>' + escapeHtml(o.order_number || String(o.id)) + '</strong></td>' +
-              '<td>' + escapeHtml(vehicle) + '</td>' +
+              '<td>' + (o.has_inoperable_vehicle ? '<span style="display:inline-block;padding:2px 8px;background:#7f1d1d;color:#fecaca;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;border-radius:4px;margin-right:6px;">INOP</span>' : '') + escapeHtml(vehicle) + '</td>' +
               '<td style="white-space:nowrap">' + route + '</td>' +
               '<td><div style="display:flex;align-items:center;gap:4px"><span class="badge ' + dsBadge + '">' + dsLabel + '</span>' + platformChip + '</div></td>' +
               '<td>' + tripNum + '</td>' +
@@ -23086,7 +23094,7 @@
             showCheckbox: true,
             checkboxAttributes: ' onchange="toggleOrderSelection(' + o.id + ', event)"',
             actionsHtml,
-            extraTopBadgesHtml: getOrderPlatformChipHtml(o)
+            extraTopBadgesHtml: (o.has_inoperable_vehicle ? '<span style="display:inline-block;padding:2px 8px;background:#7f1d1d;color:#fecaca;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;border-radius:4px;margin-right:6px;">INOP</span>' : '') + getOrderPlatformChipHtml(o)
           });
         }).join('') +
         '</div>') +
