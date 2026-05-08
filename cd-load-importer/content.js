@@ -1027,6 +1027,13 @@ function sanitizeOrderNumber(raw) {
                         <div><label style="${labelStyle}">Color</label><input type="text" class="tms-v-color" value="${escapeAttr(v.color || '')}" style="${inputStyle}"></div>
                         <div><label style="${labelStyle}">Body Type</label><select class="tms-v-body" style="${inputStyle}"><option value="">Select...</option>${bodyTypes.map(t => `<option value="${t}" ${(v.body_type || '') === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
                       </div>
+                      <div style="margin-top:10px;">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:6px;">
+                          <input type="checkbox" class="tms-v-inop" ${v.is_inoperable ? 'checked' : ''} style="accent-color:#f59e0b;cursor:pointer;">
+                          <span style="font-size:12px;font-weight:600;color:#f59e0b;text-transform:uppercase;letter-spacing:0.04em;">INOPERABLE — winch/ramps required</span>
+                        </label>
+                        <div style="font-size:11px;color:#94a3b8;margin-top:4px;padding-left:4px;">${v.is_inoperable ? 'Auto-detected from listing description.' : "Check if vehicle won&apos;t run."}</div>
+                      </div>
                     </div>
                   `).join('');
                 })()}
@@ -1528,9 +1535,11 @@ function sanitizeOrderNumber(raw) {
             model: card.querySelector('.tms-v-model')?.value.trim() || null,
             vin: card.querySelector('.tms-v-vin')?.value.trim().toUpperCase() || null,
             color: card.querySelector('.tms-v-color')?.value.trim() || null,
-            body_type: card.querySelector('.tms-v-body')?.value || null
+            body_type: card.querySelector('.tms-v-body')?.value || null,
+            is_inoperable: card.querySelector('.tms-v-inop')?.checked === true
           }));
           const first = vehicles[0] || {};
+          const has_inoperable_vehicle = vehicles.some(v => v.is_inoperable === true);
           return {
             vehicle_year: first.year,
             vehicle_make: first.make,
@@ -1540,7 +1549,8 @@ function sanitizeOrderNumber(raw) {
             vehicle_body_type: first.body_type,
             vehicle_lot_number: null,
             vehicle_buyer_number: null,
-            vehicles: vehicles
+            vehicles: vehicles,
+            has_inoperable_vehicle: has_inoperable_vehicle
           };
         })(),
         origin: (() => {
