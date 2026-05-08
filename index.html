@@ -22644,7 +22644,7 @@
         '</div>' +
         '<div class="form-row"><div class="form-group"><label>Year</label><input type="number" id="editVehYear" value="' + o.vehicle_year + '"></div><div class="form-group"><label>Make</label><input id="editVehMake" value="' + o.vehicle_make + '"></div></div>' +
         '<div class="form-row"><div class="form-group"><label>Model</label><input id="editVehModel" value="' + o.vehicle_model + '"></div><div class="form-group"><label>Body Type</label><select id="editVehBodyType">' + getVehicleBodyTypeOptionsHtml(o.vehicle_body_type || '') + '</select></div></div>' +
-        '<div class="form-row"><div class="form-group"><label>Lot #</label><input id="editVehLotNumber" value="' + (o.vehicle_lot_number || '') + '"></div><div class="form-group"><label>Buyer #</label><input id="editVehBuyerNumber" value="' + (o.vehicle_buyer_number || '') + '"></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Lot #</label><input id="editVehLotNumber" value="' + (o.vehicles?.[0]?.lot_number || o.vehicle_lot_number || '') + '"></div><div class="form-group"><label>Buyer #</label><input id="editVehBuyerNumber" value="' + (o.vehicles?.[0]?.buyer_number || o.vehicle_buyer_number || '') + '"></div></div>' +
         '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text-secondary);margin-top:6px;"><input type="checkbox" id="editVehInop" ' + ((o.vehicles?.[0]?.is_inoperable === true) ? 'checked' : '') + ' style="accent-color:#f59e0b;cursor:pointer;"><span style="color:#f59e0b;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">INOPERABLE</span></label>' +
 
         // Pickup Section
@@ -22765,17 +22765,29 @@
         vehicle_make: document.getElementById('editVehMake').value,
         vehicle_model: document.getElementById('editVehModel').value,
         vehicle_body_type: normalizeBodyType(document.getElementById('editVehBodyType')?.value || ''),
-        vehicle_lot_number: document.getElementById('editVehLotNumber')?.value || null,
-        vehicle_buyer_number: document.getElementById('editVehBuyerNumber')?.value || null,
-        vehicles: [{
-          year: parseInt(document.getElementById('editVehYear').value) || null,
-          make: document.getElementById('editVehMake').value || '',
-          model: document.getElementById('editVehModel').value || '',
-          body_type: normalizeBodyType(document.getElementById('editVehBodyType')?.value || ''),
-          lot_number: document.getElementById('editVehLotNumber')?.value || null,
-          buyer_number: document.getElementById('editVehBuyerNumber')?.value || null,
-          is_inoperable: document.getElementById('editVehInop')?.checked === true
-        }],
+        // Per-vehicle truth: merge edited fields into vehicles[0], preserve any extra keys,
+        // then recompute top-level shims from vehicles[0].
+        ...(() => {
+          const existingOrder = appData.orders.find(x => x.id === orderId);
+          const existingVeh0 = (existingOrder?.vehicles?.[0]) || {};
+          const newLot = document.getElementById('editVehLotNumber')?.value || null;
+          const newBuyer = document.getElementById('editVehBuyerNumber')?.value || null;
+          const updatedVeh0 = {
+            ...existingVeh0,
+            year: parseInt(document.getElementById('editVehYear').value) || null,
+            make: document.getElementById('editVehMake').value || '',
+            model: document.getElementById('editVehModel').value || '',
+            body_type: normalizeBodyType(document.getElementById('editVehBodyType')?.value || ''),
+            lot_number: newLot,
+            buyer_number: newBuyer,
+            is_inoperable: document.getElementById('editVehInop')?.checked === true
+          };
+          return {
+            vehicles: [updatedVeh0],
+            vehicle_lot_number: updatedVeh0.lot_number,
+            vehicle_buyer_number: updatedVeh0.buyer_number
+          };
+        })(),
         has_inoperable_vehicle: document.getElementById('editVehInop')?.checked === true,
         pickup_phone: document.getElementById('editPickupPhone')?.value || null,
         delivery_phone: document.getElementById('editDeliveryPhone')?.value || null,
