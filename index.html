@@ -18730,7 +18730,7 @@
         '<div class="form-group" style="margin-bottom:0;flex:1;position:relative"><label>Make</label><input type="text" id="lbMake" value="' + escapeHtml(o?.vehicle_make || '') + '" placeholder="Start typing make..." autocomplete="off"></div>' +
         '<div class="form-group" style="margin-bottom:0;flex:1;position:relative"><label>Model</label><input type="text" id="lbModel" value="' + escapeHtml(o?.vehicle_model || '') + '" placeholder="Start typing model..." autocomplete="off"></div>' +
         (!o ? '<button type="button" class="btn btn-secondary" onclick="addAnotherVehicleLB()" style="height:42px;white-space:nowrap">+ Add Another</button>' : '') + '</div>' +
-        '<div class="form-row" style="gap:12px;margin-top:8px"><div class="form-group" style="margin-bottom:0"><label>Body Type</label><select id="lbBodyType">' + getVehicleBodyTypeOptionsHtml(o?.vehicle_body_type || '') + '</select></div><div class="form-group" style="margin-bottom:0"><label>Lot #</label><input id="lbLotNumber" value="' + (o?.vehicle_lot_number || '') + '"></div><div class="form-group" style="margin-bottom:0"><label>Buyer #</label><input id="lbBuyerNumber" value="' + (o?.vehicle_buyer_number || '') + '"></div></div>' +
+        '<div class="form-row" style="gap:12px;margin-top:8px"><div class="form-group" style="margin-bottom:0"><label>Body Type</label><select id="lbBodyType">' + getVehicleBodyTypeOptionsHtml(o?.vehicle_body_type || '') + '</select></div><div class="form-group" style="margin-bottom:0"><label>Lot #</label><input id="lbLotNumber" class="lbLotNumber" value="' + escapeHtml(o?.vehicles?.[0]?.lot_number || o?.vehicle_lot_number || '') + '"></div><div class="form-group" style="margin-bottom:0"><label>Buyer #</label><input id="lbBuyerNumber" class="lbBuyerNumber" value="' + escapeHtml(o?.vehicles?.[0]?.buyer_number || o?.vehicle_buyer_number || '') + '"></div></div>' +
         '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text-secondary);margin-top:6px;"><input type="checkbox" id="lbInop" ' + ((o?.vehicles?.[0]?.is_inoperable === true) ? 'checked' : '') + ' style="accent-color:#f59e0b;cursor:pointer;"><span style="color:#f59e0b;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">INOPERABLE</span></label>' +
         (!o ? '<div id="lbVehicleListSection" style="margin-top:12px;display:none"><div id="lbVehicleListItems"></div></div>' : '') + '</div>' +
         '<div style="background:var(--dim-blue);padding:12px;border-radius:8px;margin-bottom:12px">' +
@@ -18791,19 +18791,24 @@
       const year = document.getElementById('lbYear').value;
       const make = document.getElementById('lbMake').value;
       const model = document.getElementById('lbModel').value;
-      
+      const lot_number = document.getElementById('lbLotNumber')?.value.trim() || '';
+      const buyer_number = document.getElementById('lbBuyerNumber')?.value.trim() || '';
+
       if (!make || !model) {
         showToast('Please enter make and model first', 'error');
         return;
       }
-      
-      lbVehicleList.push({ year, make, model });
+
+      lbVehicleList.push({ year, make, model, lot_number, buyer_number, is_inoperable: document.getElementById('lbInop')?.checked === true });
       updateLBVehicleListDisplay();
-      
+
       // Clear inputs for next vehicle
       document.getElementById('lbYear').value = new Date().getFullYear();
       document.getElementById('lbMake').value = '';
       document.getElementById('lbModel').value = '';
+      if (document.getElementById('lbLotNumber')) document.getElementById('lbLotNumber').value = '';
+      if (document.getElementById('lbBuyerNumber')) document.getElementById('lbBuyerNumber').value = '';
+      if (document.getElementById('lbInop')) document.getElementById('lbInop').checked = false;
       document.getElementById('lbMake').focus();
     }
     
@@ -18819,10 +18824,25 @@
       section.style.display = 'block';
       const itemBg = 'white';
       const itemBorder = '#e2e8f0';
+      // All user-supplied values passed through escapeHtml() — XSS-safe
       container.innerHTML = '<div style="font-size:12px;color:#64748b;margin-bottom:8px">' + lbVehicleList.length + ' vehicle(s) added:</div>' +
-        lbVehicleList.map((v, i) => '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:' + itemBg + ';border-radius:6px;margin-bottom:4px;border:1px solid ' + itemBorder + '">' +
-          '<span style="font-weight:500">' + v.year + ' ' + v.make + ' ' + v.model + '</span>' +
-          '<button onclick="removeLBVehicle(' + i + ')" style="background:var(--dim-red);color:#dc2626;border:none;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px">[[icon:x]]</button></div>').join('');
+        lbVehicleList.map((v, i) => '<div style="background:' + itemBg + ';border-radius:6px;margin-bottom:4px;border:1px solid ' + itemBorder + ';padding:8px 12px">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+          '<span style="font-weight:500">' + escapeHtml(v.year + ' ' + v.make + ' ' + v.model) + '</span>' +
+          '<button onclick="removeLBVehicle(' + i + ')" style="background:var(--dim-red);color:#dc2626;border:none;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px">[[icon:x]]</button></div>' +
+          '<div style="display:flex;gap:8px">' +
+          '<div style="flex:1"><label style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-secondary);display:block;margin-bottom:2px">Lot #</label>' +
+          '<input data-lb-extra-lot="' + i + '" value="' + escapeHtml(v.lot_number || '') + '" placeholder="Lot #" style="width:100%;box-sizing:border-box"></div>' +
+          '<div style="flex:1"><label style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-secondary);display:block;margin-bottom:2px">Buyer #</label>' +
+          '<input data-lb-extra-buyer="' + i + '" value="' + escapeHtml(v.buyer_number || '') + '" placeholder="Buyer #" style="width:100%;box-sizing:border-box"></div>' +
+          '</div></div>').join('');
+      // Wire live-update listeners so edits in the rendered inputs sync back into lbVehicleList state
+      container.querySelectorAll('[data-lb-extra-lot]').forEach(el => {
+        el.addEventListener('input', () => { const idx = parseInt(el.dataset.lbExtraLot, 10); if (lbVehicleList[idx]) lbVehicleList[idx].lot_number = el.value.trim(); });
+      });
+      container.querySelectorAll('[data-lb-extra-buyer]').forEach(el => {
+        el.addEventListener('input', () => { const idx = parseInt(el.dataset.lbExtraBuyer, 10); if (lbVehicleList[idx]) lbVehicleList[idx].buyer_number = el.value.trim(); });
+      });
     }
     
     function removeLBVehicle(index) {
@@ -18902,18 +18922,21 @@
       const currentYear = document.getElementById('lbYear').value;
       const currentMake = document.getElementById('lbMake').value;
       const currentModel = document.getElementById('lbModel').value;
+      const currentLotNumber = document.getElementById('lbLotNumber')?.value.trim() || '';
+      const currentBuyerNumber = document.getElementById('lbBuyerNumber')?.value.trim() || '';
+      const currentInop = document.getElementById('lbInop')?.checked === true;
       let vehiclesToSave = [];
       if (lbVehicleList && lbVehicleList.length > 0) {
         vehiclesToSave = [...lbVehicleList];
         if (currentMake && currentModel) {
-          vehiclesToSave.push({ year: currentYear, make: currentMake, model: currentModel });
+          vehiclesToSave.push({ year: currentYear, make: currentMake, model: currentModel, lot_number: currentLotNumber, buyer_number: currentBuyerNumber, is_inoperable: currentInop });
         }
       } else {
         if (!currentMake || !currentModel) {
           showToast('Please enter vehicle make and model', 'error');
           return;
         }
-        vehiclesToSave.push({ year: currentYear, make: currentMake, model: currentModel });
+        vehiclesToSave.push({ year: currentYear, make: currentMake, model: currentModel, lot_number: currentLotNumber, buyer_number: currentBuyerNumber, is_inoperable: currentInop });
       }
 
       const pickupAddressPayload = buildOrderAddressPayload('pickup', {
@@ -18954,23 +18977,28 @@
         dispatcher_notes: document.getElementById('lbNotes').value || null,
         notes: document.getElementById('lbDriverNotes')?.value || null,
         vehicle_body_type: normalizeBodyType(document.getElementById('lbBodyType')?.value || ''),
-        vehicle_lot_number: document.getElementById('lbLotNumber')?.value || null,
-        vehicle_buyer_number: document.getElementById('lbBuyerNumber')?.value || null,
+        vehicle_lot_number: null, // recomputed below from vehicles[0]
+        vehicle_buyer_number: null, // recomputed below from vehicles[0]
         trip_id: null,
         status: 'PENDING'
       };
 
       try {
-        // Build vehicles JSONB array from all vehicles
-        const lbInopChecked = document.getElementById('lbInop')?.checked === true;
-        const vehiclesArray = vehiclesToSave.map((v, i) => ({
+        // Build vehicles JSONB array from all vehicles — per-vehicle lot_number + buyer_number
+        // vehiclesToSave entries already carry lot_number, buyer_number, is_inoperable from assembly above
+        const vehiclesArray = vehiclesToSave.map(v => ({
           year: parseInt(v.year, 10) || null,
           make: v.make || '',
           model: v.model || '',
-          is_inoperable: i === 0 ? lbInopChecked : (v.is_inoperable === true)
+          lot_number: v.lot_number || null,
+          buyer_number: v.buyer_number || null,
+          is_inoperable: v.is_inoperable === true
         }));
         const firstVehicle = vehiclesToSave[0] || {};
         const has_inoperable_vehicle = vehiclesArray.some(v => v.is_inoperable === true);
+        // Sync top-level shim from vehicles[0] (overrides the placeholder nulls in baseData)
+        baseData.vehicle_lot_number = vehiclesArray[0]?.lot_number || null;
+        baseData.vehicle_buyer_number = vehiclesArray[0]?.buyer_number || null;
         const vehicleFields = {
           vehicle_year: parseInt(firstVehicle.year, 10) || null,
           vehicle_make: firstVehicle.make || '',
