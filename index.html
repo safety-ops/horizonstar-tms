@@ -18680,6 +18680,7 @@
         '<div class="form-group" style="margin-bottom:0;flex:1;position:relative"><label>Model</label><input type="text" id="lbModel" value="' + escapeHtml(o?.vehicle_model || '') + '" placeholder="Start typing model..." autocomplete="off"></div>' +
         (!o ? '<button type="button" class="btn btn-secondary" onclick="addAnotherVehicleLB()" style="height:42px;white-space:nowrap">+ Add Another</button>' : '') + '</div>' +
         '<div class="form-row" style="gap:12px;margin-top:8px"><div class="form-group" style="margin-bottom:0"><label>Body Type</label><select id="lbBodyType">' + getVehicleBodyTypeOptionsHtml(o?.vehicle_body_type || '') + '</select></div><div class="form-group" style="margin-bottom:0"><label>Lot #</label><input id="lbLotNumber" value="' + (o?.vehicle_lot_number || '') + '"></div><div class="form-group" style="margin-bottom:0"><label>Buyer #</label><input id="lbBuyerNumber" value="' + (o?.vehicle_buyer_number || '') + '"></div></div>' +
+        '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text-secondary);margin-top:6px;"><input type="checkbox" id="lbInop" ' + ((o?.vehicles?.[0]?.is_inoperable === true) ? 'checked' : '') + ' style="accent-color:#f59e0b;cursor:pointer;"><span style="color:#f59e0b;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">INOPERABLE</span></label>' +
         (!o ? '<div id="lbVehicleListSection" style="margin-top:12px;display:none"><div id="lbVehicleListItems"></div></div>' : '') + '</div>' +
         '<div style="background:var(--dim-blue);padding:12px;border-radius:8px;margin-bottom:12px">' +
         '<label style="font-weight:600;display:block;margin-bottom:8px">[[icon:map_pin]] PICKUP</label>' +
@@ -18910,17 +18911,21 @@
 
       try {
         // Build vehicles JSONB array from all vehicles
-        const vehiclesArray = vehiclesToSave.map(v => ({
+        const lbInopChecked = document.getElementById('lbInop')?.checked === true;
+        const vehiclesArray = vehiclesToSave.map((v, i) => ({
           year: parseInt(v.year, 10) || null,
           make: v.make || '',
-          model: v.model || ''
+          model: v.model || '',
+          is_inoperable: i === 0 ? lbInopChecked : (v.is_inoperable === true)
         }));
         const firstVehicle = vehiclesToSave[0] || {};
+        const has_inoperable_vehicle = vehiclesArray.some(v => v.is_inoperable === true);
         const vehicleFields = {
           vehicle_year: parseInt(firstVehicle.year, 10) || null,
           vehicle_make: firstVehicle.make || '',
           vehicle_model: firstVehicle.model || '',
-          vehicles: vehiclesArray
+          vehicles: vehiclesArray,
+          has_inoperable_vehicle
         };
 
         if (id) {
@@ -22557,7 +22562,8 @@
         '<div class="form-row"><div class="form-group"><label>Year</label><input type="number" id="editVehYear" value="' + o.vehicle_year + '"></div><div class="form-group"><label>Make</label><input id="editVehMake" value="' + o.vehicle_make + '"></div></div>' +
         '<div class="form-row"><div class="form-group"><label>Model</label><input id="editVehModel" value="' + o.vehicle_model + '"></div><div class="form-group"><label>Body Type</label><select id="editVehBodyType">' + getVehicleBodyTypeOptionsHtml(o.vehicle_body_type || '') + '</select></div></div>' +
         '<div class="form-row"><div class="form-group"><label>Lot #</label><input id="editVehLotNumber" value="' + (o.vehicle_lot_number || '') + '"></div><div class="form-group"><label>Buyer #</label><input id="editVehBuyerNumber" value="' + (o.vehicle_buyer_number || '') + '"></div></div>' +
-        
+        '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text-secondary);margin-top:6px;"><input type="checkbox" id="editVehInop" ' + ((o.vehicles?.[0]?.is_inoperable === true) ? 'checked' : '') + ' style="accent-color:#f59e0b;cursor:pointer;"><span style="color:#f59e0b;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">INOPERABLE</span></label>' +
+
         // Pickup Section
         '<div style="background:var(--dim-blue);padding:12px;border-radius:8px;margin-bottom:12px">' +
         '<label style="font-weight:600;display:block;margin-bottom:8px">[[icon:map_pin]] PICKUP</label>' +
@@ -22684,8 +22690,10 @@
           model: document.getElementById('editVehModel').value || '',
           body_type: normalizeBodyType(document.getElementById('editVehBodyType')?.value || ''),
           lot_number: document.getElementById('editVehLotNumber')?.value || null,
-          buyer_number: document.getElementById('editVehBuyerNumber')?.value || null
+          buyer_number: document.getElementById('editVehBuyerNumber')?.value || null,
+          is_inoperable: document.getElementById('editVehInop')?.checked === true
         }],
+        has_inoperable_vehicle: document.getElementById('editVehInop')?.checked === true,
         pickup_phone: document.getElementById('editPickupPhone')?.value || null,
         delivery_phone: document.getElementById('editDeliveryPhone')?.value || null,
         ...pickupAddressPayload,
@@ -23293,6 +23301,7 @@
         '<div class="form-row"><div class="form-group"><label>Model</label><input id="vehModel" value="' + (o?.vehicle_model || '') + '"></div><div class="form-group"><label>Body Type</label><select id="vehBodyType">' + getVehicleBodyTypeOptionsHtml(o?.vehicle_body_type || '') + '</select></div></div>' +
         '<div class="form-row"><div class="form-group"><label>VIN</label><input id="vehVin" value="' + (o?.vehicle_vin || '') + '" maxlength="17" style="font-family:var(--font-mono);text-transform:uppercase" placeholder="17-char VIN"></div><div class="form-group"><label>Color</label><input id="vehColor" value="' + (o?.vehicle_color || '') + '"></div></div>' +
         '<div class="form-row"><div class="form-group"><label>Lot #</label><input id="vehLotNumber" value="' + (o?.vehicle_lot_number || '') + '"></div><div class="form-group"><label>Buyer #</label><input id="vehBuyerNumber" value="' + (o?.vehicle_buyer_number || '') + '"></div></div>' +
+        '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text-secondary);margin-top:6px;"><input type="checkbox" id="vehInop" ' + ((o?.vehicles?.[0]?.is_inoperable === true) ? 'checked' : '') + ' style="accent-color:#f59e0b;cursor:pointer;"><span style="color:#f59e0b;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">INOPERABLE</span></label>' +
         '</div>' +
         '</div>' +
         '<div style="background:var(--dim-blue);padding:12px;border-radius:8px;margin-bottom:12px">' +
@@ -23408,6 +23417,7 @@
           + '<div class="form-group" style="margin-bottom:0"><label>Lot #</label><input id="wiz_veh_lot" value="' + escapeHtml(d.vehicle_lot_number || '') + '" placeholder="Lot number"></div>'
           + '</div>'
           + '<div class="form-group" style="margin-bottom:0"><label>Buyer #</label><input id="wiz_veh_buyer" value="' + escapeHtml(d.vehicle_buyer_number || '') + '" placeholder="Buyer number"></div>'
+          + '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text-secondary);margin-top:6px;"><input type="checkbox" id="wiz_veh_inop" ' + (d.vehicle_is_inoperable === true ? 'checked' : '') + ' style="accent-color:#f59e0b;cursor:pointer;"><span style="color:#f59e0b;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">INOPERABLE</span></label>'
           + '</div></div>';
       }
 
@@ -23621,8 +23631,9 @@
           d.vehicle_model        = (document.getElementById('wiz_veh_model') ? document.getElementById('wiz_veh_model').value : '').trim();
           d.vehicle_body_type    = normalizeBodyType(document.getElementById('wiz_veh_body_type') ? document.getElementById('wiz_veh_body_type').value : '');
           d.vehicle_color        = (document.getElementById('wiz_veh_color') ? document.getElementById('wiz_veh_color').value : '').trim();
-          d.vehicle_lot_number   = (document.getElementById('wiz_veh_lot')   ? document.getElementById('wiz_veh_lot').value   : '').trim();
-          d.vehicle_buyer_number = (document.getElementById('wiz_veh_buyer') ? document.getElementById('wiz_veh_buyer').value : '').trim();
+          d.vehicle_lot_number    = (document.getElementById('wiz_veh_lot')   ? document.getElementById('wiz_veh_lot').value   : '').trim();
+          d.vehicle_buyer_number  = (document.getElementById('wiz_veh_buyer') ? document.getElementById('wiz_veh_buyer').value : '').trim();
+          d.vehicle_is_inoperable = document.getElementById('wiz_veh_inop') ? document.getElementById('wiz_veh_inop').checked === true : false;
         } else if (step === 2) {
           d.pickup_address        = (document.getElementById('wiz_pickup_address') ? document.getElementById('wiz_pickup_address').value : '').trim();
           d.pickup_city           = (document.getElementById('wiz_pickup_city')    ? document.getElementById('wiz_pickup_city').value    : '').trim();
@@ -23784,8 +23795,10 @@
             vehicles: [{
               year: d.vehicle_year || null, make: d.vehicle_make || '', model: d.vehicle_model || '',
               vin: d.vehicle_vin || null, color: d.vehicle_color || null, body_type: d.vehicle_body_type || null,
-              lot_number: d.vehicle_lot_number || null, buyer_number: d.vehicle_buyer_number || null
+              lot_number: d.vehicle_lot_number || null, buyer_number: d.vehicle_buyer_number || null,
+              is_inoperable: d.vehicle_is_inoperable === true
             }],
+            has_inoperable_vehicle: d.vehicle_is_inoperable === true,
             pickup_contact_name:    d.pickup_contact_name    || null,
             pickup_contact_phone:   d.pickup_contact_phone   || null,
             delivery_contact_name:  d.delivery_contact_name  || null,
@@ -23886,7 +23899,8 @@
         color: document.getElementById('vehColor')?.value.trim() || null,
         body_type: document.getElementById('vehBodyType')?.value || null,
         lot_number: document.getElementById('vehLotNumber')?.value.trim() || null,
-        buyer_number: document.getElementById('vehBuyerNumber')?.value.trim() || null
+        buyer_number: document.getElementById('vehBuyerNumber')?.value.trim() || null,
+        is_inoperable: document.getElementById('vehInop')?.checked === true
       });
       // Clear form for next vehicle
       document.getElementById('vehYear').value = new Date().getFullYear();
@@ -23934,7 +23948,8 @@
           color: document.getElementById('vehColor')?.value.trim() || null,
           body_type: document.getElementById('vehBodyType')?.value || null,
           lot_number: document.getElementById('vehLotNumber')?.value.trim() || null,
-          buyer_number: document.getElementById('vehBuyerNumber')?.value.trim() || null
+          buyer_number: document.getElementById('vehBuyerNumber')?.value.trim() || null,
+          is_inoperable: document.getElementById('vehInop')?.checked === true
         });
       }
       return vehicles;
@@ -24024,6 +24039,7 @@
         vehicle_lot_number: firstVehicle.lot_number || null,
         vehicle_buyer_number: firstVehicle.buyer_number || null,
         vehicles: allVehicles.length > 0 ? allVehicles : [],
+        has_inoperable_vehicle: allVehicles.some(v => v.is_inoperable === true),
         ...pickupAddressPayload,
         ...deliveryAddressPayload,
         pickup_phone: document.getElementById('pickupPhone')?.value || null,
