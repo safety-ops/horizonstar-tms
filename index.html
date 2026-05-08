@@ -12185,6 +12185,65 @@
       return SUPABASE_URL + '/storage/v1/object/' + bucket + '/' + encodeStoragePath(path);
     }
 
+    // Strip characters that confuse Supabase Storage paths or invite traversal.
+    // Preserves dot, dash, underscore for readable filenames.
+    function sanitizeStorageFilename(name) {
+      return String(name || 'file').replace(/[^a-zA-Z0-9.\-_]/g, '_');
+    }
+
+    // Generic storage-bucket attachment uploader. Handles size validation,
+    // upload, DB insert, and best-effort cleanup if the insert fails. Use
+    // this for any (bucket, table) attachment instead of rolling per-feature
+    // copies — every prior copy had at least one bug (`supabaseClient is not
+    // defined`, no sanitization, no rollback). Returns the inserted DB row.
+    //
+    // Required: { bucket, table, file, path, row }
+    //   bucket: Supabase Storage bucket id
+    //   table:  Postgres table for the attachment metadata row
+    //   file:   File object from <input type="file">
+    //   path:   Pre-built storage path inside the bucket (caller controls
+    //           the layout — e.g. 'orders/123/file.pdf'). Caller should run
+    //           the user-supplied filename portion through sanitizeStorageFilename.
+    //   row:    Extra columns to insert (e.g. order_id, uploaded_by).
+    //
+    // Optional fieldName overrides default column names below.
+    //   fileNameField (default 'file_name'): original filename
+    //   urlField      (default 'file_url' ; pass null to skip): storage URL
+    //   pathField     (default null)        : storage_path column
+    //   sizeField     (default null)        : file_size column
+    //   typeField     (default null)        : file_type column
+    //   maxSizeMB     (default 10)          : hard size cap; throws if exceeded
+    async function uploadStorageAttachment(opts) {
+      const file = opts.file;
+      if (!file) throw new Error('No file selected');
+
+      const maxBytes = (opts.maxSizeMB || 10) * 1024 * 1024;
+      if (file.size > maxBytes) {
+        throw new Error('File size must be less than ' + (opts.maxSizeMB || 10) + 'MB');
+      }
+
+      const { error: uploadErr } = await sb.storage.from(opts.bucket).upload(opts.path, file);
+      if (uploadErr) throw uploadErr;
+
+      const insertRow = Object.assign({}, opts.row || {});
+      insertRow[opts.fileNameField || 'file_name'] = file.name;
+      if (opts.urlField !== null) {
+        insertRow[opts.urlField || 'file_url'] = buildStorageObjectUrl(opts.bucket, opts.path);
+      }
+      if (opts.pathField) insertRow[opts.pathField] = opts.path;
+      if (opts.sizeField) insertRow[opts.sizeField] = file.size;
+      if (opts.typeField) insertRow[opts.typeField] = file.type;
+
+      const { data: row, error: dbErr } = await sb.from(opts.table).insert(insertRow).select().single();
+      if (dbErr) {
+        // Best-effort cleanup so a failed insert doesn't leave orphan storage objects.
+        // Swallow the secondary error so the caller sees the original failure.
+        await sb.storage.from(opts.bucket).remove([opts.path]).catch(() => {});
+        throw dbErr;
+      }
+      return row;
+    }
+
     function extractStoragePathFromUrl(value, bucket = 'inspection-media') {
       if (!value) return null;
       const raw = String(value).trim();
@@ -30303,11 +30362,13 @@
       const file = fileInput.files[0];
       showToast('Uploading...');
       try {
-        const fileName = Date.now() + '_' + file.name;
-        const { data: uploadData, error: uploadError } = await sb.storage.from('claim-files').upload(fileName, file);
-        if (uploadError) throw uploadError;
-        const { data: urlData } = sb.storage.from('claim-files').getPublicUrl(fileName);
-        await dbInsert('claim_files', { claim_id: claimId, file_name: file.name, file_url: urlData.publicUrl, uploaded_at: new Date().toISOString() });
+        await uploadStorageAttachment({
+          bucket: 'claim-files',
+          table: 'claim_files',
+          file,
+          path: Date.now() + '_' + sanitizeStorageFilename(file.name),
+          row: { claim_id: claimId, uploaded_at: new Date().toISOString() }
+        });
         showToast('File uploaded!');
         await loadAllData(true);
         document.querySelector('.modal-overlay').remove();
@@ -30600,11 +30661,13 @@
       const file = fileInput.files[0];
       showToast('Uploading...');
       try {
-        const fileName = Date.now() + '_' + file.name;
-        const { data: uploadData, error: uploadError } = await sb.storage.from('ticket-files').upload(fileName, file);
-        if (uploadError) throw uploadError;
-        const { data: urlData } = sb.storage.from('ticket-files').getPublicUrl(fileName);
-        await dbInsert('ticket_files', { ticket_id: ticketId, file_name: file.name, file_url: urlData.publicUrl, uploaded_at: new Date().toISOString() });
+        await uploadStorageAttachment({
+          bucket: 'ticket-files',
+          table: 'ticket_files',
+          file,
+          path: Date.now() + '_' + sanitizeStorageFilename(file.name),
+          row: { ticket_id: ticketId, uploaded_at: new Date().toISOString() }
+        });
         showToast('File uploaded!');
         await loadAllData(true);
         document.querySelector('.modal-overlay').remove();
@@ -30650,11 +30713,13 @@
       const file = fileInput.files[0];
       showToast('Uploading...');
       try {
-        const fileName = Date.now() + '_' + file.name;
-        const { data: uploadData, error: uploadError } = await sb.storage.from('violation-files').upload(fileName, file);
-        if (uploadError) throw uploadError;
-        const { data: urlData } = sb.storage.from('violation-files').getPublicUrl(fileName);
-        await dbInsert('violation_files', { violation_id: violationId, file_name: file.name, file_url: urlData.publicUrl, uploaded_at: new Date().toISOString() });
+        await uploadStorageAttachment({
+          bucket: 'violation-files',
+          table: 'violation_files',
+          file,
+          path: Date.now() + '_' + sanitizeStorageFilename(file.name),
+          row: { violation_id: violationId, uploaded_at: new Date().toISOString() }
+        });
         showToast('File uploaded!');
         await loadAllData(true);
         document.querySelector('.modal-overlay').remove();
@@ -39445,59 +39510,37 @@
         showToast('Please select a file to upload', 'error');
         return;
       }
-
       const file = fileInput.files[0];
-
-      // Check file size (10MB max)
-      if (file.size > 10 * 1024 * 1024) {
-        showToast('File size must be less than 10MB', 'error');
-        return;
-      }
-
       showToast('Uploading file...', 'info');
 
       try {
-        // Upload to Supabase Storage
-        const fileName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
         const uploaderId = currentUser?.id ? String(currentUser.id) : 'tms';
+        const fileName = Date.now() + '_' + sanitizeStorageFilename(file.name);
         const filePath = uploaderId + '/order_' + orderId + '/' + fileName;
 
-        const { data: uploadData, error: uploadError } = await sb
-          .storage
-          .from('order-attachments')
-          .upload(filePath, file);
+        const attachment = await uploadStorageAttachment({
+          bucket: 'order-attachments',
+          table: 'order_attachments',
+          file,
+          path: filePath,
+          pathField: 'storage_path',
+          sizeField: 'file_size',
+          typeField: 'file_type',
+          row: {
+            order_id: orderId,
+            uploaded_by: currentUser?.first_name || 'dispatcher'
+          }
+        });
 
-        if (uploadError) throw uploadError;
+        // order-attachments is a private bucket — resolve a short-lived signed URL
+        // for immediate display before the modal re-opens.
         const signedMap = await requestSignedUrls('order-attachments', [filePath], 900);
         const resolvedUrl = signedMap[filePath] || null;
-        const fileUrl = buildStorageObjectUrl('order-attachments', filePath);
-
-        // Save to database
-        const { data: attachment, error: dbError } = await sb
-          .from('order_attachments')
-          .insert({
-            order_id: orderId,
-            file_name: file.name,
-            file_url: fileUrl,
-            storage_path: filePath,
-            file_type: file.type,
-            file_size: file.size,
-            uploaded_by: currentUser?.first_name || 'dispatcher'
-          })
-          .select()
-          .single();
-
-        if (dbError) throw dbError;
-
-        // Update appData
         appData.order_attachments.push(Object.assign({}, attachment, { __resolved_url: resolvedUrl }));
 
         showToast('File uploaded successfully!');
-
-        // Refresh the modal
         document.querySelector('.modal-overlay').remove();
         openOrderAttachmentsModal(orderId);
-
       } catch (error) {
         console.error('Upload error:', error);
         showToast('Failed to upload file: ' + (error.message || 'Unknown error'), 'error');
