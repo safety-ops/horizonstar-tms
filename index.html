@@ -30304,9 +30304,9 @@
       showToast('Uploading...');
       try {
         const fileName = Date.now() + '_' + file.name;
-        const { data: uploadData, error: uploadError } = await supabase.storage.from('claim-files').upload(fileName, file);
+        const { data: uploadData, error: uploadError } = await sb.storage.from('claim-files').upload(fileName, file);
         if (uploadError) throw uploadError;
-        const { data: urlData } = supabase.storage.from('claim-files').getPublicUrl(fileName);
+        const { data: urlData } = sb.storage.from('claim-files').getPublicUrl(fileName);
         await dbInsert('claim_files', { claim_id: claimId, file_name: file.name, file_url: urlData.publicUrl, uploaded_at: new Date().toISOString() });
         showToast('File uploaded!');
         await loadAllData(true);
@@ -30601,9 +30601,9 @@
       showToast('Uploading...');
       try {
         const fileName = Date.now() + '_' + file.name;
-        const { data: uploadData, error: uploadError } = await supabase.storage.from('ticket-files').upload(fileName, file);
+        const { data: uploadData, error: uploadError } = await sb.storage.from('ticket-files').upload(fileName, file);
         if (uploadError) throw uploadError;
-        const { data: urlData } = supabase.storage.from('ticket-files').getPublicUrl(fileName);
+        const { data: urlData } = sb.storage.from('ticket-files').getPublicUrl(fileName);
         await dbInsert('ticket_files', { ticket_id: ticketId, file_name: file.name, file_url: urlData.publicUrl, uploaded_at: new Date().toISOString() });
         showToast('File uploaded!');
         await loadAllData(true);
@@ -30651,9 +30651,9 @@
       showToast('Uploading...');
       try {
         const fileName = Date.now() + '_' + file.name;
-        const { data: uploadData, error: uploadError } = await supabase.storage.from('violation-files').upload(fileName, file);
+        const { data: uploadData, error: uploadError } = await sb.storage.from('violation-files').upload(fileName, file);
         if (uploadError) throw uploadError;
-        const { data: urlData } = supabase.storage.from('violation-files').getPublicUrl(fileName);
+        const { data: urlData } = sb.storage.from('violation-files').getPublicUrl(fileName);
         await dbInsert('violation_files', { violation_id: violationId, file_name: file.name, file_url: urlData.publicUrl, uploaded_at: new Date().toISOString() });
         showToast('File uploaded!');
         await loadAllData(true);
