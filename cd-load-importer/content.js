@@ -50,6 +50,30 @@ const SOURCE_PLATFORM_LABELS = {
 // Marketplace methods where terms shouldn't appear in the display label
 const PAYMENT_METHOD_HIDES_TERMS = new Set(['USHIP']);
 
+// Keywords used by detectInoperable() to pre-check the importer modal's
+// per-vehicle INOPERABLE checkbox. Conservative — false-positive is fine
+// (dispatcher unchecks); false-negative is dangerous (driver shows up
+// without a winch). Case-insensitive substring match.
+const INOP_KEYWORDS = [
+  'inop', 'inoperable',
+  "won't run", 'wont run',
+  "won't start", 'wont start',
+  "doesn't run", 'doesnt run',
+  'no key', 'no start',
+  'needs battery', 'dead battery'
+];
+
+/**
+ * Returns true if the given description text contains any inoperable keyword.
+ * Case-insensitive substring match. The dispatcher has the final say in the
+ * import modal; this is just a pre-check.
+ */
+function detectInoperable(text) {
+  if (!text) return false;
+  const lower = String(text).toLowerCase();
+  return INOP_KEYWORDS.some(kw => lower.includes(kw));
+}
+
 // Common (method, terms) combos. Anything outside this set renders an amber warning chip.
 const PAYMENT_COMMON_PAIRS = new Set([
   'CASH|COD','CASH|COP','CASH|LOCAL_COD','CHECK|COD','CHECK|COP',
@@ -869,6 +893,8 @@ function sanitizeOrderNumber(raw) {
       data.notes = notesMatch[1].trim().substring(0, 500);
       log('Found Notes:', data.notes);
     }
+    // Pre-check inoperable flag from load-level notes (no per-vehicle description on CD cards).
+    if (data.vehicles) data.vehicles.forEach(v => { v.is_inoperable = detectInoperable(data.notes); });
 
     data.order_source_platform = 'central_dispatch';
     data.external_order_url = window.location.href;
@@ -2291,6 +2317,8 @@ function sanitizeOrderNumber(raw) {
       const p = section?.querySelector('p');
       if (p) data.notes = p.textContent.trim().substring(0, 500);
     }
+    // Pre-check inoperable flag from load-level driver instructions.
+    if (data.vehicles) data.vehicles.forEach(v => { v.is_inoperable = detectInoperable(data.notes); });
 
     data.order_source_platform = 'super_dispatch';
     // SD's /launch-app/*/ AASA glob requires a single-segment ID after /launch-app/
@@ -2670,6 +2698,8 @@ function sanitizeOrderNumber(raw) {
       const note = instrLines.filter(l => l !== 'Edit' && l !== 'ADD DRIVER INSTRUCTIONS' && l.length > 3).join(' ');
       if (note) data.notes = note.substring(0, 500);
     }
+    // Pre-check inoperable flag from load-level dispatch instructions.
+    if (data.vehicles) data.vehicles.forEach(v => { v.is_inoperable = detectInoperable(data.notes); });
 
     data.order_source_platform = 'ship_cars';
     // Ship.cars AASA claims /order/* — short URL form fires the iOS Universal Link.
@@ -2726,6 +2756,8 @@ function sanitizeOrderNumber(raw) {
       data.vehicle_make = allVehicles[0].make;
       data.vehicle_model = allVehicles[0].model;
       data.vehicles = allVehicles;
+      // Pre-check inoperable flag from full row text (no separate notes on list cards).
+      data.vehicles.forEach(v => { v.is_inoperable = detectInoperable(text); });
     }
 
     // VIN
