@@ -1544,7 +1544,9 @@ function sanitizeOrderNumber(raw) {
             vin: card.querySelector('.tms-v-vin')?.value.trim().toUpperCase() || null,
             color: card.querySelector('.tms-v-color')?.value.trim() || null,
             body_type: card.querySelector('.tms-v-body')?.value || null,
-            is_inoperable: card.querySelector('.tms-v-inop')?.checked === true
+            is_inoperable: card.querySelector('.tms-v-inop')?.checked === true,
+            lot_number: card.querySelector('.tms-v-lot')?.value.trim() || null,
+            buyer_number: card.querySelector('.tms-v-buyer')?.value.trim() || null
           }));
           const first = vehicles[0] || {};
           const has_inoperable_vehicle = vehicles.some(v => v.is_inoperable === true);
@@ -1555,8 +1557,8 @@ function sanitizeOrderNumber(raw) {
             vehicle_vin: first.vin,
             vehicle_color: first.color,
             vehicle_body_type: first.body_type,
-            vehicle_lot_number: null,
-            vehicle_buyer_number: null,
+            vehicle_lot_number: vehicles[0]?.lot_number || null,
+            vehicle_buyer_number: vehicles[0]?.buyer_number || null,
             vehicles: vehicles,
             has_inoperable_vehicle: has_inoperable_vehicle
           };
