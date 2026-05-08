@@ -745,6 +745,10 @@ function sanitizeOrderNumber(raw) {
     if (buyerRefMatch && buyerRefMatch[1].trim() !== '') {
       data.vehicle_buyer_number = buyerRefMatch[1].trim();
       log('Found Buyer Reference:', data.vehicle_buyer_number);
+      if (data.vehicles && data.vehicles[0]) {
+        data.vehicles[0].lot_number = data.vehicles[0].lot_number || data.vehicle_lot_number;
+        data.vehicles[0].buyer_number = data.vehicles[0].buyer_number || data.vehicle_buyer_number;
+      }
     }
 
     // ORIGIN
@@ -1033,6 +1037,10 @@ function sanitizeOrderNumber(raw) {
                           <span style="font-size:12px;font-weight:600;color:#f59e0b;text-transform:uppercase;letter-spacing:0.04em;">INOPERABLE — winch/ramps required</span>
                         </label>
                         <div style="font-size:11px;color:#94a3b8;margin-top:4px;padding-left:4px;">${v.is_inoperable ? 'Auto-detected from listing description.' : "Check if vehicle won&apos;t run."}</div>
+                      </div>
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+                        <div><label style="${labelStyle}">Lot #</label><input type="text" class="tms-v-lot" value="${escapeAttr(v.lot_number || '')}" style="${inputStyle}"></div>
+                        <div><label style="${labelStyle}">Buyer #</label><input type="text" class="tms-v-buyer" value="${escapeAttr(v.buyer_number || '')}" style="${inputStyle}"></div>
                       </div>
                     </div>
                   `).join('');
@@ -2618,6 +2626,10 @@ function sanitizeOrderNumber(raw) {
     // Wrap in vehicles array
     if (data.vehicle_year || data.vehicle_make) {
       data.vehicles = [{ year: data.vehicle_year, make: data.vehicle_make, model: data.vehicle_model, vin: data.vehicle_vin, color: data.vehicle_color, body_type: data.vehicle_body_type }];
+      if (data.vehicles && data.vehicles[0]) {
+        data.vehicles[0].lot_number = data.vehicles[0].lot_number || data.vehicle_lot_number;
+        data.vehicles[0].buyer_number = data.vehicles[0].buyer_number || data.vehicle_buyer_number;
+      }
     }
 
     // Revenue from "Carrier Pay $2200"
